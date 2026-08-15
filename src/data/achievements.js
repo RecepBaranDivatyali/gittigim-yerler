@@ -97,12 +97,12 @@ export const ACHIEVEMENTS = [
   { id: 'city_10_in_one', title: 'Yerel Gibi Yaşa', desc: 'Aynı ülkede 10+ şehir/bölge gez', icon: '🏡', category: 'city', check: s => s.maxCitiesInOneCountry >= 10 },
 
   // ─── ÖZEL & TEMATİK ROTALAR ───────────────────────────────────
-  { id: 'planner', title: 'Planlı Gezgin', desc: '5+ ülkeyi "Planlanıyor" olarak işaretle', icon: '📅', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 5 },
-  { id: 'big_planner', title: 'Geleceğin Gezgini', desc: '15+ ülkeyi "Planlanıyor" olarak işaretle', icon: '🗓️', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 15 },
-  { id: 'dreamer', title: 'Dünya Hayalcisi', desc: '10+ ülkeyi "İstiyorum" olarak işaretle', icon: '💭', category: 'special', check: s => (s.worldWishlistCount || 0) >= 10 },
-  { id: 'big_dreamer', title: 'Sınırsız Hayal', desc: '25+ ülkeyi "İstiyorum" olarak işaretle', icon: '🌠', category: 'special', check: s => (s.worldWishlistCount || 0) >= 25 },
+  { id: 'planner', title: 'Planlı Gezgin', desc: '5+ yeri "Planlanıyor" olarak işaretle', icon: '📅', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 5 },
+  { id: 'big_planner', title: 'Geleceğin Gezgini', desc: '15+ yeri "Planlanıyor" olarak işaretle', icon: '🗓️', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 15 },
+  { id: 'dreamer', title: 'Dünya Hayalcisi', desc: '10+ yeri "İstiyorum" olarak işaretle', icon: '💭', category: 'special', check: s => (s.worldWishlistCount || 0) >= 10 },
+  { id: 'big_dreamer', title: 'Sınırsız Hayal', desc: '25+ yeri "İstiyorum" olarak işaretle', icon: '🌠', category: 'special', check: s => (s.worldWishlistCount || 0) >= 25 },
   { id: 'neighbor', title: 'Komşu Gezgin', desc: 'Türkiye\'nin tüm 8 komşusunu (Yunanistan, Bulgaristan, Gürcistan, Ermenistan, Azerbaycan, İran, Irak, Suriye) ziyaret et', icon: '🤝', category: 'special', check: s => ['GR','BG','GE','AM','AZ','IR','IQ','SY'].every(c => getVisitedCodes(s).includes(c)) },
-  { id: 'balkan_tour', title: 'Balkan Ruhu', desc: 'En az 4 Balkan ülkesini ziyaret et (Yunanistan, Bulgaristan, Makedonya, Arnavutluk, Sırbistan, Karadağ, Bosna, Hırvatistan, Romanya)', icon: '🎻', category: 'special', check: s => ['GR','BG','MK','AL','RS','ME','BA','HR','RO'].filter(c => getVisitedCodes(s).includes(c)).length >= 4 },
+  { id: 'balkan_tour', title: 'Balkan Ruhu', desc: 'En az 4 Balkan ülkesini ziyaret et (Yunanistan, Bulgaristan, Makedonya, Arnavutluk, Sırbistan, Karadağ, Bosna, Hırvatistan, Romanya, Slovenya, Kosova)', icon: '🎻', category: 'special', check: s => ['GR','BG','MK','AL','RS','ME','BA','HR','RO','SI','XK'].filter(c => getVisitedCodes(s).includes(c)).length >= 4 },
   { id: 'mediterranean', title: 'Akdeniz Çanağı', desc: 'En az 4 Akdeniz ülkesini ziyaret et (Türkiye, Yunanistan, İtalya, İspanya, Fransa, Mısır, Fas)', icon: '⛵', category: 'special', check: s => ['TR','GR','IT','ES','FR','EG','MA'].filter(c => getVisitedCodes(s).includes(c)).length >= 4 },
   { id: 'g20', title: 'G20 Gezgini', desc: 'G20 ülkelerinin en az yarısını (10 ülke) ziyaret et', icon: '💼', category: 'special', check: s => ['AR','AU','BR','CA','CN','FR','DE','IN','ID','IT','JP','MX','RU','SA','ZA','KR','TR','GB','US'].filter(c => getVisitedCodes(s).includes(c)).length >= 10 },
   { id: 'nordic', title: 'Kuzey Işıkları', desc: 'En az 2 İskandinav/Nordik ülkesini ziyaret et (İsveç, Norveç, Finlandiya, Danimarka, İzlanda)', icon: '❄️', category: 'special', check: s => ['SE','NO','FI','DK','IS'].filter(c => getVisitedCodes(s).includes(c)).length >= 2 },
@@ -125,6 +125,9 @@ export function computeAchievementStats(storageData, baseStats) {
 
   // Marked regions / cities
   const citiesPerCountry = {};
+  if (turkeyVisitedProvinces > 0) {
+    citiesPerCountry['TR'] = turkeyVisitedProvinces;
+  }
   worldCities.forEach(c => {
     if (c?.countryCode) citiesPerCountry[c.countryCode] = (citiesPerCountry[c.countryCode] || 0) + 1;
   });
@@ -137,8 +140,12 @@ export function computeAchievementStats(storageData, baseStats) {
 
   const totalMarkedCities = Object.values(citiesPerCountry).reduce((a, b) => a + b, 0);
   const maxCitiesInOneCountry = Object.values(citiesPerCountry).length ? Math.max(...Object.values(citiesPerCountry)) : 0;
-  const worldWishlistCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v?.status === 'wishlist').length;
-  const worldPlannedCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && (v?.status === 'planned' || v?.status === 'target')).length;
+  
+  const turkeyWishlistCount = Object.values(turkeyVisits).filter(v => v?.status === 'wishlist').length;
+  const turkeyPlannedCount = Object.values(turkeyVisits).filter(v => v?.status === 'target' || v?.status === 'planned').length;
+  
+  const worldWishlistCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v?.status === 'wishlist').length + turkeyWishlistCount;
+  const worldPlannedCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && (v?.status === 'planned' || v?.status === 'target')).length + turkeyPlannedCount;
 
   return {
     ...baseStats,

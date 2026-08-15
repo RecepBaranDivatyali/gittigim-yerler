@@ -126,19 +126,25 @@ export function calculateStats() {
   // World stats
   const worldVisitedCodes = Object.keys(worldVisits).filter(code => !code.includes('::') && worldVisits[code]?.status === 'visited');
   const worldTargetCodes = Object.keys(worldVisits).filter(code => !code.includes('::') && (worldVisits[code]?.status === 'planned' || worldVisits[code]?.status === 'target'));
+  
+  // Include Turkey in worldVisitedCodes if at least 1 Turkish province is visited
+  if (turkeyCount > 0 && !worldVisitedCodes.includes('TR')) {
+    worldVisitedCodes.push('TR');
+  }
+
   const worldCountryCount = worldVisitedCodes.length;
   const worldPercentage = ((worldCountryCount / TOTAL_WORLD_COUNTRIES_BENCHMARK) * 100).toFixed(1);
 
   // Continent breakdown
   const continentCounts = {};
   WORLD_COUNTRIES.forEach(c => {
-    if (worldVisits[c.code]?.status === 'visited') {
+    if (worldVisits[c.code]?.status === 'visited' || (c.code === 'TR' && turkeyCount > 0)) {
       continentCounts[c.continent] = (continentCounts[c.continent] || 0) + 1;
     }
   });
 
   const markedRegionCount = Object.keys(worldVisits).filter(code => code.includes('::') && worldVisits[code]?.status === 'visited').length;
-  const worldCityCount = Math.max(worldCities.length, markedRegionCount);
+  const worldCityCount = Math.max(worldCities.length, markedRegionCount) + turkeyCount;
 
   return {
     turkeyCount,
@@ -191,10 +197,10 @@ export function onStateChange(callback) {
 
 let unlockedCache = null;
 function getUnlockedCache() {
-  if (!unlockedCache) {
+  if (unlockedCache === null) {
     try {
       const raw = localStorage.getItem('gv_unlocked_achievements');
-      unlockedCache = raw ? JSON.parse(raw) : null;
+      unlockedCache = raw ? JSON.parse(raw) : [];
     } catch {
       unlockedCache = [];
     }
@@ -205,25 +211,18 @@ function getUnlockedCache() {
 export function checkAndNotifyAchievements(storageData, baseStats) {
   try {
     const earned = getEarnedAchievements(storageData, baseStats);
-    let unlocked = getUnlockedCache();
-    
-    // First time initialization: silently save current achievements
-    if (unlocked === null) {
-      unlocked = earned.map(a => a.id);
-      unlockedCache = unlocked;
-      localStorage.setItem('gv_unlocked_achievements', JSON.stringify(unlocked));
-      return;
-    }
+    const earnedIds = earned.map(a => a.id);
+    const unlocked = getUnlockedCache();
 
     const newlyUnlocked = earned.filter(a => !unlocked.includes(a.id));
     if (newlyUnlocked.length > 0) {
       newlyUnlocked.forEach(a => {
-        unlocked.push(a.id);
         notifyAchievementUnlocked(a);
       });
-      unlockedCache = unlocked;
-      localStorage.setItem('gv_unlocked_achievements', JSON.stringify(unlocked));
     }
+
+    unlockedCache = earnedIds;
+    localStorage.setItem('gv_unlocked_achievements', JSON.stringify(earnedIds));
   } catch (e) {
     console.error('Achievement check error', e);
   }
