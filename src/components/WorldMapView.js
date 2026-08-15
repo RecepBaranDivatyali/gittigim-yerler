@@ -166,15 +166,28 @@ function initMap(container) {
     });
   });
 
-  let rafId = null;
-  function handleContinuousViewChange() {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
-      onViewChange();
-    });
+  let isViewUpdating = false;
+  let viewUpdatePending = false;
+
+  async function requestViewUpdate() {
+    if (isViewUpdating) {
+      viewUpdatePending = true;
+      return;
+    }
+    isViewUpdating = true;
+    viewUpdatePending = false;
+
+    try {
+      await onViewChange();
+    } catch {} finally {
+      isViewUpdating = false;
+      if (viewUpdatePending) {
+        requestAnimationFrame(requestViewUpdate);
+      }
+    }
   }
 
-  map.on('move zoom moveend zoomend', handleContinuousViewChange);
+  map.on('move zoom moveend zoomend', requestViewUpdate);
   map.on('zoomstart', () => {
     map.eachLayer(l => l.closeTooltip && l.closeTooltip());
   });
@@ -205,7 +218,7 @@ async function onViewChange() {
   } else {
     // Zoom >= REGION_ZOOM: load and show visible countries' regions/subregions
     const rawBounds = map.getBounds();
-    const bounds = rawBounds.pad ? rawBounds.pad(0.35) : rawBounds;
+    const bounds = rawBounds.pad ? rawBounds.pad(0.6) : rawBounds;
     const boundsLeft = L.latLngBounds(
       [bounds.getSouth(), bounds.getWest() - 360],
       [bounds.getNorth(), bounds.getEast() - 360]
@@ -300,7 +313,7 @@ function refreshCountryStyle(code) {
 async function loadAndShowSubregions(code) {
   if (!subregionCache[code]) {
     try {
-      const resp = await fetch(`/data/subregions/${code}.json?v=${Date.now()}`, { cache: 'no-store' });
+      const resp = await fetch(`/data/subregions/${code}.json`);
       if (!resp.ok) {
         subregionCache[code] = { type: 'FeatureCollection', features: [] }; // Mark as empty to avoid refetching
         return;
@@ -326,7 +339,7 @@ async function loadAndShowSubregions(code) {
 async function loadAndShowRegions(code) {
   if (!regionCache[code]) {
     try {
-      const resp = await fetch(`/data/regions/${code}.json?v=${Date.now()}`, { cache: 'no-store' });
+      const resp = await fetch(`/data/regions/${code}.json`);
       if (!resp.ok) return;
       regionCache[code] = await resp.json();
     } catch { return; }

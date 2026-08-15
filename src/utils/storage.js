@@ -180,12 +180,58 @@ export function importBackup(fileContent) {
   }
 }
 
+import { getEarnedAchievements } from '../data/achievements.js';
+import { notifyAchievementUnlocked } from './notifications.js';
+
 // Event system for real-time UI reactive updates
 const listeners = [];
 export function onStateChange(callback) {
   listeners.push(callback);
 }
 
+let unlockedCache = null;
+function getUnlockedCache() {
+  if (!unlockedCache) {
+    try {
+      const raw = localStorage.getItem('gv_unlocked_achievements');
+      unlockedCache = raw ? JSON.parse(raw) : null;
+    } catch {
+      unlockedCache = [];
+    }
+  }
+  return unlockedCache;
+}
+
+export function checkAndNotifyAchievements(storageData, baseStats) {
+  try {
+    const earned = getEarnedAchievements(storageData, baseStats);
+    let unlocked = getUnlockedCache();
+    
+    // First time initialization: silently save current achievements
+    if (unlocked === null) {
+      unlocked = earned.map(a => a.id);
+      unlockedCache = unlocked;
+      localStorage.setItem('gv_unlocked_achievements', JSON.stringify(unlocked));
+      return;
+    }
+
+    const newlyUnlocked = earned.filter(a => !unlocked.includes(a.id));
+    if (newlyUnlocked.length > 0) {
+      newlyUnlocked.forEach(a => {
+        unlocked.push(a.id);
+        notifyAchievementUnlocked(a);
+      });
+      unlockedCache = unlocked;
+      localStorage.setItem('gv_unlocked_achievements', JSON.stringify(unlocked));
+    }
+  } catch (e) {
+    console.error('Achievement check error', e);
+  }
+}
+
 function notifyStateChange() {
-  listeners.forEach(cb => cb(getStorageData(), calculateStats()));
+  const sData = getStorageData();
+  const sStats = calculateStats();
+  checkAndNotifyAchievements(sData, sStats);
+  listeners.forEach(cb => cb(sData, sStats));
 }
