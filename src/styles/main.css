@@ -2354,29 +2354,20 @@ svg, g, path {
 /* ═══════════════════════════════════════════════════════════════════
    ENGRAVED MAP WATERMARK LABELS (Tattooed onto Landmass)
 ═══════════════════════════════════════════════════════════════════ */
-.leaflet-tooltip.map-tattoo-label {
+.country-watermark-wrap {
   background: transparent !important;
   border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
   pointer-events: none !important;
   user-select: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.leaflet-tooltip.map-tattoo-label::before {
-  display: none !important;
 }
 
 .country-tattoo {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9);
+  color: rgba(241, 245, 249, 0.40);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

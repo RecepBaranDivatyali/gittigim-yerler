@@ -23,6 +23,7 @@ function ns(s) {
 // ─── Module state ──────────────────────────────────────────────────────────
 let map = null;
 let countriesLayer = null;
+let countryLabelsLayer = null;
 let turkeyLayer = null;
 let regionLayers = {};
 let regionCache = {};
@@ -139,6 +140,8 @@ function initMap(container) {
   map.createPane('citiesPane');
   map.getPane('citiesPane').style.zIndex = 410;
 
+  countryLabelsLayer = L.layerGroup().addTo(map);
+
   // Pure dark ocean background
   el.style.backgroundColor = '#090d16';
 
@@ -149,19 +152,6 @@ function initMap(container) {
       style: f => countryStyle(findCountry(f)),
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
-        const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
-        const rawName = f?.properties?.name || '';
-        const isBlacklisted = IGNORED_LABEL_CODES.has(iso) ||
-          rawName.includes('Base') || rawName.includes('No Mans') ||
-          rawName.includes('Dhekelia') || rawName.includes('Akrotiri') || rawName.includes('Baykonur');
-
-        if (c && c.name && !isBlacklisted) {
-          layer.bindTooltip(`<div class="country-tattoo">${c.name}</div>`, {
-            direction: 'center',
-            permanent: true,
-            className: 'map-tattoo-label'
-          });
-        }
         layer.on('click', e => {
           if (!c) return;
           L.DomEvent.stopPropagation(e);
@@ -227,7 +217,8 @@ const IGNORED_LABEL_CODES = new Set([
 ]);
 
 function updateCountryLabels() {
-  if (!countriesLayer || !map) return;
+  if (!countryLabelsLayer || !countriesLayer || !map) return;
+  countryLabelsLayer.clearLayers();
   const placedBoxes = [];
 
   const layers = [];
@@ -248,10 +239,6 @@ function updateCountryLabels() {
     const f = layer.feature;
     const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
     const rawName = f?.properties?.name || '';
-    const tooltip = layer.getTooltip();
-    if (!tooltip) return;
-    const el = tooltip.getElement();
-    if (!el) return;
 
     // 1. Blacklist check (no military bases, micro-territories or buffer zones)
     if (IGNORED_LABEL_CODES.has(iso) ||
@@ -260,15 +247,11 @@ function updateCountryLabels() {
         rawName.includes('Dhekelia') ||
         rawName.includes('Akrotiri') ||
         rawName.includes('Baykonur')) {
-      el.style.display = 'none';
       return;
     }
 
     const c = findCountry(f);
-    if (!c || !c.name) {
-      el.style.display = 'none';
-      return;
-    }
+    if (!c || !c.name) return;
 
     try {
       const bounds = layer.getBounds();
@@ -278,48 +261,47 @@ function updateCountryLabels() {
       const pixelHeight = Math.abs(se.y - nw.y);
 
       const textLen = c.name.length;
-      // Minimum physical pixel space inside the country polygon
-      const minRequiredWidth = Math.max(42, textLen * 7.5);
-      const minRequiredHeight = 20;
+      // Strict physical pixel space inside the country polygon to guarantee ZERO overflow
+      const minRequiredWidth = Math.max(62, textLen * 9.5);
+      const minRequiredHeight = 26;
 
       if (pixelWidth < minRequiredWidth || pixelHeight < minRequiredHeight) {
-        el.style.display = 'none';
         return;
       }
 
       // Center in screen coords
       const center = map.latLngToLayerPoint(bounds.getCenter());
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.75);
-      const dynamicFontSize = Math.min(13, Math.max(9, Math.floor(pixelWidth / (textLen * 1.3))));
-      const approxTextWidth = Math.min(maxAllowedWidth, textLen * dynamicFontSize * 0.7);
-      const approxTextHeight = dynamicFontSize + 8;
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.70);
+      const dynamicFontSize = Math.min(13, Math.max(9, Math.floor(pixelWidth / (textLen * 1.5))));
+      const approxTextWidth = Math.min(maxAllowedWidth, Math.floor(textLen * dynamicFontSize * 0.75));
+      const approxTextHeight = dynamicFontSize + 6;
 
       const box = {
-        x1: center.x - approxTextWidth / 2 - 10,
-        y1: center.y - approxTextHeight / 2 - 6,
-        x2: center.x + approxTextWidth / 2 + 10,
-        y2: center.y + approxTextHeight / 2 + 6
+        x1: center.x - approxTextWidth / 2 - 12,
+        y1: center.y - approxTextHeight / 2 - 8,
+        x2: center.x + approxTextWidth / 2 + 12,
+        y2: center.y + approxTextHeight / 2 + 8
       };
 
-      // 2. Collision Detection: Prevent overlapping labels in dense regions (Balkans, Middle East, Caucasus)
+      // 2. Collision Detection: Prevent overlapping labels in dense regions
       const collides = placedBoxes.some(p => (
         box.x1 < p.x2 && box.x2 > p.x1 &&
         box.y1 < p.y2 && box.y2 > p.y1
       ));
 
-      if (collides) {
-        el.style.display = 'none';
-        return;
-      }
+      if (collides) return;
 
       placedBoxes.push(box);
-      el.style.display = 'flex';
-      el.style.maxWidth = `${maxAllowedWidth}px`;
-      el.style.fontSize = `${dynamicFontSize}px`;
-      el.textContent = c.name;
-    } catch (e) {
-      el.style.display = 'none';
-    }
+
+      const icon = L.divIcon({
+        className: 'country-watermark-wrap',
+        html: `<div class="country-tattoo" style="max-width:${maxAllowedWidth}px;font-size:${dynamicFontSize}px;">${c.name}</div>`,
+        iconSize: [approxTextWidth, approxTextHeight],
+        iconAnchor: [approxTextWidth / 2, approxTextHeight / 2]
+      });
+
+      L.marker(bounds.getCenter(), { icon, interactive: false, pane: 'countriesPane' }).addTo(countryLabelsLayer);
+    } catch (e) {}
   });
 }
 
