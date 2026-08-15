@@ -1,9 +1,9 @@
-// notifications.js - Achievement Unlock Toast Notifications
+// notifications.js - Achievement Unlock Toast Notifications (Sequential Single Toast Queue)
 import confetti from 'canvas-confetti';
 
 let toastContainer = null;
 const notificationQueue = [];
-let isProcessingQueue = false;
+let isShowingToast = false;
 
 function ensureToastContainer() {
   if (!toastContainer || !document.body.contains(toastContainer)) {
@@ -16,25 +16,32 @@ function ensureToastContainer() {
 }
 
 export function notifyAchievementUnlocked(achievement) {
-  notificationQueue.push(achievement);
-  processQueue();
+  if (!achievement || !achievement.id) return;
+  // Prevent duplicate notifications in queue
+  if (!notificationQueue.some(item => item.id === achievement.id)) {
+    notificationQueue.push(achievement);
+  }
+  processNextInQueue();
 }
 
-function processQueue() {
-  if (isProcessingQueue || notificationQueue.length === 0) return;
-  isProcessingQueue = true;
+function processNextInQueue() {
+  if (isShowingToast || notificationQueue.length === 0) return;
+  isShowingToast = true;
 
   const achievement = notificationQueue.shift();
   showToast(achievement, () => {
-    isProcessingQueue = false;
+    isShowingToast = false;
+    // 350ms pause between achievements so each achievement gets its own dedicated spotlight
     if (notificationQueue.length > 0) {
-      setTimeout(processQueue, 300);
+      setTimeout(processNextInQueue, 350);
     }
   });
 }
 
 function showToast(achievement, onComplete) {
   const container = ensureToastContainer();
+  // Clear any leftover toast element
+  container.innerHTML = '';
 
   const toast = document.createElement('div');
   toast.className = 'achievement-toast';
@@ -54,28 +61,30 @@ function showToast(achievement, onComplete) {
 
   container.appendChild(toast);
 
-  // Confetti burst
+  // Confetti burst for this achievement
   try {
     confetti({
-      particleCount: 50,
-      spread: 70,
+      particleCount: 45,
+      spread: 60,
       origin: { y: 0.12, x: 0.5 }
     });
   } catch {}
 
   let dismissed = false;
+  let timerId = null;
+
   function dismiss() {
     if (dismissed) return;
     dismissed = true;
+    if (timerId) clearTimeout(timerId);
     toast.classList.add('dismissing');
     setTimeout(() => {
       if (toast.parentNode) toast.parentNode.removeChild(toast);
       onComplete();
-    }, 400);
+    }, 350);
   }
 
   toast.addEventListener('click', dismiss);
-
-  // Auto dismiss after 4.5 seconds
-  setTimeout(dismiss, 4500);
+  // Auto dismiss after 3.8 seconds so user can read each achievement comfortably
+  timerId = setTimeout(dismiss, 3800);
 }

@@ -1,429 +1,1701 @@
-// Dünya Ülkeleri ve Popüler Şehirler Veri Seti
-export const CONTINENTS = [
-  { id: 'europe', name: 'Avrupa', icon: '🏰', color: '#3b82f6' },
-  { id: 'asia', name: 'Asya', icon: '🕌', color: '#ec4899' },
-  { id: 'north_america', name: 'Kuzey Amerika', icon: '🗽', color: '#10b981' },
-  { id: 'south_america', name: 'Güney Amerika', icon: '💃', color: '#f59e0b' },
-  { id: 'africa', name: 'Afrika', icon: '🦁', color: '#8b5cf6' },
-  { id: 'oceania', name: 'Okyanusya', icon: '🦘', color: '#06b6d4' }
+// worldData.js - Tam Dünya Ülkeleri ve Kıtaları Veri Seti (241 Ülke)
+export const WORLD_CONTINENTS = [
+  { id: 'europe', name: 'Avrupa', color: '#6366f1' },
+  { id: 'asia', name: 'Asya', color: '#f59e0b' },
+  { id: 'africa', name: 'Afrika', color: '#10b981' },
+  { id: 'north_america', name: 'Kuzey Amerika', color: '#ef4444' },
+  { id: 'south_america', name: 'Güney Amerika', color: '#ec4899' },
+  { id: 'oceania', name: 'Okyanusya', color: '#06b6d4' }
 ];
+
+export const TOTAL_WORLD_COUNTRIES_BENCHMARK = 195;
 
 export const WORLD_COUNTRIES = [
   {
-    code: 'DE',
-    name: 'Almanya',
-    nameEn: 'Germany',
-    flag: '🇩🇪',
-    continent: 'europe',
-    capital: 'Berlin',
-    popularCities: ['Münih', 'Berlin', 'Frankfurt', 'Hamburg', 'Köln', 'Stuttgart', 'Düsseldorf', 'Dresden', 'Nürnberg', 'Leipzig']
+    "code": "ID",
+    "name": "Endonezya",
+    "nameEn": "Indonesia",
+    "continent": "asia",
+    "flag": "🇮🇩"
   },
   {
-    code: 'FR',
-    name: 'Fransa',
-    nameEn: 'France',
-    flag: '🇫🇷',
-    continent: 'europe',
-    capital: 'Paris',
-    popularCities: ['Paris', 'Nice', 'Lyon', 'Marsilya', 'Bordeaux', 'Strazburg', 'Toulouse', 'Cannes', 'Lille']
+    "code": "MY",
+    "name": "Malezya",
+    "nameEn": "Malaysia",
+    "continent": "asia",
+    "flag": "🇲🇾"
   },
   {
-    code: 'IT',
-    name: 'İtalya',
-    nameEn: 'Italy',
-    flag: '🇮🇹',
-    continent: 'europe',
-    capital: 'Roma',
-    popularCities: ['Roma', 'Milano', 'Venedik', 'Floransa', 'Napoli', 'Torino', 'Bologna', 'Palermo', 'Verona', 'Pisa']
+    "code": "CL",
+    "name": "Şili",
+    "nameEn": "Chile",
+    "continent": "south_america",
+    "flag": "🇨🇱"
   },
   {
-    code: 'ES',
-    name: 'İspanya',
-    nameEn: 'Spain',
-    flag: '🇪🇸',
-    continent: 'europe',
-    capital: 'Madrid',
-    popularCities: ['Barselona', 'Madrid', 'Sevilla', 'Valensiya', 'Malaga', 'Granada', 'Bilbao', 'İbiza', 'Palma de Mallorca']
+    "code": "BO",
+    "name": "Bolivya",
+    "nameEn": "Bolivia",
+    "continent": "south_america",
+    "flag": "🇧🇴"
   },
   {
-    code: 'GB',
-    name: 'İngiltere / Birleşik Krallık',
-    nameEn: 'United Kingdom',
-    flag: '🇬🇧',
-    continent: 'europe',
-    capital: 'Londra',
-    popularCities: ['Londra', 'Edinburgh', 'Manchester', 'Liverpool', 'Oxford', 'Cambridge', 'Birmingham', 'Belfast', 'Glasgow']
+    "code": "PE",
+    "name": "Peru",
+    "nameEn": "Peru",
+    "continent": "south_america",
+    "flag": "🇵🇪"
   },
   {
-    code: 'US',
-    name: 'Amerika Birleşik Devletleri',
-    nameEn: 'United States',
-    flag: '🇺🇸',
-    continent: 'north_america',
-    capital: 'Washington, D.C.',
-    popularCities: ['New York', 'Los Angeles', 'Chicago', 'Miami', 'San Francisco', 'Las Vegas', 'Boston', 'Seattle', 'Orlando', 'Washington, D.C.']
+    "code": "AR",
+    "name": "Arjantin",
+    "nameEn": "Argentina",
+    "continent": "south_america",
+    "flag": "🇦🇷"
   },
   {
-    code: 'NL',
-    name: 'Hollanda',
-    nameEn: 'Netherlands',
-    flag: '🇳🇱',
-    continent: 'europe',
-    capital: 'Amsterdam',
-    popularCities: ['Amsterdam', 'Rotterdam', 'Lahey', 'Utrecht', 'Eindhoven', 'Maastricht', 'Groningen']
+    "code": "CY",
+    "name": "Kıbrıs",
+    "nameEn": "Cyprus",
+    "continent": "europe",
+    "flag": "🇨🇾"
   },
   {
-    code: 'GR',
-    name: 'Yunanistan',
-    nameEn: 'Greece',
-    flag: '🇬🇷',
-    continent: 'europe',
-    capital: 'Atina',
-    popularCities: ['Atina', 'Selanik', 'Santorini', 'Mikonos', 'Rodos', 'Girit', 'Kavala', 'Dedeağaç']
+    "code": "IN",
+    "name": "Hindistan",
+    "nameEn": "India",
+    "continent": "asia",
+    "flag": "🇮🇳"
   },
   {
-    code: 'AT',
-    name: 'Avusturya',
-    nameEn: 'Austria',
-    flag: '🇦🇹',
-    continent: 'europe',
-    capital: 'Viyana',
-    popularCities: ['Viyana', 'Salzburg', 'Innsbruck', 'Graz', 'Linz', 'Hallstatt']
+    "code": "CN",
+    "name": "Çin",
+    "nameEn": "China",
+    "continent": "asia",
+    "flag": "🇨🇳"
   },
   {
-    code: 'CH',
-    name: 'İsviçre',
-    nameEn: 'Switzerland',
-    flag: '🇨🇭',
-    continent: 'europe',
-    capital: 'Bern',
-    popularCities: ['Zürih', 'Cenevre', 'Lozan', 'Luzern', 'Basel', 'Interlaken', 'Bern']
+    "code": "IL",
+    "name": "İsrail",
+    "nameEn": "Israel",
+    "continent": "asia",
+    "flag": "🇮🇱"
   },
   {
-    code: 'JP',
-    name: 'Japonya',
-    nameEn: 'Japan',
-    flag: '🇯🇵',
-    continent: 'asia',
-    capital: 'Tokyo',
-    popularCities: ['Tokyo', 'Kyoto', 'Osaka', 'Hiroşima', 'Nara', 'Sapporo', 'Fukuoka', 'Yokohama']
+    "code": "PS",
+    "name": "Palestine",
+    "nameEn": "Palestine",
+    "continent": "asia",
+    "flag": "🇵🇸"
   },
   {
-    code: 'TR',
-    name: 'Türkiye',
-    nameEn: 'Turkey',
-    flag: '🇹🇷',
-    continent: 'europe',
-    capital: 'Ankara',
-    popularCities: ['İstanbul', 'Ankara', 'İzmir', 'Antalya', 'Bursa', 'Kapadokya', 'Trabzon', 'Gaziantep', 'Muğla']
+    "code": "LB",
+    "name": "Lübnan",
+    "nameEn": "Lebanon",
+    "continent": "asia",
+    "flag": "🇱🇧"
   },
   {
-    code: 'AE',
-    name: 'Birleşik Arap Emirlikleri',
-    nameEn: 'United Arab Emirates',
-    flag: '🇦🇪',
-    continent: 'asia',
-    capital: 'Abu Dabi',
-    popularCities: ['Dubai', 'Abu Dabi', 'Şarjah', 'Acman']
+    "code": "ET",
+    "name": "Etiyopya",
+    "nameEn": "Ethiopia",
+    "continent": "africa",
+    "flag": "🇪🇹"
   },
   {
-    code: 'RU',
-    name: 'Rusya',
-    nameEn: 'Russia',
-    flag: '🇷🇺',
-    continent: 'europe',
-    capital: 'Moskova',
-    popularCities: ['Moskova', 'St. Petersburg', 'Kazan', 'Soçi', 'Vladivostok']
+    "code": "SS",
+    "name": "South Sudan",
+    "nameEn": "South Sudan",
+    "continent": "africa",
+    "flag": "🇸🇸"
   },
   {
-    code: 'PT',
-    name: 'Portekiz',
-    nameEn: 'Portugal',
-    flag: '🇵🇹',
-    continent: 'europe',
-    capital: 'Lizbon',
-    popularCities: ['Lizbon', 'Porto', 'Faro', 'Coimbra', 'Funchal (Madeira)', 'Sintra']
+    "code": "SO",
+    "name": "Somalia",
+    "nameEn": "Somalia",
+    "continent": "africa",
+    "flag": "🇸🇴"
   },
   {
-    code: 'BE',
-    name: 'Belçika',
-    nameEn: 'Belgium',
-    flag: '🇧🇪',
-    continent: 'europe',
-    capital: 'Brüksel',
-    popularCities: ['Brüksel', 'Brugge', 'Gent', 'Antwerpen', 'Leuven']
+    "code": "KE",
+    "name": "Kenya",
+    "nameEn": "Kenya",
+    "continent": "africa",
+    "flag": "🇰🇪"
   },
   {
-    code: 'CZ',
-    name: 'Çekya',
-    nameEn: 'Czech Republic',
-    flag: '🇨🇿',
-    continent: 'europe',
-    capital: 'Prag',
-    popularCities: ['Prag', 'Český Krumlov', 'Brno', 'Karlovy Vary', 'Ostrava']
+    "code": "MW",
+    "name": "Malawi",
+    "nameEn": "Malawi",
+    "continent": "africa",
+    "flag": "🇲🇼"
   },
   {
-    code: 'HU',
-    name: 'Macaristan',
-    nameEn: 'Hungary',
-    flag: '🇭🇺',
-    continent: 'europe',
-    capital: 'Budapeşte',
-    popularCities: ['Budapeşte', 'Debrecen', 'Eger', 'Szeged', 'Pécs']
+    "code": "TZ",
+    "name": "Tanzanya",
+    "nameEn": "United Republic of Tanzania",
+    "continent": "africa",
+    "flag": "🇹🇿"
   },
   {
-    code: 'PL',
-    name: 'Polonya',
-    nameEn: 'Poland',
-    flag: '🇵🇱',
-    continent: 'europe',
-    capital: 'Varşova',
-    popularCities: ['Kraków', 'Varşova', 'Wrocław', 'Gdańsk', 'Poznań']
+    "code": "SY",
+    "name": "Suriye",
+    "nameEn": "Syria",
+    "continent": "asia",
+    "flag": "🇸🇾"
   },
   {
-    code: 'GE',
-    name: 'Gürcistan',
-    nameEn: 'Georgia',
-    flag: '🇬🇪',
-    continent: 'asia',
-    capital: 'Tiflis',
-    popularCities: ['Tiflis', 'Batum', 'Kutaisi', 'Kazbegi', 'Sighnaghi']
+    "code": "XS",
+    "name": "Somaliland",
+    "nameEn": "Somaliland",
+    "continent": "africa",
+    "flag": "🇽🇸"
   },
   {
-    code: 'EG',
-    name: 'Mısır',
-    nameEn: 'Egypt',
-    flag: '🇪🇬',
-    continent: 'africa',
-    capital: 'Kahire',
-    popularCities: ['Kahire', 'Şarm El-Şeyh', 'İskenderiye', 'Luksor', 'Hurgada', 'Aswan']
+    "code": "FR",
+    "name": "Fransa",
+    "nameEn": "France",
+    "continent": "europe",
+    "flag": "🇫🇷"
   },
   {
-    code: 'TH',
-    name: 'Tayland',
-    nameEn: 'Thailand',
-    flag: '🇹🇭',
-    continent: 'asia',
-    capital: 'Bangkok',
-    popularCities: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Koh Samui', 'Krabi']
+    "code": "SR",
+    "name": "Suriname",
+    "nameEn": "Suriname",
+    "continent": "south_america",
+    "flag": "🇸🇷"
   },
   {
-    code: 'CN',
-    name: 'Çin',
-    nameEn: 'China',
-    flag: '🇨🇳',
-    continent: 'asia',
-    capital: 'Pekin',
-    popularCities: ['Pekin', 'Şanghay', 'Guangzhou', 'Shenzhen', 'Xi\'an', 'Chengdu', 'Hong Kong']
+    "code": "GY",
+    "name": "Guyana",
+    "nameEn": "Guyana",
+    "continent": "south_america",
+    "flag": "🇬🇾"
   },
   {
-    code: 'KR',
-    name: 'Güney Kore',
-    nameEn: 'South Korea',
-    flag: '🇰🇷',
-    continent: 'asia',
-    capital: 'Seul',
-    popularCities: ['Seul', 'Busan', 'Jeju', 'Incheon', 'Gyeongju']
+    "code": "KR",
+    "name": "Güney Kore",
+    "nameEn": "South Korea",
+    "continent": "asia",
+    "flag": "🇰🇷"
   },
   {
-    code: 'BR',
-    name: 'Brezilya',
-    nameEn: 'Brazil',
-    flag: '🇧🇷',
-    continent: 'south_america',
-    capital: 'Brasília',
-    popularCities: ['Rio de Janeiro', 'São Paulo', 'Salvador', 'Brasília', 'Florianópolis']
+    "code": "KP",
+    "name": "Kuzey Kore",
+    "nameEn": "North Korea",
+    "continent": "asia",
+    "flag": "🇰🇵"
   },
   {
-    code: 'AR',
-    name: 'Arjantin',
-    nameEn: 'Argentina',
-    flag: '🇦🇷',
-    continent: 'south_america',
-    capital: 'Buenos Aires',
-    popularCities: ['Buenos Aires', 'Mendoza', 'Bariloche', 'Cordoba', 'Ushuaia']
+    "code": "MA",
+    "name": "Fas",
+    "nameEn": "Morocco",
+    "continent": "africa",
+    "flag": "🇲🇦"
   },
   {
-    code: 'CA',
-    name: 'Kanada',
-    nameEn: 'Canada',
-    flag: '🇨🇦',
-    continent: 'north_america',
-    capital: 'Ottawa',
-    popularCities: ['Toronto', 'Vancouver', 'Montreal', 'Quebec City', 'Calgary', 'Ottawa']
+    "code": "EH",
+    "name": "Western Sahara",
+    "nameEn": "Western Sahara",
+    "continent": "africa",
+    "flag": "🇪🇭"
   },
   {
-    code: 'AU',
-    name: 'Avustralya',
-    nameEn: 'Australia',
-    flag: '🇦🇺',
-    continent: 'oceania',
-    capital: 'Canberra',
-    popularCities: ['Sidney', 'Melbourne', 'Brisbane', 'Perth', 'Gold Coast', 'Cairns']
+    "code": "CR",
+    "name": "Kosta Rika",
+    "nameEn": "Costa Rica",
+    "continent": "north_america",
+    "flag": "🇨🇷"
   },
   {
-    code: 'SE',
-    name: 'İsveç',
-    nameEn: 'Sweden',
-    flag: '🇸🇪',
-    continent: 'europe',
-    capital: 'Stokholm',
-    popularCities: ['Stokholm', 'Göteborg', 'Malmö', 'Uppsala']
+    "code": "NI",
+    "name": "Nicaragua",
+    "nameEn": "Nicaragua",
+    "continent": "north_america",
+    "flag": "🇳🇮"
   },
   {
-    code: 'NO',
-    name: 'Norveç',
-    nameEn: 'Norway',
-    flag: '🇳🇴',
-    continent: 'europe',
-    capital: 'Oslo',
-    popularCities: ['Oslo', 'Bergen', 'Tromsø', 'Trondheim', 'Stavanger']
+    "code": "CG",
+    "name": "Republic of the Congo",
+    "nameEn": "Republic of the Congo",
+    "continent": "africa",
+    "flag": "🇨🇬"
   },
   {
-    code: 'DK',
-    name: 'Danimarka',
-    nameEn: 'Denmark',
-    flag: '🇩🇰',
-    continent: 'europe',
-    capital: 'Kopenhag',
-    popularCities: ['Kopenhag', 'Aarhus', 'Odense', 'Aalborg']
+    "code": "CD",
+    "name": "Democratic Republic of the Congo",
+    "nameEn": "Democratic Republic of the Congo",
+    "continent": "africa",
+    "flag": "🇨🇩"
   },
   {
-    code: 'FI',
-    name: 'Finlandiya',
-    nameEn: 'Finland',
-    flag: '🇫🇮',
-    continent: 'europe',
-    capital: 'Helsinki',
-    popularCities: ['Helsinki', 'Rovaniemi (Laponya)', 'Tampere', 'Turku']
+    "code": "BT",
+    "name": "Bhutan",
+    "nameEn": "Bhutan",
+    "continent": "asia",
+    "flag": "🇧🇹"
   },
   {
-    code: 'HR',
-    name: 'Hırvatistan',
-    nameEn: 'Croatia',
-    flag: '🇭🇷',
-    continent: 'europe',
-    capital: 'Zagreb',
-    popularCities: ['Dubrovnik', 'Split', 'Zagreb', 'Zadar', 'Pula']
+    "code": "UA",
+    "name": "Ukraine",
+    "nameEn": "Ukraine",
+    "continent": "europe",
+    "flag": "🇺🇦"
   },
   {
-    code: 'BA',
-    name: 'Bosna-Hersek',
-    nameEn: 'Bosnia and Herzegovina',
-    flag: '🇧🇦',
-    continent: 'europe',
-    capital: 'Saraybosna',
-    popularCities: ['Saraybosna', 'Mostar', 'Banja Luka', 'Travnik', 'Neum']
+    "code": "BY",
+    "name": "Belarus",
+    "nameEn": "Belarus",
+    "continent": "europe",
+    "flag": "🇧🇾"
   },
   {
-    code: 'ME',
-    name: 'Karadağ',
-    nameEn: 'Montenegro',
-    flag: '🇲🇪',
-    continent: 'europe',
-    capital: 'Podgorica',
-    popularCities: ['Kotor', 'Budva', 'Podgorica', 'Tivat', 'Herceg Novi']
+    "code": "NA",
+    "name": "Namibia",
+    "nameEn": "Namibia",
+    "continent": "africa",
+    "flag": "🇳🇦"
   },
   {
-    code: 'RS',
-    name: 'Sırbistan',
-    nameEn: 'Serbia',
-    flag: '🇷🇸',
-    continent: 'europe',
-    capital: 'Belgrad',
-    popularCities: ['Belgrad', 'Novi Sad', 'Niş', 'Subotica']
+    "code": "ZA",
+    "name": "Güney Afrika",
+    "nameEn": "South Africa",
+    "continent": "africa",
+    "flag": "🇿🇦"
   },
   {
-    code: 'RO',
-    name: 'Romanya',
-    nameEn: 'Romania',
-    flag: '🇷🇴',
-    continent: 'europe',
-    capital: 'Bükreş',
-    popularCities: ['Bükreş', 'Braşov', 'Cluj-Napoca', 'Sibiu', 'Timişoara']
+    "code": "MF",
+    "name": "Saint Martin",
+    "nameEn": "Saint Martin",
+    "continent": "north_america",
+    "flag": "🇲🇫"
   },
   {
-    code: 'BG',
-    name: 'Bulgaristan',
-    nameEn: 'Bulgaria',
-    flag: '🇧🇬',
-    continent: 'europe',
-    capital: 'Sofya',
-    popularCities: ['Sofya', 'Plovdiv (Filibe)', 'Varna', 'Burgaz', 'Bansko']
+    "code": "SX",
+    "name": "Sint Maarten",
+    "nameEn": "Sint Maarten",
+    "continent": "north_america",
+    "flag": "🇸🇽"
   },
   {
-    code: 'MX',
-    name: 'Meksika',
-    nameEn: 'Mexico',
-    flag: '🇲🇽',
-    continent: 'north_america',
-    capital: 'Meksiko',
-    popularCities: ['Cancun', 'Meksiko', 'Guadalajara', 'Playa del Carmen', 'Oaxaca']
+    "code": "OM",
+    "name": "Umman",
+    "nameEn": "Oman",
+    "continent": "asia",
+    "flag": "🇴🇲"
   },
   {
-    code: 'MA',
-    name: 'Fas',
-    nameEn: 'Morocco',
-    flag: '🇲🇦',
-    continent: 'africa',
-    capital: 'Rabat',
-    popularCities: ['Marakeş', 'Kasablanka', 'Fes', 'Şafşavan', 'Tanca', 'Rabat']
+    "code": "UZ",
+    "name": "Özbekistan",
+    "nameEn": "Uzbekistan",
+    "continent": "asia",
+    "flag": "🇺🇿"
   },
   {
-    code: 'ZA',
-    name: 'Güney Afrika',
-    nameEn: 'South Africa',
-    flag: '🇿🇦',
-    continent: 'africa',
-    capital: 'Pretoria',
-    popularCities: ['Cape Town', 'Johannesburg', 'Durban', 'Pretoria']
+    "code": "KZ",
+    "name": "Kazakistan",
+    "nameEn": "Kazakhstan",
+    "continent": "asia",
+    "flag": "🇰🇿"
   },
   {
-    code: 'ID',
-    name: 'Endonezya',
-    nameEn: 'Indonesia',
-    flag: '🇮🇩',
-    continent: 'asia',
-    capital: 'Cakarta',
-    popularCities: ['Bali', 'Cakarta', 'Yogyakarta', 'Bandung', 'Lombok']
+    "code": "TJ",
+    "name": "Tacikistan",
+    "nameEn": "Tajikistan",
+    "continent": "asia",
+    "flag": "🇹🇯"
   },
   {
-    code: 'SG',
-    name: 'Singapur',
-    nameEn: 'Singapore',
-    flag: '🇸🇬',
-    continent: 'asia',
-    capital: 'Singapur',
-    popularCities: ['Singapur', 'Sentosa']
+    "code": "LT",
+    "name": "Lithuania",
+    "nameEn": "Lithuania",
+    "continent": "europe",
+    "flag": "🇱🇹"
   },
   {
-    code: 'MY',
-    name: 'Malezya',
-    nameEn: 'Malaysia',
-    flag: '🇲🇾',
-    continent: 'asia',
-    capital: 'Kuala Lumpur',
-    popularCities: ['Kuala Lumpur', 'Penang', 'Langkawi', 'Melaka']
+    "code": "BR",
+    "name": "Brezilya",
+    "nameEn": "Brazil",
+    "continent": "south_america",
+    "flag": "🇧🇷"
   },
   {
-    code: 'AZ',
-    name: 'Azerbaycan',
-    nameEn: 'Azerbaijan',
-    flag: '🇦🇿',
-    continent: 'asia',
-    capital: 'Bakü',
-    popularCities: ['Bakü', 'Gence', 'Şeki', 'Gebele', 'Şuşa']
+    "code": "UY",
+    "name": "Uruguay",
+    "nameEn": "Uruguay",
+    "continent": "south_america",
+    "flag": "🇺🇾"
   },
   {
-    code: 'CY',
-    name: 'Kıbrıs (KKTC & GKRY)',
-    nameEn: 'Cyprus',
-    flag: '🇨🇾',
-    continent: 'europe',
-    capital: 'Lefkoşa',
-    popularCities: ['Girne', 'Lefkoşa', 'Gazimağusa', 'Larnaka', 'Baf']
+    "code": "MN",
+    "name": "Moğolistan",
+    "nameEn": "Mongolia",
+    "continent": "asia",
+    "flag": "🇲🇳"
+  },
+  {
+    "code": "RU",
+    "name": "Rusya",
+    "nameEn": "Russia",
+    "continent": "europe",
+    "flag": "🇷🇺"
+  },
+  {
+    "code": "CZ",
+    "name": "Çekya",
+    "nameEn": "Czechia",
+    "continent": "europe",
+    "flag": "🇨🇿"
+  },
+  {
+    "code": "DE",
+    "name": "Almanya",
+    "nameEn": "Germany",
+    "continent": "europe",
+    "flag": "🇩🇪"
+  },
+  {
+    "code": "EE",
+    "name": "Estonia",
+    "nameEn": "Estonia",
+    "continent": "europe",
+    "flag": "🇪🇪"
+  },
+  {
+    "code": "LV",
+    "name": "Latvia",
+    "nameEn": "Latvia",
+    "continent": "europe",
+    "flag": "🇱🇻"
+  },
+  {
+    "code": "NO",
+    "name": "Norveç",
+    "nameEn": "Norway",
+    "continent": "europe",
+    "flag": "🇳🇴"
+  },
+  {
+    "code": "SE",
+    "name": "İsveç",
+    "nameEn": "Sweden",
+    "continent": "europe",
+    "flag": "🇸🇪"
+  },
+  {
+    "code": "FI",
+    "name": "Finlandiya",
+    "nameEn": "Finland",
+    "continent": "europe",
+    "flag": "🇫🇮"
+  },
+  {
+    "code": "VN",
+    "name": "Vietnam",
+    "nameEn": "Vietnam",
+    "continent": "asia",
+    "flag": "🇻🇳"
+  },
+  {
+    "code": "KH",
+    "name": "Cambodia",
+    "nameEn": "Cambodia",
+    "continent": "asia",
+    "flag": "🇰🇭"
+  },
+  {
+    "code": "LU",
+    "name": "Lüksemburg",
+    "nameEn": "Luxembourg",
+    "continent": "europe",
+    "flag": "🇱🇺"
+  },
+  {
+    "code": "AE",
+    "name": "Birleşik Arap Emirlikleri",
+    "nameEn": "United Arab Emirates",
+    "continent": "asia",
+    "flag": "🇦🇪"
+  },
+  {
+    "code": "BE",
+    "name": "Belçika",
+    "nameEn": "Belgium",
+    "continent": "europe",
+    "flag": "🇧🇪"
+  },
+  {
+    "code": "GE",
+    "name": "Gürcistan",
+    "nameEn": "Georgia",
+    "continent": "asia",
+    "flag": "🇬🇪"
+  },
+  {
+    "code": "MK",
+    "name": "Kuzey Makedonya",
+    "nameEn": "North Macedonia",
+    "continent": "europe",
+    "flag": "🇲🇰"
+  },
+  {
+    "code": "AL",
+    "name": "Arnavutluk",
+    "nameEn": "Albania",
+    "continent": "europe",
+    "flag": "🇦🇱"
+  },
+  {
+    "code": "AZ",
+    "name": "Azerbaycan",
+    "nameEn": "Azerbaijan",
+    "continent": "asia",
+    "flag": "🇦🇿"
+  },
+  {
+    "code": "XK",
+    "name": "Kosova",
+    "nameEn": "Kosovo",
+    "continent": "europe",
+    "flag": "🇽🇰"
+  },
+  {
+    "code": "TR",
+    "name": "Türkiye",
+    "nameEn": "Turkey",
+    "continent": "europe",
+    "flag": "🇹🇷"
+  },
+  {
+    "code": "ES",
+    "name": "İspanya",
+    "nameEn": "Spain",
+    "continent": "europe",
+    "flag": "🇪🇸"
+  },
+  {
+    "code": "LA",
+    "name": "Laos",
+    "nameEn": "Laos",
+    "continent": "asia",
+    "flag": "🇱🇦"
+  },
+  {
+    "code": "KG",
+    "name": "Kırgızistan",
+    "nameEn": "Kyrgyzstan",
+    "continent": "asia",
+    "flag": "🇰🇬"
+  },
+  {
+    "code": "AM",
+    "name": "Ermenistan",
+    "nameEn": "Armenia",
+    "continent": "asia",
+    "flag": "🇦🇲"
+  },
+  {
+    "code": "DK",
+    "name": "Danimarka",
+    "nameEn": "Denmark",
+    "continent": "europe",
+    "flag": "🇩🇰"
+  },
+  {
+    "code": "LY",
+    "name": "Libya",
+    "nameEn": "Libya",
+    "continent": "africa",
+    "flag": "🇱🇾"
+  },
+  {
+    "code": "TN",
+    "name": "Tunus",
+    "nameEn": "Tunisia",
+    "continent": "africa",
+    "flag": "🇹🇳"
+  },
+  {
+    "code": "RO",
+    "name": "Romanya",
+    "nameEn": "Romania",
+    "continent": "europe",
+    "flag": "🇷🇴"
+  },
+  {
+    "code": "HU",
+    "name": "Macaristan",
+    "nameEn": "Hungary",
+    "continent": "europe",
+    "flag": "🇭🇺"
+  },
+  {
+    "code": "SK",
+    "name": "Slovakya",
+    "nameEn": "Slovakia",
+    "continent": "europe",
+    "flag": "🇸🇰"
+  },
+  {
+    "code": "PL",
+    "name": "Polonya",
+    "nameEn": "Poland",
+    "continent": "europe",
+    "flag": "🇵🇱"
+  },
+  {
+    "code": "IE",
+    "name": "İrlanda",
+    "nameEn": "Ireland",
+    "continent": "europe",
+    "flag": "🇮🇪"
+  },
+  {
+    "code": "GB",
+    "name": "Birleşik Krallık",
+    "nameEn": "United Kingdom",
+    "continent": "europe",
+    "flag": "🇬🇧"
+  },
+  {
+    "code": "GR",
+    "name": "Yunanistan",
+    "nameEn": "Greece",
+    "continent": "europe",
+    "flag": "🇬🇷"
+  },
+  {
+    "code": "ZM",
+    "name": "Zambia",
+    "nameEn": "Zambia",
+    "continent": "africa",
+    "flag": "🇿🇲"
+  },
+  {
+    "code": "SL",
+    "name": "Sierra Leone",
+    "nameEn": "Sierra Leone",
+    "continent": "africa",
+    "flag": "🇸🇱"
+  },
+  {
+    "code": "GN",
+    "name": "Guinea",
+    "nameEn": "Guinea",
+    "continent": "africa",
+    "flag": "🇬🇳"
+  },
+  {
+    "code": "LR",
+    "name": "Liberia",
+    "nameEn": "Liberia",
+    "continent": "africa",
+    "flag": "🇱🇷"
+  },
+  {
+    "code": "CF",
+    "name": "Central African Republic",
+    "nameEn": "Central African Republic",
+    "continent": "africa",
+    "flag": "🇨🇫"
+  },
+  {
+    "code": "SD",
+    "name": "Sudan",
+    "nameEn": "Sudan",
+    "continent": "africa",
+    "flag": "🇸🇩"
+  },
+  {
+    "code": "DJ",
+    "name": "Djibouti",
+    "nameEn": "Djibouti",
+    "continent": "africa",
+    "flag": "🇩🇯"
+  },
+  {
+    "code": "ER",
+    "name": "Eritrea",
+    "nameEn": "Eritrea",
+    "continent": "africa",
+    "flag": "🇪🇷"
+  },
+  {
+    "code": "AT",
+    "name": "Avusturya",
+    "nameEn": "Austria",
+    "continent": "europe",
+    "flag": "🇦🇹"
+  },
+  {
+    "code": "IQ",
+    "name": "Irak",
+    "nameEn": "Iraq",
+    "continent": "asia",
+    "flag": "🇮🇶"
+  },
+  {
+    "code": "IT",
+    "name": "İtalya",
+    "nameEn": "Italy",
+    "continent": "europe",
+    "flag": "🇮🇹"
+  },
+  {
+    "code": "CH",
+    "name": "İsviçre",
+    "nameEn": "Switzerland",
+    "continent": "europe",
+    "flag": "🇨🇭"
+  },
+  {
+    "code": "IR",
+    "name": "İran",
+    "nameEn": "Iran",
+    "continent": "asia",
+    "flag": "🇮🇷"
+  },
+  {
+    "code": "NL",
+    "name": "Hollanda",
+    "nameEn": "Netherlands",
+    "continent": "europe",
+    "flag": "🇳🇱"
+  },
+  {
+    "code": "LI",
+    "name": "Liechtenstein",
+    "nameEn": "Liechtenstein",
+    "continent": "europe",
+    "flag": "🇱🇮"
+  },
+  {
+    "code": "CI",
+    "name": "Ivory Coast",
+    "nameEn": "Ivory Coast",
+    "continent": "africa",
+    "flag": "🇨🇮"
+  },
+  {
+    "code": "RS",
+    "name": "Sırbistan",
+    "nameEn": "Republic of Serbia",
+    "continent": "europe",
+    "flag": "🇷🇸"
+  },
+  {
+    "code": "ML",
+    "name": "Mali",
+    "nameEn": "Mali",
+    "continent": "africa",
+    "flag": "🇲🇱"
+  },
+  {
+    "code": "SN",
+    "name": "Senegal",
+    "nameEn": "Senegal",
+    "continent": "africa",
+    "flag": "🇸🇳"
+  },
+  {
+    "code": "NG",
+    "name": "Nijerya",
+    "nameEn": "Nigeria",
+    "continent": "africa",
+    "flag": "🇳🇬"
+  },
+  {
+    "code": "BJ",
+    "name": "Benin",
+    "nameEn": "Benin",
+    "continent": "africa",
+    "flag": "🇧🇯"
+  },
+  {
+    "code": "AO",
+    "name": "Angola",
+    "nameEn": "Angola",
+    "continent": "africa",
+    "flag": "🇦🇴"
+  },
+  {
+    "code": "HR",
+    "name": "Hırvatistan",
+    "nameEn": "Croatia",
+    "continent": "europe",
+    "flag": "🇭🇷"
+  },
+  {
+    "code": "SI",
+    "name": "Slovenya",
+    "nameEn": "Slovenia",
+    "continent": "europe",
+    "flag": "🇸🇮"
+  },
+  {
+    "code": "QA",
+    "name": "Katar",
+    "nameEn": "Qatar",
+    "continent": "asia",
+    "flag": "🇶🇦"
+  },
+  {
+    "code": "SA",
+    "name": "Suudi Arabistan",
+    "nameEn": "Saudi Arabia",
+    "continent": "asia",
+    "flag": "🇸🇦"
+  },
+  {
+    "code": "BW",
+    "name": "Botswana",
+    "nameEn": "Botswana",
+    "continent": "africa",
+    "flag": "🇧🇼"
+  },
+  {
+    "code": "ZW",
+    "name": "Zimbabwe",
+    "nameEn": "Zimbabwe",
+    "continent": "africa",
+    "flag": "🇿🇼"
+  },
+  {
+    "code": "PK",
+    "name": "Pakistan",
+    "nameEn": "Pakistan",
+    "continent": "asia",
+    "flag": "🇵🇰"
+  },
+  {
+    "code": "BG",
+    "name": "Bulgaristan",
+    "nameEn": "Bulgaria",
+    "continent": "europe",
+    "flag": "🇧🇬"
+  },
+  {
+    "code": "TH",
+    "name": "Tayland",
+    "nameEn": "Thailand",
+    "continent": "asia",
+    "flag": "🇹🇭"
+  },
+  {
+    "code": "SM",
+    "name": "San Marino",
+    "nameEn": "San Marino",
+    "continent": "europe",
+    "flag": "🇸🇲"
+  },
+  {
+    "code": "HT",
+    "name": "Haiti",
+    "nameEn": "Haiti",
+    "continent": "north_america",
+    "flag": "🇭🇹"
+  },
+  {
+    "code": "DO",
+    "name": "Dominik Cumhuriyeti",
+    "nameEn": "Dominican Republic",
+    "continent": "north_america",
+    "flag": "🇩🇴"
+  },
+  {
+    "code": "TD",
+    "name": "Chad",
+    "nameEn": "Chad",
+    "continent": "africa",
+    "flag": "🇹🇩"
+  },
+  {
+    "code": "KW",
+    "name": "Kuveyt",
+    "nameEn": "Kuwait",
+    "continent": "asia",
+    "flag": "🇰🇼"
+  },
+  {
+    "code": "SV",
+    "name": "El Salvador",
+    "nameEn": "El Salvador",
+    "continent": "north_america",
+    "flag": "🇸🇻"
+  },
+  {
+    "code": "GT",
+    "name": "Guatemala",
+    "nameEn": "Guatemala",
+    "continent": "north_america",
+    "flag": "🇬🇹"
+  },
+  {
+    "code": "TL",
+    "name": "East Timor",
+    "nameEn": "East Timor",
+    "continent": "asia",
+    "flag": "🇹🇱"
+  },
+  {
+    "code": "BN",
+    "name": "Brunei",
+    "nameEn": "Brunei",
+    "continent": "asia",
+    "flag": "🇧🇳"
+  },
+  {
+    "code": "MC",
+    "name": "Monaco",
+    "nameEn": "Monaco",
+    "continent": "europe",
+    "flag": "🇲🇨"
+  },
+  {
+    "code": "DZ",
+    "name": "Cezayir",
+    "nameEn": "Algeria",
+    "continent": "africa",
+    "flag": "🇩🇿"
+  },
+  {
+    "code": "MZ",
+    "name": "Mozambique",
+    "nameEn": "Mozambique",
+    "continent": "africa",
+    "flag": "🇲🇿"
+  },
+  {
+    "code": "SZ",
+    "name": "eSwatini",
+    "nameEn": "eSwatini",
+    "continent": "africa",
+    "flag": "🇸🇿"
+  },
+  {
+    "code": "BI",
+    "name": "Burundi",
+    "nameEn": "Burundi",
+    "continent": "africa",
+    "flag": "🇧🇮"
+  },
+  {
+    "code": "RW",
+    "name": "Rwanda",
+    "nameEn": "Rwanda",
+    "continent": "africa",
+    "flag": "🇷🇼"
+  },
+  {
+    "code": "MM",
+    "name": "Myanmar",
+    "nameEn": "Myanmar",
+    "continent": "asia",
+    "flag": "🇲🇲"
+  },
+  {
+    "code": "BD",
+    "name": "Bangladeş",
+    "nameEn": "Bangladesh",
+    "continent": "asia",
+    "flag": "🇧🇩"
+  },
+  {
+    "code": "AD",
+    "name": "Andorra",
+    "nameEn": "Andorra",
+    "continent": "europe",
+    "flag": "🇦🇩"
+  },
+  {
+    "code": "AF",
+    "name": "Afghanistan",
+    "nameEn": "Afghanistan",
+    "continent": "asia",
+    "flag": "🇦🇫"
+  },
+  {
+    "code": "ME",
+    "name": "Karadağ",
+    "nameEn": "Montenegro",
+    "continent": "europe",
+    "flag": "🇲🇪"
+  },
+  {
+    "code": "BA",
+    "name": "Bosna-Hersek",
+    "nameEn": "Bosnia and Herzegovina",
+    "continent": "europe",
+    "flag": "🇧🇦"
+  },
+  {
+    "code": "UG",
+    "name": "Uganda",
+    "nameEn": "Uganda",
+    "continent": "africa",
+    "flag": "🇺🇬"
+  },
+  {
+    "code": "CU",
+    "name": "Küba",
+    "nameEn": "Cuba",
+    "continent": "north_america",
+    "flag": "🇨🇺"
+  },
+  {
+    "code": "HN",
+    "name": "Honduras",
+    "nameEn": "Honduras",
+    "continent": "north_america",
+    "flag": "🇭🇳"
+  },
+  {
+    "code": "EC",
+    "name": "Ekvador",
+    "nameEn": "Ecuador",
+    "continent": "south_america",
+    "flag": "🇪🇨"
+  },
+  {
+    "code": "CO",
+    "name": "Kolombiya",
+    "nameEn": "Colombia",
+    "continent": "south_america",
+    "flag": "🇨🇴"
+  },
+  {
+    "code": "PY",
+    "name": "Paraguay",
+    "nameEn": "Paraguay",
+    "continent": "south_america",
+    "flag": "🇵🇾"
+  },
+  {
+    "code": "PT",
+    "name": "Portekiz",
+    "nameEn": "Portugal",
+    "continent": "europe",
+    "flag": "🇵🇹"
+  },
+  {
+    "code": "MD",
+    "name": "Moldova",
+    "nameEn": "Moldova",
+    "continent": "europe",
+    "flag": "🇲🇩"
+  },
+  {
+    "code": "TM",
+    "name": "Türkmenistan",
+    "nameEn": "Turkmenistan",
+    "continent": "asia",
+    "flag": "🇹🇲"
+  },
+  {
+    "code": "JO",
+    "name": "Ürdün",
+    "nameEn": "Jordan",
+    "continent": "asia",
+    "flag": "🇯🇴"
+  },
+  {
+    "code": "NP",
+    "name": "Nepal",
+    "nameEn": "Nepal",
+    "continent": "asia",
+    "flag": "🇳🇵"
+  },
+  {
+    "code": "LS",
+    "name": "Lesotho",
+    "nameEn": "Lesotho",
+    "continent": "africa",
+    "flag": "🇱🇸"
+  },
+  {
+    "code": "CM",
+    "name": "Cameroon",
+    "nameEn": "Cameroon",
+    "continent": "africa",
+    "flag": "🇨🇲"
+  },
+  {
+    "code": "GA",
+    "name": "Gabon",
+    "nameEn": "Gabon",
+    "continent": "africa",
+    "flag": "🇬🇦"
+  },
+  {
+    "code": "NE",
+    "name": "Niger",
+    "nameEn": "Niger",
+    "continent": "africa",
+    "flag": "🇳🇪"
+  },
+  {
+    "code": "BF",
+    "name": "Burkina Faso",
+    "nameEn": "Burkina Faso",
+    "continent": "africa",
+    "flag": "🇧🇫"
+  },
+  {
+    "code": "TG",
+    "name": "Togo",
+    "nameEn": "Togo",
+    "continent": "africa",
+    "flag": "🇹🇬"
+  },
+  {
+    "code": "GH",
+    "name": "Gana",
+    "nameEn": "Ghana",
+    "continent": "africa",
+    "flag": "🇬🇭"
+  },
+  {
+    "code": "GW",
+    "name": "Guinea-Bissau",
+    "nameEn": "Guinea-Bissau",
+    "continent": "africa",
+    "flag": "🇬🇼"
+  },
+  {
+    "code": "GI",
+    "name": "Gibraltar",
+    "nameEn": "Gibraltar",
+    "continent": "europe",
+    "flag": "🇬🇮"
+  },
+  {
+    "code": "US",
+    "name": "Amerika Birleşik Devletleri",
+    "nameEn": "United States of America",
+    "continent": "north_america",
+    "flag": "🇺🇸"
+  },
+  {
+    "code": "CA",
+    "name": "Kanada",
+    "nameEn": "Canada",
+    "continent": "north_america",
+    "flag": "🇨🇦"
+  },
+  {
+    "code": "MX",
+    "name": "Meksika",
+    "nameEn": "Mexico",
+    "continent": "north_america",
+    "flag": "🇲🇽"
+  },
+  {
+    "code": "BZ",
+    "name": "Belize",
+    "nameEn": "Belize",
+    "continent": "north_america",
+    "flag": "🇧🇿"
+  },
+  {
+    "code": "PA",
+    "name": "Panama",
+    "nameEn": "Panama",
+    "continent": "north_america",
+    "flag": "🇵🇦"
+  },
+  {
+    "code": "VE",
+    "name": "Venezuela",
+    "nameEn": "Venezuela",
+    "continent": "south_america",
+    "flag": "🇻🇪"
+  },
+  {
+    "code": "PG",
+    "name": "Papua New Guinea",
+    "nameEn": "Papua New Guinea",
+    "continent": "oceania",
+    "flag": "🇵🇬"
+  },
+  {
+    "code": "EG",
+    "name": "Mısır",
+    "nameEn": "Egypt",
+    "continent": "africa",
+    "flag": "🇪🇬"
+  },
+  {
+    "code": "YE",
+    "name": "Yemen",
+    "nameEn": "Yemen",
+    "continent": "asia",
+    "flag": "🇾🇪"
+  },
+  {
+    "code": "MR",
+    "name": "Mauritania",
+    "nameEn": "Mauritania",
+    "continent": "africa",
+    "flag": "🇲🇷"
+  },
+  {
+    "code": "GQ",
+    "name": "Equatorial Guinea",
+    "nameEn": "Equatorial Guinea",
+    "continent": "africa",
+    "flag": "🇬🇶"
+  },
+  {
+    "code": "GM",
+    "name": "Gambia",
+    "nameEn": "Gambia",
+    "continent": "africa",
+    "flag": "🇬🇲"
+  },
+  {
+    "code": "HK",
+    "name": "Hong Kong S.A.R.",
+    "nameEn": "Hong Kong S.A.R.",
+    "continent": "asia",
+    "flag": "🇭🇰"
+  },
+  {
+    "code": "VA",
+    "name": "Vatican",
+    "nameEn": "Vatican",
+    "continent": "europe",
+    "flag": "🇻🇦"
+  },
+  {
+    "code": "XN",
+    "name": "Northern Cyprus",
+    "nameEn": "Northern Cyprus",
+    "continent": "asia",
+    "flag": "🇨🇾"
+  },
+  {
+    "code": "AQ",
+    "name": "Antarctica",
+    "nameEn": "Antarctica",
+    "continent": "europe",
+    "flag": "🇦🇶"
+  },
+  {
+    "code": "AU",
+    "name": "Avustralya",
+    "nameEn": "Australia",
+    "continent": "oceania",
+    "flag": "🇦🇺"
+  },
+  {
+    "code": "GL",
+    "name": "Greenland",
+    "nameEn": "Greenland",
+    "continent": "north_america",
+    "flag": "🇬🇱"
+  },
+  {
+    "code": "FJ",
+    "name": "Fiji",
+    "nameEn": "Fiji",
+    "continent": "oceania",
+    "flag": "🇫🇯"
+  },
+  {
+    "code": "NZ",
+    "name": "Yeni Zelanda",
+    "nameEn": "New Zealand",
+    "continent": "oceania",
+    "flag": "🇳🇿"
+  },
+  {
+    "code": "NC",
+    "name": "New Caledonia",
+    "nameEn": "New Caledonia",
+    "continent": "oceania",
+    "flag": "🇳🇨"
+  },
+  {
+    "code": "MG",
+    "name": "Madagascar",
+    "nameEn": "Madagascar",
+    "continent": "africa",
+    "flag": "🇲🇬"
+  },
+  {
+    "code": "PH",
+    "name": "Filipinler",
+    "nameEn": "Philippines",
+    "continent": "asia",
+    "flag": "🇵🇭"
+  },
+  {
+    "code": "LK",
+    "name": "Sri Lanka",
+    "nameEn": "Sri Lanka",
+    "continent": "asia",
+    "flag": "🇱🇰"
+  },
+  {
+    "code": "CW",
+    "name": "Curaçao",
+    "nameEn": "Curaçao",
+    "continent": "north_america",
+    "flag": "🇨🇼"
+  },
+  {
+    "code": "AW",
+    "name": "Aruba",
+    "nameEn": "Aruba",
+    "continent": "north_america",
+    "flag": "🇦🇼"
+  },
+  {
+    "code": "BS",
+    "name": "The Bahamas",
+    "nameEn": "The Bahamas",
+    "continent": "north_america",
+    "flag": "🇧🇸"
+  },
+  {
+    "code": "TC",
+    "name": "Turks and Caicos Islands",
+    "nameEn": "Turks and Caicos Islands",
+    "continent": "north_america",
+    "flag": "🇹🇨"
+  },
+  {
+    "code": "TW",
+    "name": "Taiwan",
+    "nameEn": "Taiwan",
+    "continent": "asia",
+    "flag": "🇹🇼"
+  },
+  {
+    "code": "JP",
+    "name": "Japonya",
+    "nameEn": "Japan",
+    "continent": "asia",
+    "flag": "🇯🇵"
+  },
+  {
+    "code": "PM",
+    "name": "Saint Pierre and Miquelon",
+    "nameEn": "Saint Pierre and Miquelon",
+    "continent": "north_america",
+    "flag": "🇵🇲"
+  },
+  {
+    "code": "IS",
+    "name": "İzlanda",
+    "nameEn": "Iceland",
+    "continent": "europe",
+    "flag": "🇮🇸"
+  },
+  {
+    "code": "PN",
+    "name": "Pitcairn Islands",
+    "nameEn": "Pitcairn Islands",
+    "continent": "europe",
+    "flag": "🇵🇳"
+  },
+  {
+    "code": "PF",
+    "name": "French Polynesia",
+    "nameEn": "French Polynesia",
+    "continent": "oceania",
+    "flag": "🇵🇫"
+  },
+  {
+    "code": "TF",
+    "name": "French Southern and Antarctic Lands",
+    "nameEn": "French Southern and Antarctic Lands",
+    "continent": "europe",
+    "flag": "🇹🇫"
+  },
+  {
+    "code": "SC",
+    "name": "Seychelles",
+    "nameEn": "Seychelles",
+    "continent": "africa",
+    "flag": "🇸🇨"
+  },
+  {
+    "code": "KI",
+    "name": "Kiribati",
+    "nameEn": "Kiribati",
+    "continent": "oceania",
+    "flag": "🇰🇮"
+  },
+  {
+    "code": "MH",
+    "name": "Marshall Islands",
+    "nameEn": "Marshall Islands",
+    "continent": "oceania",
+    "flag": "🇲🇭"
+  },
+  {
+    "code": "TT",
+    "name": "Trinidad and Tobago",
+    "nameEn": "Trinidad and Tobago",
+    "continent": "north_america",
+    "flag": "🇹🇹"
+  },
+  {
+    "code": "GD",
+    "name": "Grenada",
+    "nameEn": "Grenada",
+    "continent": "north_america",
+    "flag": "🇬🇩"
+  },
+  {
+    "code": "VC",
+    "name": "Saint Vincent and the Grenadines",
+    "nameEn": "Saint Vincent and the Grenadines",
+    "continent": "north_america",
+    "flag": "🇻🇨"
+  },
+  {
+    "code": "BB",
+    "name": "Barbados",
+    "nameEn": "Barbados",
+    "continent": "north_america",
+    "flag": "🇧🇧"
+  },
+  {
+    "code": "LC",
+    "name": "Saint Lucia",
+    "nameEn": "Saint Lucia",
+    "continent": "north_america",
+    "flag": "🇱🇨"
+  },
+  {
+    "code": "DM",
+    "name": "Dominica",
+    "nameEn": "Dominica",
+    "continent": "north_america",
+    "flag": "🇩🇲"
+  },
+  {
+    "code": "UM",
+    "name": "United States Minor Outlying Islands",
+    "nameEn": "United States Minor Outlying Islands",
+    "continent": "europe",
+    "flag": "🇺🇲"
+  },
+  {
+    "code": "MS",
+    "name": "Montserrat",
+    "nameEn": "Montserrat",
+    "continent": "north_america",
+    "flag": "🇲🇸"
+  },
+  {
+    "code": "AG",
+    "name": "Antigua and Barbuda",
+    "nameEn": "Antigua and Barbuda",
+    "continent": "north_america",
+    "flag": "🇦🇬"
+  },
+  {
+    "code": "KN",
+    "name": "Saint Kitts and Nevis",
+    "nameEn": "Saint Kitts and Nevis",
+    "continent": "north_america",
+    "flag": "🇰🇳"
+  },
+  {
+    "code": "VI",
+    "name": "United States Virgin Islands",
+    "nameEn": "United States Virgin Islands",
+    "continent": "north_america",
+    "flag": "🇻🇮"
+  },
+  {
+    "code": "BL",
+    "name": "Saint Barthelemy",
+    "nameEn": "Saint Barthelemy",
+    "continent": "north_america",
+    "flag": "🇧🇱"
+  },
+  {
+    "code": "PR",
+    "name": "Puerto Rico",
+    "nameEn": "Puerto Rico",
+    "continent": "north_america",
+    "flag": "🇵🇷"
+  },
+  {
+    "code": "AI",
+    "name": "Anguilla",
+    "nameEn": "Anguilla",
+    "continent": "north_america",
+    "flag": "🇦🇮"
+  },
+  {
+    "code": "VG",
+    "name": "British Virgin Islands",
+    "nameEn": "British Virgin Islands",
+    "continent": "north_america",
+    "flag": "🇻🇬"
+  },
+  {
+    "code": "JM",
+    "name": "Jamaica",
+    "nameEn": "Jamaica",
+    "continent": "north_america",
+    "flag": "🇯🇲"
+  },
+  {
+    "code": "KY",
+    "name": "Cayman Islands",
+    "nameEn": "Cayman Islands",
+    "continent": "north_america",
+    "flag": "🇰🇾"
+  },
+  {
+    "code": "BM",
+    "name": "Bermuda",
+    "nameEn": "Bermuda",
+    "continent": "north_america",
+    "flag": "🇧🇲"
+  },
+  {
+    "code": "HM",
+    "name": "Heard Island and McDonald Islands",
+    "nameEn": "Heard Island and McDonald Islands",
+    "continent": "europe",
+    "flag": "🇭🇲"
+  },
+  {
+    "code": "SH",
+    "name": "Saint Helena",
+    "nameEn": "Saint Helena",
+    "continent": "africa",
+    "flag": "🇸🇭"
+  },
+  {
+    "code": "MU",
+    "name": "Mauritius",
+    "nameEn": "Mauritius",
+    "continent": "africa",
+    "flag": "🇲🇺"
+  },
+  {
+    "code": "KM",
+    "name": "Comoros",
+    "nameEn": "Comoros",
+    "continent": "africa",
+    "flag": "🇰🇲"
+  },
+  {
+    "code": "ST",
+    "name": "São Tomé and Principe",
+    "nameEn": "São Tomé and Principe",
+    "continent": "africa",
+    "flag": "🇸🇹"
+  },
+  {
+    "code": "CV",
+    "name": "Cabo Verde",
+    "nameEn": "Cabo Verde",
+    "continent": "africa",
+    "flag": "🇨🇻"
+  },
+  {
+    "code": "MT",
+    "name": "Malta",
+    "nameEn": "Malta",
+    "continent": "europe",
+    "flag": "🇲🇹"
+  },
+  {
+    "code": "JE",
+    "name": "Jersey",
+    "nameEn": "Jersey",
+    "continent": "europe",
+    "flag": "🇯🇪"
+  },
+  {
+    "code": "GG",
+    "name": "Guernsey",
+    "nameEn": "Guernsey",
+    "continent": "europe",
+    "flag": "🇬🇬"
+  },
+  {
+    "code": "IM",
+    "name": "Isle of Man",
+    "nameEn": "Isle of Man",
+    "continent": "europe",
+    "flag": "🇮🇲"
+  },
+  {
+    "code": "AX",
+    "name": "Aland",
+    "nameEn": "Aland",
+    "continent": "europe",
+    "flag": "🇦🇽"
+  },
+  {
+    "code": "FO",
+    "name": "Faroe Islands",
+    "nameEn": "Faroe Islands",
+    "continent": "europe",
+    "flag": "🇫🇴"
+  },
+  {
+    "code": "IO",
+    "name": "British Indian Ocean Territory",
+    "nameEn": "British Indian Ocean Territory",
+    "continent": "europe",
+    "flag": "🇮🇴"
+  },
+  {
+    "code": "SG",
+    "name": "Singapur",
+    "nameEn": "Singapore",
+    "continent": "asia",
+    "flag": "🇸🇬"
+  },
+  {
+    "code": "NF",
+    "name": "Norfolk Island",
+    "nameEn": "Norfolk Island",
+    "continent": "europe",
+    "flag": "🇳🇫"
+  },
+  {
+    "code": "CK",
+    "name": "Cook Islands",
+    "nameEn": "Cook Islands",
+    "continent": "oceania",
+    "flag": "🇨🇰"
+  },
+  {
+    "code": "TO",
+    "name": "Tonga",
+    "nameEn": "Tonga",
+    "continent": "oceania",
+    "flag": "🇹🇴"
+  },
+  {
+    "code": "WF",
+    "name": "Wallis and Futuna",
+    "nameEn": "Wallis and Futuna",
+    "continent": "oceania",
+    "flag": "🇼🇫"
+  },
+  {
+    "code": "WS",
+    "name": "Samoa",
+    "nameEn": "Samoa",
+    "continent": "oceania",
+    "flag": "🇼🇸"
+  },
+  {
+    "code": "SB",
+    "name": "Solomon Islands",
+    "nameEn": "Solomon Islands",
+    "continent": "oceania",
+    "flag": "🇸🇧"
+  },
+  {
+    "code": "TV",
+    "name": "Tuvalu",
+    "nameEn": "Tuvalu",
+    "continent": "oceania",
+    "flag": "🇹🇻"
+  },
+  {
+    "code": "MV",
+    "name": "Maldives",
+    "nameEn": "Maldives",
+    "continent": "asia",
+    "flag": "🇲🇻"
+  },
+  {
+    "code": "NR",
+    "name": "Nauru",
+    "nameEn": "Nauru",
+    "continent": "oceania",
+    "flag": "🇳🇷"
+  },
+  {
+    "code": "FM",
+    "name": "Federated States of Micronesia",
+    "nameEn": "Federated States of Micronesia",
+    "continent": "oceania",
+    "flag": "🇫🇲"
+  },
+  {
+    "code": "GS",
+    "name": "South Georgia and the Islands",
+    "nameEn": "South Georgia and the Islands",
+    "continent": "europe",
+    "flag": "🇬🇸"
+  },
+  {
+    "code": "FK",
+    "name": "Falkland Islands",
+    "nameEn": "Falkland Islands",
+    "continent": "south_america",
+    "flag": "🇫🇰"
+  },
+  {
+    "code": "VU",
+    "name": "Vanuatu",
+    "nameEn": "Vanuatu",
+    "continent": "oceania",
+    "flag": "🇻🇺"
+  },
+  {
+    "code": "NU",
+    "name": "Niue",
+    "nameEn": "Niue",
+    "continent": "oceania",
+    "flag": "🇳🇺"
+  },
+  {
+    "code": "AS",
+    "name": "American Samoa",
+    "nameEn": "American Samoa",
+    "continent": "oceania",
+    "flag": "🇦🇸"
+  },
+  {
+    "code": "PW",
+    "name": "Palau",
+    "nameEn": "Palau",
+    "continent": "oceania",
+    "flag": "🇵🇼"
+  },
+  {
+    "code": "GU",
+    "name": "Guam",
+    "nameEn": "Guam",
+    "continent": "oceania",
+    "flag": "🇬🇺"
+  },
+  {
+    "code": "MP",
+    "name": "Northern Mariana Islands",
+    "nameEn": "Northern Mariana Islands",
+    "continent": "oceania",
+    "flag": "🇲🇵"
+  },
+  {
+    "code": "BH",
+    "name": "Bahrain",
+    "nameEn": "Bahrain",
+    "continent": "asia",
+    "flag": "🇧🇭"
+  },
+  {
+    "code": "MO",
+    "name": "Macao S.A.R",
+    "nameEn": "Macao S.A.R",
+    "continent": "asia",
+    "flag": "🇲🇴"
   }
 ];
-
-// Toplam tanınmış bağımsız ülke sayısı benchmarkı (195 UN üyesi/gözlemcisi)
-export const TOTAL_WORLD_COUNTRIES_BENCHMARK = 195;
