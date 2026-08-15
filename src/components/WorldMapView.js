@@ -149,8 +149,14 @@ function initMap(container) {
       style: f => countryStyle(findCountry(f)),
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
-        if (c && c.name) {
-          layer.bindTooltip(`<div class="country-tattoo">${c.flag} ${c.name}</div>`, {
+        const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
+        const rawName = f?.properties?.name || '';
+        const isBlacklisted = IGNORED_LABEL_CODES.has(iso) ||
+          rawName.includes('Base') || rawName.includes('No Mans') ||
+          rawName.includes('Dhekelia') || rawName.includes('Akrotiri') || rawName.includes('Baykonur');
+
+        if (c && c.name && !isBlacklisted) {
+          layer.bindTooltip(`<div class="country-tattoo">${c.name}</div>`, {
             direction: 'center',
             permanent: true,
             className: 'map-tattoo-label'
@@ -214,17 +220,55 @@ function initMap(container) {
   map.on('move zoom moveend zoomend', requestViewUpdate);
 }
 
+const IGNORED_LABEL_CODES = new Set([
+  '-99', 'UU', 'VA', 'SM', 'MC', 'LI', 'AD', 'GI', 'MT', 'IO', 'BM', 'KY',
+  'VG', 'AI', 'TC', 'MS', 'BL', 'MF', 'SX', 'CW', 'BQ', 'FK', 'GS', 'PN',
+  'SH', 'CC', 'CX', 'NF', 'CK', 'NU', 'TK', 'WF', 'PF', 'NC', 'PM', 'FO', 'SJ'
+]);
+
 function updateCountryLabels() {
   if (!countriesLayer || !map) return;
-  countriesLayer.eachLayer(layer => {
-    const c = findCountry(layer.feature);
-    if (!c || !c.name) return;
+  const placedBoxes = [];
 
+  const layers = [];
+  countriesLayer.eachLayer(layer => layers.push(layer));
+
+  // Sort country layers by polygon area descending (largest first)
+  layers.sort((a, b) => {
+    try {
+      const ba = a.getBounds();
+      const bb = b.getBounds();
+      const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
+      const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
+      return areaB - areaA;
+    } catch { return 0; }
+  });
+
+  layers.forEach(layer => {
+    const f = layer.feature;
+    const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
+    const rawName = f?.properties?.name || '';
     const tooltip = layer.getTooltip();
     if (!tooltip) return;
-
     const el = tooltip.getElement();
     if (!el) return;
+
+    // 1. Blacklist check (no military bases, micro-territories or buffer zones)
+    if (IGNORED_LABEL_CODES.has(iso) ||
+        rawName.includes('Base') ||
+        rawName.includes('No Mans') ||
+        rawName.includes('Dhekelia') ||
+        rawName.includes('Akrotiri') ||
+        rawName.includes('Baykonur')) {
+      el.style.display = 'none';
+      return;
+    }
+
+    const c = findCountry(f);
+    if (!c || !c.name) {
+      el.style.display = 'none';
+      return;
+    }
 
     try {
       const bounds = layer.getBounds();
@@ -234,19 +278,45 @@ function updateCountryLabels() {
       const pixelHeight = Math.abs(se.y - nw.y);
 
       const textLen = c.name.length;
-      const minRequiredWidth = Math.max(34, textLen * 4.5);
+      // Minimum physical pixel space inside the country polygon
+      const minRequiredWidth = Math.max(42, textLen * 7.5);
+      const minRequiredHeight = 20;
 
-      if (pixelWidth < minRequiredWidth || pixelHeight < 14) {
+      if (pixelWidth < minRequiredWidth || pixelHeight < minRequiredHeight) {
         el.style.display = 'none';
         return;
       }
 
-      el.style.display = 'flex';
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.80);
-      const dynamicFontSize = Math.min(13, Math.max(8.5, Math.floor(pixelWidth / (textLen * 1.05))));
+      // Center in screen coords
+      const center = map.latLngToLayerPoint(bounds.getCenter());
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.75);
+      const dynamicFontSize = Math.min(13, Math.max(9, Math.floor(pixelWidth / (textLen * 1.3))));
+      const approxTextWidth = Math.min(maxAllowedWidth, textLen * dynamicFontSize * 0.7);
+      const approxTextHeight = dynamicFontSize + 8;
 
+      const box = {
+        x1: center.x - approxTextWidth / 2 - 10,
+        y1: center.y - approxTextHeight / 2 - 6,
+        x2: center.x + approxTextWidth / 2 + 10,
+        y2: center.y + approxTextHeight / 2 + 6
+      };
+
+      // 2. Collision Detection: Prevent overlapping labels in dense regions (Balkans, Middle East, Caucasus)
+      const collides = placedBoxes.some(p => (
+        box.x1 < p.x2 && box.x2 > p.x1 &&
+        box.y1 < p.y2 && box.y2 > p.y1
+      ));
+
+      if (collides) {
+        el.style.display = 'none';
+        return;
+      }
+
+      placedBoxes.push(box);
+      el.style.display = 'flex';
       el.style.maxWidth = `${maxAllowedWidth}px`;
       el.style.fontSize = `${dynamicFontSize}px`;
+      el.textContent = c.name;
     } catch (e) {
       el.style.display = 'none';
     }
