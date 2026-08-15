@@ -112,6 +112,44 @@ export const REGION_TR_NAMES = {
   'Manitoba': 'Manitoba (Winnipeg)', 'Saskatchewan': 'Saskatchewan (Regina)',
   'Nova Scotia': 'Yeni İskoçya (Halifax)', 'New Brunswick': 'New Brunswick',
 
+  // ─── SLOVENYA ─────────────────────────────────────────────
+  'Ljubljana': 'Ljubljana (Başkent)', 'Kamnik': 'Ljubljana ve Çevresi', 'Piran': 'Piran (Sahil & Koper)',
+  'Kranjska Gora': 'Kranjska Gora (Bled & Alpler)', 'Bovec': 'Bovec (Soča Vadisi)',
+  'Šentilj': 'Maribor ve Çevresi', 'Radlje ob Dravi': 'Drava Vadisi', 'Solcava': 'Savinja Alpleri',
+  'Brežice': 'Brežice (Krka Vadisi)', 'Šentjernej': 'Güneydoğu Slovenya (Novo Mesto)',
+  'Loška dolina': 'İç Karniola (Postojna)', 'Zasavska': 'Orta Sava Bölgesi',
+
+  // ─── MACARİSTAN ───────────────────────────────────────────
+  'Budapest': 'Budapeşte (Başkent)', 'Pest': 'Peşte Bölgesi', 'Fejér': 'Fejér (Székesfehérvár)',
+  'Komárom-Esztergom': 'Komárom-Esztergom (Estergon)', 'Veszprém': 'Veszprém (Balaton Gölü)',
+  'Győr-Moson-Sopron': 'Győr-Moson-Sopron', 'Gyor-Moson-Sopron': 'Győr-Moson-Sopron', 'Vas': 'Vas (Szombathely)',
+  'Zala': 'Zala (Zalaegerszeg)', 'Somogy': 'Somogy (Kaposvár)', 'Baranya': 'Baranya (Peç)',
+  'Tolna': 'Tolna (Szekszárd)', 'Bács-Kiskun': 'Bács-Kiskun (Kecskemét)', 'Csongrád': 'Csongrád (Szeged)',
+  'Békés': 'Békés (Békéscsaba)', 'Jász-Nagykun-Szolnok': 'Szolnok', 'Hajdú-Bihar': 'Hajdú-Bihar (Debrecen)',
+  'Heves': 'Heves (Eger)', 'Nógrád': 'Nógrád (Salgótarján)', 'Borsod-Abaúj-Zemplén': 'Miskolc ve Çevresi',
+  'Szabolcs-Szatmár-Bereg': 'Nyíregyháza',
+
+  // ─── ÇEKYA ───────────────────────────────────────────────
+  'Prague': 'Prag (Başkent)', 'Hlavní město Praha': 'Prag (Başkent)',
+  'Středočeský': 'Orta Bohemya', 'Jihočeský': 'Güney Bohemya (Český Krumlov)',
+  'Plzeňský': 'Plzeň', 'Karlovarský': 'Karlovy Vary', 'Ústecký': 'Ústí nad Labem',
+  'Liberecký': 'Liberec', 'Královéhradecký': 'Hradec Králové', 'Pardubický': 'Pardubice',
+  'Vysočina': 'Vysočina', 'Jihomoravský': 'Güney Moravya (Brno)', 'Olomoucký': 'Olomouc',
+  'Zlínský': 'Zlín', 'Moravskoslezský': 'Moravya-Silezya (Ostrava)',
+
+  // ─── POLONYA ──────────────────────────────────────────────
+  'Masovian': 'Masovya (Varşova)', 'Mazowieckie': 'Masovya (Varşova)',
+  'Lesser Poland': 'Küçük Polonya (Kraków)', 'Małopolskie': 'Küçük Polonya (Kraków)',
+  'Lower Silesian': 'Aşağı Silezya (Wrocław)', 'Dolnośląskie': 'Aşağı Silezya (Wrocław)',
+  'Pomeranian': 'Pomeranya (Gdańsk)', 'Pomorskie': 'Pomeranya (Gdańsk)',
+  'Greater Poland': 'Büyük Polonya (Poznań)', 'Wielkopolskie': 'Büyük Polonya (Poznań)',
+  'Silesian': 'Silezya (Katowice)', 'Śląskie': 'Silezya (Katowice)',
+
+  // ─── PORTEKİZ ─────────────────────────────────────────────
+  'Lisboa': 'Lizbon (Başkent)', 'Porto': 'Porto', 'Faro': 'Algarve (Faro)',
+  'Braga': 'Braga', 'Setúbal': 'Setúbal', 'Coimbra': 'Coimbra', 'Aveiro': 'Aveiro',
+  'Madeira': 'Madeira Adası (Funchal)', 'Azores': 'Azor Adaları (Ponta Delgada)',
+
   // ─── BREZİLYA ─────────────────────────────────────────────
   'São Paulo': 'Sao Paulo', 'Rio de Janeiro': 'Rio de Janeiro', 'Bahia': 'Bahia (Salvador)',
   'Minas Gerais': 'Minas Gerais (Belo Horizonte)', 'Paraná': 'Parana (Curitiba)',

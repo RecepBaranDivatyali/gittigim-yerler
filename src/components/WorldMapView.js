@@ -150,10 +150,10 @@ function initMap(container) {
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
         if (c && c.name) {
-          layer.bindTooltip(`<div class="map-label country-label">${c.flag} ${c.name}</div>`, {
+          layer.bindTooltip(`<div class="country-tattoo">${c.flag} ${c.name}</div>`, {
             direction: 'center',
             permanent: true,
-            className: 'map-permanent-label country-label-wrap'
+            className: 'map-tattoo-label'
           });
         }
         layer.on('click', e => {
@@ -176,10 +176,9 @@ function initMap(container) {
       onEachFeature: (f, layer) => {
         const id = f.properties?.number;
         const prov = TURKEY_PROVINCES.find(p => p.id === id) || { id, name: f.properties?.name || 'İl' };
-        layer.bindTooltip(`<div class="map-label province-label">${prov.name}</div>`, {
-          direction: 'center',
-          permanent: true,
-          className: 'map-permanent-label province-label-wrap'
+        layer.bindTooltip(`<span>🇹🇷 ${prov.name}</span>`, {
+          direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
+          sticky: true, permanent: false
         });
         layer.on('click', e => {
           L.DomEvent.stopPropagation(e);
@@ -388,16 +387,28 @@ function buildRegionLayer(data, code) {
   const countryObj = WORLD_COUNTRIES.find(c => c.code === code);
   const flag = countryObj?.flag || '';
 
-  return L.geoJSON(data, {
+  // Sort features by area descending (largest first, smallest last) so small inner cities/enclaves like Budapest are on top
+  const sortedFeatures = (data.features || []).slice().sort((a, b) => {
+    try {
+      const bboxA = L.geoJSON(a).getBounds();
+      const bboxB = L.geoJSON(b).getBounds();
+      const areaA = (bboxA.getEast() - bboxA.getWest()) * (bboxA.getNorth() - bboxA.getSouth());
+      const areaB = (bboxB.getEast() - bboxB.getWest()) * (bboxB.getNorth() - bboxB.getSouth());
+      return areaB - areaA;
+    } catch { return 0; }
+  });
+
+  const sortedData = { ...data, features: sortedFeatures };
+
+  return L.geoJSON(sortedData, {
     pane: 'statesPane',
     style: f => regionStyle(f.properties?.name || f.properties?.NAME_1 || '', code),
     onEachFeature: (f, layer) => {
       const raw = f.properties?.name || f.properties?.NAME_1 || 'Bölge';
       const display = getLocalizedName(raw);
-      layer.bindTooltip(`<div class="map-label region-label">${display}</div>`, {
-        direction: 'center',
-        permanent: true,
-        className: 'map-permanent-label region-label-wrap'
+      layer.bindTooltip(`<span>${flag} ${display}</span>`, {
+        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
+        sticky: true, permanent: false
       });
       layer.on('click', e => {
         L.DomEvent.stopPropagation(e);
@@ -411,14 +422,31 @@ function buildRegionLayer(data, code) {
 }
 
 function refreshRegionLayer(code) {
-  regionLayers[code]?.eachLayer(l => {
+  if (!regionLayers[code]) return;
+  const { worldVisits } = getStorageData();
+  const layers = [];
+  regionLayers[code].eachLayer(l => layers.push(l));
+
+  // Sort layers by bounding box area (largest first, smallest last)
+  layers.sort((a, b) => {
+    try {
+      const ba = a.getBounds();
+      const bb = b.getBounds();
+      const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
+      const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
+      return areaB - areaA;
+    } catch { return 0; }
+  });
+
+  layers.forEach(l => {
     const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1 || '';
     const style = regionStyle(raw, code);
     l.setStyle(style);
-    
-    const { worldVisits } = getStorageData();
+
     const status = ns(worldVisits[`${code}::${raw}`]?.status);
-    if (status !== 'unvisited' && l.bringToFront) l.bringToFront();
+    if (status !== 'unvisited' && l.bringToFront) {
+      l.bringToFront();
+    }
 
     if (l._path) {
       if (style.interactive === false) {
@@ -427,6 +455,11 @@ function refreshRegionLayer(code) {
         l._path.style.pointerEvents = 'visiblePainted';
       }
     }
+  });
+
+  // Always bring smaller inner enclaves (e.g. Budapest in Pest, Berlin in Brandenburg) to the very front so they are ALWAYS clickable
+  layers.slice().reverse().forEach(l => {
+    if (l.bringToFront) l.bringToFront();
   });
 }
 
@@ -440,10 +473,9 @@ function buildSubregionLayer(data, code) {
     onEachFeature: (f, layer) => {
       const raw = f.properties?.name || 'Şehir';
       const display = getLocalizedName(raw);
-      layer.bindTooltip(`<div class="map-label subregion-label">${display}</div>`, {
-        direction: 'center',
-        permanent: true,
-        className: 'map-permanent-label subregion-label-wrap'
+      layer.bindTooltip(`<span>${flag} ${display}</span>`, {
+        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
+        sticky: true, permanent: false
       });
       layer.on('click', e => {
         L.DomEvent.stopPropagation(e);
