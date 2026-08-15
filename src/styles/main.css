@@ -2350,3 +2350,94 @@ svg, g, path {
   border: 1px solid rgba(255, 87, 34, 0.35);
   color: #ff5722;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ON-MAP SUBTLE LABELS (Permanent Country, State & City Labels)
+═══════════════════════════════════════════════════════════════════ */
+.leaflet-tooltip.map-permanent-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.leaflet-tooltip.map-permanent-label::before {
+  display: none !important;
+}
+
+.map-label {
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  line-height: 1.1;
+  transition: opacity 0.25s ease;
+}
+
+/* Country Labels (Level 1 - Global View) */
+.country-label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  background: rgba(15, 23, 42, 0.70);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* When zoomed in (zoom >= 5.2), smoothly hide country labels to prevent overlap */
+.zoom-regional .country-label-wrap {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Province & State Labels (Level 2 - Regional View) */
+.province-label, .region-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.78);
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 0.5px solid rgba(255, 87, 34, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Subregion & City Labels (Level 3 - City View) */
+.subregion-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.88);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  border: 0.5px solid rgba(59, 130, 246, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+@media (max-width: 768px) {
+  .country-label {
+    font-size: 9.5px;
+    padding: 1.5px 5px;
+  }
+  .province-label, .region-label {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+  .subregion-label {
+    font-size: 8.5px;
+    padding: 1px 3.5px;
+  }
+}

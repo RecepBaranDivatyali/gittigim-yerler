@@ -1,231 +1,159 @@
-// Turkish region name translations (Natural Earth → Türkçe)
+// regionNames.js - Genişletilmiş Türkçe Bölge, Eyalet ve Şehir İsimleri Sözlüğü
 export const REGION_TR_NAMES = {
-  // Italy / İtalya
-  'Lombardia': 'Lombardiya', 'Piemonte': 'Piemont', 'Veneto': 'Veneto',
-  'Emilia-Romagna': 'Emilia-Romagna', 'Toscana': 'Toskana', 'Lazio': 'Lazio',
-  'Campania': 'Kampanya', 'Sicilia': 'Sicilya', 'Sardegna': 'Sardunya',
-  'Puglia': 'Apulya', 'Calabria': 'Kalabria', 'Liguria': 'Ligurya',
-  'Marche': 'Marke', 'Abruzzo': 'Abruzzo', 'Umbria': 'Umbria',
-  'Basilicata': 'Basilicata', "Valle d'Aosta": "Valle d'Aosta",
+  // ─── İTALYA ───────────────────────────────────────────────
+  'Lombardia': 'Lombardiya (Milano)', 'Piemonte': 'Piemont (Torino)', 'Veneto': 'Veneto (Venedik)',
+  'Emilia-Romagna': 'Emilia-Romagna (Bolonya)', 'Toscana': 'Toskana (Floransa)', 'Lazio': 'Lazio (Roma)',
+  'Campania': 'Kampanya (Napoli)', 'Sicilia': 'Sicilya (Palermo)', 'Sardegna': 'Sardunya',
+  'Puglia': 'Puglia (Bari)', 'Calabria': 'Kalabria', 'Liguria': 'Ligurya (Cenova)',
+  'Marche': 'Marche', 'Abruzzo': 'Abruzzo', 'Umbria': 'Umbria',
+  'Basilicata': 'Basilicata', "Valle d'Aosta": "Aosta Vadisi",
   'Molise': 'Molise', 'Trentino-Alto Adige': 'Trentino-Güney Tirol',
-  'Friuli-Venezia Giulia': 'Friuli-Venedik Giulia',
+  'Friuli-Venezia Giulia': 'Friuli-Venedik Giulia (Trieste)',
 
-  // Germany / Almanya
-  'Bayern': 'Bavyera', 'Nordrhein-Westfalen': 'Kuzey Ren-Vestfalya',
-  'Baden-Württemberg': 'Baden-Württemberg', 'Niedersachsen': 'Aşağı Saksonya',
-  'Hessen': 'Hessen', 'Sachsen': 'Saksonya', 'Rheinland-Pfalz': 'Ren-Palatinat',
-  'Berlin': 'Berlin', 'Schleswig-Holstein': 'Schleswig-Holstein',
-  'Brandenburg': 'Brandenburg', 'Sachsen-Anhalt': 'Saksonya-Anhalt',
-  'Thüringen': 'Türingen', 'Hamburg': 'Hamburg', 'Mecklenburg-Vorpommern': 'Mecklenburg-Ön Pomeranya',
-  'Bremen': 'Bremen', 'Saarland': 'Saarland',
+  // ─── ALMANYA ──────────────────────────────────────────────
+  'Bayern': 'Bavyera (Münih)', 'Nordrhein-Westfalen': 'Kuzey Ren-Vestfalya (Köln)',
+  'Baden-Württemberg': 'Baden-Württemberg (Stuttgart)', 'Niedersachsen': 'Aşağı Saksonya (Hannover)',
+  'Hessen': 'Hessen (Frankfurt)', 'Sachsen': 'Saksonya (Dresden)', 'Rheinland-Pfalz': 'Ren-Palatinat (Mainz)',
+  'Berlin': 'Berlin', 'Schleswig-Holstein': 'Schleswig-Holstein (Kiel)',
+  'Brandenburg': 'Brandenburg (Potsdam)', 'Sachsen-Anhalt': 'Saksonya-Anhalt (Magdeburg)',
+  'Thüringen': 'Türingen (Erfurt)', 'Hamburg': 'Hamburg', 'Mecklenburg-Vorpommern': 'Mecklenburg-Ön Pomeranya',
+  'Bremen': 'Bremen', 'Saarland': 'Saarland (Saarbrücken)',
 
-  // France / Fransa
-  'Île-de-France': 'Fransa Adası (Paris)', 'Provence-Alpes-Côte d\'Azur': 'Provence-Riviera',
-  'Auvergne-Rhône-Alpes': 'Auvergne-Rhône-Alpler', 'Nouvelle-Aquitaine': 'Yeni Akvitanya',
-  'Occitanie': 'Oksitanya', 'Hauts-de-France': 'Kuzey Fransa',
-  'Grand Est': 'Büyük Doğu', 'Bretagne': 'Bretanya', 'Normandie': 'Normandiya',
-  'Pays de la Loire': 'Loire Vadisi', 'Centre-Val de Loire': 'Loire Merkezi',
-  'Bourgogne-Franche-Comté': 'Burgonya-Franche-Comté',
+  // ─── FRANSA ───────────────────────────────────────────────
+  'Île-de-France': 'Paris ve Çevresi', 'Provence-Alpes-Côte d\'Azur': 'Provence - Riviera (Marsilya, Nice)',
+  'Auvergne-Rhône-Alpes': 'Auvergne-Rhône-Alpler (Lyon)', 'Nouvelle-Aquitaine': 'Yeni Akvitanya (Bordeaux)',
+  'Occitanie': 'Oksitanya (Toulouse)', 'Hauts-de-France': 'Kuzey Fransa (Lille)',
+  'Grand Est': 'Büyük Doğu (Strazburg)', 'Bretagne': 'Bretanya (Rennes)', 'Normandie': 'Normandiya (Rouen)',
+  'Pays de la Loire': 'Loire Bölgesi (Nantes)', 'Centre-Val de Loire': 'Loire Vadisi (Orléans)',
+  'Bourgogne-Franche-Comté': 'Burgonya (Dijon)', 'Corse': 'Korsika Adası (Ajaccio)',
 
-  // Spain / İspanya
-  'Cataluña': 'Katalonya', 'Andalucía': 'Endülüs', 'Madrid': 'Madrid',
-  'Comunidad Valenciana': 'Valensiya', 'Galicia': 'Galiçya', 'Castilla y León': 'Kastilya-León',
-  'Castilla-La Mancha': 'Kastilya-La Mancha', 'País Vasco': 'Bask Bölgesi',
-  'Canarias': 'Kanarya Adaları', 'Aragón': 'Aragon', 'Extremadura': 'Extremadura',
-  'Principado de Asturias': 'Asturya', 'Región de Murcia': 'Murcia',
-  'Navarra': 'Navarra', 'Cantabria': 'Kantabriya', 'La Rioja': 'La Rioja',
+  // ─── İSPANYA ──────────────────────────────────────────────
+  'Cataluña': 'Katalonya (Barselona)', 'Andalucía': 'Endülüs (Sevilla, Granada)', 'Madrid': 'Madrid',
+  'Comunidad Valenciana': 'Valensiya', 'Galicia': 'Galiçya (Santiago)', 'Castilla y León': 'Kastilya-León (Valladolid)',
+  'Castilla-La Mancha': 'Kastilya-La Mancha (Toledo)', 'País Vasco': 'Bask Bölgesi (Bilbao)',
+  'Canarias': 'Kanarya Adaları (Tenerife)', 'Aragón': 'Aragon (Zaragoza)', 'Extremadura': 'Extremadura (Mérida)',
+  'Principado de Asturias': 'Asturya (Oviedo)', 'Región de Murcia': 'Murcia',
+  'Navarra': 'Navarra (Pamplona)', 'Cantabria': 'Kantabriya (Santander)', 'La Rioja': 'La Rioja (Logroño)',
+  'Islas Baleares': 'Balear Adaları (Mallorca, İbiza)',
 
-  // Greece / Yunanistan
+  // ─── YUNANİSTAN ───────────────────────────────────────────
   'Attica': 'Attika (Atina)', 'Central Macedonia': 'Orta Makedonya (Selanik)',
-  'Thessaly': 'Teselya', 'Central Greece': 'Orta Yunanistan',
-  'Peloponnese': 'Pelopones', 'Epirus': 'Epir', 'Western Macedonia': 'Batı Makedonya',
-  'Eastern Macedonia and Thrace': 'Doğu Makedonya ve Trakya',
-  'Ionian Islands': 'İyon Adaları', 'Northern Aegean': 'Kuzey Ege',
-  'Southern Aegean': 'Güney Ege (Rodos, Mikonos)', 'Crete': 'Girit',
-  'Western Greece': 'Batı Yunanistan',
+  'Thessaly': 'Teselya (Larisa)', 'Central Greece': 'Orta Yunanistan (Lamia)',
+  'Peloponnese': 'Pelopones (Tripoli)', 'Epirus': 'Epir (Yanya)', 'Western Macedonia': 'Batı Makedonya (Kozani)',
+  'Eastern Macedonia and Thrace': 'Doğu Makedonya ve Trakya (Gümülcine, Dedeağaç)',
+  'Ionian Islands': 'İyon Adaları (Korfu, Zakintos)', 'Northern Aegean': 'Kuzey Ege (Midilli, Sakız)',
+  'Southern Aegean': 'Güney Ege (Rodos, Mikonos, Santorini)', 'Crete': 'Girit (Kandiye)',
+  'Western Greece': 'Batı Yunanistan (Patras)', 'Mount Athos': 'Aynoroz (Athos Dağı)',
 
-  // Hungary / Macaristan
-  'Budapest': 'Budapeşte', 'Pest': 'Peşte', 'Fejér': 'Fejér',
-  'Komárom-Esztergom': 'Komárom-Esztergom', 'Veszprém': 'Veszprém',
-  'Győr-Moson-Sopron': 'Győr-Moson-Sopron', 'Vas': 'Vas', 'Zala': 'Zala',
-  'Somogy': 'Somogy', 'Baranya': 'Baranya', 'Tolna': 'Tolna',
-  'Bács-Kiskun': 'Bács-Kiskun', 'Csongrád': 'Csongrád', 'Békés': 'Békés',
-  'Jász-Nagykun-Szolnok': 'Jász-Nagykun-Szolnok', 'Hajdú-Bihar': 'Hajdú-Bihar',
-  'Heves': 'Heves', 'Nógrád': 'Nógrád', 'Borsod-Abaúj-Zemplén': 'Borsod-Abaúj-Zemplén',
-  'Szabolcs-Szatmár-Bereg': 'Szabolcs-Szatmár-Bereg',
+  // ─── AMERİKA BİRLEŞİK DEVLETLERİ (ABD) ────────────────────
+  'California': 'Kaliforniya (Los Angeles, San Francisco)', 'Texas': 'Teksas (Houston, Dallas)',
+  'Florida': 'Florida (Miami, Orlando)', 'New York': 'New York', 'Illinois': 'Illinois (Chicago)',
+  'Pennsylvania': 'Pensilvanya (Philadelphia)', 'Ohio': 'Ohio (Columbus)', 'Georgia': 'Georgia (Atlanta)',
+  'North Carolina': 'Kuzey Karolina (Charlotte)', 'Michigan': 'Michigan (Detroit)',
+  'New Jersey': 'New Jersey', 'Virginia': 'Virginia', 'Washington': 'Washington (Seattle)',
+  'Arizona': 'Arizona (Phoenix)', 'Massachusetts': 'Massachusetts (Boston)', 'Tennessee': 'Tennessee (Nashville)',
+  'Indiana': 'Indiana (Indianapolis)', 'Missouri': 'Missouri (Kansas City)', 'Maryland': 'Maryland (Baltimore)',
+  'Wisconsin': 'Wisconsin (Milwaukee)', 'Colorado': 'Colorado (Denver)', 'Minnesota': 'Minnesota (Minneapolis)',
+  'South Carolina': 'Güney Karolina', 'Alabama': 'Alabama', 'Louisiana': 'Louisiana (New Orleans)',
+  'Kentucky': 'Kentucky (Louisville)', 'Oregon': 'Oregon (Portland)', 'Oklahoma': 'Oklahoma',
+  'Connecticut': 'Connecticut', 'Utah': 'Utah (Salt Lake City)', 'Iowa': 'Iowa',
+  'Nevada': 'Nevada (Las Vegas)', 'Arkansas': 'Arkansas', 'Mississippi': 'Mississippi',
+  'Kansas': 'Kansas', 'New Mexico': 'New Mexico (Albuquerque)', 'Nebraska': 'Nebraska (Omaha)',
+  'West Virginia': 'Batı Virginia', 'Idaho': 'Idaho (Boise)', 'Hawaii': 'Hawaii (Honolulu)',
+  'New Hampshire': 'New Hampshire', 'Maine': 'Maine', 'Rhode Island': 'Rhode Island (Providence)',
+  'Montana': 'Montana', 'Delaware': 'Delaware', 'South Dakota': 'Güney Dakota',
+  'North Dakota': 'Kuzey Dakota', 'Alaska': 'Alaska (Anchorage)', 'Vermont': 'Vermont',
+  'Wyoming': 'Wyoming', 'District of Columbia': 'Washington D.C. (Başkent)',
 
-  // Austria / Avusturya
-  'Wien': 'Viyana', 'Niederösterreich': 'Aşağı Avusturya', 'Oberösterreich': 'Yukarı Avusturya',
-  'Steiermark': 'Styria', 'Tirol': 'Tirol', 'Kärnten': 'Karintya',
-  'Salzburg': 'Salzburg', 'Vorarlberg': 'Vorarlberg', 'Burgenland': 'Burgenland',
+  // ─── BİRLEŞİK KRALLIK (İNGİLTERE VE DİĞERLERİ) ────────────
+  'England': 'İngiltere (Londra, Manchester)', 'Scotland': 'İskoçya (Edinburgh, Glasgow)',
+  'Wales': 'Galler (Cardiff)', 'Northern Ireland': 'Kuzey İrlanda (Belfast)',
+  'Greater London': 'Büyük Londra', 'Greater Manchester': 'Büyük Manchester',
+  'West Midlands': 'Batı Midlands (Birmingham)', 'West Yorkshire': 'Batı Yorkshire (Leeds)',
 
-  // Switzerland / İsviçre
-  'Zurich': 'Zürih', 'Bern': 'Bern', 'Vaud': 'Vo', 'Aargau': 'Argov',
-  'Lucerne': 'Luzern', 'Geneva': 'Cenevre', 'Ticino': 'Ticino',
-  'Fribourg': 'Fribourg', 'Valais': 'Valais', 'St. Gallen': 'St. Gallen',
+  // ─── HOLLANDA ─────────────────────────────────────────────
+  'Noord-Holland': 'Kuzey Hollanda (Amsterdam)', 'Zuid-Holland': 'Güney Hollanda (Rotterdam, Lahey)',
+  'Utrecht': 'Utrecht', 'Noord-Brabant': 'Kuzey Brabant (Eindhoven)', 'Gelderland': 'Gelderland (Arnhem)',
+  'Overijssel': 'Overijssel (Zwolle)', 'Groningen': 'Groningen', 'Friesland': 'Frizya (Leeuwarden)',
+  'Zeeland': 'Zelanda (Middelburg)', 'Limburg': 'Limburg (Maastricht)', 'Drenthe': 'Drenthe (Assen)',
+  'Flevoland': 'Flevoland (Almere)',
 
-  // UK
-  'England': 'İngiltere', 'Scotland': 'İskoçya', 'Wales': 'Galler',
-  'Northern Ireland': 'Kuzey İrlanda',
+  // ─── İSVİÇRE ──────────────────────────────────────────────
+  'Zurich': 'Zürih', 'Bern': 'Bern (Başkent)', 'Vaud': 'Vaud (Lozan)', 'Aargau': 'Aargau',
+  'Lucerne': 'Luzern', 'Geneva': 'Cenevre', 'Ticino': 'Ticino (Lugano)',
+  'Fribourg': 'Fribourg', 'Valais': 'Valais (Sion, Zermatt)', 'St. Gallen': 'St. Gallen',
+  'Basel-Stadt': 'Basel', 'Grisons': 'Graubünden (Davos, St. Moritz)',
 
-  // Netherlands / Hollanda
-  'Noord-Holland': 'Kuzey Hollanda (Amsterdam)', 'Zuid-Holland': 'Güney Hollanda (Rotterdam)',
-  'Utrecht': 'Utrecht', 'Noord-Brabant': 'Kuzey Brabant', 'Gelderland': 'Gelderland',
-  'Overijssel': 'Overijssel', 'Groningen': 'Groningen', 'Friesland': 'Friesland',
-  'Zeeland': 'Zelanda', 'Limburg': 'Limburg', 'Drenthe': 'Drenthe',
-  'Flevoland': 'Flevoland',
+  // ─── AVUSTURYA ────────────────────────────────────────────
+  'Wien': 'Viyana (Başkent)', 'Niederösterreich': 'Aşağı Avusturya', 'Oberösterreich': 'Yukarı Avusturya (Linz)',
+  'Steiermark': 'Styria (Graz)', 'Tirol': 'Tirol (Innsbruck)', 'Kärnten': 'Karintya (Klagenfurt)',
+  'Salzburg': 'Salzburg', 'Vorarlberg': 'Vorarlberg (Bregenz)', 'Burgenland': 'Burgenland (Eisenstadt)',
 
-  // Poland / Polonya
-  'Masovian': 'Masovya (Varşova)', 'Lesser Poland': 'Küçük Polonya (Kraków)',
-  'Silesian': 'Silezya', 'Greater Poland': 'Büyük Polonya',
-  'Lower Silesian': 'Aşağı Silezya', 'Lodz': 'Łódź',
-  'Pomeranian': 'Pomeranya (Gdańsk)', 'Lublin': 'Lublin', 'Subcarpathian': 'Subkarpatya',
-  'Kuyavian-Pomeranian': 'Kuyavya-Pomeranya', 'Warmia-Mazury': 'Varmiya-Mazurya',
-  'West Pomeranian': 'Batı Pomeranya', 'Opole': 'Opole', 'Lubusz': 'Lubusz',
-  'Holy Cross': 'Kutsal Haç (Kielce)', 'Podlaskie': 'Podlasye',
+  // ─── RUSYA ────────────────────────────────────────────────
+  'Moscow': 'Moskova (Başkent)', 'Saint Petersburg': 'Sankt-Peterburg', 'Moscow City': 'Moskova Şehri',
+  'Tatarstan': 'Tataristan (Kazan)', 'Krasnodar': 'Krasnodar (Soçi)', 'Sverdlovsk': 'Sverdlovsk (Yekaterinburg)',
+  'Novosibirsk': 'Novosibirsk', 'Nizhny Novgorod': 'Nijniy Novgorod', 'Samara': 'Samara',
+  'Bashkortostan': 'Başkurtistan (Ufa)', 'Rostov': 'Rostov-na-Donu', 'Chelyabinsk': 'Çelyabinsk',
 
-  // Czech Republic / Çekya
-  'Praha': 'Prag', 'Jihomoravský': 'Güney Moravya (Brno)',
-  'Středočeský': 'Orta Bohemya', 'Moravskoslezský': 'Moravya-Silezya (Ostrava)',
-  'Jihočeský': 'Güney Bohemya', 'Ústecký': 'Ústí', 'Zlínský': 'Zlín',
-  'Liberecký': 'Liberec', 'Královéhradecký': 'Hradec Králové',
-  'Pardubický': 'Pardubice', 'Vysočina': 'Vysočina', 'Olomoucký': 'Olomouc',
-  'Plzeňský': 'Pilsen', 'Karlovarský': 'Karlovy Vary',
+  // ─── JAPONYA ──────────────────────────────────────────────
+  'Tokyo': 'Tokyo (Başkent)', 'Osaka': 'Osaka', 'Kyoto': 'Kyoto', 'Hokkaido': 'Hokkaido (Sapporo)',
+  'Kanagawa': 'Kanagawa (Yokohama)', 'Aichi': 'Aichi (Nagoya)', 'Fukuoka': 'Fukuoka', 'Hyogo': 'Hyogo (Kobe)',
+  'Hiroshima': 'Hiroşima', 'Okinawa': 'Okinawa (Naha)',
 
-  // Romania / Romanya
-  'Bucuresti': 'Bükreş', 'Cluj': 'Cluj (Kluz)', 'Prahova': 'Prahova',
-  'Iasi': 'Yaş', 'Constanta': 'Köstence', 'Timis': 'Temeşvar', 'Brasov': 'Braşov',
+  // ─── AVUSTRALYA ───────────────────────────────────────────
+  'New South Wales': 'Yeni Güney Galler (Sidney)', 'Victoria': 'Victoria (Melbourne)',
+  'Queensland': 'Queensland (Brisbane)', 'Western Australia': 'Batı Avustralya (Perth)',
+  'South Australia': 'Güney Avustralya (Adelaide)', 'Tasmania': 'Tazmanya (Hobart)',
+  'Australian Capital Territory': 'Avustralya Başkent Bölgesi (Canberra)', 'Northern Territory': 'Kuzey Bölgesi (Darwin)',
 
-  // Croatia / Hırvatistan
-  'Grad Zagreb': 'Zagreb (Başkent)', 'Primorje-Gorski Kotar': 'Primorje (Rijeka)',
-  'Splitsko-Dalmatinska': 'Split-Dalmaçya', 'Istarska': 'İstriya', 'Dubrovačko-Neretvanska': 'Dubrovnik',
-  'Zadarska': 'Zadar',
+  // ─── KANADA ───────────────────────────────────────────────
+  'Ontario': 'Ontario (Toronto, Ottawa)', 'Quebec': 'Quebec (Montreal, Quebec City)',
+  'British Columbia': 'Britanya Kolumbiyası (Vancouver)', 'Alberta': 'Alberta (Calgary, Edmonton)',
+  'Manitoba': 'Manitoba (Winnipeg)', 'Saskatchewan': 'Saskatchewan (Regina)',
+  'Nova Scotia': 'Yeni İskoçya (Halifax)', 'New Brunswick': 'New Brunswick',
 
-  // Serbia / Sırbistan
-  'Beograd': 'Belgrad', 'Vojvodina': 'Voyvodina', 'Sumadija and Western Serbia': 'Şumadiya',
-
-  // Bulgaria / Bulgaristan
-  'Sofia-Grad': 'Sofya (Başkent)', 'Plovdiv': 'Filibe', 'Varna': 'Varna',
-  'Burgas': 'Burgaz', 'Stara Zagora': 'Stara Zagora', 'Ruse': 'Rusçuk',
-
-  // Sweden / İsveç
-  'Stockholms': 'Stockholm', 'Västra Götalands': 'Göteborg', 'Skåne': 'Skåne (Malmö)',
-  'Uppsala': 'Uppsala', 'Östergötlands': 'Östergötland',
-
-  // Norway / Norveç
-  'Oslo': 'Oslo', 'Viken': 'Viken', 'Vestland': 'Bergen (Vestland)',
-  'Trøndelag': 'Trøndelag (Trondheim)', 'Rogaland': 'Stavanger',
-
-  // Turkey / Türkiye (if using TR.json)
-  'Istanbul': 'İstanbul', 'Ankara': 'Ankara', 'Izmir': 'İzmir',
-  'Bursa': 'Bursa', 'Antalya': 'Antalya', 'Konya': 'Konya',
-  'Adana': 'Adana', 'Gaziantep': 'Gaziantep', 'Mersin': 'Mersin',
+  // ─── BREZİLYA ─────────────────────────────────────────────
+  'São Paulo': 'Sao Paulo', 'Rio de Janeiro': 'Rio de Janeiro', 'Bahia': 'Bahia (Salvador)',
+  'Minas Gerais': 'Minas Gerais (Belo Horizonte)', 'Paraná': 'Parana (Curitiba)',
+  'Rio Grande do Sul': 'Rio Grande do Sul (Porto Alegre)', 'Distrito Federal': 'Brasilia (Başkent)'
 };
-
-export function getLocalizedName(name) {
-  return REGION_TR_NAMES[name] || name;
-}
 
 export const COUNTRY_TR_NAMES = {
-  'North Macedonia': 'Kuzey Makedonya',
-  'Macedonia': 'Kuzey Makedonya',
-  'Albania': 'Arnavutluk',
-  'Kosovo': 'Kosova',
-  'Ukraine': 'Ukrayna',
-  'Belarus': 'Belarus',
-  'Lithuania': 'Litvanya',
-  'Letonia': 'Letonya',
-  'Latvia': 'Letonya',
-  'Estonia': 'Estonya',
-  'Moldova': 'Moldova',
-  'Slovakia': 'Slovakya',
-  'Slovenia': 'Slovenya',
-  'Serbia': 'Sırbistan',
-  'Bosnia and Herzegovina': 'Bosna-Hersek',
-  'Montenegro': 'Karadağ',
-  'Romania': 'Romanya',
-  'Bulgaria': 'Bulgaristan',
-  'Greece': 'Yunanistan',
-  'Turkey': 'Türkiye',
-  'Cyprus': 'Kıbrıs',
-  'Northern Cyprus': 'Kuzey Kıbrıs',
-  'Saudi Arabia': 'Suudi Arabistan',
-  'Iran': 'İran',
-  'Iraq': 'Irak',
-  'Syria': 'Suriye',
-  'Lebanon': 'Lübnan',
-  'Jordan': 'Ürdün',
-  'Israel': 'İsrail',
-  'Palestine': 'Filistin',
-  'Egypt': 'Mısır',
-  'Libya': 'Libya',
-  'Tunisia': 'Tunus',
-  'Algeria': 'Cezayir',
-  'Morocco': 'Fas',
-  'Sudan': 'Sudan',
-  'South Sudan': 'Güney Sudan',
-  'Ethiopia': 'Etiyopya',
-  'Kenya': 'Kenya',
-  'Tanzania': 'Tanzanya',
-  'United Republic of Tanzania': 'Tanzanya',
-  'South Africa': 'Güney Afrika',
-  'Nigeria': 'Nijerya',
-  'India': 'Hindistan',
-  'Pakistan': 'Pakistan',
-  'Bangladesh': 'Bangladeş',
-  'Afghanistan': 'Afganistan',
-  'Kazakhstan': 'Kazakistan',
-  'Uzbekistan': 'Özbekistan',
-  'Turkmenistan': 'Türkmenistan',
-  'Kyrgyzstan': 'Kırgızistan',
-  'Tajikistan': 'Tacikistan',
-  'Azerbaijan': 'Azerbaycan',
-  'Georgia': 'Gürcistan',
-  'Armenia': 'Ermenistan',
-  'China': 'Çin',
-  'Mongolia': 'Moğolistan',
-  'North Korea': 'Kuzey Kore',
-  'South Korea': 'Güney Kore',
-  'Japan': 'Japonya',
-  'Vietnam': 'Vietnam',
-  'Thailand': 'Tayland',
-  'Indonesia': 'Endonezya',
-  'Malaysia': 'Malezya',
-  'Philippines': 'Filipinler',
-  'Australia': 'Avustralya',
-  'New Zealand': 'Yeni Zelanda',
-  'United States of America': 'ABD',
-  'United States': 'ABD',
-  'Canada': 'Kanada',
-  'Mexico': 'Meksika',
-  'Brazil': 'Brezilya',
-  'Argentina': 'Arjantin',
-  'Chile': 'Şili',
-  'Colombia': 'Kolombiya',
-  'Peru': 'Peru',
-  'Venezuela': 'Venezüela',
-  'United Kingdom': 'Birleşik Krallık',
-  'Germany': 'Almanya',
-  'France': 'Fransa',
-  'Italy': 'İtalya',
-  'Spain': 'İspanya',
-  'Portugal': 'Portekiz',
-  'Netherlands': 'Hollanda',
-  'Belgium': 'Belçika',
-  'Switzerland': 'İsviçre',
-  'Austria': 'Avusturya',
-  'Poland': 'Polonya',
-  'Czech Republic': 'Çekya',
-  'Czechia': 'Çekya',
-  'Sweden': 'İsveç',
-  'Norway': 'Norveç',
-  'Finland': 'Finlandiya',
-  'Denmark': 'Danimarka',
-  'Ireland': 'İrlanda',
-  'Iceland': 'İzlanda'
+  'Turkey': 'Türkiye', 'Germany': 'Almanya', 'France': 'Fransa', 'Italy': 'İtalya',
+  'Spain': 'İspanya', 'United Kingdom': 'Birleşik Krallık', 'United States of America': 'Amerika Birleşik Devletleri',
+  'United States': 'Amerika Birleşik Devletleri', 'Netherlands': 'Hollanda', 'Greece': 'Yunanistan',
+  'Austria': 'Avusturya', 'Switzerland': 'İsviçre', 'Japan': 'Japonya', 'United Arab Emirates': 'Birleşik Arap Emirlikleri',
+  'Russia': 'Rusya', 'Portugal': 'Portekiz', 'Belgium': 'Belçika', 'Sweden': 'İsveç',
+  'Norway': 'Norveç', 'Finland': 'Finlandiya', 'Denmark': 'Danimarka', 'Poland': 'Polonya',
+  'Czech Republic': 'Çekya', 'Czechia': 'Çekya', 'Hungary': 'Macaristan', 'Romania': 'Romanya',
+  'Bulgaria': 'Bulgaristan', 'Croatia': 'Hırvatistan', 'Serbia': 'Sırbistan', 'Bosnia and Herzegovina': 'Bosna-Hersek',
+  'Montenegro': 'Karadağ', 'Albania': 'Arnavutluk', 'North Macedonia': 'Kuzey Makedonya',
+  'Macedonia': 'Kuzey Makedonya', 'Kosovo': 'Kosova', 'Slovenia': 'Slovenya', 'Slovakia': 'Slovakya',
+  'Ireland': 'İrlanda', 'Iceland': 'İzlanda', 'Cyprus': 'Kıbrıs', 'Malta': 'Malta',
+  'Luxembourg': 'Lüksemburg', 'Georgia': 'Gürcistan', 'Armenia': 'Ermenistan', 'Azerbaijan': 'Azerbaycan',
+  'Iran': 'İran', 'Iraq': 'Irak', 'Syria': 'Suriye', 'Lebanon': 'Lübnan', 'Jordan': 'Ürdün',
+  'Israel': 'İsrail', 'Saudi Arabia': 'Suudi Arabistan', 'Qatar': 'Katar', 'Kuwait': 'Kuveyt',
+  'Oman': 'Umman', 'Yemen': 'Yemen', 'Egypt': 'Mısır', 'Morocco': 'Fas', 'Algeria': 'Cezayir',
+  'Tunisia': 'Tunus', 'Libya': 'Libya', 'South Africa': 'Güney Afrika', 'Kenya': 'Kenya',
+  'Tanzania': 'Tanzanya', 'Ethiopia': 'Etiyopya', 'Nigeria': 'Nijerya', 'Ghana': 'Gana',
+  'Senegal': 'Senegal', 'China': 'Çin', 'India': 'Hindistan', 'South Korea': 'Güney Kore',
+  'Korea': 'Güney Kore', 'North Korea': 'Kuzey Kore', 'Thailand': 'Tayland', 'Vietnam': 'Vietnam',
+  'Indonesia': 'Endonezya', 'Malaysia': 'Malezya', 'Singapore': 'Singapur', 'Philippines': 'Filipinler',
+  'Pakistan': 'Pakistan', 'Bangladesh': 'Bangladeş', 'Kazakhstan': 'Kazakistan', 'Uzbekistan': 'Özbekistan',
+  'Turkmenistan': 'Türkmenistan', 'Kyrgyzstan': 'Kırgızistan', 'Tajikistan': 'Tacikistan',
+  'Mongolia': 'Moğolistan', 'Canada': 'Kanada', 'Mexico': 'Meksika', 'Brazil': 'Brezilya',
+  'Argentina': 'Arjantin', 'Chile': 'Şili', 'Colombia': 'Kolombiya', 'Peru': 'Peru',
+  'Ecuador': 'Ekvador', 'Uruguay': 'Uruguay', 'Paraguay': 'Paraguay', 'Bolivia': 'Bolivya',
+  'Venezuela': 'Venezuela', 'Cuba': 'Küba', 'Dominican Republic': 'Dominik Cumhuriyeti',
+  'Costa Rica': 'Kosta Rika', 'Panama': 'Panama', 'Australia': 'Avustralya', 'New Zealand': 'Yeni Zelanda'
 };
 
-export function getCountryLocalizedName(name) {
-  return COUNTRY_TR_NAMES[name] || name;
+export function getLocalizedName(englishName) {
+  if (!englishName) return 'Bilinmeyen Bölge';
+  return REGION_TR_NAMES[englishName] || englishName;
 }
 
+export function getCountryLocalizedName(englishName) {
+  if (!englishName) return 'Bilinmeyen Ülke';
+  return COUNTRY_TR_NAMES[englishName] || englishName;
+}

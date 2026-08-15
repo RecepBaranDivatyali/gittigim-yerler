@@ -149,11 +149,13 @@ function initMap(container) {
       style: f => countryStyle(findCountry(f)),
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
-        const label = c ? `${c.flag} ${c.name}` : (f.properties?.name || 'Ülke');
-        layer.bindTooltip(`<span>${label}</span>`, {
-          direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-          sticky: true, permanent: false
-        });
+        if (c && c.name) {
+          layer.bindTooltip(`<div class="map-label country-label">${c.flag} ${c.name}</div>`, {
+            direction: 'center',
+            permanent: true,
+            className: 'map-permanent-label country-label-wrap'
+          });
+        }
         layer.on('click', e => {
           if (!c) return;
           L.DomEvent.stopPropagation(e);
@@ -174,9 +176,10 @@ function initMap(container) {
       onEachFeature: (f, layer) => {
         const id = f.properties?.number;
         const prov = TURKEY_PROVINCES.find(p => p.id === id) || { id, name: f.properties?.name || 'İl' };
-        layer.bindTooltip(`<span>🇹🇷 ${prov.name}</span>`, {
-          direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-          sticky: true, permanent: false
+        layer.bindTooltip(`<div class="map-label province-label">${prov.name}</div>`, {
+          direction: 'center',
+          permanent: true,
+          className: 'map-permanent-label province-label-wrap'
         });
         layer.on('click', e => {
           L.DomEvent.stopPropagation(e);
@@ -216,6 +219,11 @@ function initMap(container) {
 // ─── View change handler (regions lazy-loaded on zoom) ────────────────────────
 async function onViewChange() {
   const zoom = map.getZoom();
+  const mapEl = map.getContainer();
+  if (mapEl) {
+    if (zoom >= REGION_ZOOM) mapEl.classList.add('zoom-regional');
+    else mapEl.classList.remove('zoom-regional');
+  }
 
   // Turkey province layer zoom control
   if (turkeyLayer) {
@@ -386,9 +394,10 @@ function buildRegionLayer(data, code) {
     onEachFeature: (f, layer) => {
       const raw = f.properties?.name || f.properties?.NAME_1 || 'Bölge';
       const display = getLocalizedName(raw);
-      layer.bindTooltip(`<span>${flag} ${display}</span>`, {
-        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-        sticky: true, permanent: false
+      layer.bindTooltip(`<div class="map-label region-label">${display}</div>`, {
+        direction: 'center',
+        permanent: true,
+        className: 'map-permanent-label region-label-wrap'
       });
       layer.on('click', e => {
         L.DomEvent.stopPropagation(e);
@@ -431,9 +440,10 @@ function buildSubregionLayer(data, code) {
     onEachFeature: (f, layer) => {
       const raw = f.properties?.name || 'Şehir';
       const display = getLocalizedName(raw);
-      layer.bindTooltip(`<span>${flag} ${display}</span>`, {
-        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-        sticky: true, permanent: false
+      layer.bindTooltip(`<div class="map-label subregion-label">${display}</div>`, {
+        direction: 'center',
+        permanent: true,
+        className: 'map-permanent-label subregion-label-wrap'
       });
       layer.on('click', e => {
         L.DomEvent.stopPropagation(e);
