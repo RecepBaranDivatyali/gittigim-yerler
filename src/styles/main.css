@@ -2352,7 +2352,7 @@ svg, g, path {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   ON-MAP ENGRAVED TATTOO LABELS (Subtle Country Watermark on Map)
+   ENGRAVED MAP WATERMARK LABELS (Tattooed onto Landmass)
 ═══════════════════════════════════════════════════════════════════ */
 .leaflet-tooltip.map-tattoo-label {
   background: transparent !important;
@@ -2361,6 +2361,9 @@ svg, g, path {
   padding: 0 !important;
   pointer-events: none !important;
   user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .leaflet-tooltip.map-tattoo-label::before {
@@ -2368,25 +2371,20 @@ svg, g, path {
 }
 
 .country-tattoo {
-  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(248, 250, 252, 0.42);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 0.42);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-}
-
-@media (max-width: 768px) {
-  .country-tattoo {
-    font-size: 10.5px;
-    letter-spacing: 0.07em;
-  }
+  text-align: center;
+  line-height: 1;
 }

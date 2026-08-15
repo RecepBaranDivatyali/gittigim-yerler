@@ -166,6 +166,7 @@ function initMap(container) {
         });
       }
     }).addTo(map);
+    setTimeout(updateCountryLabels, 60);
   });
 
   // Load Turkey Provinces
@@ -201,6 +202,7 @@ function initMap(container) {
 
     try {
       await onViewChange();
+      updateCountryLabels();
     } catch {} finally {
       isViewUpdating = false;
       if (viewUpdatePending) {
@@ -210,8 +212,44 @@ function initMap(container) {
   }
 
   map.on('move zoom moveend zoomend', requestViewUpdate);
-  map.on('zoomstart', () => {
-    map.eachLayer(l => l.closeTooltip && l.closeTooltip());
+}
+
+function updateCountryLabels() {
+  if (!countriesLayer || !map) return;
+  countriesLayer.eachLayer(layer => {
+    const c = findCountry(layer.feature);
+    if (!c || !c.name) return;
+
+    const tooltip = layer.getTooltip();
+    if (!tooltip) return;
+
+    const el = tooltip.getElement();
+    if (!el) return;
+
+    try {
+      const bounds = layer.getBounds();
+      const nw = map.latLngToLayerPoint(bounds.getNorthWest());
+      const se = map.latLngToLayerPoint(bounds.getSouthEast());
+      const pixelWidth = Math.abs(se.x - nw.x);
+      const pixelHeight = Math.abs(se.y - nw.y);
+
+      const textLen = c.name.length;
+      const minRequiredWidth = Math.max(34, textLen * 4.5);
+
+      if (pixelWidth < minRequiredWidth || pixelHeight < 14) {
+        el.style.display = 'none';
+        return;
+      }
+
+      el.style.display = 'flex';
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.80);
+      const dynamicFontSize = Math.min(13, Math.max(8.5, Math.floor(pixelWidth / (textLen * 1.05))));
+
+      el.style.maxWidth = `${maxAllowedWidth}px`;
+      el.style.fontSize = `${dynamicFontSize}px`;
+    } catch (e) {
+      el.style.display = 'none';
+    }
   });
 }
 
