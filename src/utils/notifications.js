@@ -45,12 +45,11 @@ function showToast(achievement, onComplete) {
     </div>
     <div class="ach-toast-content">
       <div class="ach-toast-header">
-        <span class="ach-toast-badge">🎉 YENİ BAŞARIM!</span>
+        <span class="ach-toast-badge">🎉 YENİ BAŞARIM AÇILDI!</span>
       </div>
       <div class="ach-toast-title">${achievement.title}</div>
       <div class="ach-toast-desc">${achievement.desc || ''}</div>
     </div>
-    <button class="ach-toast-close" aria-label="Kapat">✕</button>
   `;
 
   container.appendChild(toast);
@@ -74,11 +73,6 @@ function showToast(achievement, onComplete) {
       onComplete();
     }, 400);
   }
-
-  toast.querySelector('.ach-toast-close').addEventListener('click', (e) => {
-    e.stopPropagation();
-    dismiss();
-  });
 
   toast.addEventListener('click', dismiss);
 

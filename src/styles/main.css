@@ -2118,12 +2118,15 @@ svg, g, path {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 2px;
 }
 
 .ach-toast-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 
@@ -2230,4 +2233,120 @@ svg, g, path {
   .ach-toast-desc {
     font-size: 0.72rem;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMPARE TAB ENHANCEMENTS (Battle Analytics & Common Routes)
+═══════════════════════════════════════════════════════════════════ */
+.compare-input-card {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.compare-breakdown {
+  animation: fadeIn 0.4s ease;
+}
+
+.compare-bars-card {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.comp-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comp-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.comp-bar-track {
+  height: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 99px;
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+}
+
+.comp-bar-mine {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.comp-bar-other {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.comp-card-box {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comp-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comp-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.comp-chip {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comp-chip.common {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.comp-chip.friend-only {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+}
+
+.comp-chip.mine-only {
+  background: rgba(255, 87, 34, 0.15);
+  border: 1px solid rgba(255, 87, 34, 0.35);
+  color: #ff5722;
 }

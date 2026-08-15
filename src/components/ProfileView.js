@@ -1,5 +1,6 @@
 import { getStorageData, calculateStats } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
+import { WORLD_COUNTRIES } from '../data/worldData.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare
@@ -37,7 +38,7 @@ export function renderProfileView(container, onBack) {
     tabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
         activeTab = e.target.getAttribute('data-tab');
-        render(); // re-render layout
+        render();
       });
     });
 
@@ -87,16 +88,16 @@ export function renderProfileView(container, onBack) {
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">Madalya</span></div>
           </div>
           ${earnedMedals.length > 0 ? `
+            <div class="profile-badges-header" style="font-size:0.85rem;color:#94a3b8;font-weight:600;margin-bottom:8px;">Kazanılan Rozetler (${earnedMedals.length})</div>
             <div class="profile-badges">
-              ${earnedMedals.slice(0, 12).map(m => `<span class="badge-icon" title="${m.title}">${m.icon}</span>`).join('')}
-              ${earnedMedals.length > 12 ? `<span style="color:#94a3b8;font-size:0.8rem;align-self:center;">+${earnedMedals.length - 12}</span>` : ''}
+              ${earnedMedals.map(m => `<span class="badge-icon" title="${m.title} - ${m.desc}">${m.icon}</span>`).join('')}
             </div>
-          ` : '<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">Henüz madalya kazanılmadı.</div>'}
+          ` : '<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!</div>'}
         </div>
         
         <div class="share-section">
           <h3>Profilini Paylaş</h3>
-          <p>Aşağıdaki kodu kopyalayarak profilini ve ziyaret ettiğin yerleri arkadaşlarınla paylaşabilirsin.</p>
+          <p>Aşağıdaki kodu kopyalayarak profilini ve seyahat haritanı arkadaşlarına gönder veya karşılaştırma yap.</p>
           <div class="share-code-row">
             <input type="text" class="share-code-input" id="profile-share-code" readonly value="${shareCode}">
             <button class="share-copy-btn" id="profile-copy-btn">Kopyala</button>
@@ -133,7 +134,7 @@ export function renderProfileView(container, onBack) {
     let html = `
       <div class="achievements-view">
         <div class="ach-header">
-          <div class="ach-progress-text">${earnedCount} / ${total} Madalya Kazanıldı</div>
+          <div class="ach-progress-text">${earnedCount} / ${total} Madalya Kazanıldı (%${percent})</div>
           <div class="ach-progress-bar-wrap">
             <div class="ach-progress-bar" style="width: ${percent}%"></div>
           </div>
@@ -144,9 +145,13 @@ export function renderProfileView(container, onBack) {
       const catAchs = achievements.filter(a => a.category === catId);
       if (catAchs.length === 0) return;
 
+      const catEarned = catAchs.filter(a => earnedIds.includes(a.id)).length;
+
       html += `
         <div class="ach-category">
-          <div class="ach-cat-title" style="color:${cat.color}">${cat.label}</div>
+          <div class="ach-cat-title" style="color:${cat.color}">
+            ${cat.label} <span style="font-size:0.8rem;color:#64748b;font-weight:500;">(${catEarned}/${catAchs.length})</span>
+          </div>
           <div class="ach-grid">
             ${catAchs.map(ach => {
               const isEarned = earnedIds.includes(ach.id);
@@ -173,47 +178,60 @@ export function renderProfileView(container, onBack) {
       <div class="compare-view">
         <div class="compare-top">
           <div class="compare-mine" id="compare-mine-area"></div>
-          <div class="compare-vs">VS</div>
+          <div class="compare-vs">⚔️ VS</div>
           <div class="compare-other">
-            <div id="compare-input-area" style="background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px;">
-              <h3 style="color:#f8fafc;margin-bottom:12px;font-size:1.1rem;">Arkadaşının Profilini Yükle</h3>
-              <textarea class="compare-code-input" id="compare-code" rows="4" placeholder="Arkadaşından aldığın paylaşım kodunu buraya yapıştır..."></textarea>
-              <button class="compare-load-btn" id="compare-load-btn">Profili Yükle</button>
+            <div id="compare-input-area" class="compare-input-card">
+              <h3 style="color:#f8fafc;margin-bottom:6px;font-size:1.15rem;">Arkadaşının Profilini Yükle</h3>
+              <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:14px;">Arkadaşının sana verdiği paylaşım kodunu yapıştırarak seyahatlerinizi yan yana karşılaştırın.</p>
+              <textarea class="compare-code-input" id="compare-code" rows="3" placeholder="Paylaşım kodunu buraya yapıştır..."></textarea>
+              <button class="compare-load-btn" id="compare-load-btn">⚡ Profili Karşılaştır</button>
             </div>
-            <div id="compare-other-area" style="display:none;margin-top:20px;"></div>
+            <div id="compare-other-area" style="display:none;"></div>
           </div>
         </div>
+        <div id="compare-results-area" style="display:none;margin-top:24px;"></div>
       </div>
     `;
 
-    // Render my profile card simply
+    // Render my profile card
     const myProfileStr = localStorage.getItem('gv_profile');
     const myProfile = myProfileStr ? JSON.parse(myProfileStr) : { username: 'Ben', avatar: '🧭' };
     
     let myStats = { worldCountryCount: 0, turkeyCount: 0, worldCityCount: 0 };
-    try { myStats = calculateStats(); } catch(e) {}
+    let myEarnedCount = 0;
+    let myStorage = { worldVisits: {}, turkeyVisits: {}, worldCities: [] };
+
+    try {
+      myStorage = getStorageData();
+      myStats = calculateStats();
+      myEarnedCount = getEarnedAchievements(myStorage, myStats).length;
+    } catch(e) {}
 
     document.getElementById('compare-mine-area').innerHTML = `
-      <div class="profile-card" style="margin:0;">
+      <div class="profile-card" style="margin:0;height:100%;">
         <div class="profile-card-label" style="background:rgba(59,130,246,0.2);color:#3b82f6;border-color:rgba(59,130,246,0.3);">BENİM PROFİLİM</div>
         <div class="profile-header">
           <div class="profile-avatar">${myProfile.avatar}</div>
           <div>
             <div class="profile-username">${myProfile.username}</div>
-            <div class="profile-bio">${myProfile.bio || ''}</div>
+            <div class="profile-bio">${myProfile.bio || 'Dünyayı keşfediyorum'}</div>
           </div>
         </div>
         <div class="profile-stats">
           <div class="pstat"><span class="pstat-num" style="color:#ff5722">${myStats.worldCountryCount || 0}</span><span class="pstat-lbl">Ülke</span></div>
           <div class="pstat"><span class="pstat-num" style="color:#ef4444">${myStats.turkeyCount || 0}</span><span class="pstat-lbl">TR İl</span></div>
           <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${myStats.worldCityCount || 0}</span><span class="pstat-lbl">Şehir</span></div>
+          <div class="pstat"><span class="pstat-num" style="color:#10b981">${myEarnedCount}</span><span class="pstat-lbl">Madalya</span></div>
         </div>
       </div>
     `;
 
     document.getElementById('compare-load-btn').addEventListener('click', () => {
       const code = document.getElementById('compare-code').value.trim();
-      if (!code) return;
+      if (!code) {
+        alert('Lütfen bir paylaşım kodu girin!');
+        return;
+      }
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(code)));
         const otherProfile = decoded.profile || { username: 'Arkadaş', avatar: '👤' };
@@ -221,43 +239,160 @@ export function renderProfileView(container, onBack) {
         const otherTurkeyObj = decoded.turkeyVisits || {};
         const otherCitiesArr = decoded.worldCities || [];
 
-        const otherCountryCount = Array.isArray(otherWorldObj) ? otherWorldObj.length : Object.entries(otherWorldObj).filter(([k, v]) => !k.includes('::') && v?.status === 'visited').length;
-        const otherTurkeyCount = Array.isArray(otherTurkeyObj) ? otherTurkeyObj.length : Object.values(otherTurkeyObj).filter(v => v?.status === 'visited').length;
+        const otherCountryCodes = Array.isArray(otherWorldObj) 
+          ? otherWorldObj 
+          : Object.entries(otherWorldObj).filter(([k, v]) => !k.includes('::') && v?.status === 'visited').map(([k]) => k);
+
+        const myCountryCodes = Object.entries(myStorage.worldVisits)
+          .filter(([k, v]) => !k.includes('::') && v?.status === 'visited')
+          .map(([k]) => k);
+
+        const otherTurkeyCount = Array.isArray(otherTurkeyObj) 
+          ? otherTurkeyObj.length 
+          : Object.values(otherTurkeyObj).filter(v => v?.status === 'visited').length;
+
         const otherCitiesCount = Math.max(
           Array.isArray(otherCitiesArr) ? otherCitiesArr.length : 0,
           !Array.isArray(otherWorldObj) ? Object.keys(otherWorldObj).filter(k => k.includes('::') && otherWorldObj[k]?.status === 'visited').length : 0
         );
 
+        // Calculate other's earned medals
+        let otherEarnedCount = 0;
+        try {
+          const fakeStorage = { worldVisits: otherWorldObj, turkeyVisits: otherTurkeyObj, worldCities: otherCitiesArr };
+          const fakeBase = {
+            worldCountryCount: otherCountryCodes.length,
+            turkeyCount: otherTurkeyCount,
+            worldCityCount: otherCitiesCount,
+            continentCounts: {}
+          };
+          otherEarnedCount = getEarnedAchievements(fakeStorage, fakeBase).length;
+        } catch {}
+
+        // Find common countries and unique countries
+        const commonCodes = myCountryCodes.filter(c => otherCountryCodes.includes(c));
+        const onlyOtherCodes = otherCountryCodes.filter(c => !myCountryCodes.includes(c));
+        const onlyMyCodes = myCountryCodes.filter(c => !otherCountryCodes.includes(c));
+
+        function getCountryDisplay(code) {
+          const country = WORLD_COUNTRIES.find(c => c.code === code);
+          return country ? `${country.flag} ${country.name}` : code;
+        }
+
+        // Show other card
         document.getElementById('compare-input-area').style.display = 'none';
         const otherArea = document.getElementById('compare-other-area');
         otherArea.style.display = 'block';
         otherArea.innerHTML = `
-          <div class="profile-card" style="margin:0;">
+          <div class="profile-card" style="margin:0;height:100%;">
             <div class="profile-card-label" style="background:rgba(16,185,129,0.2);color:#10b981;border-color:rgba(16,185,129,0.3);">ARKADAŞIN</div>
             <div class="profile-header">
               <div class="profile-avatar">${otherProfile.avatar || '👤'}</div>
               <div>
                 <div class="profile-username">${otherProfile.username || 'Arkadaş'}</div>
-                <div class="profile-bio">${otherProfile.bio || ''}</div>
+                <div class="profile-bio">${otherProfile.bio || 'Dünyayı keşfediyor'}</div>
               </div>
             </div>
             <div class="profile-stats">
-              <div class="pstat"><span class="pstat-num" style="color:#ff5722">${otherCountryCount}</span><span class="pstat-lbl">Ülke</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:#ff5722">${otherCountryCodes.length}</span><span class="pstat-lbl">Ülke</span></div>
               <div class="pstat"><span class="pstat-num" style="color:#ef4444">${otherTurkeyCount}</span><span class="pstat-lbl">TR İl</span></div>
               <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${otherCitiesCount}</span><span class="pstat-lbl">Şehir</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:#10b981">${otherEarnedCount}</span><span class="pstat-lbl">Madalya</span></div>
             </div>
-            <button id="compare-reset-btn" style="width:100%;background:rgba(255,255,255,0.1);border:none;border-radius:10px;color:#f8fafc;padding:10px;margin-top:16px;cursor:pointer;">Başka Birini Karşılaştır</button>
+            <button id="compare-reset-btn" style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#f8fafc;padding:9px;margin-top:14px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all .2s;">🔄 Başka Birini Karşılaştır</button>
           </div>
         `;
 
         document.getElementById('compare-reset-btn').addEventListener('click', () => {
           document.getElementById('compare-other-area').style.display = 'none';
           document.getElementById('compare-input-area').style.display = 'block';
+          document.getElementById('compare-results-area').style.display = 'none';
           document.getElementById('compare-code').value = '';
         });
 
+        // Detailed battle results
+        const resultsArea = document.getElementById('compare-results-area');
+        resultsArea.style.display = 'block';
+        resultsArea.innerHTML = `
+          <div class="compare-breakdown">
+            <h3 style="color:#f8fafc;font-size:1.2rem;margin-bottom:16px;text-align:center;">📊 Seyahat Karşılaştırma Analizi</h3>
+            
+            <!-- Comparison Metric Bars -->
+            <div class="compare-bars-card">
+              <div class="comp-bar-item">
+                <div class="comp-bar-label">
+                  <span>${myProfile.username} (${myStats.worldCountryCount || 0})</span>
+                  <span style="color:#f59e0b;font-weight:700;">🌍 Gezilen Ülke</span>
+                  <span>(${otherCountryCodes.length}) ${otherProfile.username}</span>
+                </div>
+                <div class="comp-bar-track">
+                  <div class="comp-bar-mine" style="width:${((myStats.worldCountryCount || 0) / Math.max((myStats.worldCountryCount || 0) + otherCountryCodes.length, 1)) * 100}%"></div>
+                  <div class="comp-bar-other" style="width:${(otherCountryCodes.length / Math.max((myStats.worldCountryCount || 0) + otherCountryCodes.length, 1)) * 100}%"></div>
+                </div>
+              </div>
+
+              <div class="comp-bar-item" style="margin-top:14px;">
+                <div class="comp-bar-label">
+                  <span>${myProfile.username} (${myStats.turkeyCount || 0})</span>
+                  <span style="color:#ef4444;font-weight:700;">🇹🇷 Türkiye İlleri</span>
+                  <span>(${otherTurkeyCount}) ${otherProfile.username}</span>
+                </div>
+                <div class="comp-bar-track">
+                  <div class="comp-bar-mine" style="width:${((myStats.turkeyCount || 0) / Math.max((myStats.turkeyCount || 0) + otherTurkeyCount, 1)) * 100}%"></div>
+                  <div class="comp-bar-other" style="width:${(otherTurkeyCount / Math.max((myStats.turkeyCount || 0) + otherTurkeyCount, 1)) * 100}%"></div>
+                </div>
+              </div>
+
+              <div class="comp-bar-item" style="margin-top:14px;">
+                <div class="comp-bar-label">
+                  <span>${myProfile.username} (${myEarnedCount})</span>
+                  <span style="color:#10b981;font-weight:700;">🏆 Kazanılan Madalyalar</span>
+                  <span>(${otherEarnedCount}) ${otherProfile.username}</span>
+                </div>
+                <div class="comp-bar-track">
+                  <div class="comp-bar-mine" style="width:${(myEarnedCount / Math.max(myEarnedCount + otherEarnedCount, 1)) * 100}%"></div>
+                  <div class="comp-bar-other" style="width:${(otherEarnedCount / Math.max(myEarnedCount + otherEarnedCount, 1)) * 100}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Common & Unique Countries Grid -->
+            <div class="compare-details-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-top:20px;">
+              <!-- Common Countries -->
+              <div class="comp-card-box">
+                <div class="comp-card-title" style="color:#10b981;">🤝 Ortak Gezilen Ülkeler (${commonCodes.length})</div>
+                ${commonCodes.length > 0 ? `
+                  <div class="comp-chips-wrap">
+                    ${commonCodes.map(c => `<span class="comp-chip common">${getCountryDisplay(c)}</span>`).join('')}
+                  </div>
+                ` : '<div style="color:#64748b;font-size:0.85rem;">Henüz ortak gezdiğiniz bir ülke yok.</div>'}
+              </div>
+
+              <!-- Only Friend Visited -->
+              <div class="comp-card-box">
+                <div class="comp-card-title" style="color:#3b82f6;">💡 Arkadaşının Gidip Senin Gitmediğin (${onlyOtherCodes.length})</div>
+                ${onlyOtherCodes.length > 0 ? `
+                  <div class="comp-chips-wrap">
+                    ${onlyOtherCodes.map(c => `<span class="comp-chip friend-only">${getCountryDisplay(c)}</span>`).join('')}
+                  </div>
+                ` : '<div style="color:#64748b;font-size:0.85rem;">Arkadaşının gidip senin gitmediğin bir ülke yok.</div>'}
+              </div>
+
+              <!-- Only Mine Visited -->
+              <div class="comp-card-box">
+                <div class="comp-card-title" style="color:#ff5722;">🌟 Senin Gidip Arkadaşının Gitmediği (${onlyMyCodes.length})</div>
+                ${onlyMyCodes.length > 0 ? `
+                  <div class="comp-chips-wrap">
+                    ${onlyMyCodes.map(c => `<span class="comp-chip mine-only">${getCountryDisplay(c)}</span>`).join('')}
+                  </div>
+                ` : '<div style="color:#64748b;font-size:0.85rem;">Senin gidip arkadaşının gitmediği bir ülke yok.</div>'}
+              </div>
+            </div>
+          </div>
+        `;
+
       } catch (err) {
-        alert('Geçersiz paylaşım kodu!');
+        alert('Geçersiz veya bozuk paylaşım kodu!');
       }
     });
   }
