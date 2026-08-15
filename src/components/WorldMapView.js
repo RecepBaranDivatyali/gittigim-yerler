@@ -2,7 +2,7 @@ import L from 'leaflet';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { getLocalizedName, getCountryLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, resetTravelData } from '../utils/storage.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const REGION_ZOOM = 5.2;
@@ -78,10 +78,30 @@ export function renderWorldMapView(container, options = {}) {
   initMap(container);
 
   container.querySelector('#btn-reset-data').addEventListener('click', () => {
-    if (confirm('Tüm işaretleme verilerini silmek istediğinizden emin misiniz?')) {
-      ['gittigim_yerler_turkey_v2','gittigim_yerler_world_v2',
-       'gittigim_yerler_cities_v2','gittigim_yerler_profile_v2'].forEach(k => localStorage.removeItem(k));
-      location.reload();
+    if (confirm('Haritadaki tüm işaretlemeleri temizlemek istiyor musunuz? Hesabınız ve profiliniz korunacaktır.')) {
+      resetTravelData();
+      countriesLayer?.eachLayer(l => {
+        const c = findCountry(l.feature);
+        l.setStyle(countryStyle(c));
+      });
+      if (turkeyLayer) {
+        turkeyLayer.eachLayer(l => {
+          l.setStyle({
+            fillColor: 'rgba(255, 87, 34, 0.08)',
+            fillOpacity: 0.25,
+            color: '#ff5722',
+            weight: 0.8
+          });
+        });
+      }
+      Object.keys(regionLayers).forEach(code => {
+        if (regionLayers[code]) {
+          regionLayers[code].eachLayer(l => {
+            l.setStyle(regionStyle(null));
+          });
+        }
+      });
+      refreshStats();
     }
   });
 

@@ -171,6 +171,15 @@ export function exportBackup() {
   URL.revokeObjectURL(url);
 }
 
+export function resetTravelData() {
+  localStorage.removeItem(STORAGE_KEYS.TURKEY_VISITS);
+  localStorage.removeItem(STORAGE_KEYS.WORLD_VISITS);
+  localStorage.removeItem(STORAGE_KEYS.WORLD_CITIES);
+  localStorage.removeItem('gv_unlocked_achievements');
+  unlockedCache = [];
+  notifyStateChange();
+}
+
 export function importBackup(fileContent) {
   try {
     const data = JSON.parse(fileContent);
