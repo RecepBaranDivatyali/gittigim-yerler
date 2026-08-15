@@ -272,29 +272,28 @@ async function onViewChange() {
     });
   }
 
-  // Refresh country layer visual styles at the end
-  countriesLayer?.eachLayer(l => {
-    const c = findCountry(l.feature);
-    let style = countryStyle(c);
-    l.setStyle(style);
-    
-    // Z-index: Bring visited countries to front so their borders aren't hidden by unvisited neighbors
-    if (c) {
-      const { worldVisits } = getStorageData();
-      if (ns(worldVisits[c.code]?.status) !== 'unvisited' && l.bringToFront) {
-        l.bringToFront();
+  // Only refresh country layer visual styles when zoom crosses regional threshold (prevents pan flicker)
+  const isRegional = zoom >= REGION_ZOOM;
+  if (window.__lastZoomWasRegional !== isRegional) {
+    window.__lastZoomWasRegional = isRegional;
+    countriesLayer?.eachLayer(l => {
+      const c = findCountry(l.feature);
+      let style = countryStyle(c);
+      l.setStyle(style);
+      
+      // Z-index: Bring visited countries to front so their borders aren't hidden by unvisited neighbors
+      if (c) {
+        const { worldVisits } = getStorageData();
+        if (ns(worldVisits[c.code]?.status) !== 'unvisited' && l.bringToFront) {
+          l.bringToFront();
+        }
       }
-    }
 
-    // Leaflet setStyle doesn't update pointer-events dynamically, so we do it manually
-    if (l._path) {
-      if (style.interactive === false) {
-        l._path.style.pointerEvents = 'none';
-      } else {
-        l._path.style.pointerEvents = 'visiblePainted';
+      if (l._path) {
+        l._path.style.pointerEvents = style.interactive === false ? 'none' : 'visiblePainted';
       }
-    }
-  });
+    });
+  }
 }
 
 function refreshCountryStyle(code) {

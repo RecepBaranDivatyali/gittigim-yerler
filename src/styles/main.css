@@ -1891,9 +1891,9 @@ svg, g, path {
     font-size: 0.68rem;
   }
 
-  /* Stats chip at bottom-left: with plenty of clearance above mobile browser bar */
+  /* Stats chip at bottom-left: positioned comfortably above mobile browser navigation bars */
   #stats-overlay {
-    bottom: max(38px, calc(env(safe-area-inset-bottom) + 26px));
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 60px));
     left: max(12px, env(safe-area-inset-left));
     max-width: calc(100vw - 24px);
     gap: 6px;

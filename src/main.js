@@ -5,7 +5,7 @@ import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange } from './utils/storage.js';
 
 function syncAppHeight() {
-  const h = window.innerHeight;
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.documentElement.style.setProperty('--app-height', `${h}px`);
 }
 
@@ -14,9 +14,13 @@ function initApp() {
   if (!appContainer) return;
 
   syncAppHeight();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncAppHeight);
+    window.visualViewport.addEventListener('scroll', syncAppHeight);
+  }
   window.addEventListener('resize', syncAppHeight);
   window.addEventListener('orientationchange', () => {
-    setTimeout(syncAppHeight, 100);
+    setTimeout(syncAppHeight, 150);
   });
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
