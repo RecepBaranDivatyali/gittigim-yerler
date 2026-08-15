@@ -9,7 +9,8 @@ export const ACHIEVEMENT_CATEGORIES = {
 
 function getContinentCount(s, continentKey) {
   const counts = s.continentCounts || {};
-  return (counts[continentKey.toLowerCase()] || 0) + (counts[continentKey] || 0);
+  const key = continentKey.toLowerCase();
+  return counts[key] !== undefined ? counts[key] : (counts[continentKey] || 0);
 }
 
 function getVisitedCodes(s) {
