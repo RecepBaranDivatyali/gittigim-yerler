@@ -198,7 +198,7 @@ function initMap(container) {
 
     try {
       await onViewChange();
-      updateCountryLabels();
+      scheduleLabelUpdate();
     } catch {} finally {
       isViewUpdating = false;
       if (viewUpdatePending) {
@@ -207,7 +207,7 @@ function initMap(container) {
     }
   }
 
-  map.on('move zoom moveend zoomend', requestViewUpdate);
+  map.on('moveend zoomend', requestViewUpdate);
 }
 
 const IGNORED_LABEL_CODES = new Set([
@@ -227,26 +227,44 @@ function measureTextWidth(text, fontSize) {
   return _measureCtx.measureText(text.toUpperCase()).width;
 }
 
-// Find the visual centroid: the center of the largest polygon ring
-// This fixes countries with distant islands (e.g. Greece, France, USA)
+// Proper area-weighted centroid of a polygon ring (Shoelace formula)
+// Unlike simple vertex average, this is NOT biased by vertex density on coastlines
+function polygonCentroid(ring) {
+  let area = 0, cx = 0, cy = 0;
+  const n = ring.length;
+  for (let i = 0; i < n - 1; i++) {
+    const x0 = ring[i][0], y0 = ring[i][1];
+    const x1 = ring[i + 1][0], y1 = ring[i + 1][1];
+    const cross = x0 * y1 - x1 * y0;
+    area += cross;
+    cx += (x0 + x1) * cross;
+    cy += (y0 + y1) * cross;
+  }
+  area /= 2;
+  if (Math.abs(area) < 1e-10) {
+    // Degenerate polygon, fall back to simple average
+    let sx = 0, sy = 0;
+    for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
+    return [sx / n, sy / n, Math.abs(area)];
+  }
+  cx /= (6 * area);
+  cy /= (6 * area);
+  return [cx, cy, Math.abs(area)];
+}
+
+// Find the visual centroid: area-weighted centroid of the largest polygon
 function getVisualCenter(feature) {
   const geom = feature.geometry;
   if (!geom) return null;
 
-  let largestRing = null;
-  let largestArea = 0;
+  let bestCx = 0, bestCy = 0, bestArea = 0;
 
   function processRing(ring) {
-    // Shoelace formula for polygon area
-    let area = 0;
-    for (let i = 0; i < ring.length - 1; i++) {
-      area += ring[i][0] * ring[i + 1][1];
-      area -= ring[i + 1][0] * ring[i][1];
-    }
-    area = Math.abs(area) / 2;
-    if (area > largestArea) {
-      largestArea = area;
-      largestRing = ring;
+    const [cx, cy, area] = polygonCentroid(ring);
+    if (area > bestArea) {
+      bestArea = area;
+      bestCx = cx;
+      bestCy = cy;
     }
   }
 
@@ -256,18 +274,16 @@ function getVisualCenter(feature) {
     geom.coordinates.forEach(poly => processRing(poly[0]));
   }
 
-  if (!largestRing || largestRing.length === 0) return null;
+  if (bestArea === 0) return null;
+  return L.latLng(bestCy, bestCx); // GeoJSON is [lng, lat]
+}
 
-  // Centroid of the largest polygon
-  let cx = 0, cy = 0;
-  for (let i = 0; i < largestRing.length; i++) {
-    cx += largestRing[i][0];
-    cy += largestRing[i][1];
-  }
-  cx /= largestRing.length;
-  cy /= largestRing.length;
+// Debounce timer for label updates during zoom/pan
+let _labelUpdateTimer = null;
 
-  return L.latLng(cy, cx); // Note: GeoJSON is [lng, lat]
+function scheduleLabelUpdate() {
+  if (_labelUpdateTimer) clearTimeout(_labelUpdateTimer);
+  _labelUpdateTimer = setTimeout(updateCountryLabels, 120);
 }
 
 function updateCountryLabels() {
@@ -289,9 +305,9 @@ function updateCountryLabels() {
     } catch { return 0; }
   });
 
-  // Get current viewport bounds in layer points for edge clipping
+  // Get current viewport bounds for edge clipping
   const mapSize = map.getSize();
-  const vpPadding = 30; // pixels from viewport edge to hide labels
+  const vpPadding = 20;
 
   layers.forEach(layer => {
     const f = layer.feature;
@@ -318,40 +334,39 @@ function updateCountryLabels() {
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
-      // Dynamic font size: scale with country pixel width but cap it
+      // Dynamic font size: scale with country pixel width
       const textLen = c.name.length;
-      const dynamicFontSize = Math.min(14, Math.max(9, Math.floor(pixelWidth / (textLen * 1.4))));
+      const dynamicFontSize = Math.min(15, Math.max(9, Math.floor(pixelWidth / (textLen * 1.3))));
 
       // Measure actual rendered text width with canvas
       const actualTextWidth = measureTextWidth(c.name, dynamicFontSize);
-      // Add letter-spacing (0.12em per char)
       const letterSpacingExtra = textLen * dynamicFontSize * 0.12;
       const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-      // Strict: text must fit within 72% of country pixel width
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.72);
-      if (totalTextWidth > maxAllowedWidth || pixelHeight < 24) {
-        return; // Text too wide or country too short — skip entirely
+      // Strict: text must fit within 70% of country pixel width
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.70);
+      if (totalTextWidth > maxAllowedWidth || pixelHeight < 22) {
+        return;
       }
 
-      // Use visual centroid (largest polygon center) instead of bounding box center
+      // Use proper area-weighted visual centroid
       const visualCenter = getVisualCenter(f) || bounds.getCenter();
       const centerPt = map.latLngToContainerPoint(visualCenter);
 
-      // Viewport edge check — don't place labels that would be clipped at screen edge
-      const halfW = totalTextWidth / 2 + 4;
-      const halfH = dynamicFontSize / 2 + 4;
+      // Viewport edge check
+      const halfW = totalTextWidth / 2 + 6;
+      const halfH = dynamicFontSize / 2 + 6;
       if (centerPt.x - halfW < vpPadding || centerPt.x + halfW > mapSize.x - vpPadding ||
           centerPt.y - halfH < vpPadding || centerPt.y + halfH > mapSize.y - vpPadding) {
         return;
       }
 
-      // Build collision box (using container points for consistency)
+      // Build collision box
       const box = {
-        x1: centerPt.x - halfW - 8,
-        y1: centerPt.y - halfH - 6,
-        x2: centerPt.x + halfW + 8,
-        y2: centerPt.y + halfH + 6
+        x1: centerPt.x - halfW - 6,
+        y1: centerPt.y - halfH - 4,
+        x2: centerPt.x + halfW + 6,
+        y2: centerPt.y + halfH + 4
       };
 
       // 2. Collision Detection
@@ -363,13 +378,13 @@ function updateCountryLabels() {
 
       placedBoxes.push(box);
 
-      // Render via L.divIcon placed at the visual centroid
-      const renderWidth = Math.ceil(totalTextWidth) + 8;
-      const renderHeight = dynamicFontSize + 8;
+      // Render label centered at visual centroid
+      const renderWidth = Math.ceil(totalTextWidth) + 4;
+      const renderHeight = dynamicFontSize + 4;
 
       const icon = L.divIcon({
         className: 'country-watermark-wrap',
-        html: `<div class="country-tattoo" style="width:${renderWidth}px;max-width:${maxAllowedWidth}px;font-size:${dynamicFontSize}px;">${c.name}</div>`,
+        html: `<div class="country-tattoo" style="width:${renderWidth}px;font-size:${dynamicFontSize}px;">${c.name}</div>`,
         iconSize: [renderWidth, renderHeight],
         iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
