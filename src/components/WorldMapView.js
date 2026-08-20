@@ -216,6 +216,60 @@ const IGNORED_LABEL_CODES = new Set([
   'SH', 'CC', 'CX', 'NF', 'CK', 'NU', 'TK', 'WF', 'PF', 'NC', 'PM', 'FO', 'SJ'
 ]);
 
+// ─── Hidden canvas for accurate text measurement ──────────────────────────
+let _measureCtx = null;
+function measureTextWidth(text, fontSize) {
+  if (!_measureCtx) {
+    const c = document.createElement('canvas');
+    _measureCtx = c.getContext('2d');
+  }
+  _measureCtx.font = `800 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
+  return _measureCtx.measureText(text.toUpperCase()).width;
+}
+
+// Find the visual centroid: the center of the largest polygon ring
+// This fixes countries with distant islands (e.g. Greece, France, USA)
+function getVisualCenter(feature) {
+  const geom = feature.geometry;
+  if (!geom) return null;
+
+  let largestRing = null;
+  let largestArea = 0;
+
+  function processRing(ring) {
+    // Shoelace formula for polygon area
+    let area = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      area += ring[i][0] * ring[i + 1][1];
+      area -= ring[i + 1][0] * ring[i][1];
+    }
+    area = Math.abs(area) / 2;
+    if (area > largestArea) {
+      largestArea = area;
+      largestRing = ring;
+    }
+  }
+
+  if (geom.type === 'Polygon') {
+    processRing(geom.coordinates[0]);
+  } else if (geom.type === 'MultiPolygon') {
+    geom.coordinates.forEach(poly => processRing(poly[0]));
+  }
+
+  if (!largestRing || largestRing.length === 0) return null;
+
+  // Centroid of the largest polygon
+  let cx = 0, cy = 0;
+  for (let i = 0; i < largestRing.length; i++) {
+    cx += largestRing[i][0];
+    cy += largestRing[i][1];
+  }
+  cx /= largestRing.length;
+  cy /= largestRing.length;
+
+  return L.latLng(cy, cx); // Note: GeoJSON is [lng, lat]
+}
+
 function updateCountryLabels() {
   if (!countryLabelsLayer || !countriesLayer || !map) return;
   countryLabelsLayer.clearLayers();
@@ -224,7 +278,7 @@ function updateCountryLabels() {
   const layers = [];
   countriesLayer.eachLayer(layer => layers.push(layer));
 
-  // Sort country layers by polygon area descending (largest first)
+  // Sort country layers by polygon area descending (largest first for priority)
   layers.sort((a, b) => {
     try {
       const ba = a.getBounds();
@@ -235,12 +289,16 @@ function updateCountryLabels() {
     } catch { return 0; }
   });
 
+  // Get current viewport bounds in layer points for edge clipping
+  const mapSize = map.getSize();
+  const vpPadding = 30; // pixels from viewport edge to hide labels
+
   layers.forEach(layer => {
     const f = layer.feature;
     const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
     const rawName = f?.properties?.name || '';
 
-    // 1. Blacklist check (no military bases, micro-territories or buffer zones)
+    // 1. Blacklist check
     if (IGNORED_LABEL_CODES.has(iso) ||
         rawName.includes('Base') ||
         rawName.includes('No Mans') ||
@@ -255,52 +313,68 @@ function updateCountryLabels() {
 
     try {
       const bounds = layer.getBounds();
-      const nw = map.latLngToLayerPoint(bounds.getNorthWest());
-      const se = map.latLngToLayerPoint(bounds.getSouthEast());
+      const nw = map.latLngToContainerPoint(bounds.getNorthWest());
+      const se = map.latLngToContainerPoint(bounds.getSouthEast());
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
+      // Dynamic font size: scale with country pixel width but cap it
       const textLen = c.name.length;
-      // Strict physical pixel space inside the country polygon to guarantee ZERO overflow
-      const minRequiredWidth = Math.max(62, textLen * 9.5);
-      const minRequiredHeight = 26;
+      const dynamicFontSize = Math.min(14, Math.max(9, Math.floor(pixelWidth / (textLen * 1.4))));
 
-      if (pixelWidth < minRequiredWidth || pixelHeight < minRequiredHeight) {
+      // Measure actual rendered text width with canvas
+      const actualTextWidth = measureTextWidth(c.name, dynamicFontSize);
+      // Add letter-spacing (0.12em per char)
+      const letterSpacingExtra = textLen * dynamicFontSize * 0.12;
+      const totalTextWidth = actualTextWidth + letterSpacingExtra;
+
+      // Strict: text must fit within 72% of country pixel width
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.72);
+      if (totalTextWidth > maxAllowedWidth || pixelHeight < 24) {
+        return; // Text too wide or country too short — skip entirely
+      }
+
+      // Use visual centroid (largest polygon center) instead of bounding box center
+      const visualCenter = getVisualCenter(f) || bounds.getCenter();
+      const centerPt = map.latLngToContainerPoint(visualCenter);
+
+      // Viewport edge check — don't place labels that would be clipped at screen edge
+      const halfW = totalTextWidth / 2 + 4;
+      const halfH = dynamicFontSize / 2 + 4;
+      if (centerPt.x - halfW < vpPadding || centerPt.x + halfW > mapSize.x - vpPadding ||
+          centerPt.y - halfH < vpPadding || centerPt.y + halfH > mapSize.y - vpPadding) {
         return;
       }
 
-      // Center in screen coords
-      const center = map.latLngToLayerPoint(bounds.getCenter());
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.70);
-      const dynamicFontSize = Math.min(13, Math.max(9, Math.floor(pixelWidth / (textLen * 1.5))));
-      const approxTextWidth = Math.min(maxAllowedWidth, Math.floor(textLen * dynamicFontSize * 0.75));
-      const approxTextHeight = dynamicFontSize + 6;
-
+      // Build collision box (using container points for consistency)
       const box = {
-        x1: center.x - approxTextWidth / 2 - 12,
-        y1: center.y - approxTextHeight / 2 - 8,
-        x2: center.x + approxTextWidth / 2 + 12,
-        y2: center.y + approxTextHeight / 2 + 8
+        x1: centerPt.x - halfW - 8,
+        y1: centerPt.y - halfH - 6,
+        x2: centerPt.x + halfW + 8,
+        y2: centerPt.y + halfH + 6
       };
 
-      // 2. Collision Detection: Prevent overlapping labels in dense regions
+      // 2. Collision Detection
       const collides = placedBoxes.some(p => (
         box.x1 < p.x2 && box.x2 > p.x1 &&
         box.y1 < p.y2 && box.y2 > p.y1
       ));
-
       if (collides) return;
 
       placedBoxes.push(box);
 
+      // Render via L.divIcon placed at the visual centroid
+      const renderWidth = Math.ceil(totalTextWidth) + 8;
+      const renderHeight = dynamicFontSize + 8;
+
       const icon = L.divIcon({
         className: 'country-watermark-wrap',
-        html: `<div class="country-tattoo" style="max-width:${maxAllowedWidth}px;font-size:${dynamicFontSize}px;">${c.name}</div>`,
-        iconSize: [approxTextWidth, approxTextHeight],
-        iconAnchor: [approxTextWidth / 2, approxTextHeight / 2]
+        html: `<div class="country-tattoo" style="width:${renderWidth}px;max-width:${maxAllowedWidth}px;font-size:${dynamicFontSize}px;">${c.name}</div>`,
+        iconSize: [renderWidth, renderHeight],
+        iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
 
-      L.marker(bounds.getCenter(), { icon, interactive: false, pane: 'countriesPane' }).addTo(countryLabelsLayer);
+      L.marker(visualCenter, { icon, interactive: false, pane: 'countriesPane' }).addTo(countryLabelsLayer);
     } catch (e) {}
   });
 }
