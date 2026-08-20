@@ -83,7 +83,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "PS",
-    "name": "Palestine",
+    "name": "Filistin",
     "nameEn": "Palestine",
     "continent": "asia",
     "flag": "🇵🇸"
@@ -104,14 +104,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "SS",
-    "name": "South Sudan",
+    "name": "Güney Sudan",
     "nameEn": "South Sudan",
     "continent": "africa",
     "flag": "🇸🇸"
   },
   {
     "code": "SO",
-    "name": "Somalia",
+    "name": "Somali",
     "nameEn": "Somalia",
     "continent": "africa",
     "flag": "🇸🇴"
@@ -125,7 +125,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MW",
-    "name": "Malawi",
+    "name": "Malavi",
     "nameEn": "Malawi",
     "continent": "africa",
     "flag": "🇲🇼"
@@ -160,7 +160,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "SR",
-    "name": "Suriname",
+    "name": "Surinam",
     "nameEn": "Suriname",
     "continent": "south_america",
     "flag": "🇸🇷"
@@ -195,7 +195,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "EH",
-    "name": "Western Sahara",
+    "name": "Batı Sahra",
     "nameEn": "Western Sahara",
     "continent": "africa",
     "flag": "🇪🇭"
@@ -209,35 +209,35 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "NI",
-    "name": "Nicaragua",
+    "name": "Nikaragua",
     "nameEn": "Nicaragua",
     "continent": "north_america",
     "flag": "🇳🇮"
   },
   {
     "code": "CG",
-    "name": "Republic of the Congo",
+    "name": "Kongo Cumhuriyeti",
     "nameEn": "Republic of the Congo",
     "continent": "africa",
     "flag": "🇨🇬"
   },
   {
     "code": "CD",
-    "name": "Democratic Republic of the Congo",
+    "name": "Demokratik Kongo Cumhuriyeti",
     "nameEn": "Democratic Republic of the Congo",
     "continent": "africa",
     "flag": "🇨🇩"
   },
   {
     "code": "BT",
-    "name": "Bhutan",
+    "name": "Butan",
     "nameEn": "Bhutan",
     "continent": "asia",
     "flag": "🇧🇹"
   },
   {
     "code": "UA",
-    "name": "Ukraine",
+    "name": "Ukrayna",
     "nameEn": "Ukraine",
     "continent": "europe",
     "flag": "🇺🇦"
@@ -251,7 +251,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "NA",
-    "name": "Namibia",
+    "name": "Namibya",
     "nameEn": "Namibia",
     "continent": "africa",
     "flag": "🇳🇦"
@@ -307,7 +307,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "LT",
-    "name": "Lithuania",
+    "name": "Litvanya",
     "nameEn": "Lithuania",
     "continent": "europe",
     "flag": "🇱🇹"
@@ -356,14 +356,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "EE",
-    "name": "Estonia",
+    "name": "Estonya",
     "nameEn": "Estonia",
     "continent": "europe",
     "flag": "🇪🇪"
   },
   {
     "code": "LV",
-    "name": "Latvia",
+    "name": "Letonya",
     "nameEn": "Latvia",
     "continent": "europe",
     "flag": "🇱🇻"
@@ -398,7 +398,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "KH",
-    "name": "Cambodia",
+    "name": "Kamboçya",
     "nameEn": "Cambodia",
     "continent": "asia",
     "flag": "🇰🇭"
@@ -566,7 +566,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "ZM",
-    "name": "Zambia",
+    "name": "Zambiya",
     "nameEn": "Zambia",
     "continent": "africa",
     "flag": "🇿🇲"
@@ -580,21 +580,21 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "GN",
-    "name": "Guinea",
+    "name": "Gine",
     "nameEn": "Guinea",
     "continent": "africa",
     "flag": "🇬🇳"
   },
   {
     "code": "LR",
-    "name": "Liberia",
+    "name": "Liberya",
     "nameEn": "Liberia",
     "continent": "africa",
     "flag": "🇱🇷"
   },
   {
     "code": "CF",
-    "name": "Central African Republic",
+    "name": "Orta Afrika Cumhuriyeti",
     "nameEn": "Central African Republic",
     "continent": "africa",
     "flag": "🇨🇫"
@@ -608,14 +608,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "DJ",
-    "name": "Djibouti",
+    "name": "Cibuti",
     "nameEn": "Djibouti",
     "continent": "africa",
     "flag": "🇩🇯"
   },
   {
     "code": "ER",
-    "name": "Eritrea",
+    "name": "Eritre",
     "nameEn": "Eritrea",
     "continent": "africa",
     "flag": "🇪🇷"
@@ -664,14 +664,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "LI",
-    "name": "Liechtenstein",
+    "name": "Lihtenştayn",
     "nameEn": "Liechtenstein",
     "continent": "europe",
     "flag": "🇱🇮"
   },
   {
     "code": "CI",
-    "name": "Ivory Coast",
+    "name": "Fildişi Sahili",
     "nameEn": "Ivory Coast",
     "continent": "africa",
     "flag": "🇨🇮"
@@ -755,7 +755,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "ZW",
-    "name": "Zimbabwe",
+    "name": "Zimbabve",
     "nameEn": "Zimbabwe",
     "continent": "africa",
     "flag": "🇿🇼"
@@ -804,7 +804,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "TD",
-    "name": "Chad",
+    "name": "Çad",
     "nameEn": "Chad",
     "continent": "africa",
     "flag": "🇹🇩"
@@ -832,7 +832,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "TL",
-    "name": "East Timor",
+    "name": "Doğu Timor",
     "nameEn": "East Timor",
     "continent": "asia",
     "flag": "🇹🇱"
@@ -846,7 +846,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MC",
-    "name": "Monaco",
+    "name": "Monako",
     "nameEn": "Monaco",
     "continent": "europe",
     "flag": "🇲🇨"
@@ -860,14 +860,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MZ",
-    "name": "Mozambique",
+    "name": "Mozambik",
     "nameEn": "Mozambique",
     "continent": "africa",
     "flag": "🇲🇿"
   },
   {
     "code": "SZ",
-    "name": "eSwatini",
+    "name": "Esvatini",
     "nameEn": "eSwatini",
     "continent": "africa",
     "flag": "🇸🇿"
@@ -881,7 +881,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "RW",
-    "name": "Rwanda",
+    "name": "Ruanda",
     "nameEn": "Rwanda",
     "continent": "africa",
     "flag": "🇷🇼"
@@ -909,7 +909,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "AF",
-    "name": "Afghanistan",
+    "name": "Afganistan",
     "nameEn": "Afghanistan",
     "continent": "asia",
     "flag": "🇦🇫"
@@ -1007,14 +1007,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "LS",
-    "name": "Lesotho",
+    "name": "Lesoto",
     "nameEn": "Lesotho",
     "continent": "africa",
     "flag": "🇱🇸"
   },
   {
     "code": "CM",
-    "name": "Cameroon",
+    "name": "Kamerun",
     "nameEn": "Cameroon",
     "continent": "africa",
     "flag": "🇨🇲"
@@ -1028,7 +1028,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "NE",
-    "name": "Niger",
+    "name": "Nijer",
     "nameEn": "Niger",
     "continent": "africa",
     "flag": "🇳🇪"
@@ -1056,14 +1056,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "GW",
-    "name": "Guinea-Bissau",
+    "name": "Gine-Bissau",
     "nameEn": "Guinea-Bissau",
     "continent": "africa",
     "flag": "🇬🇼"
   },
   {
     "code": "GI",
-    "name": "Gibraltar",
+    "name": "Cebelitarık",
     "nameEn": "Gibraltar",
     "continent": "europe",
     "flag": "🇬🇮"
@@ -1112,7 +1112,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "PG",
-    "name": "Papua New Guinea",
+    "name": "Papua Yeni Gine",
     "nameEn": "Papua New Guinea",
     "continent": "oceania",
     "flag": "🇵🇬"
@@ -1133,49 +1133,49 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MR",
-    "name": "Mauritania",
+    "name": "Moritanya",
     "nameEn": "Mauritania",
     "continent": "africa",
     "flag": "🇲🇷"
   },
   {
     "code": "GQ",
-    "name": "Equatorial Guinea",
+    "name": "Ekvator Ginesi",
     "nameEn": "Equatorial Guinea",
     "continent": "africa",
     "flag": "🇬🇶"
   },
   {
     "code": "GM",
-    "name": "Gambia",
+    "name": "Gambiya",
     "nameEn": "Gambia",
     "continent": "africa",
     "flag": "🇬🇲"
   },
   {
     "code": "HK",
-    "name": "Hong Kong S.A.R.",
+    "name": "Hong Kong",
     "nameEn": "Hong Kong S.A.R.",
     "continent": "asia",
     "flag": "🇭🇰"
   },
   {
     "code": "VA",
-    "name": "Vatican",
+    "name": "Vatikan",
     "nameEn": "Vatican",
     "continent": "europe",
     "flag": "🇻🇦"
   },
   {
     "code": "XN",
-    "name": "Northern Cyprus",
+    "name": "Kuzey Kıbrıs",
     "nameEn": "Northern Cyprus",
     "continent": "asia",
     "flag": "🇨🇾"
   },
   {
     "code": "AQ",
-    "name": "Antarctica",
+    "name": "Antarktika",
     "nameEn": "Antarctica",
     "continent": "europe",
     "flag": "🇦🇶"
@@ -1189,7 +1189,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "GL",
-    "name": "Greenland",
+    "name": "Grönland",
     "nameEn": "Greenland",
     "continent": "north_america",
     "flag": "🇬🇱"
@@ -1210,14 +1210,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "NC",
-    "name": "New Caledonia",
+    "name": "Yeni Kaledonya",
     "nameEn": "New Caledonia",
     "continent": "oceania",
     "flag": "🇳🇨"
   },
   {
     "code": "MG",
-    "name": "Madagascar",
+    "name": "Madagaskar",
     "nameEn": "Madagascar",
     "continent": "africa",
     "flag": "🇲🇬"
@@ -1252,21 +1252,21 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "BS",
-    "name": "The Bahamas",
+    "name": "Bahamalar",
     "nameEn": "The Bahamas",
     "continent": "north_america",
     "flag": "🇧🇸"
   },
   {
     "code": "TC",
-    "name": "Turks and Caicos Islands",
+    "name": "Turks ve Caicos Adaları",
     "nameEn": "Turks and Caicos Islands",
     "continent": "north_america",
     "flag": "🇹🇨"
   },
   {
     "code": "TW",
-    "name": "Taiwan",
+    "name": "Tayvan",
     "nameEn": "Taiwan",
     "continent": "asia",
     "flag": "🇹🇼"
@@ -1280,7 +1280,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "PM",
-    "name": "Saint Pierre and Miquelon",
+    "name": "Saint Pierre ve Miquelon",
     "nameEn": "Saint Pierre and Miquelon",
     "continent": "north_america",
     "flag": "🇵🇲"
@@ -1294,28 +1294,28 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "PN",
-    "name": "Pitcairn Islands",
+    "name": "Pitcairn Adaları",
     "nameEn": "Pitcairn Islands",
     "continent": "europe",
     "flag": "🇵🇳"
   },
   {
     "code": "PF",
-    "name": "French Polynesia",
+    "name": "Fransız Polinezyası",
     "nameEn": "French Polynesia",
     "continent": "oceania",
     "flag": "🇵🇫"
   },
   {
     "code": "TF",
-    "name": "French Southern and Antarctic Lands",
+    "name": "Fransız Güney Toprakları",
     "nameEn": "French Southern and Antarctic Lands",
     "continent": "europe",
     "flag": "🇹🇫"
   },
   {
     "code": "SC",
-    "name": "Seychelles",
+    "name": "Seyşeller",
     "nameEn": "Seychelles",
     "continent": "africa",
     "flag": "🇸🇨"
@@ -1329,14 +1329,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MH",
-    "name": "Marshall Islands",
+    "name": "Marshall Adaları",
     "nameEn": "Marshall Islands",
     "continent": "oceania",
     "flag": "🇲🇭"
   },
   {
     "code": "TT",
-    "name": "Trinidad and Tobago",
+    "name": "Trinidad ve Tobago",
     "nameEn": "Trinidad and Tobago",
     "continent": "north_america",
     "flag": "🇹🇹"
@@ -1350,7 +1350,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "VC",
-    "name": "Saint Vincent and the Grenadines",
+    "name": "Saint Vincent ve Grenadinler",
     "nameEn": "Saint Vincent and the Grenadines",
     "continent": "north_america",
     "flag": "🇻🇨"
@@ -1371,14 +1371,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "DM",
-    "name": "Dominica",
+    "name": "Dominika",
     "nameEn": "Dominica",
     "continent": "north_america",
     "flag": "🇩🇲"
   },
   {
     "code": "UM",
-    "name": "United States Minor Outlying Islands",
+    "name": "ABD Küçük Dış Adaları",
     "nameEn": "United States Minor Outlying Islands",
     "continent": "europe",
     "flag": "🇺🇲"
@@ -1392,35 +1392,35 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "AG",
-    "name": "Antigua and Barbuda",
+    "name": "Antigua ve Barbuda",
     "nameEn": "Antigua and Barbuda",
     "continent": "north_america",
     "flag": "🇦🇬"
   },
   {
     "code": "KN",
-    "name": "Saint Kitts and Nevis",
+    "name": "Saint Kitts ve Nevis",
     "nameEn": "Saint Kitts and Nevis",
     "continent": "north_america",
     "flag": "🇰🇳"
   },
   {
     "code": "VI",
-    "name": "United States Virgin Islands",
+    "name": "ABD Virgin Adaları",
     "nameEn": "United States Virgin Islands",
     "continent": "north_america",
     "flag": "🇻🇮"
   },
   {
     "code": "BL",
-    "name": "Saint Barthelemy",
+    "name": "Saint Barthélemy",
     "nameEn": "Saint Barthelemy",
     "continent": "north_america",
     "flag": "🇧🇱"
   },
   {
     "code": "PR",
-    "name": "Puerto Rico",
+    "name": "Porto Riko",
     "nameEn": "Puerto Rico",
     "continent": "north_america",
     "flag": "🇵🇷"
@@ -1434,21 +1434,21 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "VG",
-    "name": "British Virgin Islands",
+    "name": "Britanya Virgin Adaları",
     "nameEn": "British Virgin Islands",
     "continent": "north_america",
     "flag": "🇻🇬"
   },
   {
     "code": "JM",
-    "name": "Jamaica",
+    "name": "Jamaika",
     "nameEn": "Jamaica",
     "continent": "north_america",
     "flag": "🇯🇲"
   },
   {
     "code": "KY",
-    "name": "Cayman Islands",
+    "name": "Cayman Adaları",
     "nameEn": "Cayman Islands",
     "continent": "north_america",
     "flag": "🇰🇾"
@@ -1462,7 +1462,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "HM",
-    "name": "Heard Island and McDonald Islands",
+    "name": "Heard ve McDonald Adaları",
     "nameEn": "Heard Island and McDonald Islands",
     "continent": "europe",
     "flag": "🇭🇲"
@@ -1483,14 +1483,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "KM",
-    "name": "Comoros",
+    "name": "Komorlar",
     "nameEn": "Comoros",
     "continent": "africa",
     "flag": "🇰🇲"
   },
   {
     "code": "ST",
-    "name": "São Tomé and Principe",
+    "name": "São Tomé ve Príncipe",
     "nameEn": "São Tomé and Principe",
     "continent": "africa",
     "flag": "🇸🇹"
@@ -1525,28 +1525,28 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "IM",
-    "name": "Isle of Man",
+    "name": "Man Adası",
     "nameEn": "Isle of Man",
     "continent": "europe",
     "flag": "🇮🇲"
   },
   {
     "code": "AX",
-    "name": "Aland",
+    "name": "Åland Adaları",
     "nameEn": "Aland",
     "continent": "europe",
     "flag": "🇦🇽"
   },
   {
     "code": "FO",
-    "name": "Faroe Islands",
+    "name": "Faroe Adaları",
     "nameEn": "Faroe Islands",
     "continent": "europe",
     "flag": "🇫🇴"
   },
   {
     "code": "IO",
-    "name": "British Indian Ocean Territory",
+    "name": "Britanya Hint Okyanusu Toprakları",
     "nameEn": "British Indian Ocean Territory",
     "continent": "europe",
     "flag": "🇮🇴"
@@ -1560,14 +1560,14 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "NF",
-    "name": "Norfolk Island",
+    "name": "Norfolk Adası",
     "nameEn": "Norfolk Island",
     "continent": "europe",
     "flag": "🇳🇫"
   },
   {
     "code": "CK",
-    "name": "Cook Islands",
+    "name": "Cook Adaları",
     "nameEn": "Cook Islands",
     "continent": "oceania",
     "flag": "🇨🇰"
@@ -1581,7 +1581,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "WF",
-    "name": "Wallis and Futuna",
+    "name": "Wallis ve Futuna",
     "nameEn": "Wallis and Futuna",
     "continent": "oceania",
     "flag": "🇼🇫"
@@ -1595,7 +1595,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "SB",
-    "name": "Solomon Islands",
+    "name": "Solomon Adaları",
     "nameEn": "Solomon Islands",
     "continent": "oceania",
     "flag": "🇸🇧"
@@ -1609,7 +1609,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MV",
-    "name": "Maldives",
+    "name": "Maldivler",
     "nameEn": "Maldives",
     "continent": "asia",
     "flag": "🇲🇻"
@@ -1623,21 +1623,21 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "FM",
-    "name": "Federated States of Micronesia",
+    "name": "Mikronezya",
     "nameEn": "Federated States of Micronesia",
     "continent": "oceania",
     "flag": "🇫🇲"
   },
   {
     "code": "GS",
-    "name": "South Georgia and the Islands",
+    "name": "Güney Georgia ve Güney Sandwich Adaları",
     "nameEn": "South Georgia and the Islands",
     "continent": "europe",
     "flag": "🇬🇸"
   },
   {
     "code": "FK",
-    "name": "Falkland Islands",
+    "name": "Falkland Adaları",
     "nameEn": "Falkland Islands",
     "continent": "south_america",
     "flag": "🇫🇰"
@@ -1658,7 +1658,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "AS",
-    "name": "American Samoa",
+    "name": "Amerikan Samoası",
     "nameEn": "American Samoa",
     "continent": "oceania",
     "flag": "🇦🇸"
@@ -1679,21 +1679,21 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "MP",
-    "name": "Northern Mariana Islands",
+    "name": "Kuzey Mariana Adaları",
     "nameEn": "Northern Mariana Islands",
     "continent": "oceania",
     "flag": "🇲🇵"
   },
   {
     "code": "BH",
-    "name": "Bahrain",
+    "name": "Bahreyn",
     "nameEn": "Bahrain",
     "continent": "asia",
     "flag": "🇧🇭"
   },
   {
     "code": "MO",
-    "name": "Macao S.A.R",
+    "name": "Makao",
     "nameEn": "Macao S.A.R",
     "continent": "asia",
     "flag": "🇲🇴"
