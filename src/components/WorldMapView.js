@@ -73,6 +73,14 @@ export function renderWorldMapView(container, options = {}) {
         <div id="stats-countries" class="stats-chip"></div>
         <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
       </div>
+
+      <!-- Loading indicator (shown while GeoJSON loads) -->
+      <div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:9000;pointer-events:none;">
+        <div style="text-align:center;color:#94a3b8;font-size:0.9rem;">
+          <div style="font-size:2rem;margin-bottom:8px;animation:spin 2s linear infinite;">🌍</div>
+          <div>Harita yükleniyor...</div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -128,7 +136,8 @@ function initMap(container) {
     minZoom: 2, maxZoom: 12,
     zoomControl: false,
     attributionControl: false,
-    tap: false
+    tap: L.Browser.safari ? false : true,
+    tapTolerance: 15
   });
 
   map.createPane('countriesPane');
@@ -145,8 +154,11 @@ function initMap(container) {
   // Pure dark ocean background
   el.style.backgroundColor = '#090d16';
 
-  // Load World Countries (pure vector landmass - 100% clean, no third party text/noise)
-  fetch(`/data/world-countries.json?v=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(data => {
+  // Load World Countries — allow browser caching (14MB file)
+  fetch('/data/world-countries.json').then(r => {
+    if (!r.ok) throw new Error('Network ' + r.status);
+    return r.json();
+  }).then(data => {
     countriesLayer = L.geoJSON(data, {
       pane: 'countriesPane',
       style: f => countryStyle(findCountry(f)),
@@ -162,11 +174,21 @@ function initMap(container) {
         });
       }
     }).addTo(map);
-    setTimeout(updateCountryLabels, 60);
+    setTimeout(updateCountryLabels, 100);
+    // Hide loading indicator
+    const loadingEl = document.getElementById('map-loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+  }).catch(err => {
+    console.error('World countries load error:', err);
+    const loadingEl = document.getElementById('map-loading');
+    if (loadingEl) loadingEl.innerHTML = '<div style="text-align:center;color:#ef4444;font-size:0.9rem;">Harita yüklenemedi. Sayfayı yenileyin.</div>';
   });
 
   // Load Turkey Provinces
-  fetch(`/data/turkey-provinces.json?v=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(data => {
+  fetch('/data/turkey-provinces.json').then(r => {
+    if (!r.ok) throw new Error('Network ' + r.status);
+    return r.json();
+  }).then(data => {
     turkeyLayer = L.geoJSON(data, {
       pane: 'statesPane',
       style: f => provinceStyle(f.properties?.number),
@@ -183,6 +205,8 @@ function initMap(container) {
         });
       }
     });
+  }).catch(err => {
+    console.error('Turkey provinces load error:', err);
   });
 
   let isViewUpdating = false;
@@ -870,7 +894,7 @@ function provinceStyle(provinceId) {
   const tint = tintMap[trStatus];
   if (tint) return { fillColor: tint, fillOpacity: 0.35, color: '#64748b', weight: 0.8, opacity: 0.5 };
 
-  return { fillColor: '#1e293b', fillOpacity: 0.95, color: '#64748b', weight: 0.8, opacity: 0.5 };
+  return { fillColor: '#131b2e', fillOpacity: 0.95, color: '#64748b', weight: 0.8, opacity: 0.5 };
 }
 
 function subregionStyle(name, code) {
