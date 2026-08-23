@@ -861,19 +861,101 @@ function openStatusPopup(latlng, key, label, type, parentCode, parentRegionName)
         saveTurkeyVisit(id, val);
         if (val === 'visited') {
           saveWorldVisit('TR', 'visited', { notes: 'Auto-marked (İl ziyareti)' });
+        } else if (val === 'unvisited') {
+          // If no more Turkish provinces are visited, unmark TR
+          const { turkeyVisits } = getStorageData();
+          const hasVisited = Object.entries(turkeyVisits).some(([k, v]) => parseInt(k) !== id && v?.status === 'visited');
+          if (!hasVisited) {
+            saveWorldVisit('TR', 'unvisited');
+          }
         }
-      } else {
+      } else if (type === 'country') {
+        saveWorldVisit(key, val);
+
+        if (val === 'unvisited') {
+          // DOWNWARD CLEAR: Unmarking a country unmarks all its regions & subregions
+          if (key === 'TR') {
+            const { turkeyVisits } = getStorageData();
+            Object.keys(turkeyVisits).forEach(provId => {
+              saveTurkeyVisit(parseInt(provId), 'unvisited');
+            });
+          }
+          const { worldVisits } = getStorageData();
+          Object.keys(worldVisits).forEach(k => {
+            if (k.startsWith(`${key}::`)) {
+              saveWorldVisit(k, 'unvisited');
+            }
+          });
+        }
+      } else if (type === 'region') {
         saveWorldVisit(key, val);
         
-        // UPWARD AUTO-MARKING LOGIC
         if (val === 'visited') {
-          if (type === 'region' && parentCode) {
-            saveWorldVisit(parentCode, 'visited', { notes: 'Auto-marked' });
+          // UPWARD: Mark country visited
+          if (parentCode) {
+            saveWorldVisit(parentCode, 'visited', { notes: 'Auto-marked (Bölge ziyareti)' });
           }
-          if (type === 'subregion' && parentCode && parentRegionName) {
+        } else if (val === 'unvisited') {
+          // DOWNWARD: Unmark all subregions under this region
+          if (parentCode && selectedRegionName) {
+            const { worldVisits } = getStorageData();
+            const sCache = subregionCache[parentCode]?.features || [];
+            const subregionNames = sCache
+              .filter(f => f.properties.parent_region === selectedRegionName)
+              .map(f => f.properties.name);
+            
+            subregionNames.forEach(subName => {
+              saveWorldVisit(`${parentCode}::${subName}`, 'unvisited');
+            });
+          }
+
+          // UPWARD CHECK: If no more visited regions remain in this country, unmark country
+          if (parentCode) {
+            const { worldVisits } = getStorageData();
+            const hasOtherVisited = Object.entries(worldVisits).some(([k, v]) => 
+              k.startsWith(`${parentCode}::`) && k !== key && v?.status === 'visited'
+            );
+            if (!hasOtherVisited) {
+              saveWorldVisit(parentCode, 'unvisited');
+            }
+          }
+        }
+      } else if (type === 'subregion') {
+        saveWorldVisit(key, val);
+
+        if (val === 'visited') {
+          // UPWARD: Mark region and country as visited
+          if (parentCode && parentRegionName) {
             const regionKey = `${parentCode}::${parentRegionName}`;
-            saveWorldVisit(regionKey, 'visited', { notes: 'Auto-marked' });
-            saveWorldVisit(parentCode, 'visited', { notes: 'Auto-marked' });
+            saveWorldVisit(regionKey, 'visited', { notes: 'Auto-marked (Şehir ziyareti)' });
+            saveWorldVisit(parentCode, 'visited', { notes: 'Auto-marked (Şehir ziyareti)' });
+          }
+        } else if (val === 'unvisited') {
+          // UPWARD CHECK: If no more visited subregions in this region, check parent
+          if (parentCode && parentRegionName) {
+            const { worldVisits } = getStorageData();
+            const sCache = subregionCache[parentCode]?.features || [];
+            const subregionNames = sCache
+              .filter(f => f.properties.parent_region === parentRegionName)
+              .map(f => f.properties.name);
+            
+            const hasOtherSub = Object.entries(worldVisits).some(([k, v]) => {
+              if (!k.startsWith(`${parentCode}::`) || k === key || v?.status !== 'visited') return false;
+              const subName = k.split('::')[1];
+              return subregionNames.includes(subName);
+            });
+
+            if (!hasOtherSub) {
+              const regionKey = `${parentCode}::${parentRegionName}`;
+              saveWorldVisit(regionKey, 'unvisited');
+
+              const hasAnyCountryVisited = Object.entries(worldVisits).some(([k, v]) => 
+                k.startsWith(`${parentCode}::`) && k !== key && k !== regionKey && v?.status === 'visited'
+              );
+              if (!hasAnyCountryVisited) {
+                saveWorldVisit(parentCode, 'unvisited');
+              }
+            }
           }
         }
       }
