@@ -462,7 +462,7 @@ export const WORLD_COUNTRIES = [
   {
     "code": "TR",
     "name": "Türkiye",
-    "nameEn": "Turkey",
+    "nameEn": "Türkiye",
     "continent": "europe",
     "flag": "🇹🇷"
   },

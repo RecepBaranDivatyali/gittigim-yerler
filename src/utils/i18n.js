@@ -90,7 +90,7 @@ const TRANSLATIONS = {
     citiesVisited: 'Cities Visited',
     travelScore: 'Travel Score',
     totalWorld: 'World',
-    totalTurkey: 'Turkey',
+    totalTurkey: 'Türkiye',
     selectAvatar: 'Choose an Avatar',
     username: 'Username',
     usernamePlaceholder: 'Adventurer',
