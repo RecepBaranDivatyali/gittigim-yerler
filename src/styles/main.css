@@ -2512,22 +2512,41 @@ body[data-theme="vintage"] .share-section p {
 
 /* ── Light Theme Global Adjustments ──────────────────── */
 body[data-theme="light"] {
-  background-color: #c7dcf0 !important;
+  background-color: #c5dff6 !important;
   color: #0f172a !important;
 }
 
 body[data-theme="light"] .floating-profile-btn,
 body[data-theme="light"] .floating-legend,
 body[data-theme="light"] .stats-chip,
+body[data-theme="light"] .floating-feedback-btn,
 body[data-theme="light"] .profile-card,
 body[data-theme="light"] .share-section,
 body[data-theme="light"] .ach-card,
 body[data-theme="light"] .compare-input-card,
+body[data-theme="light"] .settings-section-card,
 body[data-theme="light"] .clean-status-popup .leaflet-popup-content-wrapper {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
   color: #0f172a !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .floating-profile-btn:hover,
+body[data-theme="light"] .floating-feedback-btn:hover {
+  background: #ffffff !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+  box-shadow: 0 12px 36px rgba(59, 130, 246, 0.16) !important;
+}
+
+body[data-theme="light"] .legend-item {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme="light"] .stats-label {
+  color: #64748b !important;
 }
 
 body[data-theme="light"] .profile-overlay,
@@ -2535,39 +2554,126 @@ body[data-theme="light"] #map-root {
   background: #f1f5f9 !important;
 }
 
+body[data-theme="light"] .profile-topbar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-theme="light"] .profile-back-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  color: #334155 !important;
+}
+
+body[data-theme="light"] .profile-back-btn:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .profile-tabs {
+  background: #e2e8f0 !important;
+}
+
+body[data-theme="light"] .ptab {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .ptab.active {
+  background: #ffffff !important;
+  color: #ff5722 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
 body[data-theme="light"] .profile-username,
 body[data-theme="light"] .ach-name,
 body[data-theme="light"] .floating-profile-name,
-body[data-theme="light"] .share-section h3 {
+body[data-theme="light"] .share-section h3,
+body[data-theme="light"] .feedback-modal-header h3,
+body[data-theme="light"] .settings-title {
   color: #0f172a !important;
 }
 
 body[data-theme="light"] .profile-bio,
 body[data-theme="light"] .pstat-lbl,
 body[data-theme="light"] .ach-desc,
-body[data-theme="light"] .share-section p {
+body[data-theme="light"] .share-section p,
+body[data-theme="light"] .feedback-modal-sub,
+body[data-theme="light"] .setting-label {
   color: #64748b !important;
 }
 
 body[data-theme="light"] .pstat,
 body[data-theme="light"] .share-code-input,
-body[data-theme="light"] .compare-code-input {
-  background: rgba(241, 245, 249, 0.8) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+body[data-theme="light"] .compare-code-input,
+body[data-theme="light"] .feedback-textarea,
+body[data-theme="light"] .feedback-input,
+body[data-theme="light"] .setting-select-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
   color: #0f172a !important;
 }
 
 body[data-theme="light"] .feedback-modal-card {
   background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.15) !important;
+}
+
+body[data-theme="light"] .feedback-type-btn {
+  background: #f1f5f9 !important;
+  border-color: rgba(203, 213, 225, 0.8) !important;
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .feedback-type-btn.active {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+}
+
+body[data-theme="light"] .clean-hover-tooltip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-theme="light"] .map-status-popup {
   color: #0f172a !important;
 }
 
-body[data-theme="light"] .feedback-textarea,
-body[data-theme="light"] .feedback-input {
-  background: #f8fafc !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
+body[data-theme="light"] .map-status-popup-header {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-theme="light"] .map-status-popup-title {
   color: #0f172a !important;
+}
+
+body[data-theme="light"] .map-status-popup-close {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .map-status-popup-close:hover {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .map-status-btn {
+  background: #f8fafc !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  color: #334155 !important;
+}
+
+body[data-theme="light"] .map-status-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: rgba(148, 163, 184, 0.8) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .map-status-btn.active {
+  background: rgba(255, 87, 34, 0.12) !important;
+  border-color: #ff5722 !important;
+  color: #ff5722 !important;
+  font-weight: 700 !important;
 }
 
 .floating-feedback-wrap {
