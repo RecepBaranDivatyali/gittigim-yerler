@@ -399,52 +399,54 @@ function measureTextWidth(text, fontSize) {
   return _measureCtx.measureText(text.toUpperCase()).width;
 }
 
-const COUNTRY_LABEL_OFFSETS = {
-  'CA': [56.0, -96.0],
-  'US': [38.5, -97.0],
-  'RU': [60.0, 95.0],
-  'FR': [46.6, 2.3],
-  'NO': [61.0, 8.5],
-  'CL': [-35.0, -71.5],
-  'JP': [36.2, 138.2],
-  'NZ': [-41.5, 173.0],
-  'GR': [39.0, 22.0],
-  'HR': [45.0, 15.5],
-  'MY': [4.0, 102.5],
-  'ID': [-1.5, 117.0],
-  'TR': [39.0, 35.0],
-  'NL': [52.2, 5.3],
-  'DE': [51.2, 10.4],
-  'IT': [42.8, 12.6],
-  'ES': [40.2, -3.7],
-  'PT': [39.5, -8.0],
-  'GB': [54.5, -3.0],
-  'DK': [55.7, 9.5],
-  'SE': [62.0, 15.0],
-  'FI': [64.0, 26.0],
-  'PL': [52.0, 19.5],
-  'UA': [49.0, 31.5],
-  'AT': [47.5, 14.5],
-  'CH': [46.8, 8.2],
-  'CZ': [49.8, 15.5],
-  'SK': [48.7, 19.5],
-  'HU': [47.2, 19.5],
-  'RO': [46.0, 25.0],
-  'BG': [42.7, 25.5],
-  'RS': [44.0, 20.8],
-  'BA': [44.0, 17.8],
-  'ME': [42.8, 19.3],
-  'AL': [41.3, 20.0],
-  'MK': [41.6, 21.7],
-  'EG': [26.8, 30.8],
-  'SA': [24.0, 45.0],
-  'IR': [32.0, 53.0],
-  'IQ': [33.0, 44.0],
-  'SY': [35.0, 38.5],
-  'AZ': [40.3, 47.7],
-  'GE': [42.0, 43.5],
-  'AM': [40.2, 45.0],
-};
+// Proper area-weighted centroid of a polygon ring (Shoelace formula)
+function polygonCentroid(ring) {
+  let area = 0, cx = 0, cy = 0;
+  const n = ring.length;
+  for (let i = 0; i < n - 1; i++) {
+    const x0 = ring[i][0], y0 = ring[i][1];
+    const x1 = ring[i + 1][0], y1 = ring[i + 1][1];
+    const cross = x0 * y1 - x1 * y0;
+    area += cross;
+    cx += (x0 + x1) * cross;
+    cy += (y0 + y1) * cross;
+  }
+  area /= 2;
+  if (Math.abs(area) < 1e-10) {
+    let sx = 0, sy = 0;
+    for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
+    return [sx / n, sy / n, Math.abs(area)];
+  }
+  cx /= (6 * area);
+  cy /= (6 * area);
+  return [cx, cy, Math.abs(area)];
+}
+
+// Find the visual centroid: area-weighted centroid of the largest polygon
+function getVisualCenter(feature) {
+  const geom = feature?.geometry;
+  if (!geom) return null;
+
+  let bestCx = 0, bestCy = 0, bestArea = 0;
+
+  function processRing(ring) {
+    const [cx, cy, area] = polygonCentroid(ring);
+    if (area > bestArea) {
+      bestArea = area;
+      bestCx = cx;
+      bestCy = cy;
+    }
+  }
+
+  if (geom.type === 'Polygon') {
+    processRing(geom.coordinates[0]);
+  } else if (geom.type === 'MultiPolygon') {
+    geom.coordinates.forEach(poly => processRing(poly[0]));
+  }
+
+  if (bestArea === 0) return null;
+  return L.latLng(bestCy, bestCx);
+}
 
 let _labelUpdateTimer = null;
 function scheduleLabelUpdate() {
@@ -473,84 +475,92 @@ function updateCountryLabels() {
   });
 
   const mapSize = map.getSize();
-  const vpPadding = 600; // Generous 600px viewport buffer for zero pop-in
 
   layers.forEach(layer => {
     const f = layer.feature;
     const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
-    if (IGNORED_LABEL_CODES.has(iso)) return;
+    const rawName = f?.properties?.name || '';
 
-    const c = findCountry(f);
-    if (!c) return;
-
-    const displayName = getCountryDisplayName(c);
-    if (!displayName) return;
-
-    let centerLatLng = null;
-    if (COUNTRY_LABEL_OFFSETS[c.code]) {
-      centerLatLng = L.latLng(COUNTRY_LABEL_OFFSETS[c.code]);
-    } else {
-      centerLatLng = layer.getBounds().getCenter();
-    }
-
-    const bounds = layer.getBounds();
-    const ne = map.latLngToContainerPoint(bounds.getNorthEast());
-    const sw = map.latLngToContainerPoint(bounds.getSouthWest());
-    const widthPx = Math.abs(ne.x - sw.x);
-    const heightPx = Math.abs(sw.y - ne.y);
-
-    const minDim = Math.min(widthPx, heightPx);
-    if (minDim < 28) return;
-
-    const basePx = Math.max(widthPx, heightPx);
-    let fontSize = Math.round(Math.min(18, Math.max(9, basePx / 14)));
-
-    let textW = measureTextWidth(displayName, fontSize);
-    while (textW > widthPx * 0.78 && fontSize > 8) {
-      fontSize -= 1;
-      textW = measureTextWidth(displayName, fontSize);
-    }
-    if (textW > widthPx * 0.88) return;
-
-    const pt = map.latLngToContainerPoint(centerLatLng);
-
-    if (pt.x < -vpPadding || pt.x > mapSize.x + vpPadding ||
-        pt.y < -vpPadding || pt.y > mapSize.y + vpPadding) {
+    // 1. Blacklist check
+    if (IGNORED_LABEL_CODES.has(iso) ||
+        rawName.includes('Base') ||
+        rawName.includes('No Mans') ||
+        rawName.includes('Dhekelia') ||
+        rawName.includes('Akrotiri') ||
+        rawName.includes('Baykonur')) {
       return;
     }
 
-    const halfW = textW / 2 + 3;
-    const halfH = fontSize / 2 + 2;
-    const box = { x1: pt.x - halfW, y1: pt.y - halfH, x2: pt.x + halfW, y2: pt.y + halfH };
+    const c = findCountry(f);
+    if (!c) return;
+    const countryName = getCountryDisplayName(c);
+    if (!countryName) return;
 
-    const overlaps = placedBoxes.some(b =>
-      box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1
-    );
-    if (overlaps) return;
+    try {
+      const bounds = layer.getBounds();
+      const nw = map.latLngToContainerPoint(bounds.getNorthWest());
+      const se = map.latLngToContainerPoint(bounds.getSouthEast());
+      const pixelWidth = Math.abs(se.x - nw.x);
+      const pixelHeight = Math.abs(se.y - nw.y);
 
-    placedBoxes.push(box);
+      // Dynamic font size: scale with country pixel width
+      const textLen = countryName.length;
+      const dynamicFontSize = Math.min(15, Math.max(9, Math.floor(pixelWidth / (textLen * 1.3))));
 
-    const icon = L.divIcon({
-      className: 'country-label-marker',
-      html: `<div style="
-        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-        font-size: ${fontSize}px;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: ${themeCfg.labelColor};
-        text-shadow: ${themeCfg.labelShadow};
-        white-space: nowrap;
-        pointer-events: none;
-        user-select: none;
-        transform: translate(-50%, -50%);
-      ">${displayName}</div>`,
-      iconSize: [0, 0],
-      iconAnchor: [0, 0]
-    });
+      // Measure actual rendered text width with canvas
+      const actualTextWidth = measureTextWidth(countryName, dynamicFontSize);
+      const letterSpacingExtra = textLen * dynamicFontSize * 0.12;
+      const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-    const marker = L.marker(centerLatLng, { icon, interactive: false, pane: 'labelsPane' });
-    countryLabelsLayer.addLayer(marker);
+      // Strict: text must fit within 80% of country pixel width (so tiny countries like Holland/Belgium don't collide)
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.80);
+      if (totalTextWidth > maxAllowedWidth || pixelHeight < 18) {
+        return;
+      }
+
+      // Use proper area-weighted visual centroid
+      const visualCenter = getVisualCenter(f) || bounds.getCenter();
+      const centerPt = map.latLngToContainerPoint(visualCenter);
+
+      // Generous buffer (500px outside screen) so half-visible countries have their labels ready
+      const halfW = totalTextWidth / 2 + 6;
+      const halfH = dynamicFontSize / 2 + 6;
+      const vpBuffer = 500;
+      if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
+          centerPt.y < -vpBuffer || centerPt.y > mapSize.y + vpBuffer) {
+        return;
+      }
+
+      // Build collision box
+      const box = {
+        x1: centerPt.x - halfW - 6,
+        y1: centerPt.y - halfH - 4,
+        x2: centerPt.x + halfW + 6,
+        y2: centerPt.y + halfH + 4
+      };
+
+      // 2. Collision Detection
+      const collides = placedBoxes.some(p => (
+        box.x1 < p.x2 && box.x2 > p.x1 &&
+        box.y1 < p.y2 && box.y2 > p.y1
+      ));
+      if (collides) return;
+
+      placedBoxes.push(box);
+
+      // Render label centered at visual centroid with active theme styling
+      const renderWidth = Math.ceil(totalTextWidth) + 4;
+      const renderHeight = dynamicFontSize + 4;
+
+      const icon = L.divIcon({
+        className: 'country-watermark-wrap',
+        html: `<div class="country-tattoo" style="width:${renderWidth}px;font-size:${dynamicFontSize}px;color:${themeCfg.labelColor};text-shadow:${themeCfg.labelShadow};">${countryName}</div>`,
+        iconSize: [renderWidth, renderHeight],
+        iconAnchor: [renderWidth / 2, renderHeight / 2]
+      });
+
+      L.marker(visualCenter, { icon, interactive: false, pane: 'labelsPane' }).addTo(countryLabelsLayer);
+    } catch (e) {}
   });
 }
 
@@ -676,10 +686,9 @@ function attachRegionLayer(code, data) {
   const c = WORLD_COUNTRIES.find(x => x.code === code);
   const flag = c ? c.flag : '';
 
-  // Sort descending by bounding box area so small capitals (Vienna, Berlin) are on top!
+  // Sort descending by area so small capitals (Vienna, Berlin) are on top!
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
-      const ba = a.properties?._bbox || [0,0,0,0];
       const areaA = (a.geometry?.coordinates?.[0]?.length || 1);
       const areaB = (b.geometry?.coordinates?.[0]?.length || 1);
       return areaB - areaA;
