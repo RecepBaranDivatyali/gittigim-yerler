@@ -243,6 +243,10 @@ function initMap(container) {
     tapTolerance: 15
   });
 
+  map.createPane('labelsPane');
+  map.getPane('labelsPane').style.zIndex = 450;
+  map.getPane('labelsPane').style.pointerEvents = 'none';
+
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 430;
 
@@ -517,7 +521,7 @@ function updateCountryLabels() {
         iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
 
-      L.marker(visualCenter, { icon, interactive: false, pane: 'countriesPane' }).addTo(countryLabelsLayer);
+      L.marker(visualCenter, { icon, interactive: false, pane: 'labelsPane' }).addTo(countryLabelsLayer);
     } catch (e) {}
   });
 }
@@ -684,12 +688,13 @@ function attachRegionLayer(code, data) {
   });
 
   regionLayers[code] = layer;
-  layer.addTo(map);
-
-  if (countriesLayer) {
-    countriesLayer.eachLayer(l => {
-      if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
-    });
+  if (map.getZoom() >= REGION_ZOOM) {
+    layer.addTo(map);
+    if (countriesLayer) {
+      countriesLayer.eachLayer(l => {
+        if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
+      });
+    }
   }
 }
 
@@ -788,9 +793,10 @@ function attachSubregionLayer(code, data) {
   });
 
   subregionLayers[code] = layer;
-  layer.addTo(map);
-
-  refreshRegionLayer(code);
+  if (map.getZoom() >= SUBREGION_ZOOM) {
+    layer.addTo(map);
+    refreshRegionLayer(code);
+  }
 }
 
 function refreshSubregionLayer(code) {
