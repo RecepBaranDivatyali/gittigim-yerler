@@ -1,51 +1,22 @@
-// Service Worker - Offline Cache & Fast Loading
-const CACHE_NAME = 'gittigim-yerler-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/data/world-countries.json',
-  '/data/turkey-provinces.json'
-];
+// Modern Network-First Service Worker for Instant Updates
+const CACHE_NAME = 'gittigim-yerler-v2';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(k => {
-        if (k !== CACHE_NAME) return caches.delete(k);
-      })
-    ))
+      keys.map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Always fetch from network first so all updates are seen immediately
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      }).catch(() => cached);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
