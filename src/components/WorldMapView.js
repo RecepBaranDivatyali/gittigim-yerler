@@ -28,6 +28,7 @@ function ns(s) {
 
 // ─── Module state ──────────────────────────────────────────────────────────
 let map = null;
+let mapRenderer = null;
 let countriesLayer = null;
 let countryLabelsLayer = null;
 let turkeyLayer = null;
@@ -40,7 +41,6 @@ let selectedRegionName = null;
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export function renderWorldMapView(container, options = {}) {
-  // Apply active theme to document root
   applyTheme(getTheme());
 
   let userAvatar = '🧭';
@@ -205,13 +205,11 @@ export function renderWorldMapView(container, options = {}) {
 
   attachUIEvents();
 
-  // Listen to language changes
   onLanguageChange(() => {
     container.innerHTML = getHtml();
     if (map) {
       const el = container.querySelector('#leaflet-map');
       if (el) {
-        // Reattach Leaflet container
         const mapContainer = map.getContainer();
         if (mapContainer && el.parentNode) {
           el.parentNode.replaceChild(mapContainer, el);
@@ -224,7 +222,6 @@ export function renderWorldMapView(container, options = {}) {
     refreshStats();
   });
 
-  // Listen to theme & custom color changes
   onThemeChange((newTheme) => {
     const cfg = getThemeConfig(newTheme);
     const rootEl = container.querySelector('#map-root');
@@ -276,6 +273,9 @@ function initMap(container) {
     maxBoundsVisiblity: 1.0,
   });
 
+  // Huge 200% SVG renderer buffer: eliminates all panning cutoff lines!
+  mapRenderer = L.svg({ padding: 2.0 });
+
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
 
@@ -299,6 +299,7 @@ function initMap(container) {
     return r.json();
   }).then(data => {
     countriesLayer = L.geoJSON(data, {
+      renderer: mapRenderer,
       pane: 'countriesPane',
       style: f => countryStyle(findCountry(f)),
       onEachFeature: (f, layer) => {
@@ -337,6 +338,7 @@ function initMap(container) {
     return r.json();
   }).then(data => {
     turkeyLayer = L.geoJSON(data, {
+      renderer: mapRenderer,
       pane: 'statesPane',
       style: f => provinceStyle(f.properties?.number),
       onEachFeature: (f, layer) => {
@@ -397,54 +399,12 @@ function measureTextWidth(text, fontSize) {
   return _measureCtx.measureText(text.toUpperCase()).width;
 }
 
-function polygonCentroid(ring) {
-  let area = 0, cx = 0, cy = 0;
-  const n = ring.length;
-  for (let i = 0; i < n - 1; i++) {
-    const x0 = ring[i][0], y0 = ring[i][1];
-    const x1 = ring[i + 1][0], y1 = ring[i + 1][1];
-    const cross = x0 * y1 - x1 * y0;
-    area += cross;
-    cx += (x0 + x1) * cross;
-    cy += (y0 + y1) * cross;
-  }
-  area /= 2;
-  if (Math.abs(area) < 1e-10) {
-    let sx = 0, sy = 0;
-    for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
-    return [sx / n, sy / n, Math.abs(area)];
-  }
-  return [cx / (6 * area), cy / (6 * area), Math.abs(area)];
-}
-
-function computeFeatureCenter(feature) {
-  const geom = feature?.geometry;
-  if (!geom) return null;
-
-  let bestCenter = null;
-  let maxArea = -1;
-
-  if (geom.type === 'Polygon') {
-    const [cx, cy, area] = polygonCentroid(geom.coordinates[0]);
-    bestCenter = [cy, cx];
-  } else if (geom.type === 'MultiPolygon') {
-    for (const poly of geom.coordinates) {
-      const [cx, cy, area] = polygonCentroid(poly[0]);
-      if (area > maxArea) {
-        maxArea = area;
-        bestCenter = [cy, cx];
-      }
-    }
-  }
-  return bestCenter;
-}
-
 const COUNTRY_LABEL_OFFSETS = {
-  'CA': [59.0, -100.0],
+  'CA': [56.0, -96.0],
   'US': [38.5, -97.0],
-  'RU': [61.0, 95.0],
+  'RU': [60.0, 95.0],
   'FR': [46.6, 2.3],
-  'NO': [61.5, 8.5],
+  'NO': [61.0, 8.5],
   'CL': [-35.0, -71.5],
   'JP': [36.2, 138.2],
   'NZ': [-41.5, 173.0],
@@ -453,6 +413,37 @@ const COUNTRY_LABEL_OFFSETS = {
   'MY': [4.0, 102.5],
   'ID': [-1.5, 117.0],
   'TR': [39.0, 35.0],
+  'NL': [52.2, 5.3],
+  'DE': [51.2, 10.4],
+  'IT': [42.8, 12.6],
+  'ES': [40.2, -3.7],
+  'PT': [39.5, -8.0],
+  'GB': [54.5, -3.0],
+  'DK': [55.7, 9.5],
+  'SE': [62.0, 15.0],
+  'FI': [64.0, 26.0],
+  'PL': [52.0, 19.5],
+  'UA': [49.0, 31.5],
+  'AT': [47.5, 14.5],
+  'CH': [46.8, 8.2],
+  'CZ': [49.8, 15.5],
+  'SK': [48.7, 19.5],
+  'HU': [47.2, 19.5],
+  'RO': [46.0, 25.0],
+  'BG': [42.7, 25.5],
+  'RS': [44.0, 20.8],
+  'BA': [44.0, 17.8],
+  'ME': [42.8, 19.3],
+  'AL': [41.3, 20.0],
+  'MK': [41.6, 21.7],
+  'EG': [26.8, 30.8],
+  'SA': [24.0, 45.0],
+  'IR': [32.0, 53.0],
+  'IQ': [33.0, 44.0],
+  'SY': [35.0, 38.5],
+  'AZ': [40.3, 47.7],
+  'GE': [42.0, 43.5],
+  'AM': [40.2, 45.0],
 };
 
 let _labelUpdateTimer = null;
@@ -482,7 +473,7 @@ function updateCountryLabels() {
   });
 
   const mapSize = map.getSize();
-  const vpPadding = 500; // Generous 500px viewport buffer for zero pop-in
+  const vpPadding = 600; // Generous 600px viewport buffer for zero pop-in
 
   layers.forEach(layer => {
     const f = layer.feature;
@@ -499,12 +490,7 @@ function updateCountryLabels() {
     if (COUNTRY_LABEL_OFFSETS[c.code]) {
       centerLatLng = L.latLng(COUNTRY_LABEL_OFFSETS[c.code]);
     } else {
-      const rawCenter = computeFeatureCenter(f);
-      if (rawCenter) {
-        centerLatLng = L.latLng(rawCenter[0], rawCenter[1]);
-      } else {
-        centerLatLng = layer.getBounds().getCenter();
-      }
+      centerLatLng = layer.getBounds().getCenter();
     }
 
     const bounds = layer.getBounds();
@@ -649,7 +635,7 @@ async function onViewChange() {
 
 function getVisibleCountries() {
   if (!countriesLayer || !map) return [];
-  const bounds = map.getBounds().pad(0.8); // 80% padding around screen
+  const bounds = map.getBounds().pad(1.0); // 100% padding around screen for seamless preloading
   const visible = [];
   countriesLayer.eachLayer(layer => {
     if (layer.getBounds && bounds.intersects(layer.getBounds())) {
@@ -690,13 +676,12 @@ function attachRegionLayer(code, data) {
   const c = WORLD_COUNTRIES.find(x => x.code === code);
   const flag = c ? c.flag : '';
 
-  // Sort descending by area so small capitals (Vienna, Berlin) are on top!
+  // Sort descending by bounding box area so small capitals (Vienna, Berlin) are on top!
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
-      const bboxA = turfBbox(a);
-      const bboxB = turfBbox(b);
-      const areaA = (bboxA[2] - bboxA[0]) * (bboxA[3] - bboxA[1]);
-      const areaB = (bboxB[2] - bboxB[0]) * (bboxB[3] - bboxB[1]);
+      const ba = a.properties?._bbox || [0,0,0,0];
+      const areaA = (a.geometry?.coordinates?.[0]?.length || 1);
+      const areaB = (b.geometry?.coordinates?.[0]?.length || 1);
       return areaB - areaA;
     } catch { return 0; }
   });
@@ -704,6 +689,7 @@ function attachRegionLayer(code, data) {
   const sortedData = { ...data, features: sortedFeatures };
 
   const layer = L.geoJSON(sortedData, {
+    renderer: mapRenderer,
     pane: 'statesPane',
     style: f => regionStyle(f.properties?.name || f.properties?.NAME_1, code),
     onEachFeature: (f, l) => {
@@ -782,10 +768,8 @@ function attachSubregionLayer(code, data) {
 
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
-      const bboxA = turfBbox(a);
-      const bboxB = turfBbox(b);
-      const areaA = (bboxA[2] - bboxA[0]) * (bboxA[3] - bboxA[1]);
-      const areaB = (bboxB[2] - bboxB[0]) * (bboxB[3] - bboxB[1]);
+      const areaA = (a.geometry?.coordinates?.[0]?.length || 1);
+      const areaB = (b.geometry?.coordinates?.[0]?.length || 1);
       return areaB - areaA;
     } catch { return 0; }
   });
@@ -793,6 +777,7 @@ function attachSubregionLayer(code, data) {
   const sortedData = { ...data, features: sortedFeatures };
 
   const layer = L.geoJSON(sortedData, {
+    renderer: mapRenderer,
     pane: 'citiesPane',
     style: f => subregionStyle(f.properties?.name, code),
     onEachFeature: (f, l) => {
