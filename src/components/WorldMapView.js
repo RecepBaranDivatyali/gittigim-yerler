@@ -53,13 +53,19 @@ import { THEMES, getTheme, setTheme, onThemeChange, getThemeConfig, applyTheme, 
 const REGION_ZOOM = 5.2;
 const SUBREGION_ZOOM = 7.5;
 
+function getFlagHtml(code) {
+  if (!code) return '🌍';
+  const c = code.toLowerCase();
+  return `<img src="https://flagcdn.com/w40/${c}.png" class="country-flag-badge" alt="${code}" style="width:22px;height:15px;border-radius:3px;vertical-align:middle;display:inline-block;margin-right:6px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.3);" />`;
+}
+
 function getStatusConfig() {
   const themeCfg = getThemeConfig();
   return {
     visited:   { label: '🟢 ' + t('visited'),   color: getStatusColor('visited'),  fillOpacity: 0.90 },
     planned:   { label: '🟡 ' + t('planned'),   color: getStatusColor('planned'),  fillOpacity: 0.85 },
     wishlist:  { label: '🟣 ' + t('wishlist'),  color: getStatusColor('wishlist'), fillOpacity: 0.80 },
-    unvisited: { label: '⚫ ' + t('unvisited'), color: themeCfg.landFill,          fillOpacity: 0.95 },
+    unvisited: { label: '⚫ ' + t('unvisited'), color: themeCfg.landBorder,        fillOpacity: 0.95 },
   };
 }
 
@@ -120,9 +126,9 @@ export function renderWorldMapView(container, options = {}) {
         <div id="map-legend" class="floating-legend">
           <div class="legend-items-list" style="margin-top:2px;">
             ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
-              `<span class="legend-item"><span class="legend-dot" style="background:${v.color};"></span>${v.label.replace(/^.+? /, '')}</span>`
+              `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span>${v.label.replace(/^.+? /, '')}</span>`
             ).join('')}
-            <span class="legend-item"><span class="legend-dot" style="background:${visitedColor}38;border:1px solid ${visitedColor};"></span>${t('unvisited')}</span>
+            <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};"></span>${t('unvisited')}</span>
           </div>
         </div>
 
@@ -270,13 +276,13 @@ export function renderWorldMapView(container, options = {}) {
     const legendEl = container.querySelector('#map-legend');
     if (!legendEl) return;
     const STATUS = getStatusConfig();
-    const visitedColor = getStatusColor('visited');
+    const themeCfg = getThemeConfig();
     legendEl.innerHTML = `
       <div class="legend-items-list" style="margin-top:2px;">
         ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
           `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span>${v.label.replace(/^.+? /, '')}</span>`
         ).join('')}
-        <span class="legend-item"><span class="legend-dot" style="background:${visitedColor}38;border:1.5px solid ${visitedColor};"></span>${t('unvisited')}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};box-shadow:none;"></span>${t('unvisited')}</span>
       </div>
     `;
   }
@@ -377,7 +383,7 @@ function initMap(container) {
           selectedRegionName = null;
           refreshStats();
           const displayName = getCountryDisplayName(c);
-          openStatusPopup(e.latlng, c.code, `${c.flag} ${displayName}`, 'country');
+          openStatusPopup(e.latlng, c.code, `${getFlagHtml(c.code)} ${displayName}`, 'country', c.code);
         });
       }
     }).addTo(map);
@@ -410,7 +416,7 @@ function initMap(container) {
         });
         layer.on('click', e => {
           L.DomEvent.stopPropagation(e);
-          openStatusPopup(e.latlng, `TR::${prov.id}`, `🇹🇷 ${prov.name}`, 'province');
+          openStatusPopup(e.latlng, `TR::${prov.id}`, `${getFlagHtml('TR')} ${prov.name}`, 'province', 'TR');
         });
       }
     });
@@ -798,7 +804,7 @@ function attachRegionLayer(code, data) {
         selectedCountryCode = code;
         selectedRegionName = raw;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, `${flag} ${display}`, 'region', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'region', code);
       });
     }
   });
@@ -884,7 +890,7 @@ function attachSubregionLayer(code, data) {
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, `${flag} ${display}`, 'subregion', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'subregion', code);
       });
     }
   });
@@ -928,7 +934,7 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         return `
           <button type="button" class="map-status-btn ${isAct ? 'active' : ''}"
                   data-val="${val}" style="--btn-color:${cfg.color};">
-            <span class="map-status-dot" style="background:${cfg.color};box-shadow:0 0 10px ${cfg.color}bb;"></span>
+            <span class="map-status-dot" style="${val === 'unvisited' ? 'background:transparent;border:2px solid ' + cfg.color + ';box-shadow:none;' : 'background:' + cfg.color + ';box-shadow:0 0 10px ' + cfg.color + 'bb;'}"></span>
             <span class="map-status-text">${textLabel}</span>
           </button>
         `;
