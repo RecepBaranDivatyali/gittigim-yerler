@@ -89,7 +89,7 @@ export function renderWorldMapView(container, options = {}) {
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
 
-        <!-- Floating Feedback Button (bottom-right) -->
+        <!-- Floating Feedback Button (bottom-right: aligned at safe height bottom:76px) -->
         <div id="feedback-btn-wrap" class="floating-feedback-wrap">
           <button id="btn-open-feedback" class="floating-feedback-btn" aria-label="${t('feedbackBtn')}">
             <span>💬</span> <span class="feedback-btn-text">${t('feedbackBtn')}</span>
@@ -384,7 +384,7 @@ function initMap(container) {
 }
 
 const IGNORED_LABEL_CODES = new Set([
-  '-99', 'UU', 'VA', 'SM', 'MC', 'LI', 'AD', 'GI', 'MT', 'IO', 'BM', 'KY',
+  'VA', 'SM', 'MC', 'LI', 'AD', 'GI', 'MT', 'IO', 'BM', 'KY',
   'VG', 'AI', 'TC', 'MS', 'BL', 'MF', 'SX', 'CW', 'BQ', 'FK', 'GS', 'PN',
   'SH', 'CC', 'CX', 'NF', 'CK', 'NU', 'TK', 'WF', 'PF', 'NC', 'PM', 'FO', 'SJ'
 ]);
@@ -399,42 +399,51 @@ function measureTextWidth(text, fontSize) {
   return _measureCtx.measureText(text.toUpperCase()).width;
 }
 
-// Proper area-weighted centroid of a polygon ring (Shoelace formula)
+// Proper area-weighted centroid and bounding box of a single polygon ring
 function polygonCentroid(ring) {
   let area = 0, cx = 0, cy = 0;
   const n = ring.length;
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+
   for (let i = 0; i < n - 1; i++) {
     const x0 = ring[i][0], y0 = ring[i][1];
     const x1 = ring[i + 1][0], y1 = ring[i + 1][1];
+    minX = Math.min(minX, x0, x1);
+    maxX = Math.max(maxX, x0, x1);
+    minY = Math.min(minY, y0, y1);
+    maxY = Math.max(maxY, y0, y1);
+
     const cross = x0 * y1 - x1 * y0;
     area += cross;
     cx += (x0 + x1) * cross;
     cy += (y0 + y1) * cross;
   }
   area /= 2;
-  if (Math.abs(area) < 1e-10) {
+  const absArea = Math.abs(area);
+  const bbox = { minLng: minX, minLat: minY, maxLng: maxX, maxLat: maxY };
+
+  if (absArea < 1e-10) {
     let sx = 0, sy = 0;
     for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
-    return [sx / n, sy / n, Math.abs(area)];
+    return { cx: sx / n, cy: sy / n, area: 0, bbox };
   }
-  cx /= (6 * area);
-  cy /= (6 * area);
-  return [cx, cy, Math.abs(area)];
+  return { cx: cx / (6 * area), cy: cy / (6 * area), area: absArea, bbox };
 }
 
-// Find the visual centroid: area-weighted centroid of the largest polygon
-function getVisualCenter(feature) {
+// Find the visual centroid and bounding box of ONLY the largest mainland polygon
+function getMainlandInfo(feature) {
   const geom = feature?.geometry;
   if (!geom) return null;
 
-  let bestCx = 0, bestCy = 0, bestArea = 0;
+  let best = null;
+  let maxArea = -1;
 
   function processRing(ring) {
-    const [cx, cy, area] = polygonCentroid(ring);
-    if (area > bestArea) {
-      bestArea = area;
-      bestCx = cx;
-      bestCy = cy;
+    const res = polygonCentroid(ring);
+    if (res.area > maxArea) {
+      maxArea = res.area;
+      best = res;
     }
   }
 
@@ -444,8 +453,7 @@ function getVisualCenter(feature) {
     geom.coordinates.forEach(poly => processRing(poly[0]));
   }
 
-  if (bestArea === 0) return null;
-  return L.latLng(bestCy, bestCx);
+  return best;
 }
 
 let _labelUpdateTimer = null;
@@ -478,7 +486,7 @@ function updateCountryLabels() {
 
   layers.forEach(layer => {
     const f = layer.feature;
-    const iso = f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '';
+    const iso = (f?.properties?.['ISO3166-1-Alpha-2'] || f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '').toUpperCase();
     const rawName = f?.properties?.name || '';
 
     // 1. Blacklist check
@@ -497,34 +505,50 @@ function updateCountryLabels() {
     if (!countryName) return;
 
     try {
-      const bounds = layer.getBounds();
-      const nw = map.latLngToContainerPoint(bounds.getNorthWest());
-      const se = map.latLngToContainerPoint(bounds.getSouthEast());
+      // Get mainland polygon info (eliminates overseas islands like Curacao on Netherlands)
+      const mainland = getMainlandInfo(f);
+      if (!mainland || mainland.area <= 0) return;
+
+      // Project mainland bounding box to screen pixels
+      const nw = map.latLngToContainerPoint([mainland.bbox.maxLat, mainland.bbox.minLng]);
+      const se = map.latLngToContainerPoint([mainland.bbox.minLat, mainland.bbox.maxLng]);
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
-      // Dynamic font size: scale with country pixel width
-      const textLen = countryName.length;
-      const dynamicFontSize = Math.min(15, Math.max(9, Math.floor(pixelWidth / (textLen * 1.3))));
-
-      // Measure actual rendered text width with canvas
-      const actualTextWidth = measureTextWidth(countryName, dynamicFontSize);
-      const letterSpacingExtra = textLen * dynamicFontSize * 0.12;
-      const totalTextWidth = actualTextWidth + letterSpacingExtra;
-
-      // Strict: text must fit within 80% of country pixel width (so tiny countries like Holland/Belgium don't collide)
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.80);
-      if (totalTextWidth > maxAllowedWidth || pixelHeight < 18) {
+      // Strict minimum pixel size: if country is too small on screen, do NOT show label!
+      if (pixelWidth < 36 || pixelHeight < 18) {
         return;
       }
 
-      // Use proper area-weighted visual centroid
-      const visualCenter = getVisualCenter(f) || bounds.getCenter();
+      const textLen = countryName.length;
+
+      // Calculate font size strictly proportionate to country's mainland size
+      const maxFontByWidth = Math.floor(pixelWidth / (textLen * 1.35));
+      const maxFontByHeight = Math.floor(pixelHeight / 2.0);
+      let fontSize = Math.min(16, Math.min(maxFontByWidth, maxFontByHeight));
+
+      // If text needs to be smaller than 9px to fit inside country, HIDE IT until user zooms in!
+      if (fontSize < 9) {
+        return;
+      }
+
+      // Measure actual rendered text width
+      const actualTextWidth = measureTextWidth(countryName, fontSize);
+      const letterSpacingExtra = textLen * fontSize * 0.12;
+      const totalTextWidth = actualTextWidth + letterSpacingExtra;
+
+      // Strict boundary enforcement: text must fit comfortably within 75% of country width
+      if (totalTextWidth > pixelWidth * 0.75) {
+        return;
+      }
+
+      // Visual center point on screen
+      const visualCenter = L.latLng(mainland.cy, mainland.cx);
       const centerPt = map.latLngToContainerPoint(visualCenter);
 
       // Generous buffer (500px outside screen) so half-visible countries have their labels ready
-      const halfW = totalTextWidth / 2 + 6;
-      const halfH = dynamicFontSize / 2 + 6;
+      const halfW = totalTextWidth / 2 + 5;
+      const halfH = fontSize / 2 + 4;
       const vpBuffer = 500;
       if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
           centerPt.y < -vpBuffer || centerPt.y > mapSize.y + vpBuffer) {
@@ -533,10 +557,10 @@ function updateCountryLabels() {
 
       // Build collision box
       const box = {
-        x1: centerPt.x - halfW - 6,
-        y1: centerPt.y - halfH - 4,
-        x2: centerPt.x + halfW + 6,
-        y2: centerPt.y + halfH + 4
+        x1: centerPt.x - halfW - 4,
+        y1: centerPt.y - halfH - 3,
+        x2: centerPt.x + halfW + 4,
+        y2: centerPt.y + halfH + 3
       };
 
       // 2. Collision Detection
@@ -550,11 +574,11 @@ function updateCountryLabels() {
 
       // Render label centered at visual centroid with active theme styling
       const renderWidth = Math.ceil(totalTextWidth) + 4;
-      const renderHeight = dynamicFontSize + 4;
+      const renderHeight = fontSize + 4;
 
       const icon = L.divIcon({
         className: 'country-watermark-wrap',
-        html: `<div class="country-tattoo" style="width:${renderWidth}px;font-size:${dynamicFontSize}px;color:${themeCfg.labelColor};text-shadow:${themeCfg.labelShadow};">${countryName}</div>`,
+        html: `<div class="country-tattoo" style="width:${renderWidth}px;font-size:${fontSize}px;color:${themeCfg.labelColor};text-shadow:${themeCfg.labelShadow};">${countryName}</div>`,
         iconSize: [renderWidth, renderHeight],
         iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
@@ -686,7 +710,6 @@ function attachRegionLayer(code, data) {
   const c = WORLD_COUNTRIES.find(x => x.code === code);
   const flag = c ? c.flag : '';
 
-  // Sort descending by area so small capitals (Vienna, Berlin) are on top!
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
       const areaA = (a.geometry?.coordinates?.[0]?.length || 1);
@@ -1056,7 +1079,7 @@ function subregionStyle(name, code) {
 // ─── Country Finder Helper ─────────────────────────────────────────────────────
 function findCountry(f) {
   if (!f) return null;
-  const iso2 = (f.properties?.iso_a2 || f.properties?.ISO_A2 || f.id || '').toUpperCase();
+  const iso2 = (f.properties?.['ISO3166-1-Alpha-2'] || f.properties?.iso_a2 || f.properties?.ISO_A2 || f.id || '').toUpperCase();
   const name = f.properties?.name || '';
   if (iso2 && iso2 !== '-99' && iso2 !== 'UU') {
     const found = WORLD_COUNTRIES.find(c => c.code === iso2);

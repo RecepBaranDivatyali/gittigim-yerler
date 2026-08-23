@@ -2572,7 +2572,7 @@ body[data-theme="light"] .feedback-input {
 
 .floating-feedback-wrap {
   position: absolute;
-  bottom: max(28px, env(safe-area-inset-bottom, 28px));
+  bottom: max(76px, env(safe-area-inset-bottom, 76px));
   right: max(20px, env(safe-area-inset-right, 20px));
   z-index: 1000;
 }
@@ -2745,8 +2745,8 @@ body[data-theme="light"] .feedback-input {
 
 @media (max-width: 768px) {
   .floating-feedback-wrap {
-    bottom: max(28px, env(safe-area-inset-bottom, 28px));
-    right: max(14px, env(safe-area-inset-right, 14px));
+    bottom: max(76px, env(safe-area-inset-bottom, 76px));
+    right: max(16px, env(safe-area-inset-right, 16px));
   }
   .feedback-btn-text {
     display: none;
