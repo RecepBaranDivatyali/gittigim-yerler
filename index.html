@@ -12,6 +12,11 @@
     <meta name="author" content="Gittiğim Yerler" />
     <meta name="robots" content="index, follow" />
 
+    <!-- Cache Control: Force instant updates -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://gittigim-yerler.vercel.app/" />
@@ -42,15 +47,21 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
-        <script>
-      // Immediate App Initialization Helper & Service Worker updater
+    <script>
+      // Clear old SW caches to ensure 100% instant updates on all devices
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (let reg of registrations) {
-            reg.update();
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
           }
         });
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
       }
     </script>
   </body>
