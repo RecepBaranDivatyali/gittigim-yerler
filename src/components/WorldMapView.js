@@ -243,18 +243,18 @@ function initMap(container) {
     tapTolerance: 15
   });
 
-  map.createPane('labelsPane');
-  map.getPane('labelsPane').style.zIndex = 450;
-  map.getPane('labelsPane').style.pointerEvents = 'none';
-
   map.createPane('countriesPane');
-  map.getPane('countriesPane').style.zIndex = 430;
+  map.getPane('countriesPane').style.zIndex = 410;
 
   map.createPane('statesPane');
   map.getPane('statesPane').style.zIndex = 420;
 
   map.createPane('citiesPane');
-  map.getPane('citiesPane').style.zIndex = 410;
+  map.getPane('citiesPane').style.zIndex = 430;
+
+  map.createPane('labelsPane');
+  map.getPane('labelsPane').style.zIndex = 450;
+  map.getPane('labelsPane').style.pointerEvents = 'none';
 
   countryLabelsLayer = L.layerGroup().addTo(map);
 
@@ -272,6 +272,12 @@ function initMap(container) {
         const c = findCountry(f);
         layer.on('click', e => {
           if (!c) return;
+          const zoom = map?.getZoom() || 3;
+          if (zoom >= REGION_ZOOM) {
+            const hasReg = (regionLayers[c.code] && map.hasLayer(regionLayers[c.code])) ||
+                           (c.code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer));
+            if (hasReg) return;
+          }
           L.DomEvent.stopPropagation(e);
           selectedCountryCode = c.code;
           selectedRegionName = null;
@@ -485,11 +491,11 @@ function updateCountryLabels() {
       const visualCenter = getVisualCenter(f) || bounds.getCenter();
       const centerPt = map.latLngToContainerPoint(visualCenter);
 
-      // Viewport edge check
-      const halfW = totalTextWidth / 2 + 6;
-      const halfH = dynamicFontSize / 2 + 6;
-      if (centerPt.x - halfW < vpPadding || centerPt.x + halfW > mapSize.x - vpPadding ||
-          centerPt.y - halfH < vpPadding || centerPt.y + halfH > mapSize.y - vpPadding) {
+      // Generous buffer (500px outside screen) so partially visible countries (Greece, Romania, Italy, etc.)
+      // have their names ready and visible, even if cut off by screen edge!
+      const vpBuffer = 500;
+      if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
+          centerPt.y < -vpBuffer || centerPt.y > mapSize.y + vpBuffer) {
         return;
       }
 
