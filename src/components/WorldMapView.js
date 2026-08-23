@@ -1064,11 +1064,13 @@ function findCountry(f) {
   if (!f) return null;
   const iso2 = (f.properties?.iso_a2 || f.properties?.ISO_A2 || f.id || '').toUpperCase();
   const name = f.properties?.name || '';
-
+  if (iso2 && iso2 !== '-99' && iso2 !== 'UU') {
+    const found = WORLD_COUNTRIES.find(c => c.code === iso2);
+    if (found) return found;
+  }
   return WORLD_COUNTRIES.find(c =>
-    (iso2 && c.code === iso2) ||
-    c.name.toLowerCase() === name.toLowerCase() ||
-    c.nameTr.toLowerCase() === name.toLowerCase()
+    (c.name && c.name.toLowerCase() === name.toLowerCase()) ||
+    (c.nameEn && c.nameEn.toLowerCase() === name.toLowerCase())
   ) || null;
 }
 

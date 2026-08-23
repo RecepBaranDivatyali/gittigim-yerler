@@ -2570,11 +2570,10 @@ body[data-theme="light"] .feedback-input {
   color: #0f172a !important;
 }
 
-/* ── Floating Feedback Button & Modal ─────────────────── */
 .floating-feedback-wrap {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: max(28px, env(safe-area-inset-bottom, 28px));
+  right: max(20px, env(safe-area-inset-right, 20px));
   z-index: 1000;
 }
 
@@ -2746,8 +2745,8 @@ body[data-theme="light"] .feedback-input {
 
 @media (max-width: 768px) {
   .floating-feedback-wrap {
-    bottom: max(16px, env(safe-area-inset-bottom));
-    right: max(12px, env(safe-area-inset-right));
+    bottom: max(28px, env(safe-area-inset-bottom, 28px));
+    right: max(14px, env(safe-area-inset-right, 14px));
   }
   .feedback-btn-text {
     display: none;
