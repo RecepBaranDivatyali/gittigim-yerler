@@ -1,3 +1,46 @@
+const COUNTRY_LABEL_OFFSETS = {
+  'HR': [45.7, 17.0],  // Croatia (Northern Slavonia corridor, 100% inside borders)
+  'BA': [44.1, 17.8],  // Bosnia & Herzegovina
+  'SI': [46.1, 14.8],  // Slovenia
+  'ME': [42.8, 19.3],  // Montenegro
+  'RS': [44.0, 20.8],  // Serbia
+  'XK': [42.6, 20.9],  // Kosovo
+  'MK': [41.6, 21.7],  // North Macedonia
+  'AL': [41.3, 20.0],  // Albania
+  'GR': [39.4, 21.8],  // Greece mainland
+  'IT': [43.0, 12.5],  // Italy (Central peninsula)
+  'CL': [-33.5, -70.6],// Chile (Central valley)
+  'NO': [60.8, 8.5],   // Norway (Southern interior)
+  'SE': [60.0, 15.0],  // Sweden
+  'FI': [63.0, 26.0],  // Finland
+  'VN': [21.0, 105.8], // Vietnam (Red River plain)
+  'MY': [4.0, 102.0],  // Peninsular Malaysia
+  'ID': [-2.0, 117.0], // Indonesia
+  'JP': [36.2, 138.2], // Japan (Central Honshu)
+  'CA': [56.0, -96.0], // Canada
+  'US': [38.5, -97.0], // USA (Lower 48)
+  'RU': [60.0, 95.0],  // Russia
+  'TR': [39.0, 35.2],  // Turkey (Central Anatolia)
+  'DE': [51.2, 10.4],  // Germany
+  'FR': [46.8, 2.4],   // France (Central)
+  'ES': [40.2, -3.7],  // Spain (Central)
+  'PT': [39.5, -8.2],  // Portugal
+  'GB': [53.8, -2.0],  // UK (Central England)
+  'IE': [53.4, -7.9],  // Ireland
+  'PL': [52.0, 19.5],  // Poland
+  'UA': [49.0, 31.5],  // Ukraine
+  'AT': [47.5, 14.5],  // Austria
+  'CH': [46.8, 8.2],   // Switzerland
+  'CZ': [49.8, 15.5],  // Czechia
+  'SK': [48.7, 19.5],  // Slovakia
+  'HU': [47.2, 19.3],  // Hungary
+  'RO': [45.9, 25.0],  // Romania
+  'BG': [42.7, 25.3],  // Bulgaria
+  'NL': [52.2, 5.6],   // Netherlands mainland
+  'BE': [50.6, 4.6],   // Belgium
+  'DK': [55.7, 9.5],   // Denmark mainland
+};
+
 import L from 'leaflet';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
@@ -543,7 +586,7 @@ function updateCountryLabels() {
       }
 
       // Visual center point on screen
-      const visualCenter = L.latLng(mainland.cy, mainland.cx);
+      const visualCenter = COUNTRY_LABEL_OFFSETS[c.code] ? L.latLng(COUNTRY_LABEL_OFFSETS[c.code]) : L.latLng(mainland.cy, mainland.cx);
       const centerPt = map.latLngToContainerPoint(visualCenter);
 
       // Generous buffer (500px outside screen) so half-visible countries have their labels ready
