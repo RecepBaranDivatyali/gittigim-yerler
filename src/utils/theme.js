@@ -131,5 +131,36 @@ export function applyTheme(themeId) {
   root.style.setProperty('--theme-text-main', cfg.textMain);
   root.style.setProperty('--theme-text-muted', cfg.textMuted);
 
+  const uiSize = getUiSize();
+  const uiScale = UI_SCALES[uiSize] || '1.05';
+  root.style.setProperty('--ui-font-scale', uiScale);
+  document.body.setAttribute('data-ui-size', uiSize);
   document.body.setAttribute('data-theme', cfg.id);
+}
+
+
+const UI_SIZE_STORAGE_KEY = 'gv_ui_size';
+export const UI_SCALES = {
+  small: '0.88',
+  medium: '1.05',
+  large: '1.24'
+};
+
+export function getUiSize() {
+  try {
+    const saved = localStorage.getItem(UI_SIZE_STORAGE_KEY);
+    if (saved && UI_SCALES[saved]) return saved;
+  } catch {}
+  return 'medium';
+}
+
+export function setUiSize(sizeKey) {
+  if (!UI_SCALES[sizeKey]) return;
+  try {
+    localStorage.setItem(UI_SIZE_STORAGE_KEY, sizeKey);
+  } catch {}
+  applyTheme(getTheme());
+  themeListeners.forEach(fn => {
+    try { fn(currentTheme); } catch {}
+  });
 }

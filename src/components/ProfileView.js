@@ -2,7 +2,7 @@ import { getStorageData, calculateStats, resetTravelData } from '../utils/storag
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18n.js';
-import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor } from '../utils/theme.js';
+import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -10,6 +10,7 @@ export function renderProfileView(container, onBack) {
   function render() {
     const currentLang = getLanguage();
     const currentTheme = getTheme();
+    const currentUiSize = getUiSize();
 
     container.innerHTML = `
       <div class="profile-overlay">
@@ -129,6 +130,7 @@ export function renderProfileView(container, onBack) {
   function renderSettingsTab(contentArea) {
     const currentLang = getLanguage();
     const currentTheme = getTheme();
+    const currentUiSize = getUiSize();
     const visitedColor = getStatusColor('visited');
     const plannedColor = getStatusColor('planned');
     const wishlistColor = getStatusColor('wishlist');
