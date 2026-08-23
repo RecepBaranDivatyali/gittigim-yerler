@@ -121,22 +121,7 @@ export function renderWorldMapView(container, options = {}) {
       resetBtn.addEventListener('click', () => {
         if (confirm(t('resetConfirm'))) {
           resetTravelData();
-          countriesLayer?.eachLayer(l => {
-            const c = findCountry(l.feature);
-            l.setStyle(countryStyle(c));
-          });
-          if (turkeyLayer) {
-            turkeyLayer.eachLayer(l => {
-              l.setStyle(provinceStyle(l.feature?.properties?.number));
-            });
-          }
-          Object.keys(regionLayers).forEach(code => {
-            if (regionLayers[code]) {
-              regionLayers[code].eachLayer(l => {
-                l.setStyle(regionStyle(null));
-              });
-            }
-          });
+          refreshAllStyles();
           refreshStats();
         }
       });
