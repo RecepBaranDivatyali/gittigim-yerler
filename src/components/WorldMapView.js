@@ -1,5 +1,6 @@
 const COUNTRY_LABEL_OFFSETS = {
-  'HR': [45.7, 17.0],  // Croatia (Northern Slavonia corridor, 100% inside borders)
+  'HR': [45.4, 17.5],  // Croatia (Deep inside Slavonia heartland, 100% inside borders)
+  'AT': [47.5, 14.5],  // Austria (Lower/Upper Austria central interior)
   'BA': [44.1, 17.8],  // Bosnia & Herzegovina
   'SI': [46.1, 14.8],  // Slovenia
   'ME': [42.8, 19.3],  // Montenegro
@@ -7,8 +8,8 @@ const COUNTRY_LABEL_OFFSETS = {
   'XK': [42.6, 20.9],  // Kosovo
   'MK': [41.6, 21.7],  // North Macedonia
   'AL': [41.3, 20.0],  // Albania
-  'GR': [39.4, 21.8],  // Greece mainland
-  'IT': [43.0, 12.5],  // Italy (Central peninsula)
+  'GR': [39.2, 21.9],  // Greece mainland
+  'IT': [42.6, 12.8],  // Italy (Central peninsula)
   'CL': [-33.5, -70.6],// Chile (Central valley)
   'NO': [60.8, 8.5],   // Norway (Southern interior)
   'SE': [60.0, 15.0],  // Sweden
@@ -27,15 +28,14 @@ const COUNTRY_LABEL_OFFSETS = {
   'PT': [39.5, -8.2],  // Portugal
   'GB': [53.8, -2.0],  // UK (Central England)
   'IE': [53.4, -7.9],  // Ireland
-  'PL': [52.0, 19.5],  // Poland
+  'PL': [52.0, 19.3],  // Poland
   'UA': [49.0, 31.5],  // Ukraine
-  'AT': [47.5, 14.5],  // Austria
   'CH': [46.8, 8.2],   // Switzerland
   'CZ': [49.8, 15.5],  // Czechia
   'SK': [48.7, 19.5],  // Slovakia
-  'HU': [47.2, 19.3],  // Hungary
-  'RO': [45.9, 25.0],  // Romania
-  'BG': [42.7, 25.3],  // Bulgaria
+  'HU': [47.1, 19.3],  // Hungary
+  'RO': [45.9, 24.8],  // Romania
+  'BG': [42.6, 25.3],  // Bulgaria
   'NL': [52.2, 5.6],   // Netherlands mainland
   'BE': [50.6, 4.6],   // Belgium
   'DK': [55.7, 9.5],   // Denmark mainland
@@ -558,20 +558,20 @@ function updateCountryLabels() {
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
-      // Strict minimum pixel size: if country is too small on screen, do NOT show label!
-      if (pixelWidth < 36 || pixelHeight < 18) {
+      // Strict minimum pixel size: country must have ample screen space
+      if (pixelWidth < 52 || pixelHeight < 28) {
         return;
       }
 
       const textLen = countryName.length;
 
       // Calculate font size strictly proportionate to country's mainland size
-      const maxFontByWidth = Math.floor(pixelWidth / (textLen * 1.35));
-      const maxFontByHeight = Math.floor(pixelHeight / 2.0);
-      let fontSize = Math.min(16, Math.min(maxFontByWidth, maxFontByHeight));
+      const maxFontByWidth = Math.floor(pixelWidth / (textLen * 1.55));
+      const maxFontByHeight = Math.floor(pixelHeight / 2.6);
+      let fontSize = Math.min(15, Math.min(maxFontByWidth, maxFontByHeight));
 
-      // If text needs to be smaller than 9px to fit inside country, HIDE IT until user zooms in!
-      if (fontSize < 9) {
+      // If font size is under 10px to fit inside country, HIDE IT until user zooms in!
+      if (fontSize < 10) {
         return;
       }
 
@@ -580,8 +580,8 @@ function updateCountryLabels() {
       const letterSpacingExtra = textLen * fontSize * 0.12;
       const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-      // Strict boundary enforcement: text must fit comfortably within 75% of country width
-      if (totalTextWidth > pixelWidth * 0.75) {
+      // Strict boundary enforcement: text must fit comfortably within 68% of country width & 55% of height
+      if (totalTextWidth > pixelWidth * 0.68 || (fontSize + 6) > pixelHeight * 0.55) {
         return;
       }
 
