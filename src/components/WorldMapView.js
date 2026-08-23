@@ -249,6 +249,7 @@ export function renderWorldMapView(container, options = {}) {
   attachUIEvents();
 
   onLanguageChange(() => {
+    updateLegendColors();
     container.innerHTML = getHtml();
     if (map) {
       const el = container.querySelector('#leaflet-map');
@@ -265,7 +266,23 @@ export function renderWorldMapView(container, options = {}) {
     refreshStats();
   });
 
+  function updateLegendColors() {
+    const legendEl = container.querySelector('#map-legend');
+    if (!legendEl) return;
+    const STATUS = getStatusConfig();
+    const visitedColor = getStatusColor('visited');
+    legendEl.innerHTML = `
+      <div class="legend-items-list" style="margin-top:2px;">
+        ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
+          `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span>${v.label.replace(/^.+? /, '')}</span>`
+        ).join('')}
+        <span class="legend-item"><span class="legend-dot" style="background:${visitedColor}38;border:1.5px solid ${visitedColor};"></span>${t('unvisited')}</span>
+      </div>
+    `;
+  }
+
   onThemeChange((newTheme) => {
+    updateLegendColors();
     const cfg = getThemeConfig(newTheme);
     const rootEl = container.querySelector('#map-root');
     if (rootEl) rootEl.style.backgroundColor = cfg.oceanBg;
