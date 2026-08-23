@@ -899,12 +899,16 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     currentStatus = ns(worldVisits[id]?.status);
   }
 
-  const btnsHtml = Object.entries(STATUS).map(([key, val]) => `
-    <button class="map-status-btn ${currentStatus === key ? 'active' : ''}" data-status="${key}">
-      <span class="map-status-dot" style="background:${val.color};"></span>
-      <span>${val.label.replace(/^.+? /, '')}</span>
-    </button>
-  `).join('');
+  const btnsHtml = Object.entries(STATUS).map(([key, val]) => {
+    const isAct = currentStatus === key;
+    const textLabel = val.label.replace(/^.+? /, '');
+    return `
+      <button type="button" class="map-status-btn ${isAct ? 'active' : ''}" data-status="${key}">
+        <span class="map-status-dot" style="background:${val.color};box-shadow:0 0 8px ${val.color}aa;"></span>
+        <span class="map-status-text">${textLabel}</span>
+      </button>
+    `;
+  }).join('');
 
   const content = `
     <div class="map-status-popup">
