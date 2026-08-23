@@ -645,14 +645,14 @@ function attachRegionLayer(code, data) {
   const flag = c ? c.flag : '';
   const countryName = c ? getCountryDisplayName(c) : '';
 
-  // Sort region features ascending by bounding box area
+  // Sort region features descending by bounding box area (largest first, small enclave cities last on top)
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
       const bboxA = turfBbox(a);
       const bboxB = turfBbox(b);
       const areaA = (bboxA[2] - bboxA[0]) * (bboxA[3] - bboxA[1]);
       const areaB = (bboxB[2] - bboxB[0]) * (bboxB[3] - bboxB[1]);
-      return areaA - areaB;
+      return areaB - areaA;
     } catch { return 0; }
   });
 
@@ -752,13 +752,14 @@ function attachSubregionLayer(code, data) {
   const c = WORLD_COUNTRIES.find(x => x.code === code);
   const flag = c ? c.flag : '';
 
+  // Sort subregion features descending by bounding box area (largest first, small enclave cities last on top)
   const sortedFeatures = [...data.features].sort((a, b) => {
     try {
       const bboxA = turfBbox(a);
       const bboxB = turfBbox(b);
       const areaA = (bboxA[2] - bboxA[0]) * (bboxA[3] - bboxA[1]);
       const areaB = (bboxB[2] - bboxB[0]) * (bboxB[3] - bboxB[1]);
-      return areaA - areaB;
+      return areaB - areaA;
     } catch { return 0; }
   });
 
@@ -1037,9 +1038,9 @@ function regionStyle(rawName, countryCode) {
 
   const tintMap = { visited: '#ff5722', planned: '#f59e0b', wishlist: '#8b5cf6' };
   const tint = tintMap[countryStatus];
-  if (tint) return { fillColor: tint, fillOpacity: hasSubregions ? 0.01 : 0.35, color: themeCfg.landBorder, weight: 1.5, opacity: 0.9, interactive: isInteractive };
+  if (tint) return { fillColor: tint, fillOpacity: hasSubregions ? 0.01 : 0.22, color: themeCfg.landBorder, weight: 1.2, opacity: 0.8, interactive: isInteractive };
 
-  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 1.0, opacity: zoomedToSubregions ? 0.3 : 0.8, interactive: isInteractive };
+  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 1.0, opacity: zoomedToSubregions ? 0.3 : 0.7, interactive: isInteractive };
 }
 
 function provinceStyle(provinceId) {
@@ -1061,10 +1062,10 @@ function provinceStyle(provinceId) {
   // Türkiye işaretliyse hafif renk
   const tintMap = { visited: '#ff5722', planned: '#f59e0b', wishlist: '#8b5cf6' };
   const tint = tintMap[trStatus];
-  if (tint) return { fillColor: tint, fillOpacity: 0.30, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.9 };
+  if (tint) return { fillColor: tint, fillOpacity: 0.22, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
 
   // Unvisited: şeffaf dolgu + beyaz sınır çizgisi (regionStyle ile aynı davranış)
-  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.85 };
+  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
 }
 
 function subregionStyle(name, code) {
@@ -1077,14 +1078,14 @@ function subregionStyle(name, code) {
   const themeCfg = getThemeConfig();
   
   if (status !== 'unvisited') {
-    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.0, opacity: 1 };
+    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.2, opacity: 1 };
   }
 
   const tintMap = { visited: '#ff5722', planned: '#f59e0b', wishlist: '#8b5cf6' };
   const tint = tintMap[countryStatus];
-  if (tint) return { fillColor: tint, fillOpacity: 0.35, color: themeCfg.landBorder, weight: 0.8, opacity: 0.5 };
+  if (tint) return { fillColor: tint, fillOpacity: 0.18, color: themeCfg.landBorder, weight: 0.6, opacity: 0.5 };
 
-  return { fillColor: themeCfg.provinceFill, fillOpacity: 0.95, color: themeCfg.landBorder, weight: 0.8, opacity: 0.5 };
+  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 0.6, opacity: 0.4 };
 }
 
 // ─── Country Finder Helper ─────────────────────────────────────────────────────
