@@ -893,21 +893,23 @@ function countryStyle(c) {
   let isInteractive = true;
   let hasRegions = false;
   if (zoomed) {
-    if (regionLayers[c?.code] && map.hasLayer(regionLayers[c?.code])) {
-      isInteractive = false;
-      hasRegions = true;
-    }
-    if (c?.code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer)) {
+    const hasRegionLayer = regionLayers[c?.code] && map.hasLayer(regionLayers[c?.code]);
+    const hasTurkeyLayer = c?.code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer);
+    if (hasRegionLayer || hasTurkeyLayer) {
       isInteractive = false;
       hasRegions = true;
     }
   }
 
+  // When region layer is active: country polygon becomes a ghost (only border shows)
+  // When zoomed but NO region layer yet: keep full country style, don't dim
+  const fillOpacity = hasRegions
+    ? 0.01
+    : (status === 'unvisited' ? 0.95 : cfg.fillOpacity);
+
   return {
     fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
-    fillOpacity: hasRegions ? 0.01 : (zoomed
-      ? (status === 'unvisited' ? 0.15 : 0.25)
-      : (status === 'unvisited' ? 0.95 : cfg.fillOpacity)),
+    fillOpacity,
     color: zoomed
       ? (status === 'unvisited' ? themeCfg.landBorderZoomed : '#ffffff')
       : (status === 'unvisited' ? themeCfg.landBorder : 'rgba(255,255,255,0.7)'),
@@ -957,14 +959,18 @@ function provinceStyle(provinceId) {
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
 
+  // Visited/planned/wishlist il → dolgu rengini göster
   if (status !== 'unvisited') {
-    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.0, opacity: 1 };
+    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.2, opacity: 1 };
   }
+  
+  // Türkiye işaretliyse hafif renk
   const tintMap = { visited: '#ff5722', planned: '#f59e0b', wishlist: '#8b5cf6' };
   const tint = tintMap[trStatus];
-  if (tint) return { fillColor: tint, fillOpacity: 0.35, color: themeCfg.landBorder, weight: 0.8, opacity: 0.5 };
+  if (tint) return { fillColor: tint, fillOpacity: 0.30, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.9 };
 
-  return { fillColor: themeCfg.provinceFill, fillOpacity: 0.95, color: themeCfg.landBorder, weight: 0.8, opacity: 0.5 };
+  // Unvisited: şeffaf dolgu + beyaz sınır çizgisi (regionStyle ile aynı davranış)
+  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.85 };
 }
 
 function subregionStyle(name, code) {
