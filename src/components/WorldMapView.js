@@ -859,6 +859,9 @@ function openStatusPopup(latlng, key, label, type, parentCode, parentRegionName)
       if (type === 'province') {
         const id = parseInt(key.replace('TR::', ''));
         saveTurkeyVisit(id, val);
+        if (val === 'visited') {
+          saveWorldVisit('TR', 'visited', { notes: 'Auto-marked (İl ziyareti)' });
+        }
       } else {
         saveWorldVisit(key, val);
         
@@ -896,8 +899,18 @@ function openStatusPopup(latlng, key, label, type, parentCode, parentRegionName)
 
 // ─── Layer Style Generators ───────────────────────────────────────────────────
 function countryStyle(c) {
-  const { worldVisits } = getStorageData();
-  const status = ns(worldVisits[c?.code]?.status);
+  const { worldVisits, turkeyVisits } = getStorageData();
+  let rawStatus = worldVisits[c?.code]?.status;
+  if (c?.code === 'TR' && (!rawStatus || rawStatus === 'unvisited')) {
+    if (Object.values(turkeyVisits).some(v => v?.status === 'visited')) {
+      rawStatus = 'visited';
+    } else if (Object.values(turkeyVisits).some(v => v?.status === 'planned')) {
+      rawStatus = 'planned';
+    } else if (Object.values(turkeyVisits).some(v => v?.status === 'wishlist')) {
+      rawStatus = 'wishlist';
+    }
+  }
+  const status = ns(rawStatus);
   const zoom = map?.getZoom() || 3;
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
@@ -1030,7 +1043,10 @@ function refreshStats() {
   const regionsEl = document.getElementById('stats-regions');
   if (!countriesEl) return;
 
-  const visited  = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v.status === 'visited').length;
+  const hasTrVisited = Object.values(turkeyVisits).some(v => v?.status === 'visited');
+  const countTr = (worldVisits['TR']?.status === 'visited' || hasTrVisited);
+  const nonTrVisited = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && k !== 'TR' && v.status === 'visited').length;
+  const visited = nonTrVisited + (countTr ? 1 : 0);
   const planned  = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v.status === 'planned').length;
   const wishlist = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v.status === 'wishlist').length;
   const trVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
