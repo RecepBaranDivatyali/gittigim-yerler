@@ -391,4 +391,7 @@ export function renderProfileView(container, onBack) {
       }
     });
   }
+
+  // Mount and render profile view
+  render();
 }

@@ -493,6 +493,8 @@ function updateCountryLabels() {
 
       // Generous buffer (500px outside screen) so partially visible countries (Greece, Romania, Italy, etc.)
       // have their names ready and visible, even if cut off by screen edge!
+      const halfW = totalTextWidth / 2 + 6;
+      const halfH = dynamicFontSize / 2 + 6;
       const vpBuffer = 500;
       if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
           centerPt.y < -vpBuffer || centerPt.y > mapSize.y + vpBuffer) {
