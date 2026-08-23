@@ -903,6 +903,7 @@ function refreshSubregionLayer(code) {
 }
 
 // ─── Status Popup & Two-Way Sync Logic ─────────────────────────────────────────
+// ─── Status Popup & Two-Way Sync Logic (Clean Centered Popup with Glow Buttons) ───
 function openStatusPopup(latlng, id, title, type, countryCode) {
   const currentLang = getLanguage();
   const STATUS = getStatusConfig();
@@ -916,106 +917,96 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     currentStatus = ns(worldVisits[id]?.status);
   }
 
-  const btnsHtml = Object.entries(STATUS).map(([key, val]) => {
-    const isAct = currentStatus === key;
-    const textLabel = val.label.replace(/^.+? /, '');
-    return `
-      <button type="button" class="map-status-btn ${isAct ? 'active' : ''}" data-status="${key}">
-        <span class="map-status-dot" style="background:${val.color};box-shadow:0 0 8px ${val.color}aa;"></span>
-        <span class="map-status-text">${textLabel}</span>
-      </button>
-    `;
-  }).join('');
-
-  const content = `
-    <div class="map-status-popup">
-      <div class="map-status-popup-header">
-        <span class="map-status-popup-title">${title}</span>
-        <button class="map-status-popup-close">&times;</button>
-      </div>
-      <div class="map-status-popup-buttons">
-        ${btnsHtml}
-      </div>
+  const content = document.createElement('div');
+  content.className = 'map-status-popup';
+  content.innerHTML = `
+    <div class="map-status-popup-title">${title}</div>
+    <div class="map-status-popup-buttons">
+      ${Object.entries(STATUS).map(([val, cfg]) => {
+        const isAct = currentStatus === val;
+        const textLabel = t(val);
+        return `
+          <button type="button" class="map-status-btn ${isAct ? 'active' : ''}"
+                  data-val="${val}" style="--btn-color:${cfg.color};">
+            <span class="map-status-dot" style="background:${cfg.color};box-shadow:0 0 10px ${cfg.color}bb;"></span>
+            <span class="map-status-text">${textLabel}</span>
+          </button>
+        `;
+      }).join('')}
     </div>
   `;
 
-  const popup = L.popup({
+  content.querySelectorAll('.map-status-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const val = btn.dataset.val;
+
+      if (type === 'province') {
+        const num = id.replace('TR::', '');
+        saveTurkeyVisit(num, val);
+
+        // ── Two-Way Sync for Turkey ──
+        if (val === 'visited') {
+          saveWorldVisit('TR', 'visited', { notes: 'Auto-marked' });
+        } else if (val === 'unvisited') {
+          const data = getStorageData();
+          const hasAnyVisited = Object.values(data.turkeyVisits).some(v => v.status === 'visited');
+          if (!hasAnyVisited) {
+            saveWorldVisit('TR', 'unvisited');
+          }
+        }
+      } else if (type === 'country') {
+        saveWorldVisit(id, val);
+
+        // ── Downward Clearing: Unvisiting country unvisits all its children ──
+        if (val === 'unvisited') {
+          if (id === 'TR') {
+            const data = getStorageData();
+            Object.keys(data.turkeyVisits).forEach(pid => saveTurkeyVisit(pid, 'unvisited'));
+          } else {
+            const data = getStorageData();
+            const prefix = `${id}::`;
+            Object.keys(data.worldVisits).forEach(k => {
+              if (k.startsWith(prefix)) saveWorldVisit(k, 'unvisited');
+            });
+          }
+        }
+      } else if (type === 'region' || type === 'subregion') {
+        saveWorldVisit(id, val);
+
+        // ── Two-Way Sync for World Regions / Subregions ──
+        if (countryCode) {
+          if (val === 'visited') {
+            saveWorldVisit(countryCode, 'visited', { notes: 'Auto-marked' });
+          } else if (val === 'unvisited') {
+            const data = getStorageData();
+            const prefix = `${countryCode}::`;
+            const hasAnyVisited = Object.entries(data.worldVisits).some(([k, v]) => k.startsWith(prefix) && v.status === 'visited');
+            if (!hasAnyVisited) {
+              saveWorldVisit(countryCode, 'unvisited');
+            }
+          }
+        }
+      }
+
+      map.closePopup();
+      refreshAllStyles();
+      refreshStats();
+    });
+  });
+
+  L.popup({
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: 260
+    maxWidth: 240
   })
   .setLatLng(latlng)
   .setContent(content)
   .openOn(map);
-
-  setTimeout(() => {
-    const el = popup.getElement();
-    if (!el) return;
-
-    el.querySelector('.map-status-popup-close')?.addEventListener('click', () => map.closePopup());
-
-    el.querySelectorAll('.map-status-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const val = btn.dataset.status;
-
-        if (type === 'province') {
-          const num = id.replace('TR::', '');
-          saveTurkeyVisit(num, val);
-
-          // ── Two-Way Sync for Turkey ──
-          if (val === 'visited') {
-            saveWorldVisit('TR', 'visited', 'Auto-marked');
-          } else if (val === 'unvisited') {
-            const data = getStorageData();
-            const hasAnyVisited = Object.values(data.turkeyVisits).some(v => v.status === 'visited');
-            if (!hasAnyVisited) {
-              saveWorldVisit('TR', 'unvisited');
-            }
-          }
-        } else if (type === 'country') {
-          saveWorldVisit(id, val);
-
-          // ── Downward Clearing: Unvisiting country unvisits all its children ──
-          if (val === 'unvisited') {
-            if (id === 'TR') {
-              const data = getStorageData();
-              Object.keys(data.turkeyVisits).forEach(pid => saveTurkeyVisit(pid, 'unvisited'));
-            } else {
-              const data = getStorageData();
-              const prefix = `${id}::`;
-              Object.keys(data.worldVisits).forEach(k => {
-                if (k.startsWith(prefix)) saveWorldVisit(k, 'unvisited');
-              });
-            }
-          }
-        } else if (type === 'region' || type === 'subregion') {
-          saveWorldVisit(id, val);
-
-          // ── Two-Way Sync for World Regions / Subregions ──
-          if (countryCode) {
-            if (val === 'visited') {
-              saveWorldVisit(countryCode, 'visited', 'Auto-marked');
-            } else if (val === 'unvisited') {
-              const data = getStorageData();
-              const prefix = `${countryCode}::`;
-              const hasAnyVisited = Object.entries(data.worldVisits).some(([k, v]) => k.startsWith(prefix) && v.status === 'visited');
-              if (!hasAnyVisited) {
-                saveWorldVisit(countryCode, 'unvisited');
-              }
-            }
-          }
-        }
-
-        map.closePopup();
-        refreshAllStyles();
-        refreshStats();
-      });
-    });
-  }, 10);
 }
 
-// ─── Style Functions ──────────────────────────────────────────────────────────
+
 function countryStyle(c) {
   const { worldVisits, turkeyVisits } = getStorageData();
   let rawStatus = worldVisits[c?.code]?.status;
