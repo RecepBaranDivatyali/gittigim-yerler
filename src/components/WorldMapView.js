@@ -471,9 +471,9 @@ function updateCountryLabels() {
       const letterSpacingExtra = textLen * dynamicFontSize * 0.12;
       const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-      // Strict: text must fit within 70% of country pixel width
-      const maxAllowedWidth = Math.floor(pixelWidth * 0.70);
-      if (totalTextWidth > maxAllowedWidth || pixelHeight < 22) {
+      // Strict: text must fit within 80% of country pixel width
+      const maxAllowedWidth = Math.floor(pixelWidth * 0.80);
+      if (totalTextWidth > maxAllowedWidth || pixelHeight < 18) {
         return;
       }
 
@@ -524,6 +524,7 @@ function updateCountryLabels() {
 
 // ─── View change handler (regions lazy-loaded on zoom) ────────────────────────
 async function onViewChange() {
+  if (!map) return;
   const zoom = map.getZoom();
   const mapEl = map.getContainer();
   if (mapEl) {
@@ -531,32 +532,80 @@ async function onViewChange() {
     else mapEl.classList.remove('zoom-regional');
   }
 
-  // Turkey province layer zoom control
+  // ── Turkey province layer zoom control ────────────────────────────────────
   if (turkeyLayer) {
     if (zoom >= REGION_ZOOM && !map.hasLayer(turkeyLayer)) {
       turkeyLayer.addTo(map);
+      // Refresh country style so Turkey becomes transparent
+      if (countriesLayer) {
+        countriesLayer.eachLayer(l => {
+          if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
+        });
+      }
     } else if (zoom < REGION_ZOOM && map.hasLayer(turkeyLayer)) {
       map.removeLayer(turkeyLayer);
+      // Restore Turkey country polygon opacity
+      if (countriesLayer) {
+        countriesLayer.eachLayer(l => {
+          if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
+        });
+      }
     }
   }
 
-  // World regions lazy loading
+  // ── World region layers: add when zoomed in, REMOVE when zoomed out ────────
   if (zoom >= REGION_ZOOM) {
-    const visibleCountries = getVisibleCountries();
-    for (const code of visibleCountries) {
-      if (code !== 'TR' && !regionLayers[code]) {
-        await loadRegionData(code);
+    const visibleCodes = getVisibleCountries();
+    for (const code of visibleCodes) {
+      if (code !== 'TR') {
+        if (!regionLayers[code]) {
+          await loadRegionData(code);
+        } else if (!map.hasLayer(regionLayers[code])) {
+          regionLayers[code].addTo(map);
+          // Re-fade country polygon now regions are visible
+          if (countriesLayer) {
+            countriesLayer.eachLayer(l => {
+              if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
+            });
+          }
+        }
       }
+    }
+  } else {
+    // ZOOM OUT — remove ALL region layers from map (keep cache)
+    Object.entries(regionLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+    // Restore full opacity on all country polygons
+    if (countriesLayer) {
+      countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
     }
   }
 
-  // World subregions (provinces of regions) lazy loading
+  // ── World subregion layers: add when zoomed in, REMOVE when zoomed out ────
   if (zoom >= SUBREGION_ZOOM) {
-    const visibleCountries = getVisibleCountries();
-    for (const code of visibleCountries) {
-      if (code !== 'TR' && !subregionLayers[code]) {
-        await loadSubregionData(code);
+    const visibleCodes = getVisibleCountries();
+    for (const code of visibleCodes) {
+      if (code !== 'TR') {
+        if (!subregionLayers[code]) {
+          await loadSubregionData(code);
+        } else if (!map.hasLayer(subregionLayers[code])) {
+          subregionLayers[code].addTo(map);
+        }
       }
+    }
+  } else {
+    // ZOOM OUT — remove ALL subregion layers from map (keep cache)
+    Object.entries(subregionLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+    // Restore region layers' interactivity (they were blocked by subregions)
+    if (zoom >= REGION_ZOOM) {
+      Object.keys(regionLayers).forEach(code => refreshRegionLayer(code));
     }
   }
 }
