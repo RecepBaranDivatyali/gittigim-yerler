@@ -1071,6 +1071,7 @@ function subregionStyle(name, code) {
   const { worldVisits } = getStorageData();
   const key = `${code}::${name}`;
   const status = ns(worldVisits[key]?.status);
+  const countryStatus = ns(worldVisits[code]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
@@ -1079,7 +1080,14 @@ function subregionStyle(name, code) {
     return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.2, opacity: 1 };
   }
 
-  // Unvisited subregions (e.g. Regensburg) remain transparent so ONLY visited cities (Munich, Nuremberg) are orange!
+  // Ülke ziyaret edildiyse, alt şehirler 2. katmandaki gibi hafif sıcak turuncu tonda (0.22) kalsın:
+  const tintMap = { visited: '#ff5722', planned: '#f59e0b', wishlist: '#8b5cf6' };
+  const tint = tintMap[countryStatus];
+  if (tint) {
+    return { fillColor: tint, fillOpacity: 0.22, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
+  }
+
+  // Ziyaret edilmemiş ülke alt şehirleri: koyu/şeffaf
   return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 0.7, opacity: 0.6 };
 }
 
