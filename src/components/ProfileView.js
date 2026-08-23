@@ -1,8 +1,8 @@
-import { getStorageData, calculateStats } from '../utils/storage.js';
+import { getStorageData, calculateStats, resetTravelData } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18n.js';
-import { THEMES, getTheme, setTheme } from '../utils/theme.js';
+import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor } from '../utils/theme.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -16,9 +16,10 @@ export function renderProfileView(container, onBack) {
         <div class="profile-topbar">
           <button class="profile-back-btn" id="profile-back">${t('backToMap')}</button>
           <div class="profile-tabs">
-            <button class="ptab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">${t('tabProfile')}</button>
-            <button class="ptab ${activeTab === 'medals' ? 'active' : ''}" data-tab="medals">${t('tabMedals')}</button>
-            <button class="ptab ${activeTab === 'compare' ? 'active' : ''}" data-tab="compare">${t('tabCompare')}</button>
+            <button class="ptab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 ${t('tabProfile')}</button>
+            <button class="ptab ${activeTab === 'medals' ? 'active' : ''}" data-tab="medals">🏅 ${t('tabMedals')}</button>
+            <button class="ptab ${activeTab === 'compare' ? 'active' : ''}" data-tab="compare">⚔️ ${t('tabCompare')}</button>
+            <button class="ptab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️ ${t('settings')}</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <button id="profile-logout" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:10px;padding:8px 14px;font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:600;">${t('logout')}</button>
@@ -44,7 +45,7 @@ export function renderProfileView(container, onBack) {
     const tabs = container.querySelectorAll('.ptab');
     tabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
-        activeTab = e.target.getAttribute('data-tab');
+        activeTab = e.target.closest('.ptab').getAttribute('data-tab');
         render();
       });
     });
@@ -53,12 +54,11 @@ export function renderProfileView(container, onBack) {
     if (activeTab === 'profile') renderProfileTab(contentArea);
     else if (activeTab === 'medals') renderMedalsTab(contentArea);
     else if (activeTab === 'compare') renderCompareTab(contentArea);
+    else if (activeTab === 'settings') renderSettingsTab(contentArea);
   }
 
   function renderProfileTab(contentArea) {
     const currentLang = getLanguage();
-    const currentTheme = getTheme();
-
     const profileStr = localStorage.getItem('gv_profile');
     const profile = profileStr ? JSON.parse(profileStr) : { username: 'Kullanıcı', avatar: '🧭', bio: '' };
     
@@ -92,47 +92,19 @@ export function renderProfileView(container, onBack) {
             </div>
           </div>
           <div class="profile-stats">
-            <div class="pstat"><span class="pstat-num" style="color:#ff5722">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:#ef4444">${baseStats.turkeyCount || 0}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.turkeyCount || 0}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${baseStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
           </div>
           ${earnedMedals.length > 0 ? `
-            <div class="profile-badges-header" style="font-size:0.85rem;color:#94a3b8;font-weight:600;margin-bottom:8px;">${currentLang === 'tr' ? 'Kazanılan Rozetler' : 'Earned Badges'} (${earnedMedals.length})</div>
+            <div class="profile-badges-header" style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);font-weight:600;margin-bottom:8px;">${currentLang === 'tr' ? 'Kazanılan Rozetler' : 'Earned Badges'} (${earnedMedals.length})</div>
             <div class="profile-badges">
               ${earnedMedals.map(m => `<span class="badge-icon" title="${m.title} - ${m.desc}">${m.icon}</span>`).join('')}
             </div>
           ` : `<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!' : 'No medals earned yet. Mark places on the map to earn medals!'}</div>`}
         </div>
 
-        <!-- Theme & Language Settings Card -->
-        <div class="share-section" style="margin-top:0;">
-          <h3 style="margin-bottom:12px;font-size:1.05rem;">⚙️ ${currentLang === 'tr' ? 'Görünüm ve Dil Ayarları' : 'Appearance & Language'}</h3>
-          
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-top:10px;">
-            <!-- Language Selector -->
-            <div>
-              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:8px;font-weight:600;">🌐 ${t('language')}</div>
-              <div style="display:flex;gap:8px;">
-                <button class="lang-select-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr" style="flex:1;padding:10px;border-radius:10px;border:1px solid ${currentLang === 'tr' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'tr' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:#f8fafc;cursor:pointer;font-weight:700;">🇹🇷 Türkçe</button>
-                <button class="lang-select-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en" style="flex:1;padding:10px;border-radius:10px;border:1px solid ${currentLang === 'en' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'en' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:#f8fafc;cursor:pointer;font-weight:700;">🇬🇧 English</button>
-              </div>
-            </div>
-
-            <!-- Theme Selector -->
-            <div>
-              <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:8px;font-weight:600;">🎨 ${t('theme')}</div>
-              <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;">
-                ${Object.values(THEMES).map(th => `
-                  <button class="theme-select-btn ${currentTheme === th.id ? 'active' : ''}" data-theme="${th.id}" style="padding:8px 10px;border-radius:10px;border:1px solid ${currentTheme === th.id ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentTheme === th.id ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:#f8fafc;cursor:pointer;font-size:0.82rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
-                    <span>${th.icon}</span> <span>${currentLang === 'tr' ? th.name : th.nameEn}</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-        </div>
-        
         <!-- Share Section -->
         <div class="share-section">
           <h3>${t('shareCodeTitle')}</h3>
@@ -145,30 +117,154 @@ export function renderProfileView(container, onBack) {
       </div>
     `;
 
-    // Language selection event
-    contentArea.querySelectorAll('.lang-select-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const lang = btn.getAttribute('data-lang');
-        setLanguage(lang);
-        render();
-      });
-    });
-
-    // Theme selection event
-    contentArea.querySelectorAll('.theme-select-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const themeId = btn.getAttribute('data-theme');
-        setTheme(themeId);
-        render();
-      });
-    });
-
     document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
       const input = document.getElementById('profile-share-code');
       input.select();
       document.execCommand('copy');
       e.target.textContent = t('copied');
       setTimeout(() => e.target.textContent = t('copy'), 2000);
+    });
+  }
+
+  function renderSettingsTab(contentArea) {
+    const currentLang = getLanguage();
+    const currentTheme = getTheme();
+    const visitedColor = getStatusColor('visited');
+    const plannedColor = getStatusColor('planned');
+    const wishlistColor = getStatusColor('wishlist');
+
+    contentArea.innerHTML = `
+      <div class="profile-main">
+        <!-- Appearance Theme & Language -->
+        <div class="share-section" style="margin-top:0;">
+          <h3 style="margin-bottom:16px;font-size:1.1rem;">🎨 ${t('theme')} & 🌐 ${t('language')}</h3>
+          
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px;">
+            <!-- Language Selector -->
+            <div>
+              <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌐 ${t('language')}</div>
+              <div style="display:flex;gap:8px;">
+                <button class="lang-select-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentLang === 'tr' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'tr' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;">🇹🇷 Türkçe</button>
+                <button class="lang-select-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentLang === 'en' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'en' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;">🇬🇧 English</button>
+              </div>
+            </div>
+
+            <!-- Theme Selector (Dark & Light) -->
+            <div>
+              <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌗 ${t('theme')}</div>
+              <div style="display:flex;gap:8px;">
+                <button class="theme-select-btn ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentTheme === 'dark' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentTheme === 'dark' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                  <span>🌙</span> <span>${t('themeDark')}</span>
+                </button>
+                <button class="theme-select-btn ${currentTheme === 'light' ? 'active' : ''}" data-theme="light" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentTheme === 'light' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentTheme === 'light' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                  <span>☀️</span> <span>${t('themeLight')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Map Colors Card -->
+        <div class="share-section">
+          <h3 style="margin-bottom:12px;font-size:1.1rem;">🌈 ${t('customizeColors')}</h3>
+          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:18px;">${currentLang === 'tr' ? 'Haritada gezdiğiniz ve planladığınız yerlerin vurgu renklerini dilediğiniz gibi özelleştirin.' : 'Customize the accent colors for visited and planned locations on the map.'}</p>
+          
+          <!-- Visited Color Selection -->
+          <div style="margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${visitedColor};"></span>
+              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorVisited')}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              ${COLOR_PALETTES.map(p => `
+                <button class="color-chip-btn ${p.color.toLowerCase() === visitedColor.toLowerCase() ? 'selected' : ''}" 
+                        data-status="visited" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === visitedColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === visitedColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
+                  ${p.color.toLowerCase() === visitedColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Planned Color Selection -->
+          <div style="margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${plannedColor};"></span>
+              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorPlanned')}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              ${COLOR_PALETTES.map(p => `
+                <button class="color-chip-btn ${p.color.toLowerCase() === plannedColor.toLowerCase() ? 'selected' : ''}" 
+                        data-status="planned" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === plannedColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === plannedColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
+                  ${p.color.toLowerCase() === plannedColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Wishlist Color Selection -->
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${wishlistColor};"></span>
+              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorWishlist')}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              ${COLOR_PALETTES.map(p => `
+                <button class="color-chip-btn ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? 'selected' : ''}" 
+                        data-status="wishlist" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
+                  ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone: Reset Map Data -->
+        <div class="share-section" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);">
+          <h3 style="color:#ef4444;margin-bottom:8px;font-size:1.05rem;">⚠️ ${t('dangerZone')}</h3>
+          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:16px;">${t('resetDataDesc')}</p>
+          <button id="profile-reset-map-btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all .2s;font-family:inherit;">
+            ${t('reset')}
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Language selection
+    contentArea.querySelectorAll('.lang-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setLanguage(btn.getAttribute('data-lang'));
+        render();
+      });
+    });
+
+    // Theme selection
+    contentArea.querySelectorAll('.theme-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setTheme(btn.getAttribute('data-theme'));
+        render();
+      });
+    });
+
+    // Color chips selection
+    contentArea.querySelectorAll('.color-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const statusKey = btn.getAttribute('data-status');
+        const color = btn.getAttribute('data-color');
+        setStatusColor(statusKey, color);
+        render();
+      });
+    });
+
+    // Reset button
+    document.getElementById('profile-reset-map-btn')?.addEventListener('click', () => {
+      if (confirm(t('resetConfirm'))) {
+        resetTravelData();
+        alert(currentLang === 'tr' ? 'Harita verileri başarıyla sıfırlandı.' : 'Map data reset successfully.');
+        render();
+      }
     });
   }
 
@@ -244,91 +340,69 @@ export function renderProfileView(container, onBack) {
           <div class="compare-vs">⚔️ VS</div>
           <div class="compare-other">
             <div id="compare-input-area" class="compare-input-card">
-              <h3 style="color:#f8fafc;margin-bottom:6px;font-size:1.15rem;">${currentLang === 'tr' ? 'Arkadaşının Profilini Yükle' : 'Load Friend\'s Profile'}</h3>
-              <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:14px;">${currentLang === 'tr' ? 'Arkadaşının sana verdiği paylaşım kodunu yapıştırarak seyahatlerinizi yan yana karşılaştırın.' : 'Paste your friend\'s share code to compare your travels side by side.'}</p>
+              <h3 style="color:var(--theme-text-main, #f8fafc);margin-bottom:6px;font-size:1.15rem;">${currentLang === 'tr' ? 'Arkadaşının Profilini Yükle' : 'Load Friend\'s Profile'}</h3>
+              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.82rem;margin-bottom:14px;">${currentLang === 'tr' ? 'Arkadaşının sana verdiği paylaşım kodunu yapıştırarak seyahatlerinizi yan yana karşılaştırın.' : 'Paste your friend\'s share code to compare your travels side by side.'}</p>
               <textarea class="compare-code-input" id="compare-code" rows="3" placeholder="${t('comparePlaceholder')}"></textarea>
               <button class="compare-load-btn" id="compare-load-btn">⚡ ${t('loadProfile')}</button>
             </div>
-            <div id="compare-other-area" style="display:none;"></div>
+            <div id="compare-other-card" style="display:none;"></div>
           </div>
         </div>
-        <div id="compare-results-area" style="display:none;margin-top:24px;"></div>
+
+        <div id="compare-results-area" style="display:none;"></div>
       </div>
     `;
 
-    // Render my profile card
+    // Render my profile in compare
     const myProfileStr = localStorage.getItem('gv_profile');
-    const myProfile = myProfileStr ? JSON.parse(myProfileStr) : { username: (currentLang === 'tr' ? 'Ben' : 'Me'), avatar: '🧭' };
-    
-    let myStats = { worldCountryCount: 0, turkeyCount: 0, worldCityCount: 0 };
-    let myEarnedCount = 0;
-    let myStorage = { worldVisits: {}, turkeyVisits: {}, worldCities: [] };
-
-    try {
-      myStorage = getStorageData();
-      myStats = calculateStats();
-      myEarnedCount = getEarnedAchievements(myStorage, myStats).length;
-    } catch(e) {}
+    const myProfile = myProfileStr ? JSON.parse(myProfileStr) : { username: 'Sen', avatar: '🧭' };
+    const myStorage = getStorageData();
+    const myStats = calculateStats();
+    const myMedals = getEarnedAchievements(myStorage, myStats);
 
     document.getElementById('compare-mine-area').innerHTML = `
-      <div class="profile-card" style="margin:0;height:100%;">
-        <div class="profile-card-label" style="background:rgba(59,130,246,0.2);color:#3b82f6;border-color:rgba(59,130,246,0.3);">${currentLang === 'tr' ? 'BENİM PROFİLİM' : 'MY PROFILE'}</div>
+      <div class="profile-card">
+        <div class="profile-card-label" style="background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.3);color:#3b82f6;">${currentLang === 'tr' ? 'SENİN PROFİLİN' : 'YOUR PROFILE'}</div>
         <div class="profile-header">
           <div class="profile-avatar">${myProfile.avatar}</div>
           <div>
             <div class="profile-username">${myProfile.username}</div>
-            <div class="profile-bio">${myProfile.bio || (currentLang === 'tr' ? 'Dünyayı keşfediyorum' : 'Exploring the world')}</div>
+            <div class="profile-bio">${myProfile.bio || ''}</div>
           </div>
         </div>
-        <div class="profile-stats">
-          <div class="pstat"><span class="pstat-num" style="color:#ff5722">${myStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-          <div class="pstat"><span class="pstat-num" style="color:#ef4444">${myStats.turkeyCount || 0}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
-          <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${myStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
-          <div class="pstat"><span class="pstat-num" style="color:#10b981">${myEarnedCount}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
+        <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
+          <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${myStats.worldCountryCount}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
+          <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${myStats.turkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
+          <div class="pstat"><span class="pstat-num" style="color:#3b82f6;">${myStats.worldCityCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
+          <div class="pstat"><span class="pstat-num" style="color:#10b981;">${myMedals.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
         </div>
       </div>
     `;
 
-    document.getElementById('compare-load-btn').addEventListener('click', () => {
+    // Load friend code handler
+    document.getElementById('compare-load-btn')?.addEventListener('click', () => {
       const code = document.getElementById('compare-code').value.trim();
-      if (!code) {
-        alert(currentLang === 'tr' ? 'Lütfen bir paylaşım kodu girin!' : 'Please enter a share code!');
-        return;
-      }
+      if (!code) return;
+
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(code)));
-        const otherProfile = decoded.profile || { username: (currentLang === 'tr' ? 'Arkadaş' : 'Friend'), avatar: '👤' };
-        const otherWorldObj = decoded.worldVisits || {};
-        const otherTurkeyObj = decoded.turkeyVisits || {};
-        const otherCitiesArr = decoded.worldCities || [];
+        const otherProfile = decoded.profile || { username: 'Arkadaşın', avatar: '✈️' };
+        const otherWorldVisits = decoded.worldVisits || {};
+        const otherTurkeyVisits = decoded.turkeyVisits || {};
+        const otherCities = decoded.worldCities || [];
 
-        const otherCountryCodes = Array.isArray(otherWorldObj) 
-          ? otherWorldObj 
-          : Object.entries(otherWorldObj).filter(([k, v]) => !k.includes('::') && v?.status === 'visited').map(([k]) => k);
+        // Compute other stats
+        const otherCountriesCount = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited').length;
+        const otherTurkeyCount = Object.keys(otherTurkeyVisits).filter(k => otherTurkeyVisits[k]?.status === 'visited').length;
+        const otherTotalCountries = otherCountriesCount + (otherTurkeyCount > 0 && !otherWorldVisits['TR'] ? 1 : 0);
+        const otherCitiesCount = otherCities.length + Object.keys(otherWorldVisits).filter(k => k.includes('::') && otherWorldVisits[k]?.status === 'visited').length + otherTurkeyCount;
 
-        const myCountryCodes = Object.entries(myStorage.worldVisits)
-          .filter(([k, v]) => !k.includes('::') && v?.status === 'visited')
-          .map(([k]) => k);
-
-        const otherTurkeyCount = Array.isArray(otherTurkeyObj) 
-          ? otherTurkeyObj.length 
-          : Object.values(otherTurkeyObj).filter(v => v?.status === 'visited').length;
-
-        const otherCitiesCount = otherCitiesArr.length;
-        const otherStats = {
-          worldCountryCount: otherCountryCodes.length,
-          turkeyCount: otherTurkeyCount,
-          worldCityCount: otherCitiesCount
-        };
-        const otherEarnedCount = getEarnedAchievements({ worldVisits: otherWorldObj, turkeyVisits: otherTurkeyObj, worldCities: otherCitiesArr }, otherStats).length;
-
-        // Render other profile card
         document.getElementById('compare-input-area').style.display = 'none';
-        const otherArea = document.getElementById('compare-other-area');
-        otherArea.style.display = 'block';
-        otherArea.innerHTML = `
-          <div class="profile-card" style="margin:0;height:100%;">
-            <div class="profile-card-label" style="background:rgba(245,158,11,0.2);color:#f59e0b;border-color:rgba(245,158,11,0.3);">${otherProfile.username.toUpperCase()}</div>
+        const otherCard = document.getElementById('compare-other-card');
+        otherCard.style.display = 'block';
+        otherCard.innerHTML = `
+          <div class="profile-card">
+            <div class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</div>
             <div class="profile-header">
               <div class="profile-avatar">${otherProfile.avatar}</div>
               <div>
@@ -336,16 +410,22 @@ export function renderProfileView(container, onBack) {
                 <div class="profile-bio">${otherProfile.bio || ''}</div>
               </div>
             </div>
-            <div class="profile-stats">
-              <div class="pstat"><span class="pstat-num" style="color:#ff5722">${otherCountryCodes.length}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:#ef4444">${otherTurkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${otherCitiesCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:#10b981">${otherEarnedCount}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
+            <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
+              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTurkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:#3b82f6;">${otherCitiesCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:#10b981;">${Object.keys(decoded.worldVisits || {}).length}</span><span class="pstat-lbl">${currentLang === 'tr' ? 'Kayıt' : 'Marks'}</span></div>
             </div>
           </div>
         `;
 
-        // Calculate comparison breakdown
+        // Calculate mutual / differences
+        const myCountryCodes = Object.keys(myStorage.worldVisits).filter(k => !k.includes('::') && myStorage.worldVisits[k]?.status === 'visited');
+        if (myStats.turkeyCount > 0 && !myCountryCodes.includes('TR')) myCountryCodes.push('TR');
+
+        const otherCountryCodes = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited');
+        if (otherTurkeyCount > 0 && !otherCountryCodes.includes('TR')) otherCountryCodes.push('TR');
+
         const commonCountries = myCountryCodes.filter(c => otherCountryCodes.includes(c));
         const onlyMyCountries = myCountryCodes.filter(c => !otherCountryCodes.includes(c));
         const onlyOtherCountries = otherCountryCodes.filter(c => !myCountryCodes.includes(c));
@@ -364,21 +444,21 @@ export function renderProfileView(container, onBack) {
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'İkinizin de Gittiği Ortak Ülkeler' : 'Common Countries Visited'} (${commonCountries.length})</div>
-                <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
                   ${commonCountries.length > 0 ? commonCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries found.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? `Sadece Senin Gittiğin Ülkeler` : 'Only You Visited'} (${onlyMyCountries.length})</div>
-                <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
                   ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gittiği Ülkeler` : `Only ${otherProfile.username} Visited`} (${onlyOtherCountries.length})</div>
-                <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
                   ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
                 </div>
               </div>

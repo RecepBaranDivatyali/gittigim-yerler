@@ -1,77 +1,80 @@
-// theme.js - Theme System & Dynamic Styles
+// theme.js - Modern Dark & Light Themes + Custom Status Colors
 
 const STORAGE_KEY = 'gv_theme';
+const COLOR_STORAGE_PREFIX = 'gv_color_';
 
 export const THEMES = {
   dark: {
     id: 'dark',
-    name: 'Gece',
-    nameEn: 'Midnight',
+    name: 'Karanlık',
+    nameEn: 'Dark',
     icon: '🌙',
     oceanBg: '#090d16',
     landFill: '#1e293b',
     provinceFill: '#131b2e',
     landBorder: '#94a3b8',
     landBorderZoomed: '#cbd5e1',
-    labelColor: 'rgba(241, 245, 249, 0.58)',
+    labelColor: 'rgba(241, 245, 249, 0.65)',
     labelShadow: '0 0 4px rgba(0, 0, 0, 1), 0 1px 3px rgba(0, 0, 0, 0.95)',
     uiBg: 'rgba(30, 41, 59, 0.92)',
     uiBorder: 'rgba(255, 255, 255, 0.12)',
     textMain: '#f8fafc',
     textMuted: '#94a3b8'
   },
-  ocean: {
-    id: 'ocean',
-    name: 'Okyanus',
-    nameEn: 'Ocean',
-    icon: '🌊',
-    oceanBg: '#061325',
-    landFill: '#0e2d4d',
-    provinceFill: '#0a2037',
-    landBorder: '#38bdf8',
-    landBorderZoomed: '#7dd3fc',
-    labelColor: 'rgba(224, 242, 254, 0.65)',
-    labelShadow: '0 0 4px rgba(6, 19, 37, 1), 0 1px 3px rgba(0, 0, 0, 0.9)',
-    uiBg: 'rgba(14, 45, 77, 0.92)',
-    uiBorder: 'rgba(56, 189, 248, 0.25)',
-    textMain: '#f0f9ff',
-    textMuted: '#93c5fd'
-  },
-  emerald: {
-    id: 'emerald',
-    name: 'Zümrüt',
-    nameEn: 'Emerald',
-    icon: '🌲',
-    oceanBg: '#061914',
-    landFill: '#113a2d',
-    provinceFill: '#0c2a21',
-    landBorder: '#34d399',
-    landBorderZoomed: '#6ee7b7',
-    labelColor: 'rgba(236, 253, 245, 0.65)',
-    labelShadow: '0 0 4px rgba(6, 25, 20, 1), 0 1px 3px rgba(0, 0, 0, 0.9)',
-    uiBg: 'rgba(17, 58, 45, 0.92)',
-    uiBorder: 'rgba(52, 211, 153, 0.25)',
-    textMain: '#f0fdf4',
-    textMuted: '#a7f3d0'
-  },
-  vintage: {
-    id: 'vintage',
-    name: 'Klasik',
-    nameEn: 'Vintage',
-    icon: '📜',
-    oceanBg: '#cbd5e1',
+  light: {
+    id: 'light',
+    name: 'Aydınlık',
+    nameEn: 'Light',
+    icon: '☀️',
+    oceanBg: '#c7dcf0',
     landFill: '#f8fafc',
-    provinceFill: '#e2e8f0',
-    landBorder: '#64748b',
-    landBorderZoomed: '#475569',
-    labelColor: 'rgba(30, 41, 59, 0.70)',
+    provinceFill: '#f1f5f9',
+    landBorder: '#94a3b8',
+    landBorderZoomed: '#64748b',
+    labelColor: 'rgba(15, 23, 42, 0.72)',
     labelShadow: '0 0 3px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(255, 255, 255, 0.8)',
-    uiBg: 'rgba(241, 245, 249, 0.95)',
-    uiBorder: 'rgba(100, 116, 139, 0.25)',
+    uiBg: 'rgba(255, 255, 255, 0.95)',
+    uiBorder: 'rgba(0, 0, 0, 0.12)',
     textMain: '#0f172a',
-    textMuted: '#475569'
+    textMuted: '#64748b'
   }
 };
+
+export const COLOR_PALETTES = [
+  { id: 'orange', name: 'Turuncu', nameEn: 'Orange', color: '#ff5722' },
+  { id: 'crimson', name: 'Kırmızı', nameEn: 'Crimson', color: '#ef4444' },
+  { id: 'emerald', name: 'Zümrüt', nameEn: 'Emerald', color: '#10b981' },
+  { id: 'blue', name: 'Mavi', nameEn: 'Sky Blue', color: '#3b82f6' },
+  { id: 'purple', name: 'Mor', nameEn: 'Purple', color: '#8b5cf6' },
+  { id: 'amber', name: 'Kehribar', nameEn: 'Amber', color: '#f59e0b' },
+  { id: 'rose', name: 'Pembe', nameEn: 'Rose Pink', color: '#ec4899' },
+  { id: 'teal', name: 'Turkuaz', nameEn: 'Teal', color: '#06b6d4' },
+  { id: 'indigo', name: 'İndigo', nameEn: 'Indigo', color: '#6366f1' },
+  { id: 'bronze', name: 'Bronz', nameEn: 'Bronze', color: '#d97706' }
+];
+
+const DEFAULT_STATUS_COLORS = {
+  visited: '#ff5722',
+  planned: '#f59e0b',
+  wishlist: '#8b5cf6'
+};
+
+export function getStatusColor(statusKey) {
+  try {
+    const saved = localStorage.getItem(COLOR_STORAGE_PREFIX + statusKey);
+    if (saved) return saved;
+  } catch {}
+  return DEFAULT_STATUS_COLORS[statusKey] || DEFAULT_STATUS_COLORS.visited;
+}
+
+export function setStatusColor(statusKey, hexColor) {
+  try {
+    localStorage.setItem(COLOR_STORAGE_PREFIX + statusKey, hexColor);
+  } catch {}
+  themeListeners.forEach(fn => {
+    try { fn(currentTheme); } catch {}
+  });
+}
 
 let currentTheme = 'dark';
 const themeListeners = [];

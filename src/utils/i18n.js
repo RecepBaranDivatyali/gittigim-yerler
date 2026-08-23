@@ -44,12 +44,28 @@ const TRANSLATIONS = {
     medalsEarned: '{count} / {total} Madalya Kazanıldı (%{percent})',
     markStatus: 'Durumu Değiştir:',
     close: 'Kapat',
-    theme: 'Tema',
-    themeDark: 'Gece',
-    themeOcean: 'Okyanus',
-    themeEmerald: 'Zümrüt',
-    themeVintage: 'Klasik',
-    language: 'Dil'
+    theme: 'Görünüm',
+    themeDark: 'Karanlık',
+    themeLight: 'Aydınlık',
+    language: 'Dil',
+    settings: 'Ayarlar',
+    customizeColors: 'Harita Renklerini Özelleştir',
+    colorVisited: 'Gidildi Rengi',
+    colorPlanned: 'Planlanıyor Rengi',
+    colorWishlist: 'İsteniyor Rengi',
+    feedbackBtn: '💬 Geri Bildirim & Hata Bildir',
+    feedbackTitle: '💡 Geri Bildirim & Hata Bildirimi',
+    feedbackSubtitle: 'Uygulamayı geliştirmemiz için önerilerinizi veya karşılaştığınız hataları bize iletin:',
+    feedbackType: 'Bildirim Türü',
+    feedbackSuggestion: '💡 Geliştirme Önerisi',
+    feedbackBug: '🐞 Hata Bildirimi',
+    feedbackOther: '💬 Genel Görüş',
+    feedbackMsgPlaceholder: 'Mesajınızı veya hata detayını buraya yazın...',
+    feedbackEmailPlaceholder: 'E-posta veya kullanıcı adınız (İsteğe bağlı)',
+    feedbackSend: 'Gönder',
+    feedbackSent: 'Teşekkürler! Geri bildiriminiz başarıyla iletildi.',
+    dangerZone: 'Tehlikeli Bölge',
+    resetDataDesc: 'Tüm seyahat ve işaretleme verilerinizi temizler. Profiliniz ve hesabınız korunur.'
   },
   en: {
     appName: 'Places I\'ve Been',
@@ -60,7 +76,7 @@ const TRANSLATIONS = {
     backToMap: '← Back to Map',
     logout: '🚪 Logout',
     logoutConfirm: 'Are you sure you want to log out? Your travel data will be preserved.',
-    reset: '🗑 Reset',
+    reset: '🗑 Reset Map Data',
     resetConfirm: 'Do you want to clear all marked locations? Your profile and account will be kept safe.',
     notePrivacy: 'Your data is stored strictly in your browser',
     copy: 'Copy',
@@ -92,12 +108,28 @@ const TRANSLATIONS = {
     medalsEarned: '{count} / {total} Medals Earned ({percent}%)',
     markStatus: 'Change Status:',
     close: 'Close',
-    theme: 'Theme',
-    themeDark: 'Midnight',
-    themeOcean: 'Ocean',
-    themeEmerald: 'Emerald',
-    themeVintage: 'Vintage',
-    language: 'Language'
+    theme: 'Appearance',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    language: 'Language',
+    settings: 'Settings',
+    customizeColors: 'Customize Map Colors',
+    colorVisited: 'Visited Color',
+    colorPlanned: 'Planned Color',
+    colorWishlist: 'Wishlist Color',
+    feedbackBtn: '💬 Feedback & Report Bug',
+    feedbackTitle: '💡 Feedback & Bug Report',
+    feedbackSubtitle: 'Send us your suggestions or any bugs you encountered to help us improve:',
+    feedbackType: 'Feedback Type',
+    feedbackSuggestion: '💡 Feature Suggestion',
+    feedbackBug: '🐞 Bug Report',
+    feedbackOther: '💬 General Feedback',
+    feedbackMsgPlaceholder: 'Write your suggestion or bug details here...',
+    feedbackEmailPlaceholder: 'Email or username (Optional)',
+    feedbackSend: 'Send Feedback',
+    feedbackSent: 'Thank you! Your feedback has been received.',
+    dangerZone: 'Danger Zone',
+    resetDataDesc: 'Clears all marked travel data from the map. Your profile and account will remain safe.'
   }
 };
 
@@ -150,3 +182,9 @@ export function getCountryDisplayName(c) {
   }
   return c.name || c.nameEn || '';
 }
+
+export function getLocalizedName(rawName, countryCode) {
+  if (!rawName) return '';
+  return rawName;
+}
+
