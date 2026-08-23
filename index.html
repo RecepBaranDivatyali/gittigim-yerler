@@ -2,13 +2,57 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="description" content="Gittiğim Yerler - Türkiye 81 il haritası ve Dünya ülke/şehir seyahat takip uygulaması. Gittiğiniz yerleri işaretleyin ve yüzdelik oranınızı takip edin." />
-    <title>Gittiğim Yerler - Türkiye & Dünya Haritası Seyahat Takip Uygulaması</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Gittiğim Yerler - İnteraktif Türkiye & Dünya Seyahat Haritası</title>
+    <meta name="title" content="Gittiğim Yerler - İnteraktif Türkiye & Dünya Seyahat Haritası" />
+    <meta name="description" content="Gezdiğiniz 81 ili, dünya ülkelerini ve şehirlerini interaktif harita üzerinde işaretleyin. Seyahat istatistiklerinizi çıkarın, madalyalar kazanın ve arkadaşlarınızla haritalarınızı karşılaştırın!" />
+    <meta name="keywords" content="gittiğim yerler, seyahat haritası, türkiye haritası işaretleme, gezilen yerler haritası, dünya seyahat haritası, visited places map, scratch map, seyahat günlüğü, iller haritası, gezgin haritası" />
+    <meta name="author" content="Gittiğim Yerler" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gittigim-yerler.vercel.app/" />
+    <meta property="og:title" content="Gittiğim Yerler - İnteraktif Seyahat Haritası" />
+    <meta property="og:description" content="Gezdiğin yerleri haritada işaretle, seyahat madalyaları kazan ve arkadaşlarınla karşılaştır!" />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://gittigim-yerler.vercel.app/" />
+    <meta property="twitter:title" content="Gittiğim Yerler - İnteraktif Seyahat Haritası" />
+    <meta property="twitter:description" content="Gezdiğin yerleri haritada işaretle, seyahat madalyaları kazan ve arkadaşlarınla karşılaştır!" />
+    <meta property="twitter:image" content="/icon-512.png" />
+
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#ff5722" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Gittiğim Yerler" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script>
+      // Register Service Worker for PWA support & offline caching
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('PWA Service Worker registered:', reg.scope);
+          }).catch(err => {
+            console.log('PWA Service Worker registration failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
