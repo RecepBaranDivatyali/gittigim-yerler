@@ -1,6 +1,6 @@
 {
-  "name": "Gittiğim Yerler - Seyahat Haritası",
-  "short_name": "GittiğimYerler",
+  "name": "Gezgin - Seyahat Haritası",
+  "short_name": "Gezgin",
   "description": "Türkiye ve Dünya seyahat haritası. Gezdiğin ülkeleri, şehirleri ve illeri kaydet, madalyalar kazan, arkadaşlarınla karşılaştır!",
   "start_url": "/",
   "id": "/",

@@ -1,6 +1,6 @@
 {
   "appId": "com.gittigimyerler.app",
-  "appName": "Gittiğim Yerler",
+  "appName": "Gezgin",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "backgroundColor": "#0f172a",

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gezgin</string>
+    <string name="title_activity_main">Gezgin</string>
+    <string name="package_name">com.gittigimyerler.app</string>
+    <string name="custom_url_scheme">com.gittigimyerler.app</string>
+</resources>

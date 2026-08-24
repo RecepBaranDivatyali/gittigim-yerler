@@ -4,7 +4,7 @@ const STORAGE_KEY = 'gv_language';
 
 const TRANSLATIONS = {
   tr: {
-    appName: 'Gittiğim Yerler',
+    appName: 'Gezgin',
     appSubtitle: 'Keşfet, kaydet, paylaş',
     loading: 'Harita yükleniyor...',
     loadError: 'Harita yüklenemedi. Sayfayı yenileyin.',
@@ -68,7 +68,7 @@ const TRANSLATIONS = {
     resetDataDesc: 'Tüm seyahat ve işaretleme verilerinizi temizler. Profiliniz ve hesabınız korunur.'
   },
   en: {
-    appName: 'Places I\'ve Been',
+    appName: 'Gezgin',
     appSubtitle: 'Explore, track, share',
     loading: 'Loading map...',
     loadError: 'Failed to load map. Please refresh.',
