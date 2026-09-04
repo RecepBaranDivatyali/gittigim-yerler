@@ -42,6 +42,27 @@ const COUNTRY_LABEL_OFFSETS = {
   'DK': [55.7, 9.5],   // Denmark mainland
 };
 
+const PROVINCE_LABEL_OFFSETS = {
+  'TR::34': [41.05, 28.95], // İstanbul (Bosphorus center, balanced between Europe and Asia)
+  'TR::48': [37.20, 28.36], // Muğla (Inland center near Menteşe/Yatağan, avoids sea/islands)
+  'TR::35': [38.42, 27.22], // İzmir (Central interior near Bornova-Buca, avoids gulf)
+  'TR::10': [39.65, 27.90], // Balıkesir (Central interior)
+  'TR::17': [40.05, 26.90], // Çanakkale (Mainland interior, avoids Dardanelles/islands)
+  'TR::07': [36.95, 30.65], // Antalya (Central interior)
+  'TR::14': [40.65, 31.60], // Bolu (Central valley)
+  'TR::41': [40.80, 29.95], // Kocaeli (Central interior)
+  'TR::77': [40.60, 29.25], // Yalova
+  'TR::59': [41.05, 27.50], // Tekirdağ (Central interior)
+  'TR::31': [36.35, 36.20], // Hatay (Central valley)
+  'TR::33': [36.80, 34.60], // Mersin (Mainland interior)
+  'TR::09': [37.85, 27.85], // Aydın (Central interior)
+  'TR::45': [38.65, 27.45], // Manisa (Central interior)
+  'TR::22': [41.25, 26.65], // Edirne (Central interior)
+  'TR::39': [41.70, 27.20], // Kırklareli
+  'TR::06': [39.80, 32.75], // Ankara
+  'TR::42': [38.00, 32.50], // Konya
+};
+
 import L from 'leaflet';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
@@ -407,22 +428,35 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
-    // Mobile & Tablet Legend Tap to Toggle (<= 768px)
+    // Disable click / touch propagation on floating overlays so map doesn't steal button taps
+    const floatingSelectors = [
+      '#map-legend',
+      '.floating-profile-wrap',
+      '.floating-poster-btn',
+      '.floating-search-wrap',
+      '#stats-overlay',
+      '#feedback-btn-wrap'
+    ];
+    floatingSelectors.forEach(sel => {
+      const el = container.querySelector(sel);
+      if (el) {
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+      }
+    });
+
+    // Legend Tap to Toggle Popover
     const mapLegend = container.querySelector('#map-legend');
     if (mapLegend) {
       mapLegend.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (window.innerWidth <= 768) {
-          mapLegend.classList.toggle('expanded');
+        mapLegend.classList.toggle('expanded');
+      });
+      document.addEventListener('click', (e) => {
+        if (mapLegend && !mapLegend.contains(e.target) && mapLegend.classList.contains('expanded')) {
+          mapLegend.classList.remove('expanded');
         }
       });
-      if (map) {
-        map.on('click', () => {
-          if (mapLegend.classList.contains('expanded')) {
-            mapLegend.classList.remove('expanded');
-          }
-        });
-      }
     }
 
     if (feedbackModal) {
@@ -633,11 +667,6 @@ function initMap(container) {
         const c = findCountry(f);
         layer.on('click', e => {
           if (!c) return;
-          if (activeStatusPopup) {
-            map.closePopup();
-            activeStatusPopup = null;
-            return;
-          }
           const zoom = map?.getZoom() || 3;
           if (zoom >= REGION_ZOOM) {
             const hasReg = (regionLayers[c.code] && map.hasLayer(regionLayers[c.code])) ||
@@ -685,12 +714,10 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
-          if (activeStatusPopup) {
-            map.closePopup();
-            activeStatusPopup = null;
-            return;
-          }
           L.DomEvent.stopPropagation(e);
+          selectedCountryCode = 'TR';
+          selectedRegionName = null;
+          refreshStats();
           openStatusPopup(e.latlng, `TR::${prov.id}`, `${getFlagHtml('TR')} ${prov.name}`, 'province', 'TR');
         });
         layer.on('dblclick', e => {
@@ -701,6 +728,11 @@ function initMap(container) {
     });
     if (map.getZoom() >= REGION_ZOOM && isTurkeyInView()) {
       turkeyLayer.addTo(map);
+      if (countriesLayer) {
+        countriesLayer.eachLayer(l => {
+          if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
+        });
+      }
     }
     scheduleLabelUpdate();
   }).catch(err => {
@@ -878,6 +910,13 @@ function updateCountryLabels() {
     const countryName = getCountryDisplayName(c);
     if (!countryName) return;
 
+    // If zoom is deep and regions/provinces are active for this country, skip country watermark label
+    const zoom = map.getZoom();
+    if (zoom >= REGION_ZOOM) {
+      if (c.code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer)) return;
+      if (regionLayers[c.code] && map.hasLayer(regionLayers[c.code])) return;
+    }
+
     try {
       // Get mainland polygon info (eliminates overseas islands like Curacao on Netherlands)
       const mainland = getMainlandInfo(f);
@@ -981,7 +1020,8 @@ function updateProvinceLabels() {
   if (turkeyLayer && map.hasLayer(turkeyLayer)) {
     turkeyLayer.eachLayer(l => {
       const name = l.feature?.properties?.name;
-      if (name) candidates.push({ layer: l, name, countryCode: 'TR' });
+      const num = l.feature?.properties?.number;
+      if (name) candidates.push({ layer: l, name, countryCode: 'TR', idKey: `TR::${num}` });
     });
   }
 
@@ -992,7 +1032,7 @@ function updateProvinceLabels() {
         const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
         if (raw) {
           const display = getLocalizedName(raw, code);
-          candidates.push({ layer: l, name: display, countryCode: code });
+          candidates.push({ layer: l, name: display, countryCode: code, idKey: `${code}::${raw}` });
         }
       });
     }
@@ -1006,7 +1046,7 @@ function updateProvinceLabels() {
           const raw = l.feature?.properties?.name;
           if (raw) {
             const display = getLocalizedName(raw, code);
-            candidates.push({ layer: l, name: display, countryCode: code });
+            candidates.push({ layer: l, name: display, countryCode: code, idKey: `${code}::${raw}` });
           }
         });
       }
@@ -1015,25 +1055,30 @@ function updateProvinceLabels() {
 
   if (candidates.length === 0) return;
 
-  // Pre-calculate screen bounding boxes and areas
+  // Pre-calculate screen bounding boxes and areas using mainland geometry
   const prepared = [];
   candidates.forEach(item => {
     try {
-      if (!item.layer.getBounds) return;
-      const bounds = item.layer.getBounds();
-      if (!bounds.isValid()) return;
+      const f = item.layer.feature;
+      const mainland = getMainlandInfo(f);
+      if (!mainland || mainland.area <= 0) return;
 
-      const nw = map.latLngToContainerPoint(bounds.getNorthWest());
-      const se = map.latLngToContainerPoint(bounds.getSouthEast());
+      const nw = map.latLngToContainerPoint([mainland.bbox.maxLat, mainland.bbox.minLng]);
+      const se = map.latLngToContainerPoint([mainland.bbox.minLat, mainland.bbox.maxLng]);
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
       // Area in screen pixels
       const screenArea = pixelWidth * pixelHeight;
+
+      // Centroid: use tuned visual center if available, otherwise mainland area centroid
+      const visualCenter = PROVINCE_LABEL_OFFSETS[item.idKey]
+        ? L.latLng(PROVINCE_LABEL_OFFSETS[item.idKey])
+        : L.latLng(mainland.cy, mainland.cx);
+
       prepared.push({
         ...item,
-        bounds,
-        center: bounds.getCenter(),
+        center: visualCenter,
         pixelWidth,
         pixelHeight,
         screenArea
@@ -1246,11 +1291,6 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
-        if (activeStatusPopup) {
-          map.closePopup();
-          activeStatusPopup = null;
-          return;
-        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         selectedRegionName = raw;
@@ -1343,11 +1383,6 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
-        if (activeStatusPopup) {
-          map.closePopup();
-          activeStatusPopup = null;
-          return;
-        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
@@ -1628,11 +1663,9 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
           btnToggleReview.style.display = 'flex';
         }
       } else {
-        // Hide review button and drawer, close popup
+        // Hide review button and drawer
         if (btnToggleReview) btnToggleReview.style.display = 'none';
         if (reviewDrawer) reviewDrawer.style.display = 'none';
-        map.closePopup();
-        activeStatusPopup = null;
       }
     });
   });
@@ -1683,19 +1716,19 @@ function countryStyle(c) {
     }
   }
 
-  // When region layer is active: country polygon becomes a ghost (only border shows)
+  // When region layer is active: country polygon becomes a ghost (no fill, so it doesn't color provinces from behind)
   const fillOpacity = hasRegions
-    ? 0.01
+    ? 0
     : (status === 'unvisited' ? 0.95 : cfg.fillOpacity);
 
   return {
     fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
     fillOpacity,
     color: zoomed
-      ? (status === 'unvisited' ? themeCfg.landBorderZoomed : '#ffffff')
+      ? (hasRegions ? 'rgba(255,255,255,0.35)' : (status === 'unvisited' ? themeCfg.landBorderZoomed : '#ffffff'))
       : (status === 'unvisited' ? themeCfg.landBorder : 'rgba(255,255,255,0.7)'),
-    weight: zoomed ? 2.5 : 1.5,
-    opacity: 1.0,
+    weight: zoomed ? (hasRegions ? 1.5 : 2.5) : 1.5,
+    opacity: hasRegions ? 0.5 : 1.0,
     interactive: isInteractive
   };
 }
@@ -1704,7 +1737,6 @@ function regionStyle(rawName, countryCode) {
   const { worldVisits } = getStorageData();
   const key = `${countryCode}::${rawName}`;
   const status = ns(worldVisits[key]?.status);
-  const countryStatus = ns(worldVisits[countryCode]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
@@ -1717,60 +1749,79 @@ function regionStyle(rawName, countryCode) {
   }
 
   if (status !== 'unvisited') {
-    return { fillColor: cfg.color, fillOpacity: hasSubregions ? 0.01 : cfg.fillOpacity, color: '#ffffff', weight: 1.5, opacity: 1, interactive: isInteractive };
+    return {
+      fillColor: cfg.color,
+      fillOpacity: hasSubregions ? 0 : cfg.fillOpacity,
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 1,
+      interactive: isInteractive
+    };
   }
 
-  const tintMap = { visited: getStatusColor('visited'), planned: getStatusColor('planned'), wishlist: getStatusColor('wishlist') };
-  const tint = tintMap[countryStatus];
-  if (tint) return { fillColor: tint, fillOpacity: hasSubregions ? 0.01 : 0.22, color: themeCfg.landBorder, weight: 1.2, opacity: 0.8, interactive: isInteractive };
-
-  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 1.0, opacity: hasSubregions ? 0.3 : 0.7, interactive: isInteractive };
+  return {
+    fillColor: themeCfg.landFill,
+    fillOpacity: hasSubregions ? 0 : 0.95,
+    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+    weight: 1.0,
+    opacity: hasSubregions ? 0.3 : 0.7,
+    interactive: isInteractive
+  };
 }
 
 function provinceStyle(provinceId) {
-  const { turkeyVisits, worldVisits } = getStorageData();
+  const { turkeyVisits } = getStorageData();
   const status = ns(turkeyVisits[provinceId]?.status);
-  const trStatus = ns(
-    worldVisits['TR']?.status ||
-    (Object.values(turkeyVisits).some(v => v.status === 'visited') ? 'visited' : 'unvisited')
-  );
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
 
   if (status !== 'unvisited') {
-    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.2, opacity: 1 };
+    return {
+      fillColor: cfg.color,
+      fillOpacity: cfg.fillOpacity,
+      color: '#ffffff',
+      weight: 1.2,
+      opacity: 1
+    };
   }
-  
-  const tintMap = { visited: getStatusColor('visited'), planned: getStatusColor('planned'), wishlist: getStatusColor('wishlist') };
-  const tint = tintMap[trStatus];
-  if (tint) return { fillColor: tint, fillOpacity: 0.22, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
 
-  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
+  // Pure unvisited land color: strong contrast with visited provinces!
+  return {
+    fillColor: themeCfg.landFill,
+    fillOpacity: 0.95,
+    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+    weight: 1.0,
+    opacity: 0.8
+  };
 }
 
 function subregionStyle(name, code) {
   const { worldVisits } = getStorageData();
   const key = `${code}::${name}`;
   const status = ns(worldVisits[key]?.status);
-  const countryStatus = ns(worldVisits[code]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
   
   if (status !== 'unvisited') {
-    return { fillColor: cfg.color, fillOpacity: cfg.fillOpacity, color: '#ffffff', weight: 1.2, opacity: 1 };
+    return {
+      fillColor: cfg.color,
+      fillOpacity: cfg.fillOpacity,
+      color: '#ffffff',
+      weight: 1.2,
+      opacity: 1
+    };
   }
 
-  // Ülke ziyaret edildiyse, alt şehirler 2. katmandaki gibi hafif sıcak turuncu tonda (0.22) kalsın:
-  const tintMap = { visited: getStatusColor('visited'), planned: getStatusColor('planned'), wishlist: getStatusColor('wishlist') };
-  const tint = tintMap[countryStatus];
-  if (tint) {
-    return { fillColor: tint, fillOpacity: 0.22, color: themeCfg.landBorderZoomed, weight: 1.0, opacity: 0.8 };
-  }
-
-  // Ziyaret edilmemiş ülke alt şehirleri: koyu/şeffaf
-  return { fillColor: '#ffffff', fillOpacity: 0.01, color: themeCfg.landBorder, weight: 0.7, opacity: 0.6 };
+  // Ziyaret edilmemiş şehirler: temiz koyu tema rengi
+  return {
+    fillColor: themeCfg.landFill,
+    fillOpacity: 0.95,
+    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+    weight: 0.8,
+    opacity: 0.7
+  };
 }
 
 // ─── Country Finder Helper ─────────────────────────────────────────────────────

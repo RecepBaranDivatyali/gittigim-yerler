@@ -1150,7 +1150,7 @@ svg, g, path {
   position: absolute;
   top: max(14px, env(safe-area-inset-top));
   right: max(14px, env(safe-area-inset-right));
-  z-index: 1500;
+  z-index: 2200;
   background: rgba(15, 23, 42, 0.90);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
@@ -3135,6 +3135,8 @@ body[data-theme="light"] .map-status-btn.active {
   border: none !important;
   box-shadow: none !important;
   text-align: center;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 .prov-label-text {
   font-size: 0.72rem;
@@ -4085,6 +4087,7 @@ body[data-theme="light"] .map-status-btn.active {
 
   /* Floating Top-Right Legend: Compact 4-dot pill on mobile, expandable on tap */
   #map-legend.floating-legend {
+    z-index: 2200;
     top: max(10px, env(safe-area-inset-top, 10px));
     right: max(10px, env(safe-area-inset-right, 10px));
     padding: 5px 10px;
@@ -4120,6 +4123,7 @@ body[data-theme="light"] .map-status-btn.active {
   }
   /* When expanded on tap */
   #map-legend.floating-legend.expanded {
+    z-index: 2500;
     height: auto;
     border-radius: 14px;
     padding: 8px 12px;
@@ -4142,7 +4146,7 @@ body[data-theme="light"] .map-status-btn.active {
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
   .floating-search-wrap {
     z-index: 2000;
-    top: max(48px, calc(env(safe-area-inset-top, 0px) + 46px));
+    top: max(50px, calc(env(safe-area-inset-top, 0px) + 48px));
     left: 50%;
     transform: translateX(-50%);
     width: min(440px, calc(100vw - 20px));
@@ -4273,6 +4277,7 @@ body[data-theme="light"] .map-status-btn.active {
 @media (max-width: 480px) {
   /* Floating Top-Right Legend: Tap to expand on mobile */
   #map-legend.floating-legend {
+    z-index: 2200;
     top: max(10px, env(safe-area-inset-top));
     right: max(10px, env(safe-area-inset-right));
     padding: 5px 10px;
@@ -4293,6 +4298,7 @@ body[data-theme="light"] .map-status-btn.active {
     display: none;
   }
   #map-legend.expanded {
+    z-index: 2500;
     height: auto;
     border-radius: 16px;
     padding: 10px 14px;
