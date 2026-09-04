@@ -4075,19 +4075,63 @@ body[data-theme="light"] .map-status-btn.active {
 /* ── Tablet & Mobile (<= 768px) ── */
 @media (max-width: 768px) {
   /* Floating Top Row: Profile + Poster button */
+  .floating-profile-wrap {
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    gap: 4px;
+    height: 32px;
+  }
+  .floating-profile-btn {
+    height: 32px;
+    padding: 4px 10px 4px 6px;
+    font-size: 0.8rem;
+  }
   .floating-poster-btn {
-    padding: 6px 10px;
+    height: 32px;
+    width: 34px;
+    padding: 0;
+    justify-content: center;
     font-size: 0.95rem;
-    margin-left: 4px;
-    border-radius: 99px;
+    margin-left: 2px;
+    border-radius: 50%;
   }
   .poster-btn-text {
     display: none;
   }
 
+  /* Floating Top-Right Legend: Horizontal pill, no collision */
+  #map-legend.floating-legend {
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    padding: 4px 10px;
+    border-radius: 99px;
+    min-width: auto;
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  #map-legend .legend-items-list {
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    margin: 0 !important;
+  }
+  #map-legend .legend-item {
+    font-size: 0.68rem;
+    gap: 4px;
+  }
+  #map-legend .legend-dot {
+    width: 8px;
+    height: 8px;
+  }
+
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
   .floating-search-wrap {
-    top: max(56px, calc(env(safe-area-inset-top, 0px) + 50px));
+    z-index: 2000;
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 48px));
     left: 50%;
     transform: translateX(-50%);
     width: min(440px, calc(100vw - 24px));
@@ -4098,13 +4142,14 @@ body[data-theme="light"] .map-status-btn.active {
   .map-search-results {
     max-height: 220px;
     -webkit-overflow-scrolling: touch;
+    z-index: 2001;
   }
   .search-item {
     min-height: 42px;
     padding: 8px 10px;
   }
 
-  /* Floating Layer HUD: Positioned above stats overlay without collision */
+  /* Floating Layer HUD: Positioned cleanly above stats overlay */
   .floating-layer-hud {
     bottom: calc(max(76px, calc(env(safe-area-inset-bottom, 0px) + 60px)) + 52px);
     left: max(12px, env(safe-area-inset-left, 12px));
@@ -4162,10 +4207,28 @@ body[data-theme="light"] .map-status-btn.active {
     grid-template-columns: 1fr;
     gap: 12px;
   }
+
+  /* Feedback Modal keyboard scroll safety */
+  .feedback-modal-card {
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 18px;
+  }
 }
 
 /* ── Mobile Phones (<= 480px) ── */
 @media (max-width: 480px) {
+  /* Profile Header wrapping */
+  .profile-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .profile-poster-trigger-btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
   /* Leaflet Status Popup: Clean and thumb-friendly */
   .clean-status-popup .leaflet-popup-content-wrapper {
     max-width: min(295px, calc(100vw - 26px)) !important;
@@ -4338,3 +4401,22 @@ body[data-theme="light"] .map-status-btn.active {
     white-space: nowrap;
   }
 }
+
+/* ── Very Small Mobile Phones (<= 380px) ── */
+@media (max-width: 380px) {
+  #map-legend.floating-legend {
+    padding: 4px 6px;
+    gap: 3px;
+  }
+  #map-legend .legend-items-list {
+    gap: 4px;
+  }
+  #map-legend .legend-item {
+    font-size: 0.60rem;
+    gap: 2px;
+  }
+  .poster-btn-txt {
+    display: none;
+  }
+}
+
