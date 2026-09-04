@@ -1315,16 +1315,26 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
           </button>
         `;
       }).join('')}
+
+      <!-- "Değerlendirme Yap" Butonu: Sadece "Gidildi" durumunda görünür, diğer butonlarla birebir aynı boyutta -->
+      <button type="button" id="btn-toggle-review" class="map-status-btn map-review-trigger-btn"
+              style="--btn-color:#f59e0b; display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+        <span class="map-status-dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.7);"></span>
+        <span class="map-status-text" id="review-trigger-text">
+          ${currentRating > 0 ? `⭐ ${t('reviewScore')} (${currentRating}/10)` : `⭐ ${t('rateAndReview')}`}
+        </span>
+      </button>
     </div>
 
-    <!-- Rating (1-10) and Notes Section -->
-    <div class="map-status-review-box">
-      <div class="rating-header-row">
-        <span class="rating-badge-label">⭐ ${currentLang === 'tr' ? 'Puan:' : 'Score:'} <b id="rating-score-display">${currentRating > 0 ? currentRating + '/10' : '-'}</b></span>
+    <!-- IMDb Tarzı 10 Yıldız Değerlendirme & Seyahat Notu Çekmecesi -->
+    <div class="map-status-review-drawer" id="map-status-review-drawer" style="display: none;">
+      <div class="imdb-rating-header">
+        <span class="imdb-score-title">${t('rateThisPlace')}</span>
+        <span class="imdb-score-display" id="rating-score-display">${currentRating > 0 ? `⭐ ${currentRating}/10` : '-'}</span>
       </div>
-      <div class="popup-rating-numbers">
+      <div class="imdb-stars-row" id="imdb-stars-row">
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => `
-          <button type="button" class="score-pill-btn ${s === currentRating ? 'active' : ''}" data-score="${s}">${s}</button>
+          <span class="imdb-star ${s <= currentRating ? 'filled' : ''}" data-score="${s}" title="${s}/10">★</span>
         `).join('')}
       </div>
       <div class="popup-notes-input-row">
@@ -1334,37 +1344,75 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     </div>
   `;
 
-  // Close button handler
-  content.querySelector('#map-popup-close-btn')?.addEventListener('click', (e) => {
+  // UI Elements
+  const btnToggleReview = content.querySelector('#btn-toggle-review');
+  const reviewDrawer = content.querySelector('#map-status-review-drawer');
+  const triggerText = content.querySelector('#review-trigger-text');
+  const starsRow = content.querySelector('#imdb-stars-row');
+  const starSpans = content.querySelectorAll('.imdb-star');
+  const scoreDisplay = content.querySelector('#rating-score-display');
+
+  // Toggle review drawer on "Değerlendirme Yap" click
+  btnToggleReview?.addEventListener('click', (e) => {
     e.stopPropagation();
-    map.closePopup();
-    activeStatusPopup = null;
+    const isVisible = reviewDrawer.style.display === 'flex';
+    reviewDrawer.style.display = isVisible ? 'none' : 'flex';
+    btnToggleReview.classList.toggle('active', !isVisible);
   });
 
-  // 1-10 Score button click handler
-  content.querySelectorAll('.score-pill-btn').forEach(pBtn => {
-    pBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const scoreVal = parseInt(pBtn.dataset.score, 10);
-      currentRating = (currentRating === scoreVal) ? 0 : scoreVal;
-
-      content.querySelectorAll('.score-pill-btn').forEach(b => {
-        const bVal = parseInt(b.dataset.score, 10);
-        if (bVal === currentRating) b.classList.add('active');
-        else b.classList.remove('active');
-      });
-
-      const disp = content.querySelector('#rating-score-display');
-      if (disp) disp.textContent = currentRating > 0 ? currentRating + '/10' : '-';
-
-      // Save to storage
-      if (type === 'province') {
-        const num = id.replace('TR::', '');
-        saveTurkeyVisit(num, currentStatus === 'unvisited' ? 'visited' : currentStatus, { rating: currentRating });
+  // IMDb Stars Visual Renderer
+  function renderStars(val) {
+    starSpans.forEach(s => {
+      const sVal = parseInt(s.dataset.score, 10);
+      if (sVal <= val) {
+        s.classList.add('filled');
       } else {
-        saveWorldVisit(id, currentStatus === 'unvisited' ? 'visited' : currentStatus, { rating: currentRating });
+        s.classList.remove('filled');
       }
     });
+  }
+
+  // IMDb Stars Interaction (Click & Hover)
+  starSpans.forEach(star => {
+    // Desktop hover preview
+    star.addEventListener('mouseenter', () => {
+      const hoverVal = parseInt(star.dataset.score, 10);
+      renderStars(hoverVal);
+      if (scoreDisplay) scoreDisplay.textContent = `⭐ ${hoverVal}/10`;
+    });
+
+    // Click to lock in rating
+    star.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const scoreVal = parseInt(star.dataset.score, 10);
+      currentRating = (currentRating === scoreVal) ? 0 : scoreVal;
+      renderStars(currentRating);
+
+      if (scoreDisplay) {
+        scoreDisplay.textContent = currentRating > 0 ? `⭐ ${currentRating}/10` : '-';
+      }
+      if (triggerText) {
+        triggerText.textContent = currentRating > 0
+          ? `⭐ ${t('reviewScore')} (${currentRating}/10)`
+          : `⭐ ${t('rateAndReview')}`;
+      }
+
+      // Persist rating to storage
+      if (type === 'province') {
+        const num = id.replace('TR::', '');
+        saveTurkeyVisit(num, 'visited', { rating: currentRating });
+      } else {
+        saveWorldVisit(id, 'visited', { rating: currentRating });
+      }
+    });
+  });
+
+  // Revert hover preview when mouse leaves star row
+  starsRow?.addEventListener('mouseleave', () => {
+    renderStars(currentRating);
+    if (scoreDisplay) {
+      scoreDisplay.textContent = currentRating > 0 ? `⭐ ${currentRating}/10` : '-';
+    }
   });
 
   // Note save handler
@@ -1372,9 +1420,9 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     const noteVal = content.querySelector('#popup-note-input')?.value.trim() || '';
     if (type === 'province') {
       const num = id.replace('TR::', '');
-      saveTurkeyVisit(num, currentStatus === 'unvisited' ? 'visited' : currentStatus, { notes: noteVal });
+      saveTurkeyVisit(num, 'visited', { notes: noteVal });
     } else {
-      saveWorldVisit(id, currentStatus === 'unvisited' ? 'visited' : currentStatus, { notes: noteVal });
+      saveWorldVisit(id, 'visited', { notes: noteVal });
     }
     const saveBtn = content.querySelector('#popup-note-save-btn');
     if (saveBtn) {
@@ -1394,10 +1442,12 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     }
   });
 
-  content.querySelectorAll('.map-status-btn').forEach(btn => {
+  // Status buttons click handler
+  content.querySelectorAll('.map-status-btn[data-val]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const val = btn.dataset.val;
+      currentStatus = val;
 
       if (type === 'province') {
         const num = id.replace('TR::', '');
@@ -1461,9 +1511,27 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         }
       }
 
-      map.closePopup();
       refreshAllStyles();
       refreshStats();
+
+      // Update button highlights
+      content.querySelectorAll('.map-status-btn[data-val]').forEach(b => {
+        if (b.dataset.val === val) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      if (val === 'visited') {
+        // Show the review trigger button
+        if (btnToggleReview) {
+          btnToggleReview.style.display = 'flex';
+        }
+      } else {
+        // Hide review button and drawer, close popup
+        if (btnToggleReview) btnToggleReview.style.display = 'none';
+        if (reviewDrawer) reviewDrawer.style.display = 'none';
+        map.closePopup();
+        activeStatusPopup = null;
+      }
     });
   });
 
@@ -1471,7 +1539,7 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: 260
+    maxWidth: 290
   })
   .setLatLng(latlng)
   .setContent(content)

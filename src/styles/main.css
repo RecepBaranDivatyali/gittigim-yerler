@@ -2529,6 +2529,25 @@ body[data-theme="light"] .clean-status-popup .leaflet-popup-content-wrapper {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
 }
 
+body[data-theme="light"] .map-status-review-drawer {
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+body[data-theme="light"] .imdb-score-title {
+  color: #64748b;
+}
+body[data-theme="light"] .imdb-star {
+  color: #cbd5e1;
+}
+body[data-theme="light"] .imdb-star.filled {
+  color: #d97706;
+}
+body[data-theme="light"] .popup-note-input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
 body[data-theme="light"] .floating-profile-btn:hover,
 body[data-theme="light"] .floating-feedback-btn:hover {
   background: #ffffff !important;
@@ -3212,36 +3231,84 @@ body[data-theme="light"] .map-status-btn.active {
   color: #f87171;
 }
 
-/* ── Popup Rating & Notes ── */
-.map-status-review-box {
+/* ── Popup Review Trigger Button (Same size as status buttons) ── */
+.map-review-trigger-btn {
+  margin-top: 2px;
+  border-style: dashed;
+  animation: reviewGlowPulse 2.8s ease-in-out infinite alternate;
+}
+@keyframes reviewGlowPulse {
+  0% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+}
+
+/* ── Popup Rating & Notes Drawer (IMDb Style) ── */
+.map-status-review-drawer {
   margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  animation: drawerSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.popup-rating-stars {
+@keyframes drawerSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.imdb-rating-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: space-between;
+  padding: 0 2px;
 }
-.popup-rating-stars .star-btn {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-  transition: transform 0.15s ease, color 0.15s ease;
+.imdb-score-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.imdb-score-display {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+/* ── 10 IMDb Stars in a Single Clean Row ── */
+.imdb-stars-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 0;
+  margin: 1px 0 4px 0;
   user-select: none;
+  touch-action: manipulation;
 }
-.popup-rating-stars .star-btn:hover {
-  transform: scale(1.2);
-  color: #f59e0b;
+.imdb-star {
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #475569; /* Empty IMDb star */
+  cursor: pointer;
+  transition: transform 0.12s ease, color 0.12s ease, text-shadow 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 1px;
 }
-.popup-rating-stars .star-btn.filled {
-  color: #f59e0b;
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+.imdb-star:hover {
+  transform: scale(1.25);
+  color: #fbbf24;
 }
+.imdb-star.filled {
+  color: #f59e0b; /* IMDb gold */
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
 .popup-notes-input-row {
   display: flex;
   gap: 6px;
@@ -3250,29 +3317,34 @@ body[data-theme="light"] .map-status-btn.active {
 .popup-note-input {
   flex: 1;
   background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   color: #f8fafc;
   font-family: inherit;
-  font-size: 0.78rem;
-  padding: 6px 8px;
+  font-size: 0.8rem;
+  padding: 6px 10px;
   outline: none;
+  transition: border-color 0.15s ease;
 }
 .popup-note-input:focus {
-  border-color: #3b82f6;
+  border-color: #f59e0b;
 }
 .popup-note-save-btn {
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  color: #60a5fa;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .popup-note-save-btn:hover {
-  background: rgba(59, 130, 246, 0.4);
+  background: rgba(245, 158, 11, 0.35);
+  transform: scale(1.04);
 }
 
 /* ── Profile Poster Trigger Button ── */
@@ -3854,54 +3926,7 @@ body[data-theme="light"] .map-status-btn.active {
   transform: translateY(-2px);
 }
 
-/* ── 1-10 Point Score Selector Styles ── */
-.rating-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.78rem;
-  color: var(--theme-text-muted, #94a3b8);
-}
-.rating-badge-label {
-  font-weight: 600;
-  color: #f8fafc;
-}
-.rating-badge-label b {
-  color: #f59e0b;
-}
-.popup-rating-numbers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
-.score-pill-btn {
-  width: 20px;
-  height: 22px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(15, 23, 42, 0.6);
-  color: #94a3b8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  padding: 0;
-}
-.score-pill-btn:hover {
-  border-color: #f59e0b;
-  color: #f8fafc;
-  background: rgba(245, 158, 11, 0.2);
-}
-.score-pill-btn.active {
-  background: #f59e0b;
-  border-color: #f59e0b;
-  color: #0f172a;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
-}
+
 
 /* ── Alliance Collection Set Cards (Hot Wheels style) ── */
 .alliance-set-card {
@@ -4265,20 +4290,19 @@ body[data-theme="light"] .map-status-btn.active {
 
   /* Leaflet Status Popup: Clean and thumb-friendly */
   .clean-status-popup .leaflet-popup-content-wrapper {
-    max-width: min(295px, calc(100vw - 26px)) !important;
+    max-width: min(290px, calc(100vw - 24px)) !important;
     padding: 0 !important;
   }
   .map-status-popup {
     padding: 12px 14px;
-    min-width: 250px;
+    min-width: 240px;
   }
-  .popup-rating-numbers {
-    gap: 3px;
+  .imdb-stars-row {
+    padding: 4px 0;
   }
-  .score-pill-btn {
-    width: 22px;
-    height: 26px;
-    font-size: 0.74rem;
+  .imdb-star {
+    font-size: 1.25rem;
+    padding: 3px 1px;
   }
   .popup-notes-input-row {
     gap: 6px;
@@ -4289,7 +4313,7 @@ body[data-theme="light"] .map-status-btn.active {
   }
   .popup-note-save-btn {
     padding: 6px 10px;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
 
   /* Hot Wheels Airlines Collection: 2-column sticker grid */
