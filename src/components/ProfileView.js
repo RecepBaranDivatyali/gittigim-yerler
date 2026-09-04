@@ -12,6 +12,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
+import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -106,8 +107,8 @@ export function renderProfileView(container, onBack) {
           <div class="profile-header">
             <div class="profile-avatar">${profile.avatar}</div>
             <div style="flex:1;">
-              <div class="profile-username">${profile.username}</div>
-              <div class="profile-bio">${profile.bio || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
+              <div class="profile-username">${escapeHtml(profile.username)}</div>
+              <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
             <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
               <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
@@ -933,8 +934,8 @@ export function renderProfileView(container, onBack) {
           <div class="profile-header">
             <div class="profile-avatar">${otherProfile.avatar}</div>
             <div style="flex:1;">
-              <div class="profile-username">${otherProfile.username}</div>
-              <div class="profile-bio">${otherProfile.bio || ''}</div>
+              <div class="profile-username">${escapeHtml(otherProfile.username)}</div>
+              <div class="profile-bio">${escapeHtml(otherProfile.bio || '')}</div>
             </div>
             ${rawCode ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
           </div>
@@ -1080,7 +1081,7 @@ export function renderProfileView(container, onBack) {
                           <span>${r.flag} ${r.name}</span>
                           ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
-                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${r.notes}"</div>` : ''}
+                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
                     `).join('');
                   })()}
@@ -1089,7 +1090,7 @@ export function renderProfileView(container, onBack) {
 
               <!-- Friend's Reviews -->
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${otherProfile.username} Yorumları & Puanları` : `${otherProfile.username} Reviews`}</div>
+                <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${escapeHtml(otherProfile.username)} Yorumları & Puanları` : `${escapeHtml(otherProfile.username)} Reviews`}</div>
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
                   ${(() => {
                     const reviews = [];
@@ -1112,7 +1113,7 @@ export function renderProfileView(container, onBack) {
                           <span>${r.flag} ${r.name}</span>
                           ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
-                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${r.notes}"</div>` : ''}
+                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
                     `).join('');
                   })()}
@@ -1173,7 +1174,8 @@ export function renderProfileView(container, onBack) {
       if (!code) return;
 
       try {
-        const decoded = JSON.parse(decodeURIComponent(atob(code)));
+        const decoded = parseSecureShareCode(code);
+        if (!decoded) throw new Error('Invalid code format');
         applyFriendComparison(
           decoded.profile || { username: 'Arkadaşın', avatar: '✈️' },
           decoded.worldVisits || {},

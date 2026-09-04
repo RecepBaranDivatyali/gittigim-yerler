@@ -2873,8 +2873,10 @@ body[data-theme="light"] .map-status-btn.active {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 8px;
   pointer-events: none;
+  max-width: calc(100vw - 80px);
 }
 
 .stats-chip {
@@ -3119,11 +3121,7 @@ body[data-theme="light"] .map-status-btn.active {
 
 /* ── Floating Layer HUD Badge ── */
 .floating-layer-hud {
-  position: absolute;
-  bottom: 85px;
-  left: 20px;
-  z-index: 900;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
@@ -3135,8 +3133,9 @@ body[data-theme="light"] .map-status-btn.active {
   font-weight: 600;
   color: var(--theme-text-main, #f8fafc);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  pointer-events: none;
+  pointer-events: auto;
   transition: all 0.3s ease;
+  width: fit-content;
 }
 
 /* ── Floating Poster Button ── */
@@ -4149,10 +4148,8 @@ body[data-theme="light"] .map-status-btn.active {
     padding: 8px 10px;
   }
 
-  /* Floating Layer HUD: Positioned cleanly above stats overlay */
+  /* Floating Layer HUD: Inside stats overlay naturally */
   .floating-layer-hud {
-    bottom: calc(max(76px, calc(env(safe-area-inset-bottom, 0px) + 60px)) + 52px);
-    left: max(12px, env(safe-area-inset-left, 12px));
     font-size: 0.72rem;
     padding: 4px 10px;
     border-radius: 99px;
@@ -4219,6 +4216,43 @@ body[data-theme="light"] .map-status-btn.active {
 
 /* ── Mobile Phones (<= 480px) ── */
 @media (max-width: 480px) {
+  /* Floating Top-Right Legend: Tap to expand on mobile */
+  #map-legend.floating-legend {
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    padding: 5px 10px;
+    border-radius: 99px;
+    height: 32px;
+    min-width: auto;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #map-legend .legend-items-list {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    margin: 0 !important;
+  }
+  #map-legend .legend-text {
+    display: none;
+  }
+  #map-legend.expanded {
+    height: auto;
+    border-radius: 16px;
+    padding: 10px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+  #map-legend.expanded .legend-items-list {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  #map-legend.expanded .legend-text {
+    display: inline;
+    font-size: 0.72rem;
+  }
+
   /* Profile Header wrapping */
   .profile-header {
     flex-wrap: wrap;

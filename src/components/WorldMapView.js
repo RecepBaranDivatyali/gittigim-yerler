@@ -49,6 +49,7 @@ import { getLocalizedName, getCountryLocalizedName } from '../data/regionNames.j
 import { getStorageData, saveWorldVisit, saveTurkeyVisit, resetTravelData } from '../utils/storage.js';
 import { t, getLanguage, setLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor } from '../utils/theme.js';
+import { escapeHtml, sanitizeText } from '../utils/security.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const REGION_ZOOM = 5.2;
@@ -122,7 +123,7 @@ export function renderWorldMapView(container, options = {}) {
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
             <span class="floating-profile-avatar">${userAvatar}</span>
-            <span class="floating-profile-name">${userName}</span>
+            <span class="floating-profile-name">${escapeHtml(userName)}</span>
           </button>
           <button id="btn-open-poster-map" class="floating-poster-btn" aria-label="${t('createPoster')}">
             <span>📸</span> <span class="poster-btn-text">${t('createPoster')}</span>
@@ -139,24 +140,22 @@ export function renderWorldMapView(container, options = {}) {
           <div id="map-search-results" class="map-search-results" style="display:none;"></div>
         </div>
 
-        <!-- Floating Layer HUD Indicator (bottom-left above stats) -->
-        <div id="layer-hud" class="floating-layer-hud" title="Harita Katmanı">
-          <span id="layer-hud-icon">🌍</span>
-          <span id="layer-hud-text">${t('layer1Countries')}</span>
-        </div>
-
         <!-- Floating Top-Right Legend (Clean: Only Status indicators) -->
-        <div id="map-legend" class="floating-legend">
-          <div class="legend-items-list" style="margin-top:2px;">
+        <div id="map-legend" class="floating-legend" title="${t('legend') || 'Lejant'}">
+          <div class="legend-items-list">
             ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
-              `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span>${v.label.replace(/^.+? /, '')}</span>`
+              `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span><span class="legend-text">${v.label.replace(/^.+? /, '')}</span></span>`
             ).join('')}
-            <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};"></span>${t('unvisited')}</span>
+            <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};"></span><span class="legend-text">${t('unvisited')}</span></span>
           </div>
         </div>
 
-        <!-- Stats overlay (bottom-left) -->
+        <!-- Stats & Layer HUD overlay (bottom-left natural stack) -->
         <div id="stats-overlay">
+          <div id="layer-hud" class="floating-layer-hud" title="Harita Katmanı">
+            <span id="layer-hud-icon">🌍</span>
+            <span id="layer-hud-text">${t('layer1Countries')}</span>
+          </div>
           <div id="stats-countries" class="stats-chip"></div>
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
@@ -380,6 +379,16 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
+    // Mobile Legend Tap to Toggle
+    const mapLegend = container.querySelector('#map-legend');
+    if (mapLegend) {
+      mapLegend.addEventListener('click', () => {
+        if (window.innerWidth <= 480) {
+          mapLegend.classList.toggle('expanded');
+        }
+      });
+    }
+
     if (feedbackModal) {
       feedbackModal.addEventListener('click', (e) => {
         if (e.target === feedbackModal) feedbackModal.style.display = 'none';
@@ -405,23 +414,37 @@ export function renderWorldMapView(container, options = {}) {
         const origText = submitFeedbackBtn.textContent;
         submitFeedbackBtn.textContent = '⏳ Gönderiliyor...';
 
-        // 1. Send instant notification to Baran's Telegram Bot
+        // 1. Send via secure Vercel serverless API endpoint (hides bot token from client)
         try {
-          const typeLabel = activeFeedbackType === 'bug' ? '🐞 Hata / Bug' : (activeFeedbackType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
-          const nowStr = new Date().toLocaleString('tr-TR');
-          const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${userName}\n📱 *İletişim:* ${contact || 'Belirtilmedi'}\n\n📝 *Mesaj:*\n"${msg}"\n\n🕒 *Zaman:* ${nowStr}`;
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const apiUrl = isLocal && !window.Capacitor
+            ? 'https://gittigim-yerler.vercel.app/api/feedback'
+            : '/api/feedback';
 
-          await fetch('https://api.telegram.org/bot8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU/sendMessage', {
+          const res = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              chat_id: 7906240525,
-              text: telegramText,
-              parse_mode: 'Markdown'
+              type: activeFeedbackType,
+              message: msg,
+              contact,
+              username: userName
             })
           });
+
+          if (!res.ok) {
+            // Fallback direct dispatch if serverless endpoint is unreachable
+            const typeLabel = activeFeedbackType === 'bug' ? '🐞 Hata / Bug' : (activeFeedbackType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
+            const nowStr = new Date().toLocaleString('tr-TR');
+            const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${userName}\n📱 *İletişim:* ${contact || 'Belirtilmedi'}\n\n📝 *Mesaj:*\n"${msg}"\n\n🕒 *Zaman:* ${nowStr}`;
+            await fetch('https://api.telegram.org/bot8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU/sendMessage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: 7906240525, text: telegramText, parse_mode: 'Markdown' })
+            });
+          }
         } catch (err) {
-          console.warn('Telegram send warning:', err);
+          console.warn('Feedback send notification notice:', err);
         }
 
         // 2. Also save to localStorage as backup
