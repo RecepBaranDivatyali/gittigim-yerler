@@ -323,24 +323,6 @@ export function saveBucketRanks(ranks) {
 }
 
 // ─── User Airlines Tracker ────────────────────────────────────────────────────
-export const POPULAR_AIRLINES = [
-  { id: 'thy', name: 'Türk Hava Yolları', code: 'TK', country: 'TR', flag: '🇹🇷', logo: '✈️' },
-  { id: 'pegasus', name: 'Pegasus Airlines', code: 'PC', country: 'TR', flag: '🇹🇷', logo: '🟡' },
-  { id: 'sunexpress', name: 'SunExpress', code: 'XQ', country: 'TR', flag: '🇹🇷', logo: '☀️' },
-  { id: 'ajet', name: 'AJet (AnadoluJet)', code: 'VF', country: 'TR', flag: '🇹🇷', logo: '🔵' },
-  { id: 'emirates', name: 'Emirates', code: 'EK', country: 'AE', flag: '🇦🇪', logo: '👑' },
-  { id: 'qatar', name: 'Qatar Airways', code: 'QR', country: 'QA', flag: '🇶🇦', logo: '🍷' },
-  { id: 'lufthansa', name: 'Lufthansa', code: 'LH', country: 'DE', flag: '🇩🇪', logo: '🦅' },
-  { id: 'british_airways', name: 'British Airways', code: 'BA', country: 'GB', flag: '🇬🇧', logo: '🇬🇧' },
-  { id: 'ryanair', name: 'Ryanair', code: 'FR', country: 'IE', flag: '🇮🇪', logo: '🎸' },
-  { id: 'easyjet', name: 'easyJet', code: 'U2', country: 'GB', flag: '🇬🇧', logo: '🟧' },
-  { id: 'air_france', name: 'Air France', code: 'AF', country: 'FR', flag: '🇫🇷', logo: '🇫🇷' },
-  { id: 'klm', name: 'KLM Royal Dutch', code: 'KL', country: 'NL', flag: '🇳🇱', logo: '🇳🇱' },
-  { id: 'delta', name: 'Delta Air Lines', code: 'DL', country: 'US', flag: '🇺🇸', logo: '🔺' },
-  { id: 'wizz_air', name: 'Wizz Air', code: 'W6', country: 'HU', flag: '🇭🇺', logo: '🟪' },
-  { id: 'singapore', name: 'Singapore Airlines', code: 'SQ', country: 'SG', flag: '🇸🇬', logo: '🌸' }
-];
-
 export function getUserAirlines() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRLINES);

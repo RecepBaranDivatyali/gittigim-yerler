@@ -98,6 +98,17 @@ export const ACHIEVEMENTS = [
   { id: 'city_5_in_one', title: 'Bölge Âlimi', desc: 'Aynı ülkede 5+ farklı şehir/bölge gez', icon: '🗺️', category: 'city', check: s => s.maxCitiesInOneCountry >= 5 },
   { id: 'city_10_in_one', title: 'Yerel Gibi Yaşa', desc: 'Aynı ülkede 10+ şehir/bölge gez', icon: '🏡', category: 'city', check: s => s.maxCitiesInOneCountry >= 10 },
 
+  // ─── HAVACILIK & FİLO ─────────────────────────────────────────
+  { id: 'first_flight', title: 'Kanatlanış', desc: 'Binilen ilk havayolunu işaretle', icon: '✈️', category: 'aviation', check: s => (s.flownAirlines || []).length >= 1 },
+  { id: 'turkish_fleet_master', title: 'Göklerin Hakimi', desc: "Türkiye'nin yerli havayollarının en az 3'üyle uç", icon: '🇹🇷', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'pegasus', 'sunexpress', 'ajet', 'corendon', 'freebird', 'tailwind', 'southwind'].includes(id)).length >= 3 },
+  { id: 'star_collector', title: 'Star Alliance Koleksiyoneri', desc: 'Star Alliance üyesi en az 3 farklı havayoluyla uç', icon: '🌟', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'thy_star', 'lufthansa', 'united', 'singapore', 'swiss', 'austrian', 'ana', 'air_canada', 'tap_portugal', 'aegean', 'lot_polish', 'eva_air', 'air_china', 'thai_airways', 'copa', 'brussels'].includes(id)).length >= 3 },
+  { id: 'skyteam_rider', title: 'SkyTeam Yolcusu', desc: 'SkyTeam üyesi bir havayoluyla uç', icon: '🌐', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['air_france', 'klm', 'delta', 'korean_air', 'saudia', 'virgin_atlantic', 'aeromexico', 'ita_airways', 'vietnam_airlines', 'garuda_indonesia', 'air_europa', 'tarom'].includes(id)) },
+  { id: 'oneworld_flyer', title: 'oneworld Gezgini', desc: 'oneworld üyesi bir havayoluyla uç', icon: '🦅', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['british_airways', 'qatar', 'american', 'cathay_pacific', 'finnair', 'iberia', 'jal', 'qantas', 'royal_jordanian', 'malaysia', 'royal_air_maroc', 'alaska_airlines'].includes(id)) },
+  { id: 'sky_giant', title: 'Gökyüzü Devi', desc: 'A380 veya B747 ile uçuş yap', icon: '🐘', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a380' || id === 'b747') },
+  { id: 'modern_fleet', title: 'Yeni Nesil Filo', desc: 'B787 Dreamliner veya A350 ile uçuş yap', icon: '🚀', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'b787' || id === 'a350') },
+  { id: 'fleet_collector', title: 'Hangar Koleksiyoneri', desc: 'En az 4 farklı uçak modelini koleksiyonuna ekle', icon: '🛫', category: 'aviation', check: s => (s.flownAircraft || []).length >= 4 },
+  { id: 'frequent_flyer', title: 'Sadık Yolcu', desc: 'Toplam 10 veya daha fazla uçuş kaydet', icon: '🎫', category: 'aviation', check: s => (s.totalFlightCount || 0) >= 10 },
+
   // ─── ÖZEL & TEMATİK ROTALAR ───────────────────────────────────
   { id: 'planner', title: 'Planlı Gezgin', desc: '5+ yeri "Planlanıyor" olarak işaretle', icon: '📅', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 5 },
   { id: 'big_planner', title: 'Geleceğin Gezgini', desc: '15+ yeri "Planlanıyor" olarak işaretle', icon: '🗓️', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 15 },
@@ -114,6 +125,20 @@ export const ACHIEVEMENTS = [
 
 export function computeAchievementStats(storageData, baseStats) {
   const { worldVisits = {}, turkeyVisits = {}, worldCities = [] } = storageData || {};
+
+  // ── Read aviation data from localStorage ──
+  let userAirlines = {};
+  let userAircraft = {};
+  try {
+    const alRaw = localStorage.getItem('gittigim_yerler_airlines_v1');
+    if (alRaw) userAirlines = JSON.parse(alRaw);
+    const acRaw = localStorage.getItem('gittigim_yerler_aircraft_v1');
+    if (acRaw) userAircraft = JSON.parse(acRaw);
+  } catch {}
+
+  const flownAirlines = Object.keys(userAirlines).filter(k => userAirlines[k]?.flown);
+  const totalFlightCount = Object.values(userAirlines).reduce((acc, curr) => acc + ((curr?.flown) ? (curr.count || 1) : 0), 0);
+  const flownAircraft = Object.keys(userAircraft).filter(k => userAircraft[k]?.flown);
   
   // Visited country codes (including TR if at least 1 Turkish province is visited)
   const visitedCodes = Object.entries(worldVisits)
@@ -173,3 +198,4 @@ export function getEarnedAchievements(storageData, baseStats) {
     }
   });
 }
+
