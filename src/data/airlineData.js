@@ -1,0 +1,280 @@
+// airlineData.js - Global Alliances, Turkish Carriers, Independents & Aircraft Fleet
+
+export const AIRLINE_ALLIANCES = [
+  {
+    id: 'turkish_carriers',
+    name: 'Türk Taşıyıcıları (Yerli Filo)',
+    icon: '🇹🇷',
+    color: '#e11d48',
+    badge: 'Milli & Özel Filomuz',
+    desc: 'Türkiye semalarında ve dünyada gururla uçan yerli havayollarımız.',
+    airlines: [
+      { id: 'thy', name: 'Türk Hava Yolları', code: 'TK', country: 'TR', flag: '🇹🇷', logo: '✈️' },
+      { id: 'pegasus', name: 'Pegasus Airlines', code: 'PC', country: 'TR', flag: '🇹🇷', logo: '🟡' },
+      { id: 'sunexpress', name: 'SunExpress', code: 'XQ', country: 'TR', flag: '🇹🇷', logo: '☀️' },
+      { id: 'ajet', name: 'AJet (AnadoluJet)', code: 'VF', country: 'TR', flag: '🇹🇷', logo: '🔵' },
+      { id: 'corendon', name: 'Corendon Airlines', code: 'XC', country: 'TR', flag: '🇹🇷', logo: '🔴' },
+      { id: 'freebird', name: 'Freebird Airlines', code: 'FH', country: 'TR', flag: '🇹🇷', logo: '🦅' },
+      { id: 'tailwind', name: 'Tailwind Airlines', code: 'TI', country: 'TR', flag: '🇹🇷', logo: '💨' },
+      { id: 'southwind', name: 'Southwind Airlines', code: '2S', country: 'TR', flag: '🇹🇷', logo: '🌪️' }
+    ]
+  },
+  {
+    id: 'star_alliance',
+    name: 'Star Alliance',
+    icon: '🌟',
+    color: '#d4af37',
+    badge: 'En Büyük Küresel İttifak',
+    desc: '1997 yılında kurulan, Türk Hava Yolları ve Lufthansa öncülüğündeki dev ittifak.',
+    airlines: [
+      { id: 'thy_star', name: 'Türk Hava Yolları', code: 'TK', country: 'TR', flag: '🇹🇷', logo: '✈️' },
+      { id: 'lufthansa', name: 'Lufthansa', code: 'LH', country: 'DE', flag: '🇩🇪', logo: '🦅' },
+      { id: 'united', name: 'United Airlines', code: 'UA', country: 'US', flag: '🇺🇸', logo: '🌐' },
+      { id: 'singapore', name: 'Singapore Airlines', code: 'SQ', country: 'SG', flag: '🇸🇬', logo: '🌸' },
+      { id: 'swiss', name: 'SWISS', code: 'LX', country: 'CH', flag: '🇨🇭', logo: '🇨🇭' },
+      { id: 'austrian', name: 'Austrian Airlines', code: 'OS', country: 'AT', flag: '🇦🇹', logo: '🇦🇹' },
+      { id: 'ana', name: 'ANA (All Nippon Airways)', code: 'NH', country: 'JP', flag: '🇯🇵', logo: '🇯🇵' },
+      { id: 'air_canada', name: 'Air Canada', code: 'AC', country: 'CA', flag: '🇨🇦', logo: '🍁' },
+      { id: 'tap_portugal', name: 'TAP Air Portugal', code: 'TP', country: 'PT', flag: '🇵🇹', logo: '🇵🇹' },
+      { id: 'aegean', name: 'Aegean Airlines', code: 'A3', country: 'GR', flag: '🇬🇷', logo: '🇬🇷' },
+      { id: 'lot_polish', name: 'LOT Polish Airlines', code: 'LO', country: 'PL', flag: '🇵🇱', logo: '🇵🇱' },
+      { id: 'eva_air', name: 'EVA Air', code: 'BR', country: 'TW', flag: '🇹🇼', logo: '🟢' },
+      { id: 'air_china', name: 'Air China', code: 'CA', country: 'CN', flag: '🇨🇳', logo: '🐉' },
+      { id: 'thai_airways', name: 'Thai Airways', code: 'TG', country: 'TH', flag: '🇹🇭', logo: '🌺' },
+      { id: 'copa', name: 'Copa Airlines', code: 'CM', country: 'PA', flag: '🇵🇦', logo: '🌎' },
+      { id: 'brussels', name: 'Brussels Airlines', code: 'SN', country: 'BE', flag: '🇧🇪', logo: '🇧🇪' }
+    ]
+  },
+  {
+    id: 'skyteam',
+    name: 'SkyTeam',
+    icon: '🌐',
+    color: '#2563eb',
+    badge: 'Global Havacılık İttifakı',
+    desc: 'Air France, KLM ve Delta öncülüğünde kıtalararası güçlü uçuş ağı.',
+    airlines: [
+      { id: 'air_france', name: 'Air France', code: 'AF', country: 'FR', flag: '🇫🇷', logo: '🇫🇷' },
+      { id: 'klm', name: 'KLM Royal Dutch Airlines', code: 'KL', country: 'NL', flag: '🇳🇱', logo: '👑' },
+      { id: 'delta', name: 'Delta Air Lines', code: 'DL', country: 'US', flag: '🇺🇸', logo: '🔺' },
+      { id: 'korean_air', name: 'Korean Air', code: 'KE', country: 'KR', flag: '🇰🇷', logo: '🇰🇷' },
+      { id: 'saudia', name: 'Saudia', code: 'SV', country: 'SA', flag: '🇸🇦', logo: '🇸🇦' },
+      { id: 'virgin_atlantic', name: 'Virgin Atlantic', code: 'VS', country: 'GB', flag: '🇬🇧', logo: '💃' },
+      { id: 'aeromexico', name: 'Aeroméxico', code: 'AM', country: 'MX', flag: '🇲🇽', logo: '🦅' },
+      { id: 'ita_airways', name: 'ITA Airways', code: 'AZ', country: 'IT', flag: '🇮🇹', logo: '🇮🇹' },
+      { id: 'vietnam_airlines', name: 'Vietnam Airlines', code: 'VN', country: 'VN', flag: '🇻🇳', logo: '🪷' },
+      { id: 'garuda_indonesia', name: 'Garuda Indonesia', code: 'GA', country: 'ID', flag: '🇮🇩', logo: '🇮🇩' },
+      { id: 'air_europa', name: 'Air Europa', code: 'UX', country: 'ES', flag: '🇪🇸', logo: '🇪🇸' },
+      { id: 'tarom', name: 'TAROM', code: 'RO', country: 'RO', flag: '🇷🇴', logo: '🇷🇴' }
+    ]
+  },
+  {
+    id: 'oneworld',
+    name: 'oneworld',
+    icon: '🦅',
+    color: '#0284c7',
+    badge: 'Prestijli Havacılık Birliği',
+    desc: 'British Airways, Qatar Airways ve American Airlines ortaklığında premium ittifak.',
+    airlines: [
+      { id: 'british_airways', name: 'British Airways', code: 'BA', country: 'GB', flag: '🇬🇧', logo: '🇬🇧' },
+      { id: 'qatar', name: 'Qatar Airways', code: 'QR', country: 'QA', flag: '🇶🇦', logo: '🍷' },
+      { id: 'american', name: 'American Airlines', code: 'AA', country: 'US', flag: '🇺🇸', logo: '🦅' },
+      { id: 'cathay_pacific', name: 'Cathay Pacific', code: 'CX', country: 'HK', flag: '🇭🇰', logo: '🇭🇰' },
+      { id: 'finnair', name: 'Finnair', code: 'AY', country: 'FI', flag: '🇫🇮', logo: '🇫🇮' },
+      { id: 'iberia', name: 'Iberia', code: 'IB', country: 'ES', flag: '🇪🇸', logo: '🇪🇸' },
+      { id: 'jal', name: 'Japan Airlines (JAL)', code: 'JL', country: 'JP', flag: '🇯🇵', logo: '🇯🇵' },
+      { id: 'qantas', name: 'Qantas', code: 'QF', country: 'AU', flag: '🇦🇺', logo: '🦘' },
+      { id: 'royal_jordanian', name: 'Royal Jordanian', code: 'RJ', country: 'JO', flag: '🇯🇴', logo: '🇯🇴' },
+      { id: 'malaysia', name: 'Malaysia Airlines', code: 'MH', country: 'MY', flag: '🇲🇾', logo: '🇲🇾' },
+      { id: 'royal_air_maroc', name: 'Royal Air Maroc', code: 'AT', country: 'MA', flag: '🇲🇦', logo: '🇲🇦' },
+      { id: 'alaska_airlines', name: 'Alaska Airlines', code: 'AS', country: 'US', flag: '🇺🇸', logo: '🏔️' }
+    ]
+  },
+  {
+    id: 'independents',
+    name: 'Bağımsızlar & Low-Cost Devler',
+    icon: '🌍',
+    color: '#10b981',
+    badge: 'Küresel & Düşük Maliyetli',
+    desc: 'Dünyanın en büyük bağımsız bayrak taşıyıcıları ve bütçe dostu hava yolları.',
+    airlines: [
+      { id: 'emirates', name: 'Emirates', code: 'EK', country: 'AE', flag: '🇦🇪', logo: '👑' },
+      { id: 'etihad', name: 'Etihad Airways', code: 'EY', country: 'AE', flag: '🇦🇪', logo: '✨' },
+      { id: 'ryanair', name: 'Ryanair', code: 'FR', country: 'IE', flag: '🇮🇪', logo: '🎸' },
+      { id: 'easyjet', name: 'easyJet', code: 'U2', country: 'GB', flag: '🇬🇧', logo: '🟧' },
+      { id: 'wizz_air', name: 'Wizz Air', code: 'W6', country: 'HU', flag: '🇭🇺', logo: '🟪' },
+      { id: 'flydubai', name: 'flydubai', code: 'FZ', country: 'AE', flag: '🇦🇪', logo: '🌴' },
+      { id: 'air_arabia', name: 'Air Arabia', code: 'G9', country: 'AE', flag: '🇦🇪', logo: '🪶' },
+      { id: 'southwest', name: 'Southwest Airlines', code: 'WN', country: 'US', flag: '🇺🇸', logo: '💙' },
+      { id: 'indigo', name: 'IndiGo', code: '6E', country: 'IN', flag: '🇮🇳', logo: '🇮🇳' },
+      { id: 'norwegian', name: 'Norwegian', code: 'DY', country: 'NO', flag: '🇳🇴', logo: '🔴' },
+      { id: 'jetblue', name: 'JetBlue Airways', code: 'B6', country: 'US', flag: '🇺🇸', logo: '🔷' },
+      { id: 'vueling', name: 'Vueling', code: 'VY', country: 'ES', flag: '🇪🇸', logo: '🟡' },
+      { id: 'eurowings', name: 'Eurowings', code: 'EW', country: 'DE', flag: '🇩🇪', logo: '🟣' },
+      { id: 'gulf_air', name: 'Gulf Air', code: 'GF', country: 'BH', flag: '🇧🇭', logo: '🇧🇭' },
+      { id: 'oman_air', name: 'Oman Air', code: 'WY', country: 'OM', flag: '🇴🇲', logo: '🇴🇲' }
+    ]
+  }
+];
+
+// Flat list for lookup
+export const ALL_AIRLINES = AIRLINE_ALLIANCES.flatMap(al => al.airlines);
+
+// ─── Aircraft Fleet Collection Models ──────────────────────────────────────────
+export const AIRCRAFT_MODELS = [
+  {
+    id: 'a380',
+    name: 'Airbus A380',
+    nick: 'Superjumbo',
+    builder: 'Airbus',
+    type: 'Çift Katlı Geniş Gövde',
+    icon: '🛫',
+    badge: 'Dünyanın En Büyüğü',
+    seats: '525 - 853',
+    range: '14,800 km',
+    color: '#8b5cf6',
+    desc: 'Havacılık tarihinin en büyük çift katlı lüks yolcu uçağı.'
+  },
+  {
+    id: 'b747',
+    name: 'Boeing 747',
+    nick: 'Queen of the Skies',
+    builder: 'Boeing',
+    type: 'Kambur Geniş Gövde',
+    icon: '👑',
+    badge: 'Gökyüzü Kraliçesi',
+    seats: '416 - 660',
+    range: '13,450 km',
+    color: '#f59e0b',
+    desc: 'Havacılık çağını başlatan efsanevi kambur gövdeli dev.'
+  },
+  {
+    id: 'b787',
+    name: 'Boeing 787 Dreamliner',
+    nick: 'Dreamliner',
+    builder: 'Boeing',
+    type: 'Kompozit Geniş Gövde',
+    icon: '✨',
+    badge: 'Rüya Uçak',
+    seats: '242 - 330',
+    range: '14,140 km',
+    color: '#0ea5e9',
+    desc: 'Karbon kompozit gövdesi ve devasa pencereleriyle sessiz konfor ikonu.'
+  },
+  {
+    id: 'a350',
+    name: 'Airbus A350 XWB',
+    nick: 'Extra Wide Body',
+    builder: 'Airbus',
+    type: 'Yeni Nesil Geniş Gövde',
+    icon: '🚀',
+    badge: 'Yeni Nesil Dev',
+    seats: '315 - 440',
+    range: '16,100 km',
+    color: '#3b82f6',
+    desc: 'Ultra uzun menzilli, son derece sessiz ve aerodinamik geniş gövde.'
+  },
+  {
+    id: 'b777',
+    name: 'Boeing 777',
+    nick: 'Triple Seven',
+    builder: 'Boeing',
+    type: 'Çift Motorlu Geniş Gövde',
+    icon: '✈️',
+    badge: 'Kıtalararası Lider',
+    seats: '300 - 450',
+    range: '15,840 km',
+    color: '#6366f1',
+    desc: 'Devasa GE90 motorlarıyla okyanusları aşan çift motorlu dünya devi.'
+  },
+  {
+    id: 'a330',
+    name: 'Airbus A330',
+    nick: 'Kıtalararası Klasik',
+    builder: 'Airbus',
+    type: 'Geniş Gövde Çift Koridor',
+    icon: '🛬',
+    badge: 'Güvenilir Klasik',
+    seats: '250 - 300',
+    range: '13,400 km',
+    color: '#06b6d4',
+    desc: 'Türk Hava Yolları filosunun da bel kemiği olan konforlu kıtalararası uçak.'
+  },
+  {
+    id: 'a320',
+    name: 'Airbus A320 / A321neo',
+    nick: 'Avrupa Yıldızı',
+    builder: 'Airbus',
+    type: 'Modern Dar Gövde',
+    icon: '✈️',
+    badge: 'En Çok Uçulan',
+    seats: '150 - 240',
+    range: '6,500 km',
+    color: '#10b981',
+    desc: 'Fly-by-wire teknolojisiyle üretilmiş, dünyada en sık binilen dar gövde.'
+  },
+  {
+    id: 'b737',
+    name: 'Boeing 737 / 737 MAX',
+    nick: 'Havacılık Efsanesi',
+    builder: 'Boeing',
+    type: 'Dar Gövde Efsanesi',
+    icon: '✈️',
+    badge: 'Tarihin En Çok Satanı',
+    seats: '138 - 230',
+    range: '6,570 km',
+    color: '#ec4899',
+    desc: '1967 yılından beri 11 binden fazla üretilmiş tüm zamanların rekor sahibi uçağı.'
+  },
+  {
+    id: 'a220',
+    name: 'Airbus A220',
+    nick: 'Sessiz Konfor',
+    builder: 'Airbus',
+    type: 'Modern Bölgesel Jet',
+    icon: '🕊️',
+    badge: 'Ferah 2-3 Düzen',
+    seats: '100 - 160',
+    range: '6,297 km',
+    color: '#14b8a6',
+    desc: 'Geniş koltukları ve büyük pencereleriyle yolcuların en sevdiği bölgesel jet.'
+  },
+  {
+    id: 'e_jets',
+    name: 'Embraer E-Jets (E190/E195)',
+    nick: 'Brezilya Kartalı',
+    builder: 'Embraer',
+    type: 'Bölgesel Jet',
+    icon: '🦅',
+    badge: 'Ortada Koltuk Yok (2-2)',
+    seats: '96 - 146',
+    range: '5,278 km',
+    color: '#f97316',
+    desc: 'Orta koltuk olmayan 2-2 ferah oturma düzeniyle bilinen Brezilya üretimi jet.'
+  },
+  {
+    id: 'atr72',
+    name: 'ATR 72 / Dash 8',
+    nick: 'Pervaneli Ada Avcısı',
+    builder: 'ATR / De Havilland',
+    type: 'Turboprop Pervaneli',
+    icon: '🚁',
+    badge: 'Ada & Bölge Uçağı',
+    seats: '68 - 78',
+    range: '1,500 km',
+    color: '#84cc16',
+    desc: 'Kısa pistler, ada uçuşları ve dağlık havaalanlarının vazgeçilmez pervaneli uçağı.'
+  },
+  {
+    id: 'concorde',
+    name: 'Concorde (Retro)',
+    nick: 'Süpersonik Efsane',
+    builder: 'Aérospatiale / BAC',
+    type: 'Süpersonik Yolcu Uçağı (Mach 2)',
+    icon: '⚡',
+    badge: 'Ses Hızını Aşan Dev',
+    seats: '100',
+    range: '7,222 km',
+    color: '#e11d48',
+    desc: 'Atlantik\'i ses hızının iki katıyla (Mach 2.04) 3.5 saatte aşan süpersonik efsane.'
+  }
+];

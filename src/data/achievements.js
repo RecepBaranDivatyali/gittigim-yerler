@@ -4,6 +4,7 @@ export const ACHIEVEMENT_CATEGORIES = {
   continent: { label: 'Kıta Kâşifi', color: '#8b5cf6' },
   turkey: { label: 'Anadolu', color: '#ef4444' },
   city: { label: 'Şehir Avcısı', color: '#f59e0b' },
+  aviation: { label: 'Havacılık & Filo', color: '#0ea5e9' },
   special: { label: 'Özel & Rotalar', color: '#10b981' },
 };
 
@@ -155,7 +156,10 @@ export function computeAchievementStats(storageData, baseStats) {
     maxCitiesInOneCountry,
     worldWishlistCount,
     worldPlannedCount,
-    worldTargetCount: Math.max(baseStats?.worldTargetCount || 0, worldPlannedCount)
+    worldTargetCount: Math.max(baseStats?.worldTargetCount || 0, worldPlannedCount),
+    flownAirlines,
+    totalFlightCount,
+    flownAircraft
   };
 }
 

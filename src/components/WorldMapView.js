@@ -1,3 +1,4 @@
+import { WORLD_REGIONS_INDEX } from '../data/universalSearchData.js';
 const COUNTRY_LABEL_OFFSETS = {
   'HR': [45.4, 17.5],  // Croatia (Deep inside Slavonia heartland, 100% inside borders)
   'AT': [47.5, 14.5],  // Austria (Lower/Upper Austria central interior)
@@ -215,16 +216,19 @@ export function renderWorldMapView(container, options = {}) {
     const searchClear = container.querySelector('#map-search-clear');
     const searchResults = container.querySelector('#map-search-results');
 
+    // ── Universal Search Database: Every Clickable Country, Province & World Region ──
     const searchDatabase = [
+      // 1. Turkey 81 Provinces
       ...TURKEY_PROVINCES.map(p => ({
         type: 'province',
         id: `TR::${p.id}`,
         name: p.name,
-        sub: `Türkiye (İl)`,
-        flag: '🇹🇷',
+        sub: 'Türkiye (İl)',
+        flag: getFlagHtml('TR'),
         coords: [p.coordinates[1], p.coordinates[0]],
         countryCode: 'TR'
       })),
+      // 2. World Countries
       ...WORLD_COUNTRIES.map(c => ({
         type: 'country',
         id: c.code,
@@ -234,70 +238,93 @@ export function renderWorldMapView(container, options = {}) {
         coords: COUNTRY_LABEL_OFFSETS[c.code] || null,
         countryCode: c.code
       })),
-      // Major world cities
-      { type: 'city', name: 'Tokyo', sub: 'Japonya', flag: getFlagHtml('JP'), coords: [35.6762, 139.6503], countryCode: 'JP' },
-      { type: 'city', name: 'Paris', sub: 'Fransa', flag: getFlagHtml('FR'), coords: [48.8566, 2.3522], countryCode: 'FR' },
-      { type: 'city', name: 'Londra (London)', sub: 'Birleşik Krallık', flag: getFlagHtml('GB'), coords: [51.5074, -0.1278], countryCode: 'GB' },
-      { type: 'city', name: 'Roma (Rome)', sub: 'İtalya', flag: getFlagHtml('IT'), coords: [41.9028, 12.4964], countryCode: 'IT' },
-      { type: 'city', name: 'Berlin', sub: 'Almanya', flag: getFlagHtml('DE'), coords: [52.5200, 13.4050], countryCode: 'DE' },
-      { type: 'city', name: 'Madrid', sub: 'İspanya', flag: getFlagHtml('ES'), coords: [40.4168, -3.7038], countryCode: 'ES' },
-      { type: 'city', name: 'Amsterdam', sub: 'Hollanda', flag: getFlagHtml('NL'), coords: [52.3676, 4.9041], countryCode: 'NL' },
-      { type: 'city', name: 'New York', sub: 'ABD', flag: getFlagHtml('US'), coords: [40.7128, -74.0060], countryCode: 'US' },
-      { type: 'city', name: 'Dubai', sub: 'BAE', flag: getFlagHtml('AE'), coords: [25.2048, 55.2708], countryCode: 'AE' },
-      { type: 'city', name: 'Barselona (Barcelona)', sub: 'İspanya', flag: getFlagHtml('ES'), coords: [41.3879, 2.1699], countryCode: 'ES' },
-      { type: 'city', name: 'Viyana (Vienna)', sub: 'Avusturya', flag: getFlagHtml('AT'), coords: [48.2082, 16.3738], countryCode: 'AT' }
+      // 3. All World Regions & Subdivisions (3,500+ states, provinces, prefectures, cantons)
+      ...WORLD_REGIONS_INDEX.map(r => {
+        const c = WORLD_COUNTRIES.find(x => x.code === r.countryCode);
+        const countryName = c ? getCountryDisplayName(c) : r.countryCode;
+        return {
+          type: 'region',
+          id: `${r.countryCode}::${r.name}`,
+          name: r.name,
+          sub: `${countryName} (Bölge/Eyalet)`,
+          flag: getFlagHtml(r.countryCode),
+          coords: (r.lat && r.lng) ? [r.lat, r.lng] : null,
+          countryCode: r.countryCode
+        };
+      })
     ];
 
     if (searchInput && searchResults) {
+      let searchTimeout = null;
       searchInput.addEventListener('input', () => {
-        const query = searchInput.value.trim().toLowerCase();
-        if (query.length === 0) {
-          searchResults.style.display = 'none';
-          if (searchClear) searchClear.style.display = 'none';
-          return;
-        }
-        if (searchClear) searchClear.style.display = 'block';
-
-        const matches = searchDatabase.filter(item => 
-          item.name.toLowerCase().includes(query) || (item.sub && item.sub.toLowerCase().includes(query))
-        ).slice(0, 8);
-
-        if (matches.length === 0) {
-          searchResults.innerHTML = `<div class="search-item empty">${t('searchNoResults')}</div>`;
-          searchResults.style.display = 'block';
-          return;
-        }
-
-        searchResults.innerHTML = matches.map((m, idx) => `
-          <div class="search-item" data-idx="${idx}">
-            <span class="search-item-flag">${m.flag.startsWith('<img') ? m.flag : m.flag}</span>
-            <div class="search-item-info">
-              <span class="search-item-title">${m.name}</span>
-              <span class="search-item-sub">${m.sub}</span>
-            </div>
-          </div>
-        `).join('');
-        searchResults.style.display = 'block';
-
-        searchResults.querySelectorAll('.search-item').forEach(itemEl => {
-          itemEl.addEventListener('click', () => {
-            const idx = parseInt(itemEl.dataset.idx, 10);
-            const m = matches[idx];
-            if (!m) return;
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          const query = searchInput.value.trim().toLowerCase();
+          if (query.length === 0) {
             searchResults.style.display = 'none';
-            searchInput.value = '';
             if (searchClear) searchClear.style.display = 'none';
+            return;
+          }
+          if (searchClear) searchClear.style.display = 'block';
 
-            if (m.coords && map) {
-              const targetZoom = m.type === 'province' ? 6.5 : (m.type === 'city' ? 7.5 : 4.5);
-              map.flyTo(m.coords, targetZoom, { duration: 0.8 });
-              setTimeout(() => {
-                const titleHtml = `${m.flag.startsWith('<img') ? m.flag : m.flag} ${m.name}`;
-                openStatusPopup(m.coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
-              }, 850);
+          // Search matches with prioritization: Exact start > includes
+          const matches = [];
+          for (let i = 0; i < searchDatabase.length; i++) {
+            const item = searchDatabase[i];
+            const nameLower = item.name.toLowerCase();
+            const subLower = item.sub ? item.sub.toLowerCase() : '';
+            if (nameLower.startsWith(query) || (subLower && subLower.startsWith(query))) {
+              matches.push(item);
+            } else if (nameLower.includes(query) || subLower.includes(query)) {
+              matches.push(item);
             }
+            if (matches.length >= 10) break;
+          }
+
+          if (matches.length === 0) {
+            searchResults.innerHTML = `<div class="search-item empty">${t('searchNoResults')}</div>`;
+            searchResults.style.display = 'block';
+            return;
+          }
+
+          searchResults.innerHTML = matches.map((m, idx) => `
+            <div class="search-item" data-idx="${idx}">
+              <span class="search-item-flag">${m.flag}</span>
+              <div class="search-item-info">
+                <span class="search-item-title">${m.name}</span>
+                <span class="search-item-sub">${m.sub}</span>
+              </div>
+            </div>
+          `).join('');
+          searchResults.style.display = 'block';
+
+          searchResults.querySelectorAll('.search-item').forEach(itemEl => {
+            itemEl.addEventListener('click', async () => {
+              const idx = parseInt(itemEl.dataset.idx, 10);
+              const m = matches[idx];
+              if (!m) return;
+              searchResults.style.display = 'none';
+              searchInput.value = '';
+              if (searchClear) searchClear.style.display = 'none';
+
+              // If it's a world region, ensure country's region layer is loaded
+              if (m.type === 'region' && m.countryCode && m.countryCode !== 'TR') {
+                if (!regionLayers[m.countryCode]) {
+                  await loadRegionData(m.countryCode);
+                }
+              }
+
+              if (m.coords && map) {
+                const targetZoom = m.type === 'province' ? 6.5 : (m.type === 'region' ? 6.2 : 4.5);
+                map.flyTo(m.coords, targetZoom, { duration: 0.8 });
+                setTimeout(() => {
+                  const titleHtml = `${m.flag} ${m.name}`;
+                  openStatusPopup(m.coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
+                }, 850);
+              }
+            });
           });
-        });
+        }, 150);
       });
 
       if (searchClear) {

@@ -1,3 +1,5 @@
+import { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS } from '../data/airlineData.js';
+export { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS };
 import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
@@ -9,6 +11,7 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'gittigim_yerler_profile_v2',
   BUCKET_RANKS: 'gittigim_yerler_bucket_ranks_v1',
   USER_AIRLINES: 'gittigim_yerler_airlines_v1',
+  USER_AIRCRAFT: 'gittigim_yerler_aircraft_v1',
   SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1'
 };
 
@@ -403,4 +406,34 @@ export function deleteFriend(friendId) {
   localStorage.setItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
   notifyStateChange();
   return friends;
+}
+
+// ─── Aircraft Fleet Tracker ──────────────────────────────────────────────────
+export function getUserAircraft() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRCRAFT);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveUserAircraft(aircraft) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(aircraft));
+    notifyStateChange();
+  } catch (e) {
+    console.error('Error saving user aircraft', e);
+  }
+}
+
+export function toggleUserAircraft(modelId) {
+  const data = getUserAircraft();
+  if (data[modelId]) {
+    delete data[modelId];
+  } else {
+    data[modelId] = { flown: true, date: new Date().toISOString().split('T')[0] };
+  }
+  saveUserAircraft(data);
+  return data;
 }

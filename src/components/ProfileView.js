@@ -1,7 +1,9 @@
 import { 
   getStorageData, calculateStats, resetTravelData, 
   getBucketRanks, saveBucketRanks, 
-  getUserAirlines, saveUserAirlines, toggleUserAirline, POPULAR_AIRLINES,
+  getUserAirlines, saveUserAirlines, toggleUserAirline,
+  getUserAircraft, saveUserAircraft, toggleUserAircraft,
+  AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS,
   getSavedFriends, saveFriend, deleteFriend 
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
@@ -474,76 +476,168 @@ export function renderProfileView(container, onBack) {
     });
   }
 
-  // ─── ✈️ Airlines & Flights Tab ───────────────────────────────────────────────
+  // ─── ✈️ Airlines & Aircraft Fleet Collection Tab ───────────────────────────
+  let flightSubTab = 'alliances'; // 'alliances' | 'aircraft'
+
   function renderFlightsTab(contentArea) {
     const currentLang = getLanguage();
     const userAirlines = getUserAirlines();
+    const userAircraft = getUserAircraft();
     
-    // Calculate total flights
+    // Calculate total flights and airline counts
     let totalFlightsCount = 0;
     let flownAirlinesCount = 0;
     Object.values(userAirlines).forEach(a => {
-      if (a.flown) {
+      if (a && a.flown) {
         flownAirlinesCount++;
         totalFlightsCount += (a.count || 1);
       }
     });
 
+    const flownAircraftCount = Object.values(userAircraft).filter(a => a && a.flown).length;
+
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="share-section" style="margin-top:0;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
             <div>
-              <h3 style="margin-bottom:4px;">✈️ ${t('tabFlights')}</h3>
-              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Bindiğin havayollarını işaretle ve toplam uçuş sayını kaydet.' : 'Track airlines you have flown with and count your flights.'}</p>
+              <h3 style="margin-bottom:4px;">✈️ ${t('tabFlights')} & Koleksiyon</h3>
+              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Bindiğin havayolu birliklerini tamamla ve uçak modelleri filonu oluştur.' : 'Collect airline alliances and track your aircraft fleet.'}</p>
             </div>
           </div>
 
-          <!-- Flight Stats -->
-          <div class="profile-stats" style="grid-template-columns:repeat(2, 1fr);margin-bottom:20px;">
+          <!-- Top Aviation Stats Grid -->
+          <div class="profile-stats" style="grid-template-columns:repeat(3, 1fr);margin-bottom:20px;">
             <div class="pstat">
               <span class="pstat-num" style="color:#3b82f6;">${totalFlightsCount}</span>
               <span class="pstat-lbl">${t('totalFlights')}</span>
             </div>
             <div class="pstat">
               <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount}</span>
-              <span class="pstat-lbl">${t('airlinesTracked')}</span>
+              <span class="pstat-lbl">${currentLang === 'tr' ? 'Havayolu' : 'Airlines'}</span>
+            </div>
+            <div class="pstat">
+              <span class="pstat-num" style="color:#8b5cf6;">${flownAircraftCount}/${AIRCRAFT_MODELS.length}</span>
+              <span class="pstat-lbl">${currentLang === 'tr' ? 'Uçak Modeli' : 'Aircraft'}</span>
             </div>
           </div>
 
-          <!-- Airline Cards Grid -->
-          <div class="airlines-grid">
-            ${POPULAR_AIRLINES.map(airline => {
-              const uData = userAirlines[airline.id] || {};
-              const isFlown = !!uData.flown;
-              const count = uData.count || 1;
+          <!-- Aviation Subtabs Switcher -->
+          <div class="compare-subtabs-row" style="margin-bottom:20px;">
+            <button type="button" class="compare-subtab ${flightSubTab === 'alliances' ? 'active' : ''}" id="tab-btn-alliances">
+              🏢 ${currentLang === 'tr' ? 'Havayolu Birlikleri (Koleksiyon)' : 'Airline Alliances (Collection)'}
+            </button>
+            <button type="button" class="compare-subtab ${flightSubTab === 'aircraft' ? 'active' : ''}" id="tab-btn-aircraft">
+              🛩️ ${currentLang === 'tr' ? 'Uçak Filosu (Hangar)' : 'Aircraft Fleet (Hangar)'}
+            </button>
+          </div>
+
+          <!-- PANE 1: ALLIANCES & AIRLINES COLLECTION -->
+          <div id="flight-pane-alliances" style="display:${flightSubTab === 'alliances' ? 'block' : 'none'};">
+            ${AIRLINE_ALLIANCES.map(alliance => {
+              const allianceAirlines = alliance.airlines;
+              const completedCount = allianceAirlines.filter(al => userAirlines[al.id]?.flown).length;
+              const totalCount = allianceAirlines.length;
+              const percent = Math.round((completedCount / totalCount) * 100);
+              const isFull = completedCount === totalCount;
+
               return `
-                <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}">
-                  <div class="airline-top">
-                    <span class="airline-flag">${airline.flag}</span>
-                    <span class="airline-code">${airline.code}</span>
-                    <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}">${isFlown ? '✓' : '+'}</button>
-                  </div>
-                  <div class="airline-name">${airline.name}</div>
-                  ${isFlown ? `
-                    <div class="airline-count-row">
-                      <span class="airline-count-label">${currentLang === 'tr' ? 'Uçuş:' : 'Flights:'}</span>
-                      <div class="airline-stepper">
-                        <button type="button" class="stepper-btn minus" data-id="${airline.id}">-</button>
-                        <span class="stepper-val">${count}</span>
-                        <button type="button" class="stepper-btn plus" data-id="${airline.id}">+</button>
+                <div class="alliance-set-card" style="border-left: 4px solid ${alliance.color};">
+                  <div class="alliance-set-header">
+                    <div class="alliance-title-wrap">
+                      <span class="alliance-icon">${alliance.icon}</span>
+                      <div>
+                        <div class="alliance-name">${alliance.name}</div>
+                        <div class="alliance-sub">${alliance.desc}</div>
                       </div>
                     </div>
-                  ` : ''}
+                    <div class="alliance-progress-wrap">
+                      <div class="alliance-count-badge" style="color:${alliance.color};background:${alliance.color}18;border-color:${alliance.color}44;">
+                        ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hot Wheels Style Progress Bar -->
+                  <div class="alliance-progress-bar-bg">
+                    <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${alliance.color};"></div>
+                  </div>
+
+                  <!-- Grid of Airlines in this Alliance -->
+                  <div class="airlines-grid" style="margin-top:14px;">
+                    ${allianceAirlines.map(airline => {
+                      const uData = userAirlines[airline.id] || {};
+                      const isFlown = !!uData.flown;
+                      const count = uData.count || 1;
+                      return `
+                        <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}">
+                          <div class="airline-top">
+                            <span class="airline-flag">${airline.flag}</span>
+                            <span class="airline-code">${airline.code}</span>
+                            <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}">${isFlown ? '✓' : '+'}</button>
+                          </div>
+                          <div class="airline-name">${airline.name}</div>
+                          ${isFlown ? `
+                            <div class="airline-count-row">
+                              <span class="airline-count-label">${currentLang === 'tr' ? 'Uçuş:' : 'Flights:'}</span>
+                              <div class="airline-stepper">
+                                <button type="button" class="stepper-btn minus" data-id="${airline.id}">-</button>
+                                <span class="stepper-val">${count}</span>
+                                <button type="button" class="stepper-btn plus" data-id="${airline.id}">+</button>
+                              </div>
+                            </div>
+                          ` : ''}
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
                 </div>
               `;
             }).join('')}
+          </div>
+
+          <!-- PANE 2: AIRCRAFT FLEET MODELS TRACKER -->
+          <div id="flight-pane-aircraft" style="display:${flightSubTab === 'aircraft' ? 'block' : 'none'};">
+            <div class="aircraft-grid">
+              ${AIRCRAFT_MODELS.map(model => {
+                const isFlown = !!userAircraft[model.id]?.flown;
+                return `
+                  <div class="aircraft-card ${isFlown ? 'active' : ''}" data-id="${model.id}" style="--aircraft-accent:${model.color};">
+                    <div class="aircraft-header">
+                      <span class="aircraft-icon">${model.icon}</span>
+                      <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
+                    </div>
+                    <div class="aircraft-model-name">${model.name}</div>
+                    <div class="aircraft-builder">${model.builder} • ${model.type}</div>
+                    <div class="aircraft-desc">${model.desc}</div>
+                    <div class="aircraft-specs-row">
+                      <span>💺 ${model.seats}</span>
+                      <span>🌐 ${model.range}</span>
+                    </div>
+                    <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
+                      ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
         </div>
       </div>
     `;
 
-    // Airline card toggle
+    // Subtab click handlers
+    contentArea.querySelector('#tab-btn-alliances')?.addEventListener('click', () => {
+      flightSubTab = 'alliances';
+      renderFlightsTab(contentArea);
+    });
+
+    contentArea.querySelector('#tab-btn-aircraft')?.addEventListener('click', () => {
+      flightSubTab = 'aircraft';
+      renderFlightsTab(contentArea);
+    });
+
+    // Airline check button click
     contentArea.querySelectorAll('.airline-check-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -578,6 +672,26 @@ export function renderProfileView(container, onBack) {
           saveUserAirlines(airlines);
           renderFlightsTab(contentArea);
         }
+      });
+    });
+
+    // Aircraft toggle click
+    contentArea.querySelectorAll('.aircraft-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.aircraft-card');
+        const id = card.dataset.id;
+        toggleUserAircraft(id);
+        renderFlightsTab(contentArea);
+      });
+    });
+
+    contentArea.querySelectorAll('.aircraft-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.aircraft-toggle-btn')) return;
+        const id = card.dataset.id;
+        toggleUserAircraft(id);
+        renderFlightsTab(contentArea);
       });
     });
   }

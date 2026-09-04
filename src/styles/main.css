@@ -3903,3 +3903,160 @@ body[data-theme="light"] .map-status-btn.active {
   color: #0f172a;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
 }
+
+/* ── Alliance Collection Set Cards (Hot Wheels style) ── */
+.alliance-set-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+.alliance-set-card:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.alliance-set-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.alliance-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.alliance-icon {
+  font-size: 1.8rem;
+}
+.alliance-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.alliance-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.alliance-count-badge {
+  border-radius: 99px;
+  border: 1px solid;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.alliance-progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.alliance-progress-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+/* ── Aircraft Fleet Cards (Hangar) ── */
+.aircraft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.aircraft-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.aircraft-card:hover {
+  transform: translateY(-2px);
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+.aircraft-card.active {
+  border-color: var(--aircraft-accent, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 24px var(--aircraft-accent, #3b82f6) 25;
+}
+.aircraft-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.aircraft-icon {
+  font-size: 2rem;
+}
+.aircraft-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.aircraft-model-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.aircraft-builder {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+.aircraft-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+  min-height: 34px;
+}
+.aircraft-specs-row {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: auto;
+}
+.aircraft-toggle-btn {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 6px;
+}
+.aircraft-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.aircraft-toggle-btn.flown {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
