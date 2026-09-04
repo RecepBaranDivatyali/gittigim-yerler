@@ -2447,65 +2447,8 @@ body[data-theme="vintage"] .share-section p {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   ENHANCED MOBILE TOUCH & SAFE AREA RULES
+   ENHANCED MOBILE TOUCH & SAFE AREA RULES (Consolidated in Mobile Query)
 ═══════════════════════════════════════════════════════════════════ */
-@media (max-width: 480px) {
-  .floating-profile-wrap {
-    top: max(8px, env(safe-area-inset-top));
-    left: max(8px, env(safe-area-inset-left));
-  }
-
-  .floating-profile-btn {
-    padding: 5px 10px 5px 6px;
-    font-size: 0.78rem;
-    gap: 4px;
-  }
-
-  .floating-profile-name {
-    max-width: 75px;
-  }
-
-  #map-legend.floating-legend {
-    top: max(8px, env(safe-area-inset-top));
-    right: max(8px, env(safe-area-inset-right));
-    padding: 6px 8px;
-    min-width: 95px;
-  }
-
-  .legend-item {
-    font-size: 0.65rem;
-  }
-
-  #stats-overlay {
-    bottom: max(16px, env(safe-area-inset-bottom));
-    left: max(8px, env(safe-area-inset-left));
-  }
-
-  .stats-chip {
-    padding: 7px 10px;
-    border-radius: 12px;
-  }
-
-  .stats-number {
-    font-size: 1.05rem;
-  }
-
-  .stats-label {
-    font-size: 0.60rem;
-  }
-
-  .clean-status-popup .leaflet-popup-content-wrapper {
-    max-width: 220px !important;
-    padding: 10px !important;
-  }
-
-  .map-status-popup-buttons {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 5px !important;
-  }
-
-  
-}
 
 /* ── Light Theme Global Adjustments ──────────────────── */
 body[data-theme="light"] {
@@ -2931,6 +2874,10 @@ body[data-theme="light"] .map-status-btn.active {
   top: max(16px, env(safe-area-inset-top, 16px));
   left: max(16px, env(safe-area-inset-left, 16px));
   z-index: 1000;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .floating-profile-btn {
@@ -3174,7 +3121,7 @@ body[data-theme="light"] .map-status-btn.active {
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-left: 6px;
+  margin: 0;
 }
 .floating-poster-btn:hover {
   transform: translateY(-2px);
@@ -4100,68 +4047,109 @@ body[data-theme="light"] .map-status-btn.active {
 @media (max-width: 768px) {
   /* Floating Top Row: Profile + Poster button */
   .floating-profile-wrap {
-    top: max(10px, env(safe-area-inset-top));
-    left: max(10px, env(safe-area-inset-left));
-    gap: 4px;
+    top: max(10px, env(safe-area-inset-top, 10px));
+    left: max(10px, env(safe-area-inset-left, 10px));
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
     height: 32px;
   }
   .floating-profile-btn {
     height: 32px;
     padding: 4px 10px 4px 6px;
     font-size: 0.8rem;
+    gap: 6px;
+  }
+  .floating-profile-name {
+    max-width: 85px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .floating-poster-btn {
     height: 32px;
-    width: 34px;
+    width: 32px;
+    min-width: 32px;
     padding: 0;
+    display: flex;
+    align-items: center;
     justify-content: center;
     font-size: 0.95rem;
-    margin-left: 2px;
+    margin: 0;
     border-radius: 50%;
   }
   .poster-btn-text {
     display: none;
   }
 
-  /* Floating Top-Right Legend: Horizontal pill, no collision */
+  /* Floating Top-Right Legend: Compact 4-dot pill on mobile, expandable on tap */
   #map-legend.floating-legend {
-    top: max(10px, env(safe-area-inset-top));
-    right: max(10px, env(safe-area-inset-right));
-    padding: 4px 10px;
+    top: max(10px, env(safe-area-inset-top, 10px));
+    right: max(10px, env(safe-area-inset-right, 10px));
+    padding: 5px 10px;
     border-radius: 99px;
     min-width: auto;
     height: 32px;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
   #map-legend .legend-items-list {
+    display: flex;
     flex-direction: row;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
     margin: 0 !important;
   }
+  #map-legend .legend-text {
+    display: none;
+  }
   #map-legend .legend-item {
     font-size: 0.68rem;
-    gap: 4px;
+    gap: 0;
+    margin: 0;
   }
   #map-legend .legend-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
+  }
+  /* When expanded on tap */
+  #map-legend.floating-legend.expanded {
+    height: auto;
+    border-radius: 14px;
+    padding: 8px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #map-legend.floating-legend.expanded .legend-items-list {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  #map-legend.floating-legend.expanded .legend-item {
+    gap: 6px;
+  }
+  #map-legend.floating-legend.expanded .legend-text {
+    display: inline-block;
+    font-size: 0.72rem;
   }
 
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
   .floating-search-wrap {
     z-index: 2000;
-    top: max(52px, calc(env(safe-area-inset-top, 0px) + 48px));
+    top: max(48px, calc(env(safe-area-inset-top, 0px) + 46px));
     left: 50%;
     transform: translateX(-50%);
-    width: min(440px, calc(100vw - 24px));
+    width: min(440px, calc(100vw - 20px));
   }
   .map-search-input-box {
-    padding: 7px 14px;
+    padding: 6px 12px;
+    height: 36px;
   }
   .map-search-results {
     max-height: 220px;
@@ -4169,15 +4157,57 @@ body[data-theme="light"] .map-status-btn.active {
     z-index: 2001;
   }
   .search-item {
-    min-height: 42px;
-    padding: 8px 10px;
+    min-height: 40px;
+    padding: 7px 10px;
   }
 
-  /* Floating Layer HUD: Inside stats overlay naturally */
+  /* Floating Bottom Left: Layer HUD + Stats Chip */
+  #stats-overlay {
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    left: max(10px, env(safe-area-inset-left, 10px));
+    gap: 6px;
+  }
   .floating-layer-hud {
-    font-size: 0.72rem;
-    padding: 4px 10px;
+    font-size: 0.70rem;
+    padding: 3px 9px;
+    height: 24px;
     border-radius: 99px;
+  }
+  .stats-chip {
+    padding: 6px 12px;
+    border-radius: 99px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-width: auto;
+  }
+  .stats-divider-mobile {
+    display: block;
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .stats-number {
+    font-size: 1.05rem;
+  }
+  .stats-label {
+    font-size: 0.60rem;
+  }
+  .stats-icon {
+    font-size: 1.05rem;
+  }
+
+  /* Floating Bottom Right: Feedback Button */
+  .floating-feedback-wrap {
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    right: max(10px, env(safe-area-inset-right, 10px));
+  }
+  .floating-feedback-btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.78rem;
+    border-radius: 99px;
+    gap: 6px;
   }
 
   /* Profile View: 6 Tabs with Smooth Horizontal Scroll & Touch */
@@ -4462,19 +4492,15 @@ body[data-theme="light"] .map-status-btn.active {
 
 /* ── Very Small Mobile Phones (<= 380px) ── */
 @media (max-width: 380px) {
-  #map-legend.floating-legend {
-    padding: 4px 6px;
-    gap: 3px;
-  }
-  #map-legend .legend-items-list {
-    gap: 4px;
-  }
-  #map-legend .legend-item {
-    font-size: 0.60rem;
-    gap: 2px;
-  }
-  .poster-btn-txt {
+  .feedback-btn-text {
     display: none;
+  }
+  .floating-feedback-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
   }
 }
 

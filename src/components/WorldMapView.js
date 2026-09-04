@@ -91,7 +91,27 @@ let selectedCountryCode = null;
 let selectedRegionName = null;
 let activeStatusPopup = null;
 let provinceLabelsLayer = null;
+let activeLabelPlacedBoxes = [];
 
+function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
+  return `
+    <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
+      <span class="stats-icon" style="font-size:1.3rem;">🌍</span>
+      <div>
+        <div class="stats-number" style="color:${visitedColor};">${worldCount}</div>
+        <div class="stats-label">${t('countriesVisited')}</div>
+      </div>
+    </div>
+    <div class="stats-divider-mobile"></div>
+    <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
+      <span class="stats-icon-tr" style="font-size:0.9rem;font-weight:800;color:var(--theme-text-muted, #94a3b8);">TR</span>
+      <div>
+        <div class="stats-number" style="color:${visitedColor};">${trVisited}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">/81</span></div>
+        <div class="stats-label">${t('provincesVisited')}</div>
+      </div>
+    </div>
+  `;
+}
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export function renderWorldMapView(container, options = {}) {
@@ -114,6 +134,12 @@ export function renderWorldMapView(container, options = {}) {
     const themeCfg = getThemeConfig(currentTheme);
     const STATUS = getStatusConfig();
     const visitedColor = getStatusColor('visited');
+
+    const { turkeyVisits, worldVisits } = getStorageData();
+    const trVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
+    const worldCodes = Object.keys(worldVisits || {}).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
+    if (trVisited > 0 && !worldCodes.includes('TR')) worldCodes.push('TR');
+    const worldCount = worldCodes.length;
 
     return `
       <div id="map-root" style="width:100%;height:100%;position:relative;background:${themeCfg.oceanBg};">
@@ -156,7 +182,9 @@ export function renderWorldMapView(container, options = {}) {
             <span id="layer-hud-icon">🌍</span>
             <span id="layer-hud-text">${t('layer1Countries')}</span>
           </div>
-          <div id="stats-countries" class="stats-chip"></div>
+          <div id="stats-countries" class="stats-chip">
+            ${buildStatsCountriesHtml(worldCount, trVisited, visitedColor)}
+          </div>
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
 
@@ -379,14 +407,22 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
-    // Mobile Legend Tap to Toggle
+    // Mobile & Tablet Legend Tap to Toggle (<= 768px)
     const mapLegend = container.querySelector('#map-legend');
     if (mapLegend) {
-      mapLegend.addEventListener('click', () => {
-        if (window.innerWidth <= 480) {
+      mapLegend.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.innerWidth <= 768) {
           mapLegend.classList.toggle('expanded');
         }
       });
+      if (map) {
+        map.on('click', () => {
+          if (mapLegend.classList.contains('expanded')) {
+            mapLegend.classList.remove('expanded');
+          }
+        });
+      }
     }
 
     if (feedbackModal) {
@@ -621,7 +657,7 @@ function initMap(container) {
         });
       }
     }).addTo(map);
-    setTimeout(updateCountryLabels, 100);
+    scheduleLabelUpdate();
     
     // Hide loading indicator
     const loadingEl = document.getElementById('map-loading');
@@ -663,6 +699,10 @@ function initMap(container) {
         });
       }
     });
+    if (map.getZoom() >= REGION_ZOOM && isTurkeyInView()) {
+      turkeyLayer.addTo(map);
+    }
+    scheduleLabelUpdate();
   }).catch(err => {
     console.error('Turkey provinces load error:', err);
   });
@@ -686,94 +726,13 @@ function initMap(container) {
     }
   }
 
-  function updateProvinceLabels() {
-    if (!provinceLabelsLayer || !map) return;
-    const z = map.getZoom();
-    provinceLabelsLayer.clearLayers();
-
-    if (z >= 4.8) {
-      // 1. Turkey provinces labels
-      TURKEY_PROVINCES.forEach(p => {
-        if (p.coordinates) {
-          const marker = L.marker([p.coordinates[1], p.coordinates[0]], {
-            icon: L.divIcon({
-              className: 'map-province-label',
-              html: `<span class="prov-label-text">${p.name}</span>`,
-              iconSize: [80, 20],
-              iconAnchor: [40, 10]
-            }),
-            interactive: false
-          });
-          provinceLabelsLayer.addLayer(marker);
-        }
-      });
-
-      // 2. World region labels for all active region layers
-      Object.entries(regionLayers).forEach(([cCode, rLayer]) => {
-        if (rLayer && map.hasLayer(rLayer)) {
-          rLayer.eachLayer(layer => {
-            try {
-              const bounds = layer.getBounds();
-              if (bounds && bounds.isValid()) {
-                const center = bounds.getCenter();
-                const rawName = layer.feature?.properties?.name || layer.feature?.properties?.NAME_1;
-                if (rawName) {
-                  const disp = getLocalizedName(rawName, cCode);
-                  const marker = L.marker(center, {
-                    icon: L.divIcon({
-                      className: 'map-province-label',
-                      html: `<span class="prov-label-text">${disp}</span>`,
-                      iconSize: [100, 20],
-                      iconAnchor: [50, 10]
-                    }),
-                    interactive: false
-                  });
-                  provinceLabelsLayer.addLayer(marker);
-                }
-              }
-            } catch {}
-          });
-        }
-      });
-
-      // 3. Subregion/city labels
-      if (z >= SUBREGION_ZOOM) {
-        Object.entries(subregionLayers).forEach(([cCode, srLayer]) => {
-          if (srLayer && map.hasLayer(srLayer)) {
-            srLayer.eachLayer(layer => {
-              try {
-                const bounds = layer.getBounds();
-                if (bounds && bounds.isValid()) {
-                  const center = bounds.getCenter();
-                  const rawName = layer.feature?.properties?.name;
-                  if (rawName) {
-                    const disp = getLocalizedName(rawName, cCode);
-                    const marker = L.marker(center, {
-                      icon: L.divIcon({
-                        className: 'map-province-label',
-                        html: `<span class="prov-label-text" style="font-size:0.68rem;">${disp}</span>`,
-                        iconSize: [90, 18],
-                        iconAnchor: [45, 9]
-                      }),
-                      interactive: false
-                    });
-                    provinceLabelsLayer.addLayer(marker);
-                  }
-                }
-              } catch {}
-            });
-          }
-        });
-      }
-    }
-  }
+  // (updateProvinceLabels and updateCountryLabels are coordinated at module level)
 
   let isViewUpdating = false;
   let viewUpdatePending = false;
 
   async function requestViewUpdate() {
     updateLayerHud();
-    updateProvinceLabels();
     if (isViewUpdating) {
       viewUpdatePending = true;
       return;
@@ -871,13 +830,16 @@ function getMainlandInfo(feature) {
 let _labelUpdateTimer = null;
 function scheduleLabelUpdate() {
   if (_labelUpdateTimer) clearTimeout(_labelUpdateTimer);
-  _labelUpdateTimer = setTimeout(updateCountryLabels, 120);
+  _labelUpdateTimer = setTimeout(() => {
+    updateCountryLabels();
+    updateProvinceLabels();
+  }, 120);
 }
 
 function updateCountryLabels() {
   if (!countryLabelsLayer || !countriesLayer || !map) return;
   countryLabelsLayer.clearLayers();
-  const placedBoxes = [];
+  activeLabelPlacedBoxes = [];
   const themeCfg = getThemeConfig();
 
   const layers = [];
@@ -976,13 +938,13 @@ function updateCountryLabels() {
       };
 
       // 2. Collision Detection
-      const collides = placedBoxes.some(p => (
+      const collides = activeLabelPlacedBoxes.some(p => (
         box.x1 < p.x2 && box.x2 > p.x1 &&
         box.y1 < p.y2 && box.y2 > p.y1
       ));
       if (collides) return;
 
-      placedBoxes.push(box);
+      activeLabelPlacedBoxes.push(box);
 
       // Render label centered at visual centroid with active theme styling
       const renderWidth = Math.ceil(totalTextWidth) + 4;
@@ -997,6 +959,144 @@ function updateCountryLabels() {
 
       L.marker(visualCenter, { icon, interactive: false, pane: 'labelsPane' }).addTo(countryLabelsLayer);
     } catch (e) {}
+  });
+}
+
+function updateProvinceLabels() {
+  if (!provinceLabelsLayer || !map) return;
+  provinceLabelsLayer.clearLayers();
+
+  const zoom = map.getZoom();
+  if (zoom < REGION_ZOOM) return;
+
+  const themeCfg = getThemeConfig();
+  const mapSize = map.getSize();
+  const labelColor = themeCfg?.labelColor || '#f8fafc';
+  const labelShadow = themeCfg?.labelShadow || '0 1px 3px rgba(0, 0, 0, 0.85), 0 0 6px rgba(0, 0, 0, 0.6)';
+
+  // Collect candidate region / province features from active layers on map
+  const candidates = [];
+
+  // 1. Turkey Layer
+  if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+    turkeyLayer.eachLayer(l => {
+      const name = l.feature?.properties?.name;
+      if (name) candidates.push({ layer: l, name, countryCode: 'TR' });
+    });
+  }
+
+  // 2. World Region Layers (Level 2)
+  Object.entries(regionLayers).forEach(([code, rLayer]) => {
+    if (rLayer && map.hasLayer(rLayer)) {
+      rLayer.eachLayer(l => {
+        const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
+        if (raw) {
+          const display = getLocalizedName(raw, code);
+          candidates.push({ layer: l, name: display, countryCode: code });
+        }
+      });
+    }
+  });
+
+  // 3. World Subregion Layers (Level 3)
+  if (zoom >= SUBREGION_ZOOM) {
+    Object.entries(subregionLayers).forEach(([code, sLayer]) => {
+      if (sLayer && map.hasLayer(sLayer)) {
+        sLayer.eachLayer(l => {
+          const raw = l.feature?.properties?.name;
+          if (raw) {
+            const display = getLocalizedName(raw, code);
+            candidates.push({ layer: l, name: display, countryCode: code });
+          }
+        });
+      }
+    });
+  }
+
+  if (candidates.length === 0) return;
+
+  // Pre-calculate screen bounding boxes and areas
+  const prepared = [];
+  candidates.forEach(item => {
+    try {
+      if (!item.layer.getBounds) return;
+      const bounds = item.layer.getBounds();
+      if (!bounds.isValid()) return;
+
+      const nw = map.latLngToContainerPoint(bounds.getNorthWest());
+      const se = map.latLngToContainerPoint(bounds.getSouthEast());
+      const pixelWidth = Math.abs(se.x - nw.x);
+      const pixelHeight = Math.abs(se.y - nw.y);
+
+      // Area in screen pixels
+      const screenArea = pixelWidth * pixelHeight;
+      prepared.push({
+        ...item,
+        bounds,
+        center: bounds.getCenter(),
+        pixelWidth,
+        pixelHeight,
+        screenArea
+      });
+    } catch (e) {}
+  });
+
+  // Sort descending by screenArea so larger provinces get priority
+  prepared.sort((a, b) => b.screenArea - a.screenArea);
+
+  prepared.forEach(item => {
+    // 1. Strict minimum pixel dimensions: region must be large enough on screen
+    if (item.pixelWidth < 50 || item.pixelHeight < 22) return;
+
+    // 2. Measure text width
+    const fontSize = 11;
+    const textWidth = measureTextWidth(item.name, fontSize);
+
+    // 3. User rule: "onlarda da ülkelerdeki aynı kuralı uygulayalım. adı sığanlar gözüksün"
+    // Text must fit comfortably within 70% of polygon width and 65% of polygon height
+    if (textWidth > item.pixelWidth * 0.70 || (fontSize + 6) > item.pixelHeight * 0.65) {
+      return;
+    }
+
+    // 4. Viewport visibility check
+    const centerPt = map.latLngToContainerPoint(item.center);
+    const vpBuffer = 150;
+    if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
+        centerPt.y < -vpBuffer || centerPt.y > mapSize.y + vpBuffer) {
+      return;
+    }
+
+    // 5. Collision box against ALL already placed labels (countries + larger provinces)
+    const halfW = textWidth / 2 + 4;
+    const halfH = fontSize / 2 + 3;
+    const box = {
+      x1: centerPt.x - halfW - 3,
+      y1: centerPt.y - halfH - 3,
+      x2: centerPt.x + halfW + 3,
+      y2: centerPt.y + halfH + 3
+    };
+
+    const collides = activeLabelPlacedBoxes.some(p => (
+      box.x1 < p.x2 && box.x2 > p.x1 &&
+      box.y1 < p.y2 && box.y2 > p.y1
+    ));
+    if (collides) return;
+
+    // Register collision box
+    activeLabelPlacedBoxes.push(box);
+
+    // Create marker
+    const renderWidth = Math.ceil(textWidth) + 8;
+    const renderHeight = fontSize + 6;
+
+    const icon = L.divIcon({
+      className: 'map-province-label',
+      html: `<div class="prov-label-text" style="width:${renderWidth}px;font-size:${fontSize}px;color:${labelColor};text-shadow:${labelShadow};">${item.name}</div>`,
+      iconSize: [renderWidth, renderHeight],
+      iconAnchor: [renderWidth / 2, renderHeight / 2]
+    });
+
+    L.marker(item.center, { icon, interactive: false, pane: 'labelsPane' }).addTo(provinceLabelsLayer);
   });
 }
 
@@ -1172,6 +1272,7 @@ function attachRegionLayer(code, data) {
         if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
       });
     }
+    scheduleLabelUpdate();
   }
 }
 
@@ -1263,6 +1364,7 @@ function attachSubregionLayer(code, data) {
   if (map.getZoom() >= SUBREGION_ZOOM) {
     layer.addTo(map);
     refreshRegionLayer(code);
+    scheduleLabelUpdate();
   }
 }
 
@@ -1704,22 +1806,7 @@ function refreshStats() {
 
   const visitedColor = getStatusColor('visited');
 
-  cEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span style="font-size:1.6rem;">🌍</span>
-      <div>
-        <div class="stats-number" style="color:${visitedColor};">${worldCount}</div>
-        <div class="stats-label">${t('countriesVisited')}</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
-      <span style="font-size:0.95rem;font-weight:800;color:var(--theme-text-muted, #94a3b8);">TR</span>
-      <div>
-        <div class="stats-number" style="color:${visitedColor};">${trVisited}<span style="font-size:0.85rem;color:var(--theme-text-muted, #64748b);">/81</span></div>
-        <div class="stats-label">${t('provincesVisited')}</div>
-      </div>
-    </div>
-  `;
+  cEl.innerHTML = buildStatsCountriesHtml(worldCount, trVisited, visitedColor);
 
   if (selectedCountryCode && selectedCountryCode !== 'TR' && rEl) {
     const c = WORLD_COUNTRIES.find(x => x.code === selectedCountryCode);
