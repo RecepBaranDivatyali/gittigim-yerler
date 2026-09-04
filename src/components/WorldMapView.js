@@ -396,16 +396,43 @@ export function renderWorldMapView(container, options = {}) {
     });
 
     if (submitFeedbackBtn) {
-      submitFeedbackBtn.addEventListener('click', () => {
+      submitFeedbackBtn.addEventListener('click', async () => {
         const msg = container.querySelector('#feedback-message')?.value?.trim();
         const contact = container.querySelector('#feedback-contact')?.value?.trim();
         if (!msg) return;
 
+        submitFeedbackBtn.disabled = true;
+        const origText = submitFeedbackBtn.textContent;
+        submitFeedbackBtn.textContent = '⏳ Gönderiliyor...';
+
+        // 1. Send instant notification to Baran's Telegram Bot
+        try {
+          const typeLabel = activeFeedbackType === 'bug' ? '🐞 Hata / Bug' : (activeFeedbackType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
+          const nowStr = new Date().toLocaleString('tr-TR');
+          const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${userName}\n📱 *İletişim:* ${contact || 'Belirtilmedi'}\n\n📝 *Mesaj:*\n"${msg}"\n\n🕒 *Zaman:* ${nowStr}`;
+
+          await fetch('https://api.telegram.org/bot8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: 7906240525,
+              text: telegramText,
+              parse_mode: 'Markdown'
+            })
+          });
+        } catch (err) {
+          console.warn('Telegram send warning:', err);
+        }
+
+        // 2. Also save to localStorage as backup
         try {
           const stored = JSON.parse(localStorage.getItem('gv_feedbacks') || '[]');
           stored.push({ type: activeFeedbackType, message: msg, contact, date: new Date().toISOString() });
           localStorage.setItem('gv_feedbacks', JSON.stringify(stored));
         } catch {}
+
+        submitFeedbackBtn.disabled = false;
+        submitFeedbackBtn.textContent = origText;
 
         const successMsg = container.querySelector('#feedback-success-msg');
         if (successMsg) {
@@ -414,6 +441,7 @@ export function renderWorldMapView(container, options = {}) {
             feedbackModal.style.display = 'none';
             successMsg.style.display = 'none';
             if (container.querySelector('#feedback-message')) container.querySelector('#feedback-message').value = '';
+            if (container.querySelector('#feedback-contact')) container.querySelector('#feedback-contact').value = '';
           }, 2000);
         }
       });
