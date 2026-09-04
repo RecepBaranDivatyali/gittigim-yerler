@@ -4060,3 +4060,281 @@ body[data-theme="light"] .map-status-btn.active {
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS & TOUCH OPTIMIZATIONS (Gezgin 2.0 Features)
+═════════════════════════════════════════════════════════════════════════════ */
+
+/* Compare reviews layout base */
+.compare-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ── Tablet & Mobile (<= 768px) ── */
+@media (max-width: 768px) {
+  /* Floating Top Row: Profile + Poster button */
+  .floating-poster-btn {
+    padding: 6px 10px;
+    font-size: 0.95rem;
+    margin-left: 4px;
+    border-radius: 99px;
+  }
+  .poster-btn-text {
+    display: none;
+  }
+
+  /* Floating Row 2: Search Bar sits cleanly below top buttons */
+  .floating-search-wrap {
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 50px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(440px, calc(100vw - 24px));
+  }
+  .map-search-input-box {
+    padding: 7px 14px;
+  }
+  .map-search-results {
+    max-height: 220px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .search-item {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+
+  /* Floating Layer HUD: Positioned above stats overlay without collision */
+  .floating-layer-hud {
+    bottom: calc(max(76px, calc(env(safe-area-inset-bottom, 0px) + 60px)) + 52px);
+    left: max(12px, env(safe-area-inset-left, 12px));
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+
+  /* Profile View: 6 Tabs with Smooth Horizontal Scroll & Touch */
+  .profile-tabs {
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 4px 2px;
+  }
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ptab {
+    flex: 0 0 auto !important;
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 0.84rem;
+    border-radius: 10px;
+  }
+
+  /* Subtabs (Compare & Flights) Horizontal Scroll */
+  .compare-subtabs-row {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+  }
+  .compare-subtabs-row::-webkit-scrollbar {
+    display: none;
+  }
+  .compare-subtab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 7px 12px;
+  }
+
+  /* Reviews Comparison on mobile */
+  .compare-reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ── Mobile Phones (<= 480px) ── */
+@media (max-width: 480px) {
+  /* Leaflet Status Popup: Clean and thumb-friendly */
+  .clean-status-popup .leaflet-popup-content-wrapper {
+    max-width: min(295px, calc(100vw - 26px)) !important;
+    padding: 0 !important;
+  }
+  .map-status-popup {
+    padding: 12px 14px;
+    min-width: 250px;
+  }
+  .popup-rating-numbers {
+    gap: 3px;
+  }
+  .score-pill-btn {
+    width: 22px;
+    height: 26px;
+    font-size: 0.74rem;
+  }
+  .popup-notes-input-row {
+    gap: 6px;
+  }
+  .popup-note-input {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+  .popup-note-save-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Hot Wheels Airlines Collection: 2-column sticker grid */
+  .airlines-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .airline-card {
+    padding: 10px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+  .airline-name {
+    font-size: 0.78rem;
+    min-height: 32px;
+  }
+  .stepper-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 0.9rem;
+  }
+  .airline-check-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 0.82rem;
+  }
+  .alliance-set-card {
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+  }
+  .alliance-title-wrap {
+    gap: 8px;
+  }
+  .alliance-icon {
+    font-size: 1.4rem;
+  }
+  .alliance-name {
+    font-size: 0.95rem;
+  }
+  .alliance-count-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+
+  /* Aircraft Hangar Cards */
+  .aircraft-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .aircraft-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+  .aircraft-toggle-btn {
+    padding: 10px;
+    font-size: 0.88rem;
+  }
+
+  /* Bucket List Reorderable Cards */
+  .bucket-item-card {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .bucket-rank-num {
+    min-width: 22px;
+    font-size: 0.85rem;
+  }
+  .bucket-info-wrap {
+    min-width: 0;
+    flex: 1;
+  }
+  .bucket-item-title {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bucket-status-tag {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+  }
+  .bucket-move-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.75rem;
+  }
+
+  /* Travel Poster Modal */
+  .poster-modal-overlay {
+    padding: 8px;
+  }
+  .poster-modal-dialog {
+    max-width: 100%;
+    width: 100%;
+  }
+  .travel-poster-card {
+    width: 100%;
+    max-width: 330px;
+    min-height: auto;
+    padding: 16px 12px;
+  }
+  .poster-globe-art {
+    font-size: 3rem;
+  }
+  .poster-stats-grid {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .poster-stat-box {
+    padding: 8px 6px;
+  }
+  .poster-stat-num {
+    font-size: 1.25rem;
+  }
+  .poster-stat-lbl {
+    font-size: 0.7rem;
+  }
+  .poster-actions-row {
+    flex-direction: column;
+    gap: 8px;
+    max-width: 330px;
+    width: 100%;
+  }
+  .poster-action-btn {
+    padding: 11px;
+    font-size: 0.88rem;
+    width: 100%;
+  }
+
+  /* Saved Friends Panel */
+  .saved-friends-panel {
+    padding: 10px 12px;
+  }
+  .saved-friend-chip {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+  }
+  .sf-name {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

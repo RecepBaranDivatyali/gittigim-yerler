@@ -1054,7 +1054,7 @@ export function renderProfileView(container, onBack) {
 
           <!-- Section 3: Reviews & Scores (1-10) -->
           <div id="compare-pane-reviews" class="compare-pane" style="display:none;">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;">
+            <div class="compare-reviews-grid" style="gap:16px;">
               <!-- My Reviews -->
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:12px;">📝 ${currentLang === 'tr' ? 'Senin Yorumların & Puanların' : 'Your Reviews & Scores'}</div>
