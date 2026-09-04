@@ -1,8 +1,15 @@
-import { getStorageData, calculateStats, resetTravelData } from '../utils/storage.js';
+import { 
+  getStorageData, calculateStats, resetTravelData, 
+  getBucketRanks, saveBucketRanks, 
+  getUserAirlines, saveUserAirlines, toggleUserAirline, POPULAR_AIRLINES,
+  getSavedFriends, saveFriend, deleteFriend 
+} from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
+import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
+import { toPng } from 'html-to-image';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -19,6 +26,8 @@ export function renderProfileView(container, onBack) {
           <div class="profile-tabs">
             <button class="ptab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 ${t('tabProfile')}</button>
             <button class="ptab ${activeTab === 'medals' ? 'active' : ''}" data-tab="medals">🏅 ${t('tabMedals')}</button>
+            <button class="ptab ${activeTab === 'bucket' ? 'active' : ''}" data-tab="bucket">🎯 ${t('tabBucket')}</button>
+            <button class="ptab ${activeTab === 'flights' ? 'active' : ''}" data-tab="flights">✈️ ${t('tabFlights')}</button>
             <button class="ptab ${activeTab === 'compare' ? 'active' : ''}" data-tab="compare">⚔️ ${t('tabCompare')}</button>
             <button class="ptab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️ ${t('settings')}</button>
           </div>
@@ -54,8 +63,15 @@ export function renderProfileView(container, onBack) {
     const contentArea = document.getElementById('profile-content-area');
     if (activeTab === 'profile') renderProfileTab(contentArea);
     else if (activeTab === 'medals') renderMedalsTab(contentArea);
+    else if (activeTab === 'bucket') renderBucketTab(contentArea);
+    else if (activeTab === 'flights') renderFlightsTab(contentArea);
     else if (activeTab === 'compare') renderCompareTab(contentArea);
     else if (activeTab === 'settings') renderSettingsTab(contentArea);
+
+    if (window.__openPosterOnProfile) {
+      window.__openPosterOnProfile = false;
+      setTimeout(() => openPosterModal(), 200);
+    }
   }
 
   function renderProfileTab(contentArea) {
@@ -87,10 +103,13 @@ export function renderProfileView(container, onBack) {
           <div class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</div>
           <div class="profile-header">
             <div class="profile-avatar">${profile.avatar}</div>
-            <div>
+            <div style="flex:1;">
               <div class="profile-username">${profile.username}</div>
               <div class="profile-bio">${profile.bio || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
+            <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
+              <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
+            </button>
           </div>
           <div class="profile-stats">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
@@ -117,6 +136,10 @@ export function renderProfileView(container, onBack) {
         </div>
       </div>
     `;
+
+    document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
+      openPosterModal();
+    });
 
     document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
       const input = document.getElementById('profile-share-code');
@@ -332,11 +355,410 @@ export function renderProfileView(container, onBack) {
     contentArea.innerHTML = html;
   }
 
+
+  // ─── 🎯 Bucket List Priority Ranking Tab ──────────────────────────────────────
+  function renderBucketTab(contentArea) {
+    const currentLang = getLanguage();
+    const storageData = getStorageData();
+    let savedRanks = getBucketRanks();
+
+    // Collect all planned and wishlist places
+    const bucketItems = [];
+
+    // Turkey provinces
+    Object.entries(storageData.turkeyVisits || {}).forEach(([pid, data]) => {
+      if (data.status === 'planned' || data.status === 'wishlist' || data.status === 'target') {
+        const prov = TURKEY_PROVINCES.find(p => p.id === pid) || { id: pid, name: `İl ${pid}` };
+        bucketItems.push({
+          id: `TR::${pid}`,
+          name: prov.name,
+          sub: 'Türkiye',
+          flag: '🇹🇷',
+          status: data.status === 'target' ? 'planned' : data.status,
+          type: 'province'
+        });
+      }
+    });
+
+    // World countries
+    Object.entries(storageData.worldVisits || {}).forEach(([code, data]) => {
+      if (!code.includes('::') && (data.status === 'planned' || data.status === 'wishlist' || data.status === 'target')) {
+        const c = WORLD_COUNTRIES.find(x => x.code === code) || { code, name: code };
+        bucketItems.push({
+          id: code,
+          name: getCountryDisplayName(c),
+          sub: c.continent || 'Dünya',
+          flag: `https://flagcdn.com/w40/${code.toLowerCase()}.png`,
+          status: data.status === 'target' ? 'planned' : data.status,
+          type: 'country'
+        });
+      }
+    });
+
+    // Sort according to savedRanks order if present
+    if (savedRanks && savedRanks.length > 0) {
+      bucketItems.sort((a, b) => {
+        const idxA = savedRanks.indexOf(a.id);
+        const idxB = savedRanks.indexOf(b.id);
+        if (idxA === -1 && idxB === -1) return 0;
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+    }
+
+    contentArea.innerHTML = `
+      <div class="profile-main">
+        <div class="share-section" style="margin-top:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <h3 style="margin-bottom:4px;">🎯 ${t('tabBucket')}</h3>
+              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Planladığın ve gitmek istediğin yerlerin öncelik sırasını belirle.' : 'Prioritize your planned and dream destinations.'}</p>
+            </div>
+            <span class="bucket-count-badge">${bucketItems.length} ${currentLang === 'tr' ? 'Hedef' : 'Places'}</span>
+          </div>
+
+          ${bucketItems.length === 0 ? `
+            <div style="text-align:center;padding:40px 20px;color:var(--theme-text-muted, #64748b);">
+              <div style="font-size:3rem;margin-bottom:12px;">🗺️</div>
+              <p>${currentLang === 'tr' ? 'Henüz planlanan veya istenen bir yer işaretlemediniz. Haritada ülkelere tıklayarak "Planlanıyor" veya "İsteniyor" yapın!' : 'No planned or wishlist destinations yet. Click places on the map to add them!'}</p>
+            </div>
+          ` : `
+            <div class="bucket-list-grid" id="bucket-list-container">
+              ${bucketItems.map((item, index) => {
+                const isPlanned = item.status === 'planned';
+                const statusBadge = isPlanned ? `<span class="bucket-status-tag planned">🟡 ${t('planned')}</span>` : `<span class="bucket-status-tag wishlist">🟣 ${t('wishlist')}</span>`;
+                const flagHtml = item.flag.startsWith('http') ? `<img src="${item.flag}" class="bucket-item-flag" alt="" />` : `<span style="font-size:1.4rem;">${item.flag}</span>`;
+                return `
+                  <div class="bucket-item-card" data-id="${item.id}" data-idx="${index}">
+                    <div class="bucket-rank-num">#${index + 1}</div>
+                    <div class="bucket-flag-wrap">${flagHtml}</div>
+                    <div class="bucket-info-wrap">
+                      <div class="bucket-item-title">${item.name}</div>
+                      <div class="bucket-item-sub">${item.sub}</div>
+                    </div>
+                    ${statusBadge}
+                    <div class="bucket-order-btns">
+                      <button type="button" class="bucket-move-btn btn-up" data-idx="${index}" ${index === 0 ? 'disabled' : ''} title="Yukarı">▲</button>
+                      <button type="button" class="bucket-move-btn btn-down" data-idx="${index}" ${index === bucketItems.length - 1 ? 'disabled' : ''} title="Aşağı">▼</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+
+    // Order change handlers
+    const orderBtns = contentArea.querySelectorAll('.bucket-move-btn');
+    orderBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        const isUp = btn.classList.contains('btn-up');
+        const targetIdx = isUp ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= bucketItems.length) return;
+
+        // Swap
+        const temp = bucketItems[idx];
+        bucketItems[idx] = bucketItems[targetIdx];
+        bucketItems[targetIdx] = temp;
+
+        // Save ranks
+        const newRanks = bucketItems.map(b => b.id);
+        saveBucketRanks(newRanks);
+
+        renderBucketTab(contentArea);
+      });
+    });
+  }
+
+  // ─── ✈️ Airlines & Flights Tab ───────────────────────────────────────────────
+  function renderFlightsTab(contentArea) {
+    const currentLang = getLanguage();
+    const userAirlines = getUserAirlines();
+    
+    // Calculate total flights
+    let totalFlightsCount = 0;
+    let flownAirlinesCount = 0;
+    Object.values(userAirlines).forEach(a => {
+      if (a.flown) {
+        flownAirlinesCount++;
+        totalFlightsCount += (a.count || 1);
+      }
+    });
+
+    contentArea.innerHTML = `
+      <div class="profile-main">
+        <div class="share-section" style="margin-top:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h3 style="margin-bottom:4px;">✈️ ${t('tabFlights')}</h3>
+              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Bindiğin havayollarını işaretle ve toplam uçuş sayını kaydet.' : 'Track airlines you have flown with and count your flights.'}</p>
+            </div>
+          </div>
+
+          <!-- Flight Stats -->
+          <div class="profile-stats" style="grid-template-columns:repeat(2, 1fr);margin-bottom:20px;">
+            <div class="pstat">
+              <span class="pstat-num" style="color:#3b82f6;">${totalFlightsCount}</span>
+              <span class="pstat-lbl">${t('totalFlights')}</span>
+            </div>
+            <div class="pstat">
+              <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount}</span>
+              <span class="pstat-lbl">${t('airlinesTracked')}</span>
+            </div>
+          </div>
+
+          <!-- Airline Cards Grid -->
+          <div class="airlines-grid">
+            ${POPULAR_AIRLINES.map(airline => {
+              const uData = userAirlines[airline.id] || {};
+              const isFlown = !!uData.flown;
+              const count = uData.count || 1;
+              return `
+                <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}">
+                  <div class="airline-top">
+                    <span class="airline-flag">${airline.flag}</span>
+                    <span class="airline-code">${airline.code}</span>
+                    <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}">${isFlown ? '✓' : '+'}</button>
+                  </div>
+                  <div class="airline-name">${airline.name}</div>
+                  ${isFlown ? `
+                    <div class="airline-count-row">
+                      <span class="airline-count-label">${currentLang === 'tr' ? 'Uçuş:' : 'Flights:'}</span>
+                      <div class="airline-stepper">
+                        <button type="button" class="stepper-btn minus" data-id="${airline.id}">-</button>
+                        <span class="stepper-val">${count}</span>
+                        <button type="button" class="stepper-btn plus" data-id="${airline.id}">+</button>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Airline card toggle
+    contentArea.querySelectorAll('.airline-check-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.airline-card');
+        const id = card.dataset.id;
+        toggleUserAirline(id);
+        renderFlightsTab(contentArea);
+      });
+    });
+
+    contentArea.querySelectorAll('.airline-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.airline-stepper') || e.target.closest('.airline-check-btn')) return;
+        const id = card.dataset.id;
+        toggleUserAirline(id);
+        renderFlightsTab(contentArea);
+      });
+    });
+
+    // Stepper buttons
+    contentArea.querySelectorAll('.stepper-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const airlines = getUserAirlines();
+        if (airlines[id]) {
+          if (btn.classList.contains('plus')) {
+            airlines[id].count = (airlines[id].count || 1) + 1;
+          } else if (btn.classList.contains('minus')) {
+            airlines[id].count = Math.max(1, (airlines[id].count || 1) - 1);
+          }
+          saveUserAirlines(airlines);
+          renderFlightsTab(contentArea);
+        }
+      });
+    });
+  }
+
+  // ─── 📸 Instagram / Story Travel Poster Generator Modal ───────────────────────
+  function openPosterModal() {
+    const currentLang = getLanguage();
+    const currentTheme = getTheme();
+    const storageData = getStorageData();
+    const stats = calculateStats();
+    const profileStr = localStorage.getItem('gv_profile');
+    const profile = profileStr ? JSON.parse(profileStr) : { username: 'Gezgin', avatar: '🧭' };
+    const earnedMedals = getEarnedAchievements(storageData, stats);
+    const visitedColor = getStatusColor('visited');
+
+    // Visited country codes
+    const visitedCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited');
+    if (stats.turkeyCount > 0 && !visitedCodes.includes('TR')) visitedCodes.push('TR');
+
+    const modal = document.createElement('div');
+    modal.className = 'poster-modal-overlay';
+    modal.innerHTML = `
+      <div class="poster-modal-dialog">
+        <div class="poster-modal-top">
+          <h3>📸 ${t('createPoster')}</h3>
+          <button class="poster-modal-close" id="poster-close-btn">&times;</button>
+        </div>
+
+        <div class="poster-preview-container">
+          <!-- The Rendered Poster Card (1080x1920 ratio) -->
+          <div id="travel-poster-canvas" class="travel-poster-card" style="--poster-accent:${visitedColor};">
+            <div class="poster-noise-bg"></div>
+            
+            <div class="poster-header">
+              <div class="poster-brand">
+                <span class="poster-brand-icon">🌍</span>
+                <span class="poster-brand-text">GEZGİN</span>
+              </div>
+              <div class="poster-date">${new Date().toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })}</div>
+            </div>
+
+            <div class="poster-user-badge">
+              <div class="poster-user-avatar">${profile.avatar}</div>
+              <div class="poster-user-info">
+                <div class="poster-username">${profile.username}</div>
+                <div class="poster-user-title">${currentLang === 'tr' ? 'Dünya Gezgini' : 'World Explorer'}</div>
+              </div>
+            </div>
+
+            <!-- Stylized Global Silhouette with glowing stats -->
+            <div class="poster-map-graphic">
+              <div class="poster-globe-art">🌐</div>
+              <div class="poster-map-label">${currentLang === 'tr' ? 'KİŞİSEL SEYAHAT HARİTASI' : 'PERSONAL TRAVEL MAP'}</div>
+            </div>
+
+            <!-- 4 Aesthetic Key Stat Badges -->
+            <div class="poster-stats-grid">
+              <div class="poster-stat-box">
+                <span class="poster-stat-num">${stats.worldCountryCount}</span>
+                <span class="poster-stat-lbl">${currentLang === 'tr' ? 'Ülke' : 'Countries'}</span>
+                <span class="poster-stat-sub">%${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'}</span>
+              </div>
+              <div class="poster-stat-box">
+                <span class="poster-stat-num">${stats.turkeyCount}</span>
+                <span class="poster-stat-lbl">${currentLang === 'tr' ? 'İl' : 'Provinces'}</span>
+                <span class="poster-stat-sub">%${stats.turkeyPercentage} ${currentLang === 'tr' ? 'Türkiye' : 'Turkey'}</span>
+              </div>
+              <div class="poster-stat-box">
+                <span class="poster-stat-num">${stats.worldCityCount}</span>
+                <span class="poster-stat-lbl">${currentLang === 'tr' ? 'Şehir' : 'Cities'}</span>
+                <span class="poster-stat-sub">${currentLang === 'tr' ? 'Keşfedildi' : 'Explored'}</span>
+              </div>
+              <div class="poster-stat-box">
+                <span class="poster-stat-num">${earnedMedals.length}</span>
+                <span class="poster-stat-lbl">${currentLang === 'tr' ? 'Madalya' : 'Medals'}</span>
+                <span class="poster-stat-sub">${earnedMedals.length} / ${ACHIEVEMENTS.length}</span>
+              </div>
+            </div>
+
+            <!-- Visited Countries Badges Preview (top 15) -->
+            ${visitedCodes.length > 0 ? `
+              <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'}</div>
+              <div class="poster-flags-grid">
+                ${visitedCodes.slice(0, 16).map(cCode => {
+                  const c = WORLD_COUNTRIES.find(x => x.code === cCode);
+                  const cName = c ? getCountryDisplayName(c) : cCode;
+                  return `<span class="poster-flag-chip"><img src="https://flagcdn.com/w40/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /> ${cName}</span>`;
+                }).join('')}
+                ${visitedCodes.length > 16 ? `<span class="poster-flag-chip more">+${visitedCodes.length - 16} ${currentLang === 'tr' ? 'daha' : 'more'}</span>` : ''}
+              </div>
+            ` : ''}
+
+            <div class="poster-footer">
+              <span class="poster-tagline">${currentLang === 'tr' ? 'Gez • Keşfet • Paylaş' : 'Travel • Explore • Share'}</span>
+              <span class="poster-url">gezgin.app</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="poster-actions-row">
+          <button type="button" id="btn-download-poster" class="poster-action-btn primary">
+            <span>📥</span> <span>${t('downloadPoster')}</span>
+          </button>
+          ${navigator.share ? `
+            <button type="button" id="btn-share-poster" class="poster-action-btn secondary">
+              <span>📲</span> <span>${t('sharePoster')}</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('#poster-close-btn').addEventListener('click', () => {
+      modal.remove();
+    });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    // Download PNG using html-to-image
+    modal.querySelector('#btn-download-poster')?.addEventListener('click', async () => {
+      const node = document.getElementById('travel-poster-canvas');
+      if (!node) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const link = document.createElement('a');
+        link.download = `Gezgin-Seyahat-Posteri-${profile.username}.png`;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error('Poster generation error', err);
+        alert('Poster oluşturulurken bir hata oluştu.');
+      }
+    });
+
+    // Share API
+    modal.querySelector('#btn-share-poster')?.addEventListener('click', async () => {
+      const node = document.getElementById('travel-poster-canvas');
+      if (!node || !navigator.share) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'gezgin-posteri.png', { type: 'image/png' });
+        await navigator.share({
+          title: `${profile.username} - Gezgin Seyahat Haritası`,
+          text: `Gezdiğim yerleri incele! 🌍`,
+          files: [file]
+        });
+      } catch (err) {
+        console.error('Share error', err);
+      }
+    });
+  }
+
   function renderCompareTab(contentArea) {
     const currentLang = getLanguage();
+    const savedFriends = getSavedFriends();
 
     contentArea.innerHTML = `
       <div class="compare-view">
+        <!-- Saved Friends Bar -->
+        ${savedFriends.length > 0 ? `
+          <div class="saved-friends-panel">
+            <div class="saved-friends-header">
+              <span>${t('savedFriends')}</span>
+              <span class="saved-friends-count">(${savedFriends.length})</span>
+            </div>
+            <div class="saved-friends-chips-row">
+              ${savedFriends.map(f => `
+                <div class="saved-friend-chip" data-id="${f.id}">
+                  <span class="sf-avatar">${f.avatar}</span>
+                  <span class="sf-name">${f.username}</span>
+                  <button type="button" class="sf-del-btn" data-id="${f.id}" title="Sil">&times;</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="compare-top">
           <div class="compare-mine" id="compare-mine-area"></div>
           <div class="compare-vs">⚔️ VS</div>
@@ -381,92 +803,270 @@ export function renderProfileView(container, onBack) {
       </div>
     `;
 
-    // Load friend code handler
+    // Function to load and render decoded friend data
+    function applyFriendComparison(otherProfile, otherWorldVisits, otherTurkeyVisits, otherCities, rawCode = '') {
+      const otherCountriesCount = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited').length;
+      const otherTurkeyCount = Object.keys(otherTurkeyVisits).filter(k => otherTurkeyVisits[k]?.status === 'visited').length;
+      const otherTotalCountries = otherCountriesCount + (otherTurkeyCount > 0 && !otherWorldVisits['TR'] ? 1 : 0);
+      const otherCitiesCount = otherCities.length + Object.keys(otherWorldVisits).filter(k => k.includes('::') && otherWorldVisits[k]?.status === 'visited').length + otherTurkeyCount;
+
+      document.getElementById('compare-input-area').style.display = 'none';
+      const otherCard = document.getElementById('compare-other-card');
+      otherCard.style.display = 'block';
+      otherCard.innerHTML = `
+        <div class="profile-card">
+          <div class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</div>
+          <div class="profile-header">
+            <div class="profile-avatar">${otherProfile.avatar}</div>
+            <div style="flex:1;">
+              <div class="profile-username">${otherProfile.username}</div>
+              <div class="profile-bio">${otherProfile.bio || ''}</div>
+            </div>
+            ${rawCode ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
+          </div>
+          <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
+            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTurkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#3b82f6;">${otherCitiesCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#10b981;">${Object.keys(otherWorldVisits || {}).length}</span><span class="pstat-lbl">${currentLang === 'tr' ? 'Kayıt' : 'Marks'}</span></div>
+          </div>
+        </div>
+      `;
+
+      // Save friend button handler
+      document.getElementById('btn-save-this-friend')?.addEventListener('click', (e) => {
+        saveFriend({
+          username: otherProfile.username,
+          avatar: otherProfile.avatar,
+          bio: otherProfile.bio,
+          code: rawCode,
+          data: { profile: otherProfile, worldVisits: otherWorldVisits, turkeyVisits: otherTurkeyVisits, worldCities: otherCities }
+        });
+        e.target.textContent = '✓ ' + t('friendSaved');
+        setTimeout(() => renderCompareTab(contentArea), 1200);
+      });
+
+      // ── Calculate Country Comparison ──
+      const myCountryCodes = Object.keys(myStorage.worldVisits).filter(k => !k.includes('::') && myStorage.worldVisits[k]?.status === 'visited');
+      if (myStats.turkeyCount > 0 && !myCountryCodes.includes('TR')) myCountryCodes.push('TR');
+
+      const otherCountryCodes = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited');
+      if (otherTurkeyCount > 0 && !otherCountryCodes.includes('TR')) otherCountryCodes.push('TR');
+
+      const commonCountries = myCountryCodes.filter(c => otherCountryCodes.includes(c));
+      const onlyMyCountries = myCountryCodes.filter(c => !otherCountryCodes.includes(c));
+      const onlyOtherCountries = otherCountryCodes.filter(c => !myCountryCodes.includes(c));
+
+      const getCName = (code) => {
+        const c = WORLD_COUNTRIES.find(x => x.code === code);
+        return c ? getCountryDisplayName(c) : code;
+      };
+
+      // ── Calculate Turkey Provinces Comparison ──
+      const myProvIds = Object.keys(myStorage.turkeyVisits || {}).filter(pid => myStorage.turkeyVisits[pid]?.status === 'visited');
+      const otherProvIds = Object.keys(otherTurkeyVisits || {}).filter(pid => otherTurkeyVisits[pid]?.status === 'visited');
+
+      const commonProvs = myProvIds.filter(p => otherProvIds.includes(p));
+      const onlyMyProvs = myProvIds.filter(p => !otherProvIds.includes(p));
+      const onlyOtherProvs = otherProvIds.filter(p => !myProvIds.includes(p));
+
+      const getPName = (pid) => {
+        const p = TURKEY_PROVINCES.find(x => x.id === pid);
+        return p ? p.name : `İl ${pid}`;
+      };
+
+      const resultsArea = document.getElementById('compare-results-area');
+      resultsArea.style.display = 'block';
+      resultsArea.innerHTML = `
+        <div class="share-section" style="margin-top:0;">
+          <!-- Category Tabs: Countries / Turkey 81 Provinces / Reviews & Scores -->
+          <div class="compare-subtabs-row">
+            <button type="button" class="compare-subtab active" data-sub="countries">🌍 ${currentLang === 'tr' ? 'Ülkeler' : 'Countries'}</button>
+            <button type="button" class="compare-subtab" data-sub="provinces">🇹🇷 ${currentLang === 'tr' ? 'Türkiye (81 İl)' : 'Turkey (81 Provinces)'}</button>
+            <button type="button" class="compare-subtab" data-sub="reviews">📝 ${currentLang === 'tr' ? 'Yorumlar & Puanlar (1-10)' : 'Reviews & Scores (1-10)'}</button>
+          </div>
+
+          <!-- Section 1: Countries -->
+          <div id="compare-pane-countries" class="compare-pane active">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'İkinizin de Gittiği Ortak Ülkeler' : 'Common Countries'} (${commonCountries.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${commonCountries.length > 0 ? commonCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries.')}
+                </div>
+              </div>
+
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gittiğin Ülkeler' : 'Only You Visited'} (${onlyMyCountries.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
+                </div>
+              </div>
+
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gittiği Ülkeler` : `Only ${otherProfile.username}`} (${onlyOtherCountries.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Turkey 81 Provinces -->
+          <div id="compare-pane-provinces" class="compare-pane" style="display:none;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'Ortak Gezilen İller' : 'Common Provinces'} (${commonProvs.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${commonProvs.length > 0 ? commonProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak il bulunamadı.' : 'No common provinces.')}
+                </div>
+              </div>
+
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gezdiğin İller' : 'Only You Visited'} (${onlyMyProvs.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyMyProvs.length > 0 ? onlyMyProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
+                </div>
+              </div>
+
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gezdiği İller` : `Only ${otherProfile.username}`} (${onlyOtherProvs.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyOtherProvs.length > 0 ? onlyOtherProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Reviews & Scores (1-10) -->
+          <div id="compare-pane-reviews" class="compare-pane" style="display:none;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;">
+              <!-- My Reviews -->
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#3b82f6;margin-bottom:12px;">📝 ${currentLang === 'tr' ? 'Senin Yorumların & Puanların' : 'Your Reviews & Scores'}</div>
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
+                  ${(() => {
+                    const reviews = [];
+                    Object.entries(myStorage.worldVisits || {}).forEach(([k, v]) => {
+                      if (v.rating || v.notes) {
+                        const c = WORLD_COUNTRIES.find(x => x.code === k);
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: v.rating, notes: v.notes });
+                      }
+                    });
+                    Object.entries(myStorage.turkeyVisits || {}).forEach(([pid, v]) => {
+                      if (v.rating || v.notes) {
+                        const p = TURKEY_PROVINCES.find(x => x.id === pid);
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: v.rating, notes: v.notes });
+                      }
+                    });
+                    if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz puan veya not girmediniz.' : 'No reviews or notes yet.'}</span>`;
+                    return reviews.map(r => `
+                      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
+                          <span>${r.flag} ${r.name}</span>
+                          ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
+                        </div>
+                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${r.notes}"</div>` : ''}
+                      </div>
+                    `).join('');
+                  })()}
+                </div>
+              </div>
+
+              <!-- Friend's Reviews -->
+              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+                <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${otherProfile.username} Yorumları & Puanları` : `${otherProfile.username} Reviews`}</div>
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
+                  ${(() => {
+                    const reviews = [];
+                    Object.entries(otherWorldVisits || {}).forEach(([k, v]) => {
+                      if (v && (v.rating || v.notes)) {
+                        const c = WORLD_COUNTRIES.find(x => x.code === k);
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: v.rating, notes: v.notes });
+                      }
+                    });
+                    Object.entries(otherTurkeyVisits || {}).forEach(([pid, v]) => {
+                      if (v && (v.rating || v.notes)) {
+                        const p = TURKEY_PROVINCES.find(x => x.id === pid);
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: v.rating, notes: v.notes });
+                      }
+                    });
+                    if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının henüz yorumu yok.' : 'Friend has no reviews yet.'}</span>`;
+                    return reviews.map(r => `
+                      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
+                          <span>${r.flag} ${r.name}</span>
+                          ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
+                        </div>
+                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${r.notes}"</div>` : ''}
+                      </div>
+                    `).join('');
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Subtab switching
+      resultsArea.querySelectorAll('.compare-subtab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          resultsArea.querySelectorAll('.compare-subtab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const sub = btn.dataset.sub;
+          const pCountries = document.getElementById('compare-pane-countries');
+          const pProvinces = document.getElementById('compare-pane-provinces');
+          const pReviews = document.getElementById('compare-pane-reviews');
+          if (pCountries) pCountries.style.display = sub === 'countries' ? 'block' : 'none';
+          if (pProvinces) pProvinces.style.display = sub === 'provinces' ? 'block' : 'none';
+          if (pReviews) pReviews.style.display = sub === 'reviews' ? 'block' : 'none';
+        });
+      });
+    }
+
+    // Saved friend chips click
+    contentArea.querySelectorAll('.saved-friend-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if (e.target.closest('.sf-del-btn')) return;
+        const fid = chip.dataset.id;
+        const friend = savedFriends.find(f => f.id === fid);
+        if (friend && friend.data) {
+          applyFriendComparison(
+            friend.data.profile || { username: friend.username, avatar: friend.avatar },
+            friend.data.worldVisits || {},
+            friend.data.turkeyVisits || {},
+            friend.data.worldCities || [],
+            friend.code
+          );
+        }
+      });
+    });
+
+    // Delete saved friend handler
+    contentArea.querySelectorAll('.sf-del-btn').forEach(delBtn => {
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fid = delBtn.dataset.id;
+        deleteFriend(fid);
+        renderCompareTab(contentArea);
+      });
+    });
+
+    // Manual load button
     document.getElementById('compare-load-btn')?.addEventListener('click', () => {
       const code = document.getElementById('compare-code').value.trim();
       if (!code) return;
 
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(code)));
-        const otherProfile = decoded.profile || { username: 'Arkadaşın', avatar: '✈️' };
-        const otherWorldVisits = decoded.worldVisits || {};
-        const otherTurkeyVisits = decoded.turkeyVisits || {};
-        const otherCities = decoded.worldCities || [];
-
-        // Compute other stats
-        const otherCountriesCount = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited').length;
-        const otherTurkeyCount = Object.keys(otherTurkeyVisits).filter(k => otherTurkeyVisits[k]?.status === 'visited').length;
-        const otherTotalCountries = otherCountriesCount + (otherTurkeyCount > 0 && !otherWorldVisits['TR'] ? 1 : 0);
-        const otherCitiesCount = otherCities.length + Object.keys(otherWorldVisits).filter(k => k.includes('::') && otherWorldVisits[k]?.status === 'visited').length + otherTurkeyCount;
-
-        document.getElementById('compare-input-area').style.display = 'none';
-        const otherCard = document.getElementById('compare-other-card');
-        otherCard.style.display = 'block';
-        otherCard.innerHTML = `
-          <div class="profile-card">
-            <div class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</div>
-            <div class="profile-header">
-              <div class="profile-avatar">${otherProfile.avatar}</div>
-              <div>
-                <div class="profile-username">${otherProfile.username}</div>
-                <div class="profile-bio">${otherProfile.bio || ''}</div>
-              </div>
-            </div>
-            <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
-              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTurkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:#3b82f6;">${otherCitiesCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
-              <div class="pstat"><span class="pstat-num" style="color:#10b981;">${Object.keys(decoded.worldVisits || {}).length}</span><span class="pstat-lbl">${currentLang === 'tr' ? 'Kayıt' : 'Marks'}</span></div>
-            </div>
-          </div>
-        `;
-
-        // Calculate mutual / differences
-        const myCountryCodes = Object.keys(myStorage.worldVisits).filter(k => !k.includes('::') && myStorage.worldVisits[k]?.status === 'visited');
-        if (myStats.turkeyCount > 0 && !myCountryCodes.includes('TR')) myCountryCodes.push('TR');
-
-        const otherCountryCodes = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited');
-        if (otherTurkeyCount > 0 && !otherCountryCodes.includes('TR')) otherCountryCodes.push('TR');
-
-        const commonCountries = myCountryCodes.filter(c => otherCountryCodes.includes(c));
-        const onlyMyCountries = myCountryCodes.filter(c => !otherCountryCodes.includes(c));
-        const onlyOtherCountries = otherCountryCodes.filter(c => !myCountryCodes.includes(c));
-
-        const getCName = (code) => {
-          const c = WORLD_COUNTRIES.find(x => x.code === code);
-          return c ? getCountryDisplayName(c) : code;
-        };
-
-        const resultsArea = document.getElementById('compare-results-area');
-        resultsArea.style.display = 'block';
-        resultsArea.innerHTML = `
-          <div class="share-section" style="margin-top:0;">
-            <h3 style="margin-bottom:16px;">📊 ${currentLang === 'tr' ? 'Karşılaştırma Sonuçları' : 'Comparison Results'}</h3>
-            
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'İkinizin de Gittiği Ortak Ülkeler' : 'Common Countries Visited'} (${commonCountries.length})</div>
-                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
-                  ${commonCountries.length > 0 ? commonCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries found.')}
-                </div>
-              </div>
-
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? `Sadece Senin Gittiğin Ülkeler` : 'Only You Visited'} (${onlyMyCountries.length})</div>
-                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
-                  ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
-                </div>
-              </div>
-
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gittiği Ülkeler` : `Only ${otherProfile.username} Visited`} (${onlyOtherCountries.length})</div>
-                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;">
-                  ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+        applyFriendComparison(
+          decoded.profile || { username: 'Arkadaşın', avatar: '✈️' },
+          decoded.worldVisits || {},
+          decoded.turkeyVisits || {},
+          decoded.worldCities || [],
+          code
+        );
       } catch (err) {
         console.error('Compare parse error:', err);
         alert(t('invalidCode'));

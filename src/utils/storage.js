@@ -6,7 +6,10 @@ const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
   WORLD_VISITS: 'gittigim_yerler_world_v2',
   WORLD_CITIES: 'gittigim_yerler_cities_v2',
-  USER_PROFILE: 'gittigim_yerler_profile_v2'
+  USER_PROFILE: 'gittigim_yerler_profile_v2',
+  BUCKET_RANKS: 'gittigim_yerler_bucket_ranks_v1',
+  USER_AIRLINES: 'gittigim_yerler_airlines_v1',
+  SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1'
 };
 
 // Store default initial state
@@ -40,18 +43,62 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
   if (status === 'unvisited' || !status) {
     delete turkeyVisits[provinceId];
   } else {
+    const existing = turkeyVisits[provinceId] || {};
     turkeyVisits[provinceId] = {
-      status, // 'visited' | 'target'
-      date: details.date || new Date().toISOString().split('T')[0],
-      notes: details.notes || '',
-      rating: details.rating || 5
+      status,
+      date: details.date || existing.date || new Date().toISOString().split('T')[0],
+      notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
+      rating: details.rating !== undefined ? details.rating : (existing.rating || 0)
     };
     if (status === 'visited') {
       triggerConfetti();
     }
   }
   localStorage.setItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(turkeyVisits));
+
+  // Two-way synchronization with Turkey (TR) country status
+  syncCountryFromSubdivision('TR', status);
+
   notifyStateChange();
+}
+
+export function syncCountryFromSubdivision(countryCode, subStatus) {
+  if (!countryCode) return;
+  const { worldVisits } = getStorageData();
+  const currentCountry = worldVisits[countryCode] || {};
+  const currentStatus = currentCountry.status || 'unvisited';
+
+  if (subStatus === 'visited') {
+    if (currentStatus !== 'visited') {
+      worldVisits[countryCode] = {
+        ...currentCountry,
+        status: 'visited',
+        date: currentCountry.date || new Date().toISOString().split('T')[0],
+        notes: currentCountry.notes || 'Alt bölge ziyareti ile otomatik işaretlendi'
+      };
+      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+    }
+  } else if (subStatus === 'planned') {
+    // Only upgrade to planned if not already visited
+    if (currentStatus !== 'visited' && currentStatus !== 'planned') {
+      worldVisits[countryCode] = {
+        ...currentCountry,
+        status: 'planned',
+        date: currentCountry.date || new Date().toISOString().split('T')[0]
+      };
+      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+    }
+  } else if (subStatus === 'wishlist') {
+    // Only upgrade to wishlist if unvisited
+    if (currentStatus === 'unvisited' || !currentStatus) {
+      worldVisits[countryCode] = {
+        ...currentCountry,
+        status: 'wishlist',
+        date: currentCountry.date || new Date().toISOString().split('T')[0]
+      };
+      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+    }
+  }
 }
 
 export function saveWorldVisit(countryCode, status, details = {}) {
@@ -59,16 +106,25 @@ export function saveWorldVisit(countryCode, status, details = {}) {
   if (status === 'unvisited' || !status) {
     delete worldVisits[countryCode];
   } else {
+    const existing = worldVisits[countryCode] || {};
     worldVisits[countryCode] = {
-      status, // 'visited' | 'target'
-      date: details.date || new Date().toISOString().split('T')[0],
-      notes: details.notes || ''
+      status,
+      date: details.date || existing.date || new Date().toISOString().split('T')[0],
+      notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
+      rating: details.rating !== undefined ? details.rating : (existing.rating || 0)
     };
     if (status === 'visited') {
       triggerConfetti();
     }
   }
   localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+
+  // If this is a region/subregion (contains '::'), synchronize with parent country
+  if (countryCode.includes('::')) {
+    const parentCode = countryCode.split('::')[0];
+    syncCountryFromSubdivision(parentCode, status);
+  }
+
   notifyStateChange();
 }
 
@@ -242,4 +298,109 @@ function notifyStateChange() {
   const sStats = calculateStats();
   checkAndNotifyAchievements(sData, sStats);
   listeners.forEach(cb => cb(sData, sStats));
+}
+
+// ─── Bucket List Priority Rankings ───────────────────────────────────────────
+export function getBucketRanks() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.BUCKET_RANKS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveBucketRanks(ranks) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(ranks));
+    notifyStateChange();
+  } catch (e) {
+    console.error('Error saving bucket ranks', e);
+  }
+}
+
+// ─── User Airlines Tracker ────────────────────────────────────────────────────
+export const POPULAR_AIRLINES = [
+  { id: 'thy', name: 'Türk Hava Yolları', code: 'TK', country: 'TR', flag: '🇹🇷', logo: '✈️' },
+  { id: 'pegasus', name: 'Pegasus Airlines', code: 'PC', country: 'TR', flag: '🇹🇷', logo: '🟡' },
+  { id: 'sunexpress', name: 'SunExpress', code: 'XQ', country: 'TR', flag: '🇹🇷', logo: '☀️' },
+  { id: 'ajet', name: 'AJet (AnadoluJet)', code: 'VF', country: 'TR', flag: '🇹🇷', logo: '🔵' },
+  { id: 'emirates', name: 'Emirates', code: 'EK', country: 'AE', flag: '🇦🇪', logo: '👑' },
+  { id: 'qatar', name: 'Qatar Airways', code: 'QR', country: 'QA', flag: '🇶🇦', logo: '🍷' },
+  { id: 'lufthansa', name: 'Lufthansa', code: 'LH', country: 'DE', flag: '🇩🇪', logo: '🦅' },
+  { id: 'british_airways', name: 'British Airways', code: 'BA', country: 'GB', flag: '🇬🇧', logo: '🇬🇧' },
+  { id: 'ryanair', name: 'Ryanair', code: 'FR', country: 'IE', flag: '🇮🇪', logo: '🎸' },
+  { id: 'easyjet', name: 'easyJet', code: 'U2', country: 'GB', flag: '🇬🇧', logo: '🟧' },
+  { id: 'air_france', name: 'Air France', code: 'AF', country: 'FR', flag: '🇫🇷', logo: '🇫🇷' },
+  { id: 'klm', name: 'KLM Royal Dutch', code: 'KL', country: 'NL', flag: '🇳🇱', logo: '🇳🇱' },
+  { id: 'delta', name: 'Delta Air Lines', code: 'DL', country: 'US', flag: '🇺🇸', logo: '🔺' },
+  { id: 'wizz_air', name: 'Wizz Air', code: 'W6', country: 'HU', flag: '🇭🇺', logo: '🟪' },
+  { id: 'singapore', name: 'Singapore Airlines', code: 'SQ', country: 'SG', flag: '🇸🇬', logo: '🌸' }
+];
+
+export function getUserAirlines() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRLINES);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveUserAirlines(airlines) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(airlines));
+    notifyStateChange();
+  } catch (e) {
+    console.error('Error saving user airlines', e);
+  }
+}
+
+export function toggleUserAirline(airlineId, flightsCount = 1) {
+  const data = getUserAirlines();
+  if (data[airlineId]) {
+    delete data[airlineId];
+  } else {
+    data[airlineId] = { flown: true, count: Math.max(1, flightsCount), date: new Date().toISOString().split('T')[0] };
+  }
+  saveUserAirlines(data);
+  return data;
+}
+
+// ─── Saved Friends System ─────────────────────────────────────────────────────
+export function getSavedFriends() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SAVED_FRIENDS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFriend(friendObj) {
+  const friends = getSavedFriends();
+  const existingIdx = friends.findIndex(f => f.id === friendObj.id || (f.username && f.username.toLowerCase() === friendObj.username.toLowerCase()));
+  if (existingIdx >= 0) {
+    friends[existingIdx] = { ...friends[existingIdx], ...friendObj, updatedAt: new Date().toISOString() };
+  } else {
+    friends.push({
+      id: friendObj.id || 'f_' + Date.now(),
+      username: friendObj.username || 'Arkadaş',
+      avatar: friendObj.avatar || '🌍',
+      bio: friendObj.bio || '',
+      code: friendObj.code || '',
+      data: friendObj.data || null,
+      savedAt: new Date().toISOString()
+    });
+  }
+  localStorage.setItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
+  notifyStateChange();
+  return friends;
+}
+
+export function deleteFriend(friendId) {
+  const friends = getSavedFriends().filter(f => f.id !== friendId);
+  localStorage.setItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
+  notifyStateChange();
+  return friends;
 }

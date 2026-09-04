@@ -87,6 +87,9 @@ let subregionLayers = {};
 let subregionCache = {};
 let selectedCountryCode = null;
 let selectedRegionName = null;
+let activeStatusPopup = null;
+let provinceLabelsLayer = null;
+
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export function renderWorldMapView(container, options = {}) {
@@ -114,12 +117,31 @@ export function renderWorldMapView(container, options = {}) {
       <div id="map-root" style="width:100%;height:100%;position:relative;background:${themeCfg.oceanBg};">
         <div id="leaflet-map" style="width:100%;height:100%;background:${themeCfg.oceanBg};"></div>
 
-        <!-- Floating Profile Button (top-left) -->
+        <!-- Floating Profile & Poster Buttons (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
             <span class="floating-profile-avatar">${userAvatar}</span>
             <span class="floating-profile-name">${userName}</span>
           </button>
+          <button id="btn-open-poster-map" class="floating-poster-btn" aria-label="${t('createPoster')}">
+            <span>📸</span> <span class="poster-btn-text">${t('createPoster')}</span>
+          </button>
+        </div>
+
+        <!-- Floating Live Search Bar (top-center) -->
+        <div id="map-search-wrap" class="floating-search-wrap">
+          <div class="map-search-input-box">
+            <span class="map-search-icon">🔍</span>
+            <input type="text" id="map-search-input" placeholder="${t('searchPlaceholder')}" autocomplete="off" />
+            <button type="button" id="map-search-clear" class="map-search-clear" style="display:none;">✕</button>
+          </div>
+          <div id="map-search-results" class="map-search-results" style="display:none;"></div>
+        </div>
+
+        <!-- Floating Layer HUD Indicator (bottom-left above stats) -->
+        <div id="layer-hud" class="floating-layer-hud" title="Harita Katmanı">
+          <span id="layer-hud-icon">🌍</span>
+          <span id="layer-hud-text">${t('layer1Countries')}</span>
         </div>
 
         <!-- Floating Top-Right Legend (Clean: Only Status indicators) -->
@@ -187,6 +209,125 @@ export function renderWorldMapView(container, options = {}) {
 
   // Setup UI button events
   function attachUIEvents() {
+
+    // Search Autocomplete Handler
+    const searchInput = container.querySelector('#map-search-input');
+    const searchClear = container.querySelector('#map-search-clear');
+    const searchResults = container.querySelector('#map-search-results');
+
+    const searchDatabase = [
+      ...TURKEY_PROVINCES.map(p => ({
+        type: 'province',
+        id: `TR::${p.id}`,
+        name: p.name,
+        sub: `Türkiye (İl)`,
+        flag: '🇹🇷',
+        coords: [p.coordinates[1], p.coordinates[0]],
+        countryCode: 'TR'
+      })),
+      ...WORLD_COUNTRIES.map(c => ({
+        type: 'country',
+        id: c.code,
+        name: getCountryDisplayName(c),
+        sub: c.name,
+        flag: getFlagHtml(c.code),
+        coords: COUNTRY_LABEL_OFFSETS[c.code] || null,
+        countryCode: c.code
+      })),
+      // Major world cities
+      { type: 'city', name: 'Tokyo', sub: 'Japonya', flag: getFlagHtml('JP'), coords: [35.6762, 139.6503], countryCode: 'JP' },
+      { type: 'city', name: 'Paris', sub: 'Fransa', flag: getFlagHtml('FR'), coords: [48.8566, 2.3522], countryCode: 'FR' },
+      { type: 'city', name: 'Londra (London)', sub: 'Birleşik Krallık', flag: getFlagHtml('GB'), coords: [51.5074, -0.1278], countryCode: 'GB' },
+      { type: 'city', name: 'Roma (Rome)', sub: 'İtalya', flag: getFlagHtml('IT'), coords: [41.9028, 12.4964], countryCode: 'IT' },
+      { type: 'city', name: 'Berlin', sub: 'Almanya', flag: getFlagHtml('DE'), coords: [52.5200, 13.4050], countryCode: 'DE' },
+      { type: 'city', name: 'Madrid', sub: 'İspanya', flag: getFlagHtml('ES'), coords: [40.4168, -3.7038], countryCode: 'ES' },
+      { type: 'city', name: 'Amsterdam', sub: 'Hollanda', flag: getFlagHtml('NL'), coords: [52.3676, 4.9041], countryCode: 'NL' },
+      { type: 'city', name: 'New York', sub: 'ABD', flag: getFlagHtml('US'), coords: [40.7128, -74.0060], countryCode: 'US' },
+      { type: 'city', name: 'Dubai', sub: 'BAE', flag: getFlagHtml('AE'), coords: [25.2048, 55.2708], countryCode: 'AE' },
+      { type: 'city', name: 'Barselona (Barcelona)', sub: 'İspanya', flag: getFlagHtml('ES'), coords: [41.3879, 2.1699], countryCode: 'ES' },
+      { type: 'city', name: 'Viyana (Vienna)', sub: 'Avusturya', flag: getFlagHtml('AT'), coords: [48.2082, 16.3738], countryCode: 'AT' }
+    ];
+
+    if (searchInput && searchResults) {
+      searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        if (query.length === 0) {
+          searchResults.style.display = 'none';
+          if (searchClear) searchClear.style.display = 'none';
+          return;
+        }
+        if (searchClear) searchClear.style.display = 'block';
+
+        const matches = searchDatabase.filter(item => 
+          item.name.toLowerCase().includes(query) || (item.sub && item.sub.toLowerCase().includes(query))
+        ).slice(0, 8);
+
+        if (matches.length === 0) {
+          searchResults.innerHTML = `<div class="search-item empty">${t('searchNoResults')}</div>`;
+          searchResults.style.display = 'block';
+          return;
+        }
+
+        searchResults.innerHTML = matches.map((m, idx) => `
+          <div class="search-item" data-idx="${idx}">
+            <span class="search-item-flag">${m.flag.startsWith('<img') ? m.flag : m.flag}</span>
+            <div class="search-item-info">
+              <span class="search-item-title">${m.name}</span>
+              <span class="search-item-sub">${m.sub}</span>
+            </div>
+          </div>
+        `).join('');
+        searchResults.style.display = 'block';
+
+        searchResults.querySelectorAll('.search-item').forEach(itemEl => {
+          itemEl.addEventListener('click', () => {
+            const idx = parseInt(itemEl.dataset.idx, 10);
+            const m = matches[idx];
+            if (!m) return;
+            searchResults.style.display = 'none';
+            searchInput.value = '';
+            if (searchClear) searchClear.style.display = 'none';
+
+            if (m.coords && map) {
+              const targetZoom = m.type === 'province' ? 6.5 : (m.type === 'city' ? 7.5 : 4.5);
+              map.flyTo(m.coords, targetZoom, { duration: 0.8 });
+              setTimeout(() => {
+                const titleHtml = `${m.flag.startsWith('<img') ? m.flag : m.flag} ${m.name}`;
+                openStatusPopup(m.coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
+              }, 850);
+            }
+          });
+        });
+      });
+
+      if (searchClear) {
+        searchClear.addEventListener('click', () => {
+          searchInput.value = '';
+          searchResults.style.display = 'none';
+          searchClear.style.display = 'none';
+        });
+      }
+
+      // Close search results on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#map-search-wrap')) {
+          searchResults.style.display = 'none';
+        }
+      });
+    }
+
+    // Poster button handler
+    const posterBtn = container.querySelector('#btn-open-poster-map');
+    if (posterBtn) {
+      posterBtn.addEventListener('click', () => {
+        if (options.onOpenProfile) {
+          // Open profile in poster mode or open profile view
+          window.__openPosterOnProfile = true;
+          options.onOpenProfile();
+        }
+      });
+    }
+
     const profileBtn = container.querySelector('#btn-open-profile');
     if (profileBtn) {
       profileBtn.addEventListener('click', () => {
@@ -334,9 +475,14 @@ function initMap(container) {
     maxZoom: 12,
     zoomControl: false,
     attributionControl: false,
+    doubleClickZoom: true,
     worldCopyJump: false,
     maxBounds: [[-85, -180], [85, 180]],
     maxBoundsVisiblity: 1.0,
+  });
+
+  map.on('popupclose', () => {
+    activeStatusPopup = null;
   });
 
   // Huge 200% SVG renderer buffer: eliminates all panning cutoff lines!
@@ -356,6 +502,7 @@ function initMap(container) {
   map.getPane('labelsPane').style.pointerEvents = 'none';
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
+  provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
 
   el.style.backgroundColor = themeCfg.oceanBg;
 
@@ -372,6 +519,11 @@ function initMap(container) {
         const c = findCountry(f);
         layer.on('click', e => {
           if (!c) return;
+          if (activeStatusPopup) {
+            map.closePopup();
+            activeStatusPopup = null;
+            return;
+          }
           const zoom = map?.getZoom() || 3;
           if (zoom >= REGION_ZOOM) {
             const hasReg = (regionLayers[c.code] && map.hasLayer(regionLayers[c.code])) ||
@@ -384,6 +536,10 @@ function initMap(container) {
           refreshStats();
           const displayName = getCountryDisplayName(c);
           openStatusPopup(e.latlng, c.code, `${getFlagHtml(c.code)} ${displayName}`, 'country', c.code);
+        });
+        layer.on('dblclick', e => {
+          L.DomEvent.stopPropagation(e);
+          map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
         });
       }
     }).addTo(map);
@@ -415,8 +571,17 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
+          if (activeStatusPopup) {
+            map.closePopup();
+            activeStatusPopup = null;
+            return;
+          }
           L.DomEvent.stopPropagation(e);
           openStatusPopup(e.latlng, `TR::${prov.id}`, `${getFlagHtml('TR')} ${prov.name}`, 'province', 'TR');
+        });
+        layer.on('dblclick', e => {
+          L.DomEvent.stopPropagation(e);
+          map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
         });
       }
     });
@@ -424,10 +589,113 @@ function initMap(container) {
     console.error('Turkey provinces load error:', err);
   });
 
+
+  function updateLayerHud() {
+    const hudEl = document.getElementById('layer-hud');
+    if (!hudEl || !map) return;
+    const z = map.getZoom();
+    const iconEl = document.getElementById('layer-hud-icon');
+    const textEl = document.getElementById('layer-hud-text');
+    if (z < REGION_ZOOM) {
+      if (iconEl) iconEl.textContent = '🌍';
+      if (textEl) textEl.textContent = t('layer1Countries');
+    } else if (z < SUBREGION_ZOOM) {
+      if (iconEl) iconEl.textContent = '🏙️';
+      if (textEl) textEl.textContent = t('layer2Regions');
+    } else {
+      if (iconEl) iconEl.textContent = '📍';
+      if (textEl) textEl.textContent = t('layer3Cities');
+    }
+  }
+
+  function updateProvinceLabels() {
+    if (!provinceLabelsLayer || !map) return;
+    const z = map.getZoom();
+    provinceLabelsLayer.clearLayers();
+
+    if (z >= 4.8) {
+      // 1. Turkey provinces labels
+      TURKEY_PROVINCES.forEach(p => {
+        if (p.coordinates) {
+          const marker = L.marker([p.coordinates[1], p.coordinates[0]], {
+            icon: L.divIcon({
+              className: 'map-province-label',
+              html: `<span class="prov-label-text">${p.name}</span>`,
+              iconSize: [80, 20],
+              iconAnchor: [40, 10]
+            }),
+            interactive: false
+          });
+          provinceLabelsLayer.addLayer(marker);
+        }
+      });
+
+      // 2. World region labels for all active region layers
+      Object.entries(regionLayers).forEach(([cCode, rLayer]) => {
+        if (rLayer && map.hasLayer(rLayer)) {
+          rLayer.eachLayer(layer => {
+            try {
+              const bounds = layer.getBounds();
+              if (bounds && bounds.isValid()) {
+                const center = bounds.getCenter();
+                const rawName = layer.feature?.properties?.name || layer.feature?.properties?.NAME_1;
+                if (rawName) {
+                  const disp = getLocalizedName(rawName, cCode);
+                  const marker = L.marker(center, {
+                    icon: L.divIcon({
+                      className: 'map-province-label',
+                      html: `<span class="prov-label-text">${disp}</span>`,
+                      iconSize: [100, 20],
+                      iconAnchor: [50, 10]
+                    }),
+                    interactive: false
+                  });
+                  provinceLabelsLayer.addLayer(marker);
+                }
+              }
+            } catch {}
+          });
+        }
+      });
+
+      // 3. Subregion/city labels
+      if (z >= SUBREGION_ZOOM) {
+        Object.entries(subregionLayers).forEach(([cCode, srLayer]) => {
+          if (srLayer && map.hasLayer(srLayer)) {
+            srLayer.eachLayer(layer => {
+              try {
+                const bounds = layer.getBounds();
+                if (bounds && bounds.isValid()) {
+                  const center = bounds.getCenter();
+                  const rawName = layer.feature?.properties?.name;
+                  if (rawName) {
+                    const disp = getLocalizedName(rawName, cCode);
+                    const marker = L.marker(center, {
+                      icon: L.divIcon({
+                        className: 'map-province-label',
+                        html: `<span class="prov-label-text" style="font-size:0.68rem;">${disp}</span>`,
+                        iconSize: [90, 18],
+                        iconAnchor: [45, 9]
+                      }),
+                      interactive: false
+                    });
+                    provinceLabelsLayer.addLayer(marker);
+                  }
+                }
+              } catch {}
+            });
+          }
+        });
+      }
+    }
+  }
+
   let isViewUpdating = false;
   let viewUpdatePending = false;
 
   async function requestViewUpdate() {
+    updateLayerHud();
+    updateProvinceLabels();
     if (isViewUpdating) {
       viewUpdatePending = true;
       return;
@@ -800,11 +1068,20 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
+        if (activeStatusPopup) {
+          map.closePopup();
+          activeStatusPopup = null;
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         selectedRegionName = raw;
         refreshStats();
         openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'region', code);
+      });
+      l.on('dblclick', e => {
+        L.DomEvent.stopPropagation(e);
+        map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
       });
     }
   });
@@ -887,10 +1164,19 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
+        if (activeStatusPopup) {
+          map.closePopup();
+          activeStatusPopup = null;
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
         openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'subregion', code);
+      });
+      l.on('dblclick', e => {
+        L.DomEvent.stopPropagation(e);
+        map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
       });
     }
   });
@@ -916,17 +1202,29 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
   const { turkeyVisits, worldVisits } = getStorageData();
 
   let currentStatus = 'unvisited';
+  let currentRating = 0;
+  let currentNotes = '';
+
   if (type === 'province') {
     const num = id.replace('TR::', '');
-    currentStatus = ns(turkeyVisits[num]?.status);
+    const pData = turkeyVisits[num] || {};
+    currentStatus = ns(pData.status);
+    currentRating = pData.rating || 0;
+    currentNotes = pData.notes || '';
   } else {
-    currentStatus = ns(worldVisits[id]?.status);
+    const wData = worldVisits[id] || {};
+    currentStatus = ns(wData.status);
+    currentRating = wData.rating || 0;
+    currentNotes = wData.notes || '';
   }
 
   const content = document.createElement('div');
   content.className = 'map-status-popup';
   content.innerHTML = `
-    <div class="map-status-popup-title">${title}</div>
+    <div class="map-status-popup-header" style="justify-content:center;margin-bottom:10px;">
+      <div class="map-status-popup-title" style="text-align:center;">${title}</div>
+    </div>
+
     <div class="map-status-popup-buttons">
       ${Object.entries(STATUS).map(([val, cfg]) => {
         const isAct = currentStatus === val;
@@ -940,7 +1238,83 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         `;
       }).join('')}
     </div>
+
+    <!-- Rating (1-10) and Notes Section -->
+    <div class="map-status-review-box">
+      <div class="rating-header-row">
+        <span class="rating-badge-label">⭐ ${currentLang === 'tr' ? 'Puan:' : 'Score:'} <b id="rating-score-display">${currentRating > 0 ? currentRating + '/10' : '-'}</b></span>
+      </div>
+      <div class="popup-rating-numbers">
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => `
+          <button type="button" class="score-pill-btn ${s === currentRating ? 'active' : ''}" data-score="${s}">${s}</button>
+        `).join('')}
+      </div>
+      <div class="popup-notes-input-row">
+        <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${currentNotes.replace(/"/g, '&quot;')}" />
+        <button type="button" id="popup-note-save-btn" class="popup-note-save-btn" title="${t('save')}">💾</button>
+      </div>
+    </div>
   `;
+
+  // Close button handler
+  content.querySelector('#map-popup-close-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    map.closePopup();
+    activeStatusPopup = null;
+  });
+
+  // 1-10 Score button click handler
+  content.querySelectorAll('.score-pill-btn').forEach(pBtn => {
+    pBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const scoreVal = parseInt(pBtn.dataset.score, 10);
+      currentRating = (currentRating === scoreVal) ? 0 : scoreVal;
+
+      content.querySelectorAll('.score-pill-btn').forEach(b => {
+        const bVal = parseInt(b.dataset.score, 10);
+        if (bVal === currentRating) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      const disp = content.querySelector('#rating-score-display');
+      if (disp) disp.textContent = currentRating > 0 ? currentRating + '/10' : '-';
+
+      // Save to storage
+      if (type === 'province') {
+        const num = id.replace('TR::', '');
+        saveTurkeyVisit(num, currentStatus === 'unvisited' ? 'visited' : currentStatus, { rating: currentRating });
+      } else {
+        saveWorldVisit(id, currentStatus === 'unvisited' ? 'visited' : currentStatus, { rating: currentRating });
+      }
+    });
+  });
+
+  // Note save handler
+  const saveNote = () => {
+    const noteVal = content.querySelector('#popup-note-input')?.value.trim() || '';
+    if (type === 'province') {
+      const num = id.replace('TR::', '');
+      saveTurkeyVisit(num, currentStatus === 'unvisited' ? 'visited' : currentStatus, { notes: noteVal });
+    } else {
+      saveWorldVisit(id, currentStatus === 'unvisited' ? 'visited' : currentStatus, { notes: noteVal });
+    }
+    const saveBtn = content.querySelector('#popup-note-save-btn');
+    if (saveBtn) {
+      saveBtn.textContent = '✓';
+      setTimeout(() => { if (saveBtn) saveBtn.textContent = '💾'; }, 1500);
+    }
+  };
+
+  content.querySelector('#popup-note-save-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    saveNote();
+  });
+  content.querySelector('#popup-note-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveNote();
+    }
+  });
 
   content.querySelectorAll('.map-status-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -951,15 +1325,22 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         const num = id.replace('TR::', '');
         saveTurkeyVisit(num, val);
 
-        // ── Two-Way Sync for Turkey ──
+        // ── Symmetrical Two-Way Sync for Turkey (visited, planned, wishlist) ──
         if (val === 'visited') {
           saveWorldVisit('TR', 'visited', { notes: 'Auto-marked' });
+        } else if (val === 'planned') {
+          const data = getStorageData();
+          if (data.worldVisits['TR']?.status !== 'visited') saveWorldVisit('TR', 'planned');
+        } else if (val === 'wishlist') {
+          const data = getStorageData();
+          if (!['visited', 'planned'].includes(data.worldVisits['TR']?.status)) saveWorldVisit('TR', 'wishlist');
         } else if (val === 'unvisited') {
           const data = getStorageData();
-          const hasAnyVisited = Object.values(data.turkeyVisits).some(v => v.status === 'visited');
-          if (!hasAnyVisited) {
-            saveWorldVisit('TR', 'unvisited');
-          }
+          const provs = Object.values(data.turkeyVisits);
+          if (provs.some(v => v.status === 'visited')) saveWorldVisit('TR', 'visited');
+          else if (provs.some(v => v.status === 'planned')) saveWorldVisit('TR', 'planned');
+          else if (provs.some(v => v.status === 'wishlist')) saveWorldVisit('TR', 'wishlist');
+          else saveWorldVisit('TR', 'unvisited');
         }
       } else if (type === 'country') {
         saveWorldVisit(id, val);
@@ -980,17 +1361,24 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
       } else if (type === 'region' || type === 'subregion') {
         saveWorldVisit(id, val);
 
-        // ── Two-Way Sync for World Regions / Subregions ──
+        // ── Symmetrical Two-Way Sync for World Regions / Subregions (visited, planned, wishlist) ──
         if (countryCode) {
           if (val === 'visited') {
             saveWorldVisit(countryCode, 'visited', { notes: 'Auto-marked' });
+          } else if (val === 'planned') {
+            const data = getStorageData();
+            if (data.worldVisits[countryCode]?.status !== 'visited') saveWorldVisit(countryCode, 'planned');
+          } else if (val === 'wishlist') {
+            const data = getStorageData();
+            if (!['visited', 'planned'].includes(data.worldVisits[countryCode]?.status)) saveWorldVisit(countryCode, 'wishlist');
           } else if (val === 'unvisited') {
             const data = getStorageData();
             const prefix = `${countryCode}::`;
-            const hasAnyVisited = Object.entries(data.worldVisits).some(([k, v]) => k.startsWith(prefix) && v.status === 'visited');
-            if (!hasAnyVisited) {
-              saveWorldVisit(countryCode, 'unvisited');
-            }
+            const subs = Object.entries(data.worldVisits).filter(([k]) => k.startsWith(prefix)).map(([, v]) => v.status);
+            if (subs.includes('visited')) saveWorldVisit(countryCode, 'visited');
+            else if (subs.includes('planned')) saveWorldVisit(countryCode, 'planned');
+            else if (subs.includes('wishlist')) saveWorldVisit(countryCode, 'wishlist');
+            else saveWorldVisit(countryCode, 'unvisited');
           }
         }
       }
@@ -1001,11 +1389,11 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     });
   });
 
-  L.popup({
+  activeStatusPopup = L.popup({
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: 240
+    maxWidth: 260
   })
   .setLatLng(latlng)
   .setContent(content)
