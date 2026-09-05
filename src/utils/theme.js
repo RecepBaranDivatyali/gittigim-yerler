@@ -164,3 +164,25 @@ export function setUiSize(sizeKey) {
     try { fn(currentTheme); } catch {}
   });
 }
+
+export function blendColors(hexBase, hexTint, ratio = 0.25) {
+  if (!hexBase || !hexTint) return hexBase || '#1e293b';
+  let b = hexBase.startsWith('#') ? hexBase.slice(1) : hexBase;
+  if (b.length === 3) b = b.split('').map(c => c + c).join('');
+  let t = hexTint.startsWith('#') ? hexTint.slice(1) : hexTint;
+  if (t.length === 3) t = t.split('').map(c => c + c).join('');
+
+  const r1 = parseInt(b.slice(0, 2), 16) || 0;
+  const g1 = parseInt(b.slice(2, 4), 16) || 0;
+  const b1 = parseInt(b.slice(4, 6), 16) || 0;
+
+  const r2 = parseInt(t.slice(0, 2), 16) || 0;
+  const g2 = parseInt(t.slice(2, 4), 16) || 0;
+  const b2 = parseInt(t.slice(4, 6), 16) || 0;
+
+  const r = Math.round(r1 * (1 - ratio) + r2 * ratio);
+  const g = Math.round(g1 * (1 - ratio) + g2 * ratio);
+  const bl = Math.round(b1 * (1 - ratio) + b2 * ratio);
+
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + bl).toString(16).slice(1);
+}

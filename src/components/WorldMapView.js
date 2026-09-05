@@ -43,25 +43,51 @@ const COUNTRY_LABEL_OFFSETS = {
 };
 
 const PROVINCE_LABEL_OFFSETS = {
-  'TR::34': [41.05, 28.95], // İstanbul (Bosphorus center, balanced between Europe and Asia)
-  'TR::48': [37.20, 28.36], // Muğla (Inland center near Menteşe/Yatağan, avoids sea/islands)
-  'TR::35': [38.42, 27.22], // İzmir (Central interior near Bornova-Buca, avoids gulf)
+  // Turkey manual fine-tuned offsets for complex coastal/peninsular shapes
+  'TR::7': [36.98, 30.65],  // Antalya (Inland plateau north of gulf, safely away from sea)
+  'TR::07': [36.98, 30.65],
+  'TR::33': [36.88, 33.80], // Mersin (Inland plateau, safely away from coastline/sea)
+  'TR::35': [38.35, 27.28], // İzmir (Inland valley Bornova/Kemalpaşa, away from Aegean Sea/Çeşme)
+  'TR::48': [37.20, 28.36], // Muğla (Menteşe interior plateau)
+  'TR::34': [41.06, 28.98], // İstanbul (Bosphorus center)
   'TR::10': [39.65, 27.90], // Balıkesir (Central interior)
-  'TR::17': [40.05, 26.90], // Çanakkale (Mainland interior, avoids Dardanelles/islands)
-  'TR::07': [36.95, 30.65], // Antalya (Central interior)
-  'TR::14': [40.65, 31.60], // Bolu (Central valley)
-  'TR::41': [40.80, 29.95], // Kocaeli (Central interior)
+  'TR::17': [39.90, 27.05], // Çanakkale (Biga inland plateau)
+  'TR::14': [40.65, 31.60], // Bolu (Bolu central valley)
+  'TR::41': [40.80, 29.95], // Kocaeli
   'TR::77': [40.60, 29.25], // Yalova
-  'TR::59': [41.05, 27.50], // Tekirdağ (Central interior)
-  'TR::31': [36.35, 36.20], // Hatay (Central valley)
-  'TR::33': [36.80, 34.60], // Mersin (Mainland interior)
-  'TR::09': [37.85, 27.85], // Aydın (Central interior)
-  'TR::45': [38.65, 27.45], // Manisa (Central interior)
-  'TR::22': [41.25, 26.65], // Edirne (Central interior)
+  'TR::59': [41.05, 27.50], // Tekirdağ
+  'TR::31': [36.35, 36.20], // Hatay
+  'TR::9': [37.85, 27.85],  // Aydın
+  'TR::09': [37.85, 27.85],
+  'TR::45': [38.65, 27.45], // Manisa
+  'TR::22': [41.25, 26.65], // Edirne
   'TR::39': [41.70, 27.20], // Kırklareli
-  'TR::06': [39.80, 32.75], // Ankara
+  'TR::6': [39.80, 32.75],  // Ankara
+  'TR::06': [39.80, 32.75],
   'TR::42': [38.00, 32.50], // Konya
+  'TR::57': [41.80, 34.90], // Sinop
+  'TR::55': [41.25, 36.15], // Samsun
+  'TR::61': [40.85, 39.70], // Trabzon
+  'TR::53': [40.90, 40.75], // Rize
+  'TR::8': [41.15, 41.80],  // Artvin
+  'TR::08': [41.15, 41.80],
 };
+
+function getProvinceOffset(item) {
+  if (!item) return null;
+  if (PROVINCE_LABEL_OFFSETS[item.idKey]) return PROVINCE_LABEL_OFFSETS[item.idKey];
+  if (item.countryCode === 'TR') {
+    const rawNum = String(item.idKey || '').replace('TR::', '');
+    const num = parseInt(rawNum, 10);
+    if (!isNaN(num)) {
+      const padded = `TR::${String(num).padStart(2, '0')}`;
+      const unpadded = `TR::${num}`;
+      if (PROVINCE_LABEL_OFFSETS[padded]) return PROVINCE_LABEL_OFFSETS[padded];
+      if (PROVINCE_LABEL_OFFSETS[unpadded]) return PROVINCE_LABEL_OFFSETS[unpadded];
+    }
+  }
+  return null;
+}
 
 import L from 'leaflet';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -69,7 +95,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { getLocalizedName, getCountryLocalizedName } from '../data/regionNames.js';
 import { getStorageData, saveWorldVisit, saveTurkeyVisit, resetTravelData } from '../utils/storage.js';
 import { t, getLanguage, setLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
-import { THEMES, getTheme, setTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor } from '../utils/theme.js';
+import { THEMES, getTheme, setTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml, sanitizeText } from '../utils/security.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -834,19 +860,95 @@ function polygonCentroid(ring) {
   return { cx: cx / (6 * area), cy: cy / (6 * area), area: absArea, bbox };
 }
 
-// Find the visual centroid and bounding box of ONLY the largest mainland polygon
+function getPointToSegmentDistSq(px, py, ax, ay, bx, by) {
+  let dx = bx - ax, dy = by - ay;
+  if (dx !== 0 || dy !== 0) {
+    const t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+    if (t > 1) { ax = bx; ay = by; }
+    else if (t > 0) { ax += dx * t; ay += dy * t; }
+  }
+  dx = px - ax; dy = py - ay;
+  return dx * dx + dy * dy;
+}
+
+function pointToPolygonDist(x, y, ring) {
+  let inside = false;
+  let minDistSq = Infinity;
+  for (let i = 0, len = ring.length, j = len - 1; i < len; j = i++) {
+    const a = ring[i], b = ring[j];
+    if ((a[1] > y !== b[1] > y) && (x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0])) inside = !inside;
+    minDistSq = Math.min(minDistSq, getPointToSegmentDistSq(x, y, a[0], a[1], b[0], b[1]));
+  }
+  return minDistSq === 0 ? 0 : (inside ? 1 : -1) * Math.sqrt(minDistSq);
+}
+
+// Pole of inaccessibility: finds the point inside polygon that is farthest from all borders
+function polylabelFast(ring, precision = 0.01) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i];
+    if (p[0] < minX) minX = p[0];
+    if (p[1] < minY) minY = p[1];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[1] > maxY) maxY = p[1];
+  }
+  const width = maxX - minX, height = maxY - minY;
+  const cellSize = Math.min(width, height);
+  let h = cellSize / 2;
+  if (cellSize === 0) return [minX, minY, 0];
+
+  let bestCell = { x: minX + width / 2, y: minY + height / 2, h: 0, d: pointToPolygonDist(minX + width / 2, minY + height / 2, ring) };
+
+  const cells = [];
+  for (let x = minX; x < maxX; x += cellSize) {
+    for (let y = minY; y < maxY; y += cellSize) {
+      const cx = x + h, cy = y + h;
+      const d = pointToPolygonDist(cx, cy, ring);
+      const c = { x: cx, y: cy, h, d, max: d + h * Math.SQRT2 };
+      cells.push(c);
+      if (d > bestCell.d) bestCell = c;
+    }
+  }
+
+  while (cells.length) {
+    cells.sort((a, b) => b.max - a.max);
+    const cell = cells.shift();
+    if (cell.d > bestCell.d) bestCell = cell;
+    if (cell.max - bestCell.d <= precision) continue;
+
+    h = cell.h / 2;
+    const sub = [
+      { x: cell.x - h, y: cell.y - h },
+      { x: cell.x + h, y: cell.y - h },
+      { x: cell.x - h, y: cell.y + h },
+      { x: cell.x + h, y: cell.y + h }
+    ];
+    for (const p of sub) {
+      const d = pointToPolygonDist(p.x, p.y, ring);
+      const c = { x: p.x, y: p.y, h, d, max: d + h * Math.SQRT2 };
+      if (d > bestCell.d) bestCell = c;
+      if (c.max > bestCell.d) cells.push(c);
+    }
+  }
+  return [bestCell.x, bestCell.y, bestCell.d];
+}
+
+// Find the visual centroid and bounding box of ONLY the largest mainland polygon,
+// guaranteed inside the landmass via polylabel
 function getMainlandInfo(feature) {
   const geom = feature?.geometry;
   if (!geom) return null;
 
   let best = null;
   let maxArea = -1;
+  let bestRing = null;
 
   function processRing(ring) {
     const res = polygonCentroid(ring);
     if (res.area > maxArea) {
       maxArea = res.area;
       best = res;
+      bestRing = ring;
     }
   }
 
@@ -855,6 +957,17 @@ function getMainlandInfo(feature) {
   } else if (geom.type === 'MultiPolygon') {
     geom.coordinates.forEach(poly => processRing(poly[0]));
   }
+
+  if (!best || !bestRing) return null;
+
+  // Use Pole of Inaccessibility so label is never placed in water/sea or across borders
+  try {
+    const pl = polylabelFast(bestRing, 0.01);
+    if (pl && pl[2] > 0) {
+      best.cx = pl[0]; // lng
+      best.cy = pl[1]; // lat
+    }
+  } catch (e) {}
 
   return best;
 }
@@ -1071,9 +1184,10 @@ function updateProvinceLabels() {
       // Area in screen pixels
       const screenArea = pixelWidth * pixelHeight;
 
-      // Centroid: use tuned visual center if available, otherwise mainland area centroid
-      const visualCenter = PROVINCE_LABEL_OFFSETS[item.idKey]
-        ? L.latLng(PROVINCE_LABEL_OFFSETS[item.idKey])
+      // Centroid: use tuned visual center if available, otherwise mainland area centroid (polylabel)
+      const offset = getProvinceOffset(item);
+      const visualCenter = offset
+        ? L.latLng(offset)
         : L.latLng(mainland.cy, mainland.cx);
 
       prepared.push({
@@ -1748,6 +1862,7 @@ function regionStyle(rawName, countryCode) {
     hasSubregions = true;
   }
 
+  // 1. Durum: Bölge bizzat işaretlenmiş (Gidildi / Planlanıyor / İstek Listesi)
   if (status !== 'unvisited') {
     return {
       fillColor: cfg.color,
@@ -1759,6 +1874,28 @@ function regionStyle(rawName, countryCode) {
     };
   }
 
+  // 3. Durum: Ülke ziyaret edilmiş (veya planlanmış/istek) ama bu bölge henüz ziyaret edilmemiş!
+  const countryStatus = ns(
+    worldVisits[countryCode]?.status ||
+    (Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'visited') ? 'visited' :
+     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'planned') ? 'planned' :
+     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'wishlist') ? 'wishlist' : 'unvisited')
+  );
+
+  if (countryStatus !== 'unvisited') {
+    const tintColor = getStatusColor(countryStatus);
+    const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
+    return {
+      fillColor: blended,
+      fillOpacity: hasSubregions ? 0 : 0.95,
+      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+      weight: 1.0,
+      opacity: hasSubregions ? 0.3 : 0.85,
+      interactive: isInteractive
+    };
+  }
+
+  // 2. Durum: Ülke de ziyaret edilmemiş (saf harita zemin rengi)
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: hasSubregions ? 0 : 0.95,
@@ -1770,12 +1907,13 @@ function regionStyle(rawName, countryCode) {
 }
 
 function provinceStyle(provinceId) {
-  const { turkeyVisits } = getStorageData();
+  const { turkeyVisits, worldVisits } = getStorageData();
   const status = ns(turkeyVisits[provinceId]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
 
+  // 1. Durum: İl bizzat ziyaret edilmiş / planlanmış / istek listesinde
   if (status !== 'unvisited') {
     return {
       fillColor: cfg.color,
@@ -1786,7 +1924,27 @@ function provinceStyle(provinceId) {
     };
   }
 
-  // Pure unvisited land color: strong contrast with visited provinces!
+  // 3. Durum: Türkiye ziyaret edilmiş ama bu il henüz ziyaret edilmemiş!
+  const trStatus = ns(
+    worldVisits['TR']?.status ||
+    (Object.values(turkeyVisits).some(v => v.status === 'visited') ? 'visited' :
+     Object.values(turkeyVisits).some(v => v.status === 'planned') ? 'planned' :
+     Object.values(turkeyVisits).some(v => v.status === 'wishlist') ? 'wishlist' : 'unvisited')
+  );
+
+  if (trStatus !== 'unvisited') {
+    const tintColor = getStatusColor(trStatus);
+    const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
+    return {
+      fillColor: blended,
+      fillOpacity: 0.95,
+      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+      weight: 1.0,
+      opacity: 0.85
+    };
+  }
+
+  // 2. Durum: Türkiye de ziyaret edilmemiş (saf harita zemin rengi)
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: 0.95,
@@ -1804,6 +1962,7 @@ function subregionStyle(name, code) {
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
   
+  // 1. Durum: Alt şehir bizzat ziyaret edilmiş / planlanmış / istek
   if (status !== 'unvisited') {
     return {
       fillColor: cfg.color,
@@ -1814,7 +1973,27 @@ function subregionStyle(name, code) {
     };
   }
 
-  // Ziyaret edilmemiş şehirler: temiz koyu tema rengi
+  // 3. Durum: Ülke ziyaret edilmiş ama bu alt şehir henüz ziyaret edilmemiş!
+  const countryStatus = ns(
+    worldVisits[code]?.status ||
+    (Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'visited') ? 'visited' :
+     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'planned') ? 'planned' :
+     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'wishlist') ? 'wishlist' : 'unvisited')
+  );
+
+  if (countryStatus !== 'unvisited') {
+    const tintColor = getStatusColor(countryStatus);
+    const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
+    return {
+      fillColor: blended,
+      fillOpacity: 0.95,
+      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+      weight: 0.9,
+      opacity: 0.85
+    };
+  }
+
+  // 2. Durum: Ziyaret edilmemiş ülke alt şehirleri
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: 0.95,
