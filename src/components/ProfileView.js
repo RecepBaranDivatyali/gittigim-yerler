@@ -13,6 +13,7 @@ import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
+import { POSTER_WORLD_MAP_SVG } from '../data/posterWorldMapSvg.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -581,11 +582,18 @@ export function renderProfileView(container, onBack) {
                       return `
                         <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}" style="cursor:pointer;">
                           <div class="airline-top">
-                            <span class="airline-flag">${airline.flag}</span>
+                            <div class="airline-logo-badge">
+                              <img src="https://images.kiwi.com/airlines/64/${airline.code}.png"
+                                   alt="${escapeHtml(airline.name)}"
+                                   class="airline-logo-img"
+                                   loading="lazy"
+                                   onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" />
+                              <span class="airline-flag-fallback" style="display:none;">${airline.flag}</span>
+                            </div>
                             <span class="airline-code">${airline.code}</span>
                             <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}" aria-label="Seç">${isFlown ? '✓' : ''}</button>
                           </div>
-                          <div class="airline-name">${airline.name}</div>
+                          <div class="airline-name">${escapeHtml(airline.name)}</div>
                         </div>
                       `;
                     }).join('')}
@@ -602,20 +610,26 @@ export function renderProfileView(container, onBack) {
                 const isFlown = !!userAircraft[model.id]?.flown;
                 return `
                   <div class="aircraft-card ${isFlown ? 'active' : ''}" data-id="${model.id}" style="--aircraft-accent:${model.color};">
-                    <div class="aircraft-header">
-                      <span class="aircraft-icon">${model.icon}</span>
+                    <div class="aircraft-photo-wrap">
+                      <img src="${model.image}" alt="${escapeHtml(model.name)}" class="aircraft-photo-img" loading="lazy" />
+                      <div class="aircraft-photo-overlay"></div>
                       <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
                     </div>
-                    <div class="aircraft-model-name">${model.name}</div>
-                    <div class="aircraft-builder">${model.builder} • ${model.type}</div>
-                    <div class="aircraft-desc">${model.desc}</div>
-                    <div class="aircraft-specs-row">
-                      <span>💺 ${model.seats}</span>
-                      <span>🌐 ${model.range}</span>
+                    <div class="aircraft-card-content">
+                      <div class="aircraft-header">
+                        <span class="aircraft-icon">${model.icon}</span>
+                        <div class="aircraft-model-name">${escapeHtml(model.name)}</div>
+                      </div>
+                      <div class="aircraft-builder">${model.builder} • ${model.type}</div>
+                      <div class="aircraft-desc">${model.desc}</div>
+                      <div class="aircraft-specs-row">
+                        <span>💺 ${model.seats}</span>
+                        <span>🌐 ${model.range}</span>
+                      </div>
+                      <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
+                        ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
+                      </button>
                     </div>
-                    <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
-                      ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
-                    </button>
                   </div>
                 `;
               }).join('')}
@@ -700,30 +714,25 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <div class="poster-preview-container">
-          <!-- The Rendered Poster Card (1080x1920 ratio) -->
+          <!-- The Rendered World Map Poster Card -->
           <div id="travel-poster-canvas" class="travel-poster-card" style="--poster-accent:${visitedColor};">
             <div class="poster-noise-bg"></div>
             
             <div class="poster-header">
               <div class="poster-brand">
-                <span class="poster-brand-icon">🌍</span>
+                <span class="poster-brand-icon">🧭</span>
                 <span class="poster-brand-text">GEZGİN</span>
               </div>
+              <div class="poster-subtitle-tag">${currentLang === 'tr' ? 'DÜNYA SEYAHAT HARİTASI' : 'WORLD TRAVEL MAP'}</div>
               <div class="poster-date">${new Date().toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })}</div>
             </div>
 
-            <div class="poster-user-badge">
-              <div class="poster-user-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
-              <div class="poster-user-info">
-                <div class="poster-username">${escapeHtml(profile.username || 'Gezgin')}</div>
-                <div class="poster-user-title">${currentLang === 'tr' ? 'Dünya Gezgini' : 'World Explorer'}</div>
+            <!-- Authentic Centerpiece: Vector World Map -->
+            <div class="poster-map-box">
+              <div class="poster-svg-wrapper">
+                ${POSTER_WORLD_MAP_SVG}
               </div>
-            </div>
-
-            <!-- Stylized Global Silhouette with glowing stats -->
-            <div class="poster-map-graphic">
-              <div class="poster-globe-art">🌐</div>
-              <div class="poster-map-label">${currentLang === 'tr' ? 'KİŞİSEL SEYAHAT HARİTASI' : 'PERSONAL TRAVEL MAP'}</div>
+              <div class="poster-map-latlong">EQUIRECTANGULAR PROJECTION • 1:50M</div>
             </div>
 
             <!-- 4 Aesthetic Key Stat Badges -->
@@ -750,7 +759,7 @@ export function renderProfileView(container, onBack) {
               </div>
             </div>
 
-            <!-- Visited Countries Badges Preview (top 15) -->
+            <!-- Visited Countries Badges Preview (top 16) -->
             ${visitedCodes.length > 0 ? `
               <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'}</div>
               <div class="poster-flags-grid">
@@ -764,8 +773,14 @@ export function renderProfileView(container, onBack) {
             ` : ''}
 
             <div class="poster-footer">
-              <span class="poster-tagline">${currentLang === 'tr' ? 'Gez • Keşfet • Paylaş' : 'Travel • Explore • Share'}</span>
-              <span class="poster-url">gezgin.app</span>
+              <div class="poster-user-sign">
+                <span class="poster-user-sign-avatar">${escapeHtml(profile.avatar || '🧭')}</span>
+                <span class="poster-user-sign-name">@${escapeHtml(profile.username || 'Gezgin')}</span>
+              </div>
+              <div class="poster-footer-brand">
+                <span class="poster-tagline">${currentLang === 'tr' ? 'Gez • Keşfet • Paylaş' : 'Travel • Explore • Share'}</span>
+                <span class="poster-url">gezgin.app</span>
+              </div>
             </div>
           </div>
         </div>
@@ -784,6 +799,17 @@ export function renderProfileView(container, onBack) {
     `;
 
     document.body.appendChild(modal);
+
+    // Highlight visited countries on the poster SVG map
+    const svgEl = modal.querySelector('.poster-world-svg');
+    if (svgEl) {
+      visitedCodes.forEach(cCode => {
+        const paths = svgEl.querySelectorAll(`path[data-code="${cCode}"]`);
+        paths.forEach(p => {
+          p.classList.add('visited');
+        });
+      });
+    }
 
     const closeModal = () => {
       document.removeEventListener('keydown', handleEsc);

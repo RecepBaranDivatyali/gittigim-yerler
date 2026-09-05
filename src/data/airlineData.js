@@ -132,6 +132,7 @@ export const AIRCRAFT_MODELS = [
     seats: '525 - 853',
     range: '14,800 km',
     color: '#8b5cf6',
+    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&q=80',
     desc: 'Havacılık tarihinin en büyük çift katlı lüks yolcu uçağı.'
   },
   {
@@ -145,6 +146,7 @@ export const AIRCRAFT_MODELS = [
     seats: '416 - 660',
     range: '13,450 km',
     color: '#f59e0b',
+    image: 'https://images.unsplash.com/photo-1520437358207-323b43b50729?auto=format&fit=crop&w=600&q=80',
     desc: 'Havacılık çağını başlatan efsanevi kambur gövdeli dev.'
   },
   {
@@ -158,6 +160,7 @@ export const AIRCRAFT_MODELS = [
     seats: '242 - 330',
     range: '14,140 km',
     color: '#0ea5e9',
+    image: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=600&q=80',
     desc: 'Karbon kompozit gövdesi ve devasa pencereleriyle sessiz konfor ikonu.'
   },
   {
@@ -171,6 +174,7 @@ export const AIRCRAFT_MODELS = [
     seats: '315 - 440',
     range: '16,100 km',
     color: '#3b82f6',
+    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80',
     desc: 'Ultra uzun menzilli, son derece sessiz ve aerodinamik geniş gövde.'
   },
   {
@@ -184,6 +188,7 @@ export const AIRCRAFT_MODELS = [
     seats: '300 - 450',
     range: '15,840 km',
     color: '#6366f1',
+    image: 'https://images.unsplash.com/photo-1517400508447-f8dd518b86db?auto=format&fit=crop&w=600&q=80',
     desc: 'Devasa GE90 motorlarıyla okyanusları aşan çift motorlu dünya devi.'
   },
   {
@@ -197,6 +202,7 @@ export const AIRCRAFT_MODELS = [
     seats: '250 - 300',
     range: '13,400 km',
     color: '#06b6d4',
+    image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80',
     desc: 'Türk Hava Yolları filosunun da bel kemiği olan konforlu kıtalararası uçak.'
   },
   {
@@ -210,6 +216,7 @@ export const AIRCRAFT_MODELS = [
     seats: '150 - 240',
     range: '6,500 km',
     color: '#10b981',
+    image: 'https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?auto=format&fit=crop&w=600&q=80',
     desc: 'Fly-by-wire teknolojisiyle üretilmiş, dünyada en sık binilen dar gövde.'
   },
   {
@@ -223,6 +230,7 @@ export const AIRCRAFT_MODELS = [
     seats: '138 - 230',
     range: '6,570 km',
     color: '#ec4899',
+    image: 'https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=600&q=80',
     desc: '1967 yılından beri 11 binden fazla üretilmiş tüm zamanların rekor sahibi uçağı.'
   },
   {
@@ -236,6 +244,7 @@ export const AIRCRAFT_MODELS = [
     seats: '100 - 160',
     range: '6,297 km',
     color: '#14b8a6',
+    image: 'https://images.unsplash.com/photo-1517999144091-3d9dca6d1e43?auto=format&fit=crop&w=600&q=80',
     desc: 'Geniş koltukları ve büyük pencereleriyle yolcuların en sevdiği bölgesel jet.'
   },
   {
@@ -249,6 +258,7 @@ export const AIRCRAFT_MODELS = [
     seats: '96 - 146',
     range: '5,278 km',
     color: '#f97316',
+    image: 'https://images.unsplash.com/photo-1529074963764-98f45c47344b?auto=format&fit=crop&w=600&q=80',
     desc: 'Orta koltuk olmayan 2-2 ferah oturma düzeniyle bilinen Brezilya üretimi jet.'
   },
   {
@@ -262,6 +272,7 @@ export const AIRCRAFT_MODELS = [
     seats: '68 - 78',
     range: '1,500 km',
     color: '#84cc16',
+    image: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=600&q=80',
     desc: 'Kısa pistler, ada uçuşları ve dağlık havaalanlarının vazgeçilmez pervaneli uçağı.'
   },
   {
@@ -275,6 +286,7 @@ export const AIRCRAFT_MODELS = [
     seats: '100',
     range: '7,222 km',
     color: '#e11d48',
+    image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?auto=format&fit=crop&w=600&q=80',
     desc: 'Atlantik\'i ses hızının iki katıyla (Mach 2.04) 3.5 saatte aşan süpersonik efsane.'
   }
 ];

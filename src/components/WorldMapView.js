@@ -1150,6 +1150,71 @@ function updateCountryLabels() {
   });
 }
 
+const CAPITAL_COORDINATES = {
+  'TR': [39.9334, 32.8597],
+  'HU': [47.4979, 19.0402],
+  'AT': [48.2082, 16.3738],
+  'SK': [48.1486, 17.1077],
+  'CZ': [50.0755, 14.4378],
+  'DE': [52.5200, 13.4050],
+  'FR': [48.8566, 2.3522],
+  'GB': [51.5074, -0.1278],
+  'IT': [41.9028, 12.4964],
+  'ES': [40.4168, -3.7038],
+  'NL': [52.3676, 4.9041],
+  'BE': [50.8503, 4.3517],
+  'GR': [37.9838, 23.7275],
+  'BG': [42.6977, 23.3219],
+  'RO': [44.4268, 26.1025],
+  'RS': [44.7866, 20.4489],
+  'BA': [43.8563, 18.4131],
+  'HR': [45.8150, 15.9819],
+  'ME': [42.4304, 19.2594],
+  'MK': [41.9981, 21.4254],
+  'AL': [41.3275, 19.8187],
+  'XK': [42.6629, 21.1655],
+  'PL': [52.2297, 21.0122],
+  'UA': [50.4501, 30.5234],
+  'RU': [55.7558, 37.6173],
+  'PT': [38.7223, -9.1393],
+  'SE': [59.3293, 18.0686],
+  'NO': [59.9139, 10.7522],
+  'FI': [60.1699, 24.9384],
+  'DK': [55.6761, 12.5683],
+  'IE': [53.3498, -6.2603],
+  'CH': [46.9480, 7.4474],
+  'AZ': [40.4093, 49.8671],
+  'GE': [41.7151, 44.8271],
+  'AM': [40.1792, 44.4991],
+  'EG': [30.0444, 31.2357],
+  'US': [38.9072, -77.0369],
+  'JP': [35.6762, 139.6503],
+  'KR': [37.5665, 126.9780],
+  'CN': [39.9042, 116.4074]
+};
+
+const CAPITAL_KEYWORDS = [
+  'ankara', 'budapest', 'budapeşte', 'wien', 'vienna', 'viyana', 'bratislava', 'bratislavsky',
+  'prague', 'praha', 'prag', 'berlin', 'paris', 'london', 'londra', 'roma', 'rome',
+  'madrid', 'amsterdam', 'brussel', 'bruxelles', 'brussels', 'brüksel', 'athens', 'atina',
+  'sofia', 'sofya', 'bucuresti', 'bucharest', 'bükreş', 'beograd', 'belgrade', 'belgrad',
+  'sarajevo', 'saraybosna', 'zagreb', 'podgorica', 'skopje', 'üsküp', 'tirana', 'tiran',
+  'pristina', 'priştine', 'warsaw', 'warszawa', 'varşova', 'kyiv', 'kiev', 'moscow', 'moskova',
+  'lisbon', 'lisboa', 'lizbon', 'stockholm', 'oslo', 'helsinki', 'copenhagen', 'kopenhag',
+  'dublin', 'bern', 'baku', 'bakü', 'tbilisi', 'tiflis', 'yerevan', 'erivan', 'cairo', 'kahire',
+  'washington', 'tokyo', 'seoul', 'seul', 'beijing', 'pekin'
+];
+
+function isCapitalItem(item) {
+  if (!item) return false;
+  const rawLower = (item.rawName || item.name || '').toLowerCase();
+  const displayLower = (item.name || '').toLowerCase();
+  if (rawLower.includes('başkent') || displayLower.includes('başkent') || rawLower.includes('capital') || displayLower.includes('capital')) {
+    return true;
+  }
+  return CAPITAL_KEYWORDS.some(k => rawLower.includes(k) || displayLower.includes(k));
+}
+
 function updateProvinceLabels() {
   if (!provinceLabelsLayer || !map) return;
   provinceLabelsLayer.clearLayers();
@@ -1170,7 +1235,7 @@ function updateProvinceLabels() {
     turkeyLayer.eachLayer(l => {
       const name = l.feature?.properties?.name;
       const num = l.feature?.properties?.number;
-      if (name) candidates.push({ layer: l, name, countryCode: 'TR', idKey: `TR::${num}` });
+      if (name) candidates.push({ layer: l, name, rawName: name, countryCode: 'TR', idKey: `TR::${num}` });
     });
   }
 
@@ -1181,7 +1246,7 @@ function updateProvinceLabels() {
         const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
         if (raw) {
           const display = getLocalizedName(raw, code);
-          candidates.push({ layer: l, name: display, countryCode: code, idKey: `${code}::${raw}` });
+          candidates.push({ layer: l, name: display, rawName: raw, countryCode: code, idKey: `${code}::${raw}` });
         }
       });
     }
@@ -1195,7 +1260,7 @@ function updateProvinceLabels() {
           const raw = l.feature?.properties?.name;
           if (raw) {
             const display = getLocalizedName(raw, code);
-            candidates.push({ layer: l, name: display, countryCode: code, idKey: `${code}::${raw}` });
+            candidates.push({ layer: l, name: display, rawName: raw, countryCode: code, idKey: `${code}::${raw}` });
           }
         });
       }
@@ -1220,14 +1285,22 @@ function updateProvinceLabels() {
       // Area in screen pixels
       const screenArea = pixelWidth * pixelHeight;
 
-      // Centroid: use tuned visual center if available, otherwise mainland area centroid (polylabel)
-      const offset = getProvinceOffset(item);
-      const visualCenter = offset
-        ? L.latLng(offset)
-        : L.latLng(mainland.cy, mainland.cx);
+      const isCapital = isCapitalItem(item);
+
+      // Centroid: use exact capital coordinates if available, otherwise tuned visual center / mainland centroid
+      let visualCenter;
+      if (isCapital && CAPITAL_COORDINATES[item.countryCode]) {
+        visualCenter = L.latLng(CAPITAL_COORDINATES[item.countryCode]);
+      } else {
+        const offset = getProvinceOffset(item);
+        visualCenter = offset
+          ? L.latLng(offset)
+          : L.latLng(mainland.cy, mainland.cx);
+      }
 
       prepared.push({
         ...item,
+        isCapital,
         center: visualCenter,
         pixelWidth,
         pixelHeight,
@@ -1236,21 +1309,33 @@ function updateProvinceLabels() {
     } catch (e) {}
   });
 
-  // Sort descending by screenArea so larger provinces get priority
-  prepared.sort((a, b) => b.screenArea - a.screenArea);
+  // Sort: Capitals first per user request ("başkentlerin adları da muhakkak yazsın"), then descending by screenArea
+  prepared.sort((a, b) => {
+    if (a.isCapital && !b.isCapital) return -1;
+    if (!a.isCapital && b.isCapital) return 1;
+    return b.screenArea - a.screenArea;
+  });
 
   prepared.forEach(item => {
     // 1. Strict minimum pixel dimensions: region must be large enough on screen
-    if (item.pixelWidth < 50 || item.pixelHeight < 22) return;
+    // Capitals are exempt from strict minimum dimensions so they are never suppressed
+    if (!item.isCapital && (item.pixelWidth < 50 || item.pixelHeight < 22)) return;
 
     // 2. Measure text width
-    const fontSize = 11;
-    const textWidth = measureTextWidth(item.name, fontSize);
+    let displayName = item.name;
+    if (item.isCapital) {
+      displayName = displayName.replace(/\s*\([^)]*başkent[^)]*\)/gi, '').trim();
+    }
+    const fontSize = item.isCapital ? 12 : 11;
+    const textWidth = measureTextWidth(displayName, fontSize);
 
     // 3. User rule: "onlarda da ülkelerdeki aynı kuralı uygulayalım. adı sığanlar gözüksün"
     // Text must fit comfortably within 70% of polygon width and 65% of polygon height
-    if (textWidth > item.pixelWidth * 0.70 || (fontSize + 6) > item.pixelHeight * 0.65) {
-      return;
+    // Capitals are exempt from strict polygon clipping filter
+    if (!item.isCapital) {
+      if (textWidth > item.pixelWidth * 0.70 || (fontSize + 6) > item.pixelHeight * 0.65) {
+        return;
+      }
     }
 
     // 4. Viewport visibility check
@@ -1261,8 +1346,8 @@ function updateProvinceLabels() {
       return;
     }
 
-    // 5. Collision box against ALL already placed labels (countries + larger provinces)
-    const halfW = textWidth / 2 + 4;
+    // 5. Collision box against ALL already placed labels
+    const halfW = textWidth / 2 + (item.isCapital ? 10 : 4);
     const halfH = fontSize / 2 + 3;
     const box = {
       x1: centerPt.x - halfW - 3,
@@ -1275,18 +1360,18 @@ function updateProvinceLabels() {
       box.x1 < p.x2 && box.x2 > p.x1 &&
       box.y1 < p.y2 && box.y2 > p.y1
     ));
-    if (collides) return;
+    if (collides && !item.isCapital) return;
 
     // Register collision box
     activeLabelPlacedBoxes.push(box);
 
     // Create marker
-    const renderWidth = Math.ceil(textWidth) + 16;
-    const renderHeight = fontSize + 6;
+    const renderWidth = Math.ceil(textWidth) + (item.isCapital ? 28 : 16);
+    const renderHeight = fontSize + (item.isCapital ? 10 : 6);
 
     const icon = L.divIcon({
-      className: 'map-province-label',
-      html: `<div class="prov-label-text" style="font-size:${fontSize}px;color:${labelColor};text-shadow:${labelShadow};">${item.name}</div>`,
+      className: `map-province-label ${item.isCapital ? 'is-capital' : ''}`,
+      html: `<div class="prov-label-text ${item.isCapital ? 'capital-label-text' : ''}" style="font-size:${fontSize}px;color:${item.isCapital ? '#fbbf24' : labelColor};text-shadow:${labelShadow};">${item.isCapital ? '⭐ ' : ''}${escapeHtml(displayName)}</div>`,
       iconSize: [renderWidth, renderHeight],
       iconAnchor: [renderWidth / 2, renderHeight / 2]
     });
