@@ -79,8 +79,16 @@ export function renderProfileView(container, onBack) {
 
   function renderProfileTab(contentArea) {
     const currentLang = getLanguage();
-    const profileStr = localStorage.getItem('gv_profile');
-    const profile = profileStr ? JSON.parse(profileStr) : { username: 'Kullanıcı', avatar: '🧭', bio: '' };
+    let profile = { username: 'Kullanıcı', avatar: '🧭', bio: '' };
+    try {
+      const profileStr = localStorage.getItem('gv_profile');
+      if (profileStr) {
+        const parsed = JSON.parse(profileStr);
+        if (parsed && typeof parsed === 'object') profile = parsed;
+      }
+    } catch (e) {
+      console.error('Error parsing profile', e);
+    }
     
     let earnedMedals = [];
     let storageData = { worldVisits: {}, turkeyVisits: {}, worldCities: [] };
@@ -105,9 +113,9 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card">
           <div class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</div>
           <div class="profile-header">
-            <div class="profile-avatar">${profile.avatar}</div>
+            <div class="profile-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
             <div style="flex:1;">
-              <div class="profile-username">${escapeHtml(profile.username)}</div>
+              <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
             <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
@@ -703,8 +711,16 @@ export function renderProfileView(container, onBack) {
     const currentTheme = getTheme();
     const storageData = getStorageData();
     const stats = calculateStats();
-    const profileStr = localStorage.getItem('gv_profile');
-    const profile = profileStr ? JSON.parse(profileStr) : { username: 'Gezgin', avatar: '🧭' };
+    let profile = { username: 'Gezgin', avatar: '🧭' };
+    try {
+      const profileStr = localStorage.getItem('gv_profile');
+      if (profileStr) {
+        const parsed = JSON.parse(profileStr);
+        if (parsed && typeof parsed === 'object') profile = parsed;
+      }
+    } catch (e) {
+      console.error('Profile parse error', e);
+    }
     const earnedMedals = getEarnedAchievements(storageData, stats);
     const visitedColor = getStatusColor('visited');
 
@@ -735,9 +751,9 @@ export function renderProfileView(container, onBack) {
             </div>
 
             <div class="poster-user-badge">
-              <div class="poster-user-avatar">${profile.avatar}</div>
+              <div class="poster-user-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
               <div class="poster-user-info">
-                <div class="poster-username">${profile.username}</div>
+                <div class="poster-username">${escapeHtml(profile.username || 'Gezgin')}</div>
                 <div class="poster-user-title">${currentLang === 'tr' ? 'Dünya Gezgini' : 'World Explorer'}</div>
               </div>
             </div>
@@ -779,7 +795,7 @@ export function renderProfileView(container, onBack) {
                 ${visitedCodes.slice(0, 16).map(cCode => {
                   const c = WORLD_COUNTRIES.find(x => x.code === cCode);
                   const cName = c ? getCountryDisplayName(c) : cCode;
-                  return `<span class="poster-flag-chip"><img src="https://flagcdn.com/w40/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /> ${cName}</span>`;
+                  return `<span class="poster-flag-chip"><img src="https://flagcdn.com/w40/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /> ${escapeHtml(cName)}</span>`;
                 }).join('')}
                 ${visitedCodes.length > 16 ? `<span class="poster-flag-chip more">+${visitedCodes.length - 16} ${currentLang === 'tr' ? 'daha' : 'more'}</span>` : ''}
               </div>
@@ -807,11 +823,19 @@ export function renderProfileView(container, onBack) {
 
     document.body.appendChild(modal);
 
-    modal.querySelector('#poster-close-btn').addEventListener('click', () => {
+    const closeModal = () => {
+      document.removeEventListener('keydown', handleEsc);
       modal.remove();
-    });
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    modal.querySelector('#poster-close-btn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) closeModal();
     });
 
     // Download PNG using html-to-image
@@ -821,12 +845,13 @@ export function renderProfileView(container, onBack) {
       try {
         const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
         const link = document.createElement('a');
-        link.download = `Gezgin-Seyahat-Posteri-${profile.username}.png`;
+        const cleanName = (profile.username || 'Gezgin').replace(/[^a-zA-Z0-9_\-\u00C0-\u017F]/g, '_');
+        link.download = `Gezgin-Seyahat-Posteri-${cleanName}.png`;
         link.href = dataUrl;
         link.click();
       } catch (err) {
         console.error('Poster generation error', err);
-        alert('Poster oluşturulurken bir hata oluştu.');
+        alert(currentLang === 'tr' ? 'Poster oluşturulurken bir hata oluştu.' : 'Error generating poster.');
       }
     });
 
@@ -838,13 +863,24 @@ export function renderProfileView(container, onBack) {
         const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'gezgin-posteri.png', { type: 'image/png' });
-        await navigator.share({
-          title: `${profile.username} - Gezgin Seyahat Haritası`,
-          text: `Gezdiğim yerleri incele! 🌍`,
-          files: [file]
-        });
+        if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+          // Fallback to text/url sharing
+          await navigator.share({
+            title: `${profile.username} - Gezgin Seyahat Haritası`,
+            text: `Gezdiğim yerleri incele! 🌍`,
+            url: window.location.href
+          });
+        } else {
+          await navigator.share({
+            title: `${profile.username} - Gezgin Seyahat Haritası`,
+            text: `Gezdiğim yerleri incele! 🌍`,
+            files: [file]
+          });
+        }
       } catch (err) {
-        console.error('Share error', err);
+        if (err.name !== 'AbortError') {
+          console.error('Share error', err);
+        }
       }
     });
   }
@@ -857,17 +893,17 @@ export function renderProfileView(container, onBack) {
       <div class="compare-view">
         <!-- Saved Friends Bar -->
         ${savedFriends.length > 0 ? `
-          <div class="saved-friends-panel">
+          <div class="saved-friends-panel" id="saved-friends-panel">
             <div class="saved-friends-header">
               <span>${t('savedFriends')}</span>
               <span class="saved-friends-count">(${savedFriends.length})</span>
             </div>
             <div class="saved-friends-chips-row">
               ${savedFriends.map(f => `
-                <div class="saved-friend-chip" data-id="${f.id}">
-                  <span class="sf-avatar">${f.avatar}</span>
-                  <span class="sf-name">${f.username}</span>
-                  <button type="button" class="sf-del-btn" data-id="${f.id}" title="Sil">&times;</button>
+                <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}">
+                  <span class="sf-avatar">${escapeHtml(f.avatar || '🌍')}</span>
+                  <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
+                  <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="Sil">&times;</button>
                 </div>
               `).join('')}
             </div>
@@ -893,8 +929,16 @@ export function renderProfileView(container, onBack) {
     `;
 
     // Render my profile in compare
-    const myProfileStr = localStorage.getItem('gv_profile');
-    const myProfile = myProfileStr ? JSON.parse(myProfileStr) : { username: 'Sen', avatar: '🧭' };
+    let myProfile = { username: 'Sen', avatar: '🧭', bio: '' };
+    try {
+      const myProfileStr = localStorage.getItem('gv_profile');
+      if (myProfileStr) {
+        const parsed = JSON.parse(myProfileStr);
+        if (parsed && typeof parsed === 'object') myProfile = parsed;
+      }
+    } catch (e) {
+      console.error('My profile parse error', e);
+    }
     const myStorage = getStorageData();
     const myStats = calculateStats();
     const myMedals = getEarnedAchievements(myStorage, myStats);
@@ -903,10 +947,10 @@ export function renderProfileView(container, onBack) {
       <div class="profile-card">
         <div class="profile-card-label" style="background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.3);color:#3b82f6;">${currentLang === 'tr' ? 'SENİN PROFİLİN' : 'YOUR PROFILE'}</div>
         <div class="profile-header">
-          <div class="profile-avatar">${myProfile.avatar}</div>
+          <div class="profile-avatar">${escapeHtml(myProfile.avatar || '🧭')}</div>
           <div>
-            <div class="profile-username">${myProfile.username}</div>
-            <div class="profile-bio">${myProfile.bio || ''}</div>
+            <div class="profile-username">${escapeHtml(myProfile.username || 'Sen')}</div>
+            <div class="profile-bio">${escapeHtml(myProfile.bio || '')}</div>
           </div>
         </div>
         <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
@@ -920,10 +964,21 @@ export function renderProfileView(container, onBack) {
 
     // Function to load and render decoded friend data
     function applyFriendComparison(otherProfile, otherWorldVisits, otherTurkeyVisits, otherCities, rawCode = '') {
-      const otherCountriesCount = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited').length;
-      const otherTurkeyCount = Object.keys(otherTurkeyVisits).filter(k => otherTurkeyVisits[k]?.status === 'visited').length;
-      const otherTotalCountries = otherCountriesCount + (otherTurkeyCount > 0 && !otherWorldVisits['TR'] ? 1 : 0);
-      const otherCitiesCount = otherCities.length + Object.keys(otherWorldVisits).filter(k => k.includes('::') && otherWorldVisits[k]?.status === 'visited').length + otherTurkeyCount;
+      const safeProfile = otherProfile || { username: 'Arkadaş', avatar: '✈️', bio: '' };
+      const safeWorldVisits = (otherWorldVisits && typeof otherWorldVisits === 'object') ? otherWorldVisits : {};
+      const safeTurkeyVisits = (otherTurkeyVisits && typeof otherTurkeyVisits === 'object') ? otherTurkeyVisits : {};
+      const safeCities = Array.isArray(otherCities) ? otherCities : [];
+
+      const otherCountriesCount = Object.keys(safeWorldVisits).filter(k => !k.includes('::') && safeWorldVisits[k]?.status === 'visited').length;
+      const otherTurkeyCount = Object.keys(safeTurkeyVisits).filter(k => safeTurkeyVisits[k]?.status === 'visited').length;
+      const otherTotalCountries = otherCountriesCount + (otherTurkeyCount > 0 && !safeWorldVisits['TR'] ? 1 : 0);
+      const otherCitiesCount = safeCities.length + Object.keys(safeWorldVisits).filter(k => k.includes('::') && safeWorldVisits[k]?.status === 'visited').length + otherTurkeyCount;
+
+      const currentFriends = getSavedFriends();
+      const isAlreadySaved = currentFriends.some(f => 
+        (f.username && safeProfile.username && f.username.toLowerCase() === safeProfile.username.toLowerCase()) || 
+        (rawCode && f.code === rawCode)
+      );
 
       document.getElementById('compare-input-area').style.display = 'none';
       const otherCard = document.getElementById('compare-other-card');
@@ -932,40 +987,42 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card">
           <div class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</div>
           <div class="profile-header">
-            <div class="profile-avatar">${otherProfile.avatar}</div>
+            <div class="profile-avatar">${escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div style="flex:1;">
-              <div class="profile-username">${escapeHtml(otherProfile.username)}</div>
-              <div class="profile-bio">${escapeHtml(otherProfile.bio || '')}</div>
+              <div class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</div>
+              <div class="profile-bio">${escapeHtml(safeProfile.bio || '')}</div>
             </div>
-            ${rawCode ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
+            ${rawCode && !isAlreadySaved ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
           </div>
           <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTurkeyCount}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6;">${otherCitiesCount}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:#10b981;">${Object.keys(otherWorldVisits || {}).length}</span><span class="pstat-lbl">${currentLang === 'tr' ? 'Kayıt' : 'Marks'}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#10b981;">${Object.keys(safeWorldVisits).length}</span><span class="pstat-lbl">${currentLang === 'tr' ? 'Kayıt' : 'Marks'}</span></div>
           </div>
         </div>
       `;
 
       // Save friend button handler
       document.getElementById('btn-save-this-friend')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
         saveFriend({
-          username: otherProfile.username,
-          avatar: otherProfile.avatar,
-          bio: otherProfile.bio,
+          username: safeProfile.username,
+          avatar: safeProfile.avatar,
+          bio: safeProfile.bio,
           code: rawCode,
-          data: { profile: otherProfile, worldVisits: otherWorldVisits, turkeyVisits: otherTurkeyVisits, worldCities: otherCities }
+          data: { profile: safeProfile, worldVisits: safeWorldVisits, turkeyVisits: safeTurkeyVisits, worldCities: safeCities }
         });
-        e.target.textContent = '✓ ' + t('friendSaved');
-        setTimeout(() => renderCompareTab(contentArea), 1200);
+        btn.textContent = '✓ ' + t('friendSaved');
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
       });
 
       // ── Calculate Country Comparison ──
-      const myCountryCodes = Object.keys(myStorage.worldVisits).filter(k => !k.includes('::') && myStorage.worldVisits[k]?.status === 'visited');
+      const myCountryCodes = Object.keys(myStorage.worldVisits || {}).filter(k => !k.includes('::') && myStorage.worldVisits[k]?.status === 'visited');
       if (myStats.turkeyCount > 0 && !myCountryCodes.includes('TR')) myCountryCodes.push('TR');
 
-      const otherCountryCodes = Object.keys(otherWorldVisits).filter(k => !k.includes('::') && otherWorldVisits[k]?.status === 'visited');
+      const otherCountryCodes = Object.keys(safeWorldVisits).filter(k => !k.includes('::') && safeWorldVisits[k]?.status === 'visited');
       if (otherTurkeyCount > 0 && !otherCountryCodes.includes('TR')) otherCountryCodes.push('TR');
 
       const commonCountries = myCountryCodes.filter(c => otherCountryCodes.includes(c));
@@ -979,14 +1036,14 @@ export function renderProfileView(container, onBack) {
 
       // ── Calculate Turkey Provinces Comparison ──
       const myProvIds = Object.keys(myStorage.turkeyVisits || {}).filter(pid => myStorage.turkeyVisits[pid]?.status === 'visited');
-      const otherProvIds = Object.keys(otherTurkeyVisits || {}).filter(pid => otherTurkeyVisits[pid]?.status === 'visited');
+      const otherProvIds = Object.keys(safeTurkeyVisits).filter(pid => safeTurkeyVisits[pid]?.status === 'visited');
 
       const commonProvs = myProvIds.filter(p => otherProvIds.includes(p));
       const onlyMyProvs = myProvIds.filter(p => !otherProvIds.includes(p));
       const onlyOtherProvs = otherProvIds.filter(p => !myProvIds.includes(p));
 
       const getPName = (pid) => {
-        const p = TURKEY_PROVINCES.find(x => x.id === pid);
+        const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
         return p ? p.name : `İl ${pid}`;
       };
 
@@ -1007,21 +1064,21 @@ export function renderProfileView(container, onBack) {
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'İkinizin de Gittiği Ortak Ülkeler' : 'Common Countries'} (${commonCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${commonCountries.length > 0 ? commonCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries.')}
+                  ${commonCountries.length > 0 ? commonCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gittiğin Ülkeler' : 'Only You Visited'} (${onlyMyCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
+                  ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gittiği Ülkeler` : `Only ${otherProfile.username}`} (${onlyOtherCountries.length})</div>
+                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gittiği Ülkeler` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${getCName(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
+                  ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
                 </div>
               </div>
             </div>
@@ -1033,21 +1090,21 @@ export function renderProfileView(container, onBack) {
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'Ortak Gezilen İller' : 'Common Provinces'} (${commonProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${commonProvs.length > 0 ? commonProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak il bulunamadı.' : 'No common provinces.')}
+                  ${commonProvs.length > 0 ? commonProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Ortak il bulunamadı.' : 'No common provinces.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gezdiğin İller' : 'Only You Visited'} (${onlyMyProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${onlyMyProvs.length > 0 ? onlyMyProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
+                  ${onlyMyProvs.length > 0 ? onlyMyProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
                 </div>
               </div>
 
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${otherProfile.username}'in Gezdiği İller` : `Only ${otherProfile.username}`} (${onlyOtherProvs.length})</div>
+                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gezdiği İller` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
-                  ${onlyOtherProvs.length > 0 ? onlyOtherProvs.map(pid => `• ${getPName(pid)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
+                  ${onlyOtherProvs.length > 0 ? onlyOtherProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
                 </div>
               </div>
             </div>
@@ -1063,23 +1120,23 @@ export function renderProfileView(container, onBack) {
                   ${(() => {
                     const reviews = [];
                     Object.entries(myStorage.worldVisits || {}).forEach(([k, v]) => {
-                      if (v.rating || v.notes) {
+                      if (v && (v.rating || v.notes)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: v.rating, notes: v.notes });
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: v.notes });
                       }
                     });
                     Object.entries(myStorage.turkeyVisits || {}).forEach(([pid, v]) => {
-                      if (v.rating || v.notes) {
-                        const p = TURKEY_PROVINCES.find(x => x.id === pid);
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: v.rating, notes: v.notes });
+                      if (v && (v.rating || v.notes)) {
+                        const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: v.notes });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz puan veya not girmediniz.' : 'No reviews or notes yet.'}</span>`;
                     return reviews.map(r => `
                       <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
-                          <span>${r.flag} ${r.name}</span>
-                          ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
+                          <span>${escapeHtml(r.flag)} ${escapeHtml(r.name)}</span>
+                          ${r.rating > 0 ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
                         ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
@@ -1090,28 +1147,28 @@ export function renderProfileView(container, onBack) {
 
               <!-- Friend's Reviews -->
               <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
-                <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${escapeHtml(otherProfile.username)} Yorumları & Puanları` : `${escapeHtml(otherProfile.username)} Reviews`}</div>
+                <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${escapeHtml(safeProfile.username)} Yorumları & Puanları` : `${escapeHtml(safeProfile.username)} Reviews`}</div>
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
                   ${(() => {
                     const reviews = [];
-                    Object.entries(otherWorldVisits || {}).forEach(([k, v]) => {
+                    Object.entries(safeWorldVisits).forEach(([k, v]) => {
                       if (v && (v.rating || v.notes)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: v.rating, notes: v.notes });
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: v.notes });
                       }
                     });
-                    Object.entries(otherTurkeyVisits || {}).forEach(([pid, v]) => {
+                    Object.entries(safeTurkeyVisits).forEach(([pid, v]) => {
                       if (v && (v.rating || v.notes)) {
-                        const p = TURKEY_PROVINCES.find(x => x.id === pid);
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: v.rating, notes: v.notes });
+                        const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: v.notes });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının henüz yorumu yok.' : 'Friend has no reviews yet.'}</span>`;
                     return reviews.map(r => `
                       <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
-                          <span>${r.flag} ${r.name}</span>
-                          ${r.rating ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
+                          <span>${escapeHtml(r.flag)} ${escapeHtml(r.name)}</span>
+                          ${r.rating > 0 ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
                         ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
@@ -1170,8 +1227,12 @@ export function renderProfileView(container, onBack) {
 
     // Manual load button
     document.getElementById('compare-load-btn')?.addEventListener('click', () => {
-      const code = document.getElementById('compare-code').value.trim();
-      if (!code) return;
+      const codeInput = document.getElementById('compare-code');
+      const code = codeInput ? codeInput.value.trim() : '';
+      if (!code) {
+        alert(currentLang === 'tr' ? 'Lütfen bir profil paylaşım kodu yapıştırın.' : 'Please paste a profile share code.');
+        return;
+      }
 
       try {
         const decoded = parseSecureShareCode(code);

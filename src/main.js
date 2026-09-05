@@ -25,19 +25,26 @@ function initApp() {
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
 
+  let cleanupMap = null;
+
   function showMap() {
+    if (cleanupMap) { cleanupMap(); cleanupMap = null; }
+    else if (window.__cleanupWorldMap) { window.__cleanupWorldMap(); }
     appContainer.innerHTML = '';
-    renderWorldMapView(appContainer, { onOpenProfile: showProfile });
-    if (typeof onStateChange === 'function') {
-      onStateChange(() => {
-        if (window.__refreshMapStats) window.__refreshMapStats();
-      });
-    }
+    cleanupMap = renderWorldMapView(appContainer, { onOpenProfile: showProfile });
   }
 
   function showProfile() {
+    if (cleanupMap) { cleanupMap(); cleanupMap = null; }
+    else if (window.__cleanupWorldMap) { window.__cleanupWorldMap(); }
     appContainer.innerHTML = '';
     renderProfileView(appContainer, showMap);
+  }
+
+  if (typeof onStateChange === 'function') {
+    onStateChange(() => {
+      if (window.__refreshMapStats) window.__refreshMapStats();
+    });
   }
 
   renderLoginPage(appContainer, (profile) => {

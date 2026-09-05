@@ -1,4 +1,7 @@
 import { t, getLanguage, setLanguage } from '../utils/i18n.js';
+import { sanitizeText } from '../utils/security.js';
+
+const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁'];
 
 export function renderLoginPage(container, onLogin) {
   // Check if already logged in
@@ -7,15 +10,20 @@ export function renderLoginPage(container, onLogin) {
       const profileStr = localStorage.getItem('gv_profile');
       if (profileStr) {
         const profile = JSON.parse(profileStr);
-        onLogin(profile);
-        return;
+        if (profile && profile.username) {
+          onLogin(profile);
+          return;
+        }
       }
     } catch (e) {
       console.error('Profile parse error', e);
+      localStorage.removeItem('gv_logged_in');
     }
   }
 
   let selectedAvatar = '🧭';
+  let savedUsername = '';
+  let savedBio = '';
 
   function render() {
     const currentLang = getLanguage();
@@ -38,30 +46,35 @@ export function renderLoginPage(container, onLogin) {
           <div class="avatar-section">
             <div class="avatar-label">${t('selectAvatar')}</div>
             <div class="avatar-grid" id="login-avatar-grid">
-              ${['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁'].map((emoji) => `
-                <button class="avatar-btn ${emoji === selectedAvatar ? 'selected' : ''}" data-emoji="${emoji}">${emoji}</button>
+              ${ALLOWED_AVATARS.map((emoji) => `
+                <button type="button" class="avatar-btn ${emoji === selectedAvatar ? 'selected' : ''}" data-emoji="${emoji}" aria-label="Avatar ${emoji}" title="Avatar ${emoji}">${emoji}</button>
               `).join('')}
             </div>
           </div>
-          <div class="login-form">
+          <form id="login-inner-form" class="login-form" onsubmit="return false;">
             <div class="input-group">
               <label for="login-username">${t('username')}</label>
-              <input type="text" id="login-username" maxlength="20" placeholder="${t('usernamePlaceholder')}" autocomplete="off">
+              <input type="text" id="login-username" maxlength="20" placeholder="${t('usernamePlaceholder')}" value="${sanitizeText(savedUsername, 20)}" autocomplete="off">
             </div>
             <div class="input-group">
               <label for="login-bio">${t('bio')}</label>
-              <input type="text" id="login-bio" maxlength="60" placeholder="${t('bioPlaceholder')}" autocomplete="off">
+              <input type="text" id="login-bio" maxlength="60" placeholder="${t('bioPlaceholder')}" value="${sanitizeText(savedBio, 60)}" autocomplete="off">
             </div>
-          </div>
-          <button id="login-start-btn" class="login-btn">${t('startMap')}</button>
+            <button type="submit" id="login-start-btn" class="login-btn">${t('startMap')}</button>
+          </form>
           <div class="login-note">${t('notePrivacy')}</div>
         </div>
       </div>
     `;
 
+    const usernameInput = container.querySelector('#login-username');
+    const bioInput = container.querySelector('#login-bio');
+
     const langBtn = container.querySelector('#login-lang-toggle');
     if (langBtn) {
       langBtn.addEventListener('click', () => {
+        if (usernameInput) savedUsername = usernameInput.value;
+        if (bioInput) savedBio = bioInput.value;
         const nextLang = currentLang === 'tr' ? 'en' : 'tr';
         setLanguage(nextLang);
         render();
@@ -73,26 +86,37 @@ export function renderLoginPage(container, onLogin) {
       btn.addEventListener('click', () => {
         avatarBtns.forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        selectedAvatar = btn.getAttribute('data-emoji');
+        const emo = btn.getAttribute('data-emoji');
+        if (ALLOWED_AVATARS.includes(emo)) {
+          selectedAvatar = emo;
+        }
       });
     });
 
-    const startBtn = container.querySelector('#login-start-btn');
-    const usernameInput = container.querySelector('#login-username');
-    const bioInput = container.querySelector('#login-bio');
-
-    startBtn.addEventListener('click', () => {
+    const form = container.querySelector('#login-inner-form');
+    const handleSubmit = () => {
       const defaultName = currentLang === 'tr' ? 'Maceracı' : 'Adventurer';
-      const username = usernameInput.value.trim() || defaultName;
-      const bio = bioInput.value.trim();
+      const rawUser = usernameInput ? usernameInput.value.trim() : '';
+      const rawBio = bioInput ? bioInput.value.trim() : '';
+
+      const username = sanitizeText(rawUser.slice(0, 20), 20) || defaultName;
+      const bio = sanitizeText(rawBio.slice(0, 60), 60);
+      const avatar = ALLOWED_AVATARS.includes(selectedAvatar) ? selectedAvatar : '🧭';
       const createdAt = new Date().toISOString();
 
-      const profile = { username, bio, avatar: selectedAvatar, createdAt };
+      const profile = { username, bio, avatar, createdAt };
       localStorage.setItem('gv_logged_in', '1');
       localStorage.setItem('gv_profile', JSON.stringify(profile));
 
       onLogin(profile);
-    });
+    };
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleSubmit();
+      });
+    }
   }
 
   render();

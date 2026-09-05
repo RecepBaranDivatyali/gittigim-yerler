@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
   WORLD_VISITS: 'gittigim_yerler_world_v2',
   WORLD_CITIES: 'gittigim_yerler_cities_v2',

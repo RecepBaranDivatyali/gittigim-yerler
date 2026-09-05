@@ -1,4 +1,13 @@
+import L from 'leaflet';
 import { WORLD_REGIONS_INDEX } from '../data/universalSearchData.js';
+import { WORLD_COUNTRIES } from '../data/worldData.js';
+import { TURKEY_PROVINCES } from '../data/turkeyData.js';
+import { getLocalizedName } from '../data/regionNames.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit } from '../utils/storage.js';
+import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
+import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
+import { escapeHtml } from '../utils/security.js';
+
 const COUNTRY_LABEL_OFFSETS = {
   'HR': [45.4, 17.5],  // Croatia (Deep inside Slavonia heartland, 100% inside borders)
   'AT': [47.5, 14.5],  // Austria (Lower/Upper Austria central interior)
@@ -89,15 +98,6 @@ function getProvinceOffset(item) {
   return null;
 }
 
-import L from 'leaflet';
-import { WORLD_COUNTRIES } from '../data/worldData.js';
-import { TURKEY_PROVINCES } from '../data/turkeyData.js';
-import { getLocalizedName, getCountryLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, resetTravelData } from '../utils/storage.js';
-import { t, getLanguage, setLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
-import { THEMES, getTheme, setTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
-import { escapeHtml, sanitizeText } from '../utils/security.js';
-
 // ─── Config ───────────────────────────────────────────────────────────────────
 const REGION_ZOOM = 5.2;
 const SUBREGION_ZOOM = 7.5;
@@ -134,8 +134,9 @@ let regionLayers = {};
 let regionCache = {};
 let subregionLayers = {};
 let subregionCache = {};
+const inFlightRegions = {};
+const inFlightSubregions = {};
 let selectedCountryCode = null;
-let selectedRegionName = null;
 let activeStatusPopup = null;
 let provinceLabelsLayer = null;
 let activeLabelPlacedBoxes = [];
@@ -163,6 +164,16 @@ function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
 // ─── Entry point ──────────────────────────────────────────────────────────────
 export function renderWorldMapView(container, options = {}) {
   applyTheme(getTheme());
+
+  let activeDocListeners = [];
+  function addDocListener(type, fn) {
+    document.addEventListener(type, fn);
+    activeDocListeners.push({ type, fn });
+  }
+  function clearDocListeners() {
+    activeDocListeners.forEach(({ type, fn }) => document.removeEventListener(type, fn));
+    activeDocListeners = [];
+  }
 
   let userAvatar = '🧭';
   let userName = t('profile');
@@ -195,7 +206,7 @@ export function renderWorldMapView(container, options = {}) {
         <!-- Floating Profile & Poster Buttons (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
-            <span class="floating-profile-avatar">${userAvatar}</span>
+            <span class="floating-profile-avatar">${escapeHtml(userAvatar)}</span>
             <span class="floating-profile-name">${escapeHtml(userName)}</span>
           </button>
           <button id="btn-open-poster-map" class="floating-poster-btn" aria-label="${t('createPoster')}">
@@ -283,7 +294,10 @@ export function renderWorldMapView(container, options = {}) {
   initMap(container);
 
   // Setup UI button events
+  const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
+
   function attachUIEvents() {
+    clearDocListeners();
 
     // Search Autocomplete Handler
     const searchInput = container.querySelector('#map-search-input');
@@ -299,7 +313,7 @@ export function renderWorldMapView(container, options = {}) {
         name: p.name,
         sub: 'Türkiye (İl)',
         flag: getFlagHtml('TR'),
-        coords: [p.coordinates[1], p.coordinates[0]],
+        coords: [p.lat, p.lng],
         countryCode: 'TR'
       })),
       // 2. World Countries
@@ -314,7 +328,7 @@ export function renderWorldMapView(container, options = {}) {
       })),
       // 3. All World Regions & Subdivisions (3,500+ states, provinces, prefectures, cantons)
       ...WORLD_REGIONS_INDEX.map(r => {
-        const c = WORLD_COUNTRIES.find(x => x.code === r.countryCode);
+        const c = countryByCode.get(r.countryCode);
         const countryName = c ? getCountryDisplayName(c) : r.countryCode;
         return {
           type: 'region',
@@ -410,7 +424,7 @@ export function renderWorldMapView(container, options = {}) {
       }
 
       // Close search results on outside click
-      document.addEventListener('click', (e) => {
+      addDocListener('click', (e) => {
         if (!e.target.closest('#map-search-wrap')) {
           searchResults.style.display = 'none';
         }
@@ -478,7 +492,7 @@ export function renderWorldMapView(container, options = {}) {
         e.stopPropagation();
         mapLegend.classList.toggle('expanded');
       });
-      document.addEventListener('click', (e) => {
+      addDocListener('click', (e) => {
         if (mapLegend && !mapLegend.contains(e.target) && mapLegend.classList.contains('expanded')) {
           mapLegend.classList.remove('expanded');
         }
@@ -529,15 +543,7 @@ export function renderWorldMapView(container, options = {}) {
           });
 
           if (!res.ok) {
-            // Fallback direct dispatch if serverless endpoint is unreachable
-            const typeLabel = activeFeedbackType === 'bug' ? '🐞 Hata / Bug' : (activeFeedbackType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
-            const nowStr = new Date().toLocaleString('tr-TR');
-            const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${userName}\n📱 *İletişim:* ${contact || 'Belirtilmedi'}\n\n📝 *Mesaj:*\n"${msg}"\n\n🕒 *Zaman:* ${nowStr}`;
-            await fetch('https://api.telegram.org/bot8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU/sendMessage', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: 7906240525, text: telegramText, parse_mode: 'Markdown' })
-            });
+            console.warn('Feedback serverless endpoint returned status:', res.status);
           }
         } catch (err) {
           console.warn('Feedback send notification notice:', err);
@@ -569,8 +575,7 @@ export function renderWorldMapView(container, options = {}) {
 
   attachUIEvents();
 
-  onLanguageChange(() => {
-    updateLegendColors();
+  const unsubLang = onLanguageChange(() => {
     container.innerHTML = getHtml();
     if (map) {
       const el = container.querySelector('#leaflet-map');
@@ -581,6 +586,7 @@ export function renderWorldMapView(container, options = {}) {
         }
       }
     }
+    updateLegendColors();
     attachUIEvents();
     refreshAllStyles();
     scheduleLabelUpdate();
@@ -602,7 +608,7 @@ export function renderWorldMapView(container, options = {}) {
     `;
   }
 
-  onThemeChange((newTheme) => {
+  const unsubTheme = onThemeChange((newTheme) => {
     updateLegendColors();
     const cfg = getThemeConfig(newTheme);
     const rootEl = container.querySelector('#map-root');
@@ -621,9 +627,30 @@ export function renderWorldMapView(container, options = {}) {
 
   window.__refreshMapStats = refreshStats;
   refreshStats();
+
+  const cleanup = () => {
+    clearDocListeners();
+    if (typeof unsubLang === 'function') unsubLang();
+    if (typeof unsubTheme === 'function') unsubTheme();
+    if (_labelUpdateTimer) { clearTimeout(_labelUpdateTimer); _labelUpdateTimer = null; }
+    if (map) { map.remove(); map = null; }
+    regionLayers = {};
+    subregionLayers = {};
+    countriesLayer = null;
+    turkeyLayer = null;
+    countryLabelsLayer = null;
+    provinceLabelsLayer = null;
+    activeStatusPopup = null;
+    activeLabelPlacedBoxes = [];
+    invalidateStorageCache();
+  };
+
+  window.__cleanupWorldMap = cleanup;
+  return cleanup;
 }
 
 function refreshAllStyles() {
+  invalidateStorageCache();
   if (countriesLayer) {
     countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
   }
@@ -639,6 +666,14 @@ function initMap(container) {
   const el = container.querySelector('#leaflet-map');
   if (!el) return;
   if (map) { map.remove(); map = null; }
+  regionLayers = {};
+  subregionLayers = {};
+  countriesLayer = null;
+  turkeyLayer = null;
+  countryLabelsLayer = null;
+  provinceLabelsLayer = null;
+  activeStatusPopup = null;
+  activeLabelPlacedBoxes = [];
 
   const themeCfg = getThemeConfig();
 
@@ -652,7 +687,7 @@ function initMap(container) {
     doubleClickZoom: true,
     worldCopyJump: false,
     maxBounds: [[-85, -180], [85, 180]],
-    maxBoundsVisiblity: 1.0,
+    maxBoundsViscosity: 1.0,
   });
 
   map.on('popupclose', () => {
@@ -701,7 +736,6 @@ function initMap(container) {
           }
           L.DomEvent.stopPropagation(e);
           selectedCountryCode = c.code;
-          selectedRegionName = null;
           refreshStats();
           const displayName = getCountryDisplayName(c);
           openStatusPopup(e.latlng, c.code, `${getFlagHtml(c.code)} ${displayName}`, 'country', c.code);
@@ -742,7 +776,6 @@ function initMap(container) {
         layer.on('click', e => {
           L.DomEvent.stopPropagation(e);
           selectedCountryCode = 'TR';
-          selectedRegionName = null;
           refreshStats();
           openStatusPopup(e.latlng, `TR::${prov.id}`, `${getFlagHtml('TR')} ${prov.name}`, 'province', 'TR');
         });
@@ -1283,14 +1316,17 @@ async function onViewChange() {
     }
   }
 
+  const visibleCodes = getVisibleCountries();
+
   // ── World region layers (Level 2) ──────────────────────────────────────────
   if (zoom >= REGION_ZOOM) {
-    const visibleCodes = getVisibleCountries();
-    for (const code of visibleCodes) {
-      if (code !== 'TR') {
-        if (!regionLayers[code]) {
-          await loadRegionData(code);
-        } else if (!map.hasLayer(regionLayers[code])) {
+    const toLoad = visibleCodes.filter(code => code !== 'TR' && !regionLayers[code]);
+    if (toLoad.length > 0) {
+      await Promise.all(toLoad.map(code => loadRegionData(code)));
+    }
+    if (map && map.getZoom() >= REGION_ZOOM) {
+      for (const code of visibleCodes) {
+        if (code !== 'TR' && regionLayers[code] && !map.hasLayer(regionLayers[code])) {
           regionLayers[code].addTo(map);
           if (countriesLayer) {
             countriesLayer.eachLayer(l => {
@@ -1314,12 +1350,13 @@ async function onViewChange() {
 
   // ── World subregion layers (Level 3) ──────────────────────────────────────
   if (zoom >= SUBREGION_ZOOM) {
-    const visibleCodes = getVisibleCountries();
-    for (const code of visibleCodes) {
-      if (code !== 'TR') {
-        if (!subregionLayers[code]) {
-          await loadSubregionData(code);
-        } else if (!map.hasLayer(subregionLayers[code])) {
+    const toLoadSub = visibleCodes.filter(code => code !== 'TR' && !subregionLayers[code]);
+    if (toLoadSub.length > 0) {
+      await Promise.all(toLoadSub.map(code => loadSubregionData(code)));
+    }
+    if (map && map.getZoom() >= SUBREGION_ZOOM) {
+      for (const code of visibleCodes) {
+        if (code !== 'TR' && subregionLayers[code] && !map.hasLayer(subregionLayers[code])) {
           subregionLayers[code].addTo(map);
           refreshRegionLayer(code);
         }
@@ -1364,21 +1401,31 @@ async function loadRegionData(code) {
     attachRegionLayer(code, regionCache[code]);
     return;
   }
-
-  try {
-    const r = await fetch(`/data/regions/${code}.json`);
-    if (!r.ok) { regionCache[code] = null; return; }
-    const data = await r.json();
-    regionCache[code] = data;
-    attachRegionLayer(code, data);
-  } catch {
-    regionCache[code] = null;
+  if (inFlightRegions[code]) {
+    await inFlightRegions[code];
+    return;
   }
+
+  inFlightRegions[code] = (async () => {
+    try {
+      const r = await fetch(`/data/regions/${code}.json`);
+      if (!r.ok) { regionCache[code] = null; return; }
+      const data = await r.json();
+      regionCache[code] = data;
+      attachRegionLayer(code, data);
+    } catch {
+      regionCache[code] = null;
+    } finally {
+      delete inFlightRegions[code];
+    }
+  })();
+
+  await inFlightRegions[code];
 }
 
 function attachRegionLayer(code, data) {
   if (regionLayers[code] || !map) return;
-  const c = WORLD_COUNTRIES.find(x => x.code === code);
+  const c = countryByCode.get(code);
   const flag = c ? c.flag : '';
 
   const sortedFeatures = [...data.features].sort((a, b) => {
@@ -1407,7 +1454,6 @@ function attachRegionLayer(code, data) {
       l.on('click', e => {
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
-        selectedRegionName = raw;
         refreshStats();
         openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'region', code);
       });
@@ -1436,7 +1482,7 @@ function refreshRegionLayer(code) {
     const style = regionStyle(raw, code);
     l.setStyle(style);
     
-    const { worldVisits } = getStorageData();
+    const { worldVisits } = getCachedStorage();
     const status = ns(worldVisits[`${code}::${raw}`]?.status);
     if (status !== 'unvisited' && l.bringToFront) l.bringToFront();
 
@@ -1457,21 +1503,31 @@ async function loadSubregionData(code) {
     attachSubregionLayer(code, subregionCache[code]);
     return;
   }
-
-  try {
-    const r = await fetch(`/data/subregions/${code}.json`);
-    if (!r.ok) { subregionCache[code] = null; return; }
-    const data = await r.json();
-    subregionCache[code] = data;
-    attachSubregionLayer(code, data);
-  } catch {
-    subregionCache[code] = null;
+  if (inFlightSubregions[code]) {
+    await inFlightSubregions[code];
+    return;
   }
+
+  inFlightSubregions[code] = (async () => {
+    try {
+      const r = await fetch(`/data/subregions/${code}.json`);
+      if (!r.ok) { subregionCache[code] = null; return; }
+      const data = await r.json();
+      subregionCache[code] = data;
+      attachSubregionLayer(code, data);
+    } catch {
+      subregionCache[code] = null;
+    } finally {
+      delete inFlightSubregions[code];
+    }
+  })();
+
+  await inFlightSubregions[code];
 }
 
 function attachSubregionLayer(code, data) {
   if (subregionLayers[code] || !map) return;
-  const c = WORLD_COUNTRIES.find(x => x.code === code);
+  const c = countryByCode.get(code);
   const flag = c ? c.flag : '';
 
   const sortedFeatures = [...data.features].sort((a, b) => {
@@ -1549,9 +1605,12 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
 
   const content = document.createElement('div');
   content.className = 'map-status-popup';
+  L.DomEvent.disableClickPropagation(content);
+  L.DomEvent.disableScrollPropagation(content);
+
   content.innerHTML = `
     <div class="map-status-popup-header" style="justify-content:center;margin-bottom:10px;">
-      <div class="map-status-popup-title" style="text-align:center;">${title}</div>
+      <div class="map-status-popup-title" style="text-align:center;">${escapeHtml(title)}</div>
     </div>
 
     <div class="map-status-popup-buttons">
@@ -1589,7 +1648,7 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         `).join('')}
       </div>
       <div class="popup-notes-input-row">
-        <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${currentNotes.replace(/"/g, '&quot;')}" />
+        <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${escapeHtml(currentNotes)}" />
         <button type="button" id="popup-note-save-btn" class="popup-note-save-btn" title="${t('save')}">💾</button>
       </div>
     </div>
@@ -1796,23 +1855,62 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
 }
 
 
-function countryStyle(c) {
-  const { worldVisits, turkeyVisits } = getStorageData();
-  let rawStatus = worldVisits[c?.code]?.status;
+// ─── Style Caching & Country Status Helpers ────────────────────────────────────
+let _cachedStorageData = null;
+let _cachedSubdivisionSummary = null;
 
-  // If Turkey has any visited province, treat Turkey as visited
-  if (c?.code === 'TR' && !rawStatus) {
-    if (Object.values(turkeyVisits).some(v => v.status === 'visited')) rawStatus = 'visited';
+function invalidateStorageCache() {
+  _cachedStorageData = null;
+  _cachedSubdivisionSummary = null;
+}
+
+function getCachedStorage() {
+  if (!_cachedStorageData) {
+    _cachedStorageData = getStorageData();
   }
-  // If country has any visited province/subregion in worldVisits, treat country as visited
-  if (c?.code && !rawStatus) {
-    const prefix = `${c.code}::`;
-    if (Object.entries(worldVisits).some(([k, v]) => k.startsWith(prefix) && v.status === 'visited')) {
-      rawStatus = 'visited';
+  return _cachedStorageData;
+}
+
+function getSubdivisionSummary() {
+  if (_cachedSubdivisionSummary) return _cachedSubdivisionSummary;
+  const { worldVisits, turkeyVisits } = getCachedStorage();
+  const visited = new Set();
+  const planned = new Set();
+  const wishlist = new Set();
+
+  if (turkeyVisits && Object.values(turkeyVisits).some(v => v?.status === 'visited')) visited.add('TR');
+  else if (turkeyVisits && Object.values(turkeyVisits).some(v => v?.status === 'planned')) planned.add('TR');
+  else if (turkeyVisits && Object.values(turkeyVisits).some(v => v?.status === 'wishlist')) wishlist.add('TR');
+
+  if (worldVisits) {
+    for (const [k, v] of Object.entries(worldVisits)) {
+      if (k.includes('::') && v?.status) {
+        const parentCode = k.split('::')[0];
+        if (v.status === 'visited') visited.add(parentCode);
+        else if (v.status === 'planned' && !visited.has(parentCode)) planned.add(parentCode);
+        else if (v.status === 'wishlist' && !visited.has(parentCode) && !planned.has(parentCode)) wishlist.add(parentCode);
+      }
     }
   }
+  _cachedSubdivisionSummary = { visited, planned, wishlist };
+  return _cachedSubdivisionSummary;
+}
 
-  const status = ns(rawStatus);
+function getEffectiveCountryStatus(countryCode) {
+  if (!countryCode) return 'unvisited';
+  const { worldVisits } = getCachedStorage();
+  const direct = worldVisits[countryCode]?.status;
+  if (direct && direct !== 'unvisited') return direct;
+  const summary = getSubdivisionSummary();
+  if (summary.visited.has(countryCode)) return 'visited';
+  if (summary.planned.has(countryCode)) return 'planned';
+  if (summary.wishlist.has(countryCode)) return 'wishlist';
+  return 'unvisited';
+}
+
+function countryStyle(c) {
+  const code = c?.code;
+  const status = ns(getEffectiveCountryStatus(code));
   const zoom = map?.getZoom() || 3;
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
@@ -1822,8 +1920,8 @@ function countryStyle(c) {
   let isInteractive = true;
   let hasRegions = false;
   if (zoomed) {
-    const hasRegionLayer = regionLayers[c?.code] && map.hasLayer(regionLayers[c?.code]);
-    const hasTurkeyLayer = c?.code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer);
+    const hasRegionLayer = regionLayers[code] && map.hasLayer(regionLayers[code]);
+    const hasTurkeyLayer = code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer);
     if (hasRegionLayer || hasTurkeyLayer) {
       isInteractive = false;
       hasRegions = true;
@@ -1848,7 +1946,7 @@ function countryStyle(c) {
 }
 
 function regionStyle(rawName, countryCode) {
-  const { worldVisits } = getStorageData();
+  const { worldVisits } = getCachedStorage();
   const key = `${countryCode}::${rawName}`;
   const status = ns(worldVisits[key]?.status);
   const STATUS = getStatusConfig();
@@ -1875,12 +1973,7 @@ function regionStyle(rawName, countryCode) {
   }
 
   // 3. Durum: Ülke ziyaret edilmiş (veya planlanmış/istek) ama bu bölge henüz ziyaret edilmemiş!
-  const countryStatus = ns(
-    worldVisits[countryCode]?.status ||
-    (Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'visited') ? 'visited' :
-     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'planned') ? 'planned' :
-     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${countryCode}::`) && v.status === 'wishlist') ? 'wishlist' : 'unvisited')
-  );
+  const countryStatus = ns(getEffectiveCountryStatus(countryCode));
 
   if (countryStatus !== 'unvisited') {
     const tintColor = getStatusColor(countryStatus);
@@ -1907,7 +2000,7 @@ function regionStyle(rawName, countryCode) {
 }
 
 function provinceStyle(provinceId) {
-  const { turkeyVisits, worldVisits } = getStorageData();
+  const { turkeyVisits } = getCachedStorage();
   const status = ns(turkeyVisits[provinceId]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
@@ -1925,12 +2018,7 @@ function provinceStyle(provinceId) {
   }
 
   // 3. Durum: Türkiye ziyaret edilmiş ama bu il henüz ziyaret edilmemiş!
-  const trStatus = ns(
-    worldVisits['TR']?.status ||
-    (Object.values(turkeyVisits).some(v => v.status === 'visited') ? 'visited' :
-     Object.values(turkeyVisits).some(v => v.status === 'planned') ? 'planned' :
-     Object.values(turkeyVisits).some(v => v.status === 'wishlist') ? 'wishlist' : 'unvisited')
-  );
+  const trStatus = ns(getEffectiveCountryStatus('TR'));
 
   if (trStatus !== 'unvisited') {
     const tintColor = getStatusColor(trStatus);
@@ -1955,7 +2043,7 @@ function provinceStyle(provinceId) {
 }
 
 function subregionStyle(name, code) {
-  const { worldVisits } = getStorageData();
+  const { worldVisits } = getCachedStorage();
   const key = `${code}::${name}`;
   const status = ns(worldVisits[key]?.status);
   const STATUS = getStatusConfig();
@@ -1974,12 +2062,7 @@ function subregionStyle(name, code) {
   }
 
   // 3. Durum: Ülke ziyaret edilmiş ama bu alt şehir henüz ziyaret edilmemiş!
-  const countryStatus = ns(
-    worldVisits[code]?.status ||
-    (Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'visited') ? 'visited' :
-     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'planned') ? 'planned' :
-     Object.entries(worldVisits).some(([k, v]) => k.startsWith(`${code}::`) && v.status === 'wishlist') ? 'wishlist' : 'unvisited')
-  );
+  const countryStatus = ns(getEffectiveCountryStatus(code));
 
   if (countryStatus !== 'unvisited') {
     const tintColor = getStatusColor(countryStatus);

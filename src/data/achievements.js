@@ -1,4 +1,6 @@
 // achievements.js - Seyahat Başarımları ve Madalyalar
+import { STORAGE_KEYS } from '../utils/storage.js';
+
 export const ACHIEVEMENT_CATEGORIES = {
   world: { label: 'Dünya Gezgini', color: '#3b82f6' },
   continent: { label: 'Kıta Kâşifi', color: '#8b5cf6' },
@@ -130,9 +132,9 @@ export function computeAchievementStats(storageData, baseStats) {
   let userAirlines = {};
   let userAircraft = {};
   try {
-    const alRaw = localStorage.getItem('gittigim_yerler_airlines_v1');
+    const alRaw = localStorage.getItem(STORAGE_KEYS.USER_AIRLINES);
     if (alRaw) userAirlines = JSON.parse(alRaw);
-    const acRaw = localStorage.getItem('gittigim_yerler_aircraft_v1');
+    const acRaw = localStorage.getItem(STORAGE_KEYS.USER_AIRCRAFT);
     if (acRaw) userAircraft = JSON.parse(acRaw);
   } catch {}
 

@@ -189,7 +189,7 @@ body {
 
 .portal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
   gap: 2rem;
   margin-bottom: 3rem;
 }
@@ -2832,7 +2832,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: absolute;
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
   left: max(16px, env(safe-area-inset-left, 16px));
-  z-index: 1000;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -2873,7 +2873,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: absolute;
   top: max(16px, env(safe-area-inset-top, 16px));
   left: max(16px, env(safe-area-inset-left, 16px));
-  z-index: 1000;
+  z-index: 2100;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -2912,7 +2912,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: absolute;
   top: max(16px, env(safe-area-inset-top, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
-  z-index: 1000;
+  z-index: 2200;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: calc(16px * var(--ui-font-scale, 1.05));
@@ -2948,7 +2948,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: absolute;
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
   right: max(16px, env(safe-area-inset-right, 16px));
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .floating-feedback-btn {
@@ -2979,7 +2979,7 @@ body[data-theme="light"] .map-status-btn.active {
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  z-index: 2150;
   width: min(340px, calc(100vw - 120px));
 }
 .map-search-input-box {
@@ -3039,7 +3039,7 @@ body[data-theme="light"] .map-status-btn.active {
   display: flex;
   flex-direction: column;
   padding: 6px;
-  z-index: 1001;
+  z-index: 2600;
   animation: fadeIn 0.2s ease;
 }
 .search-item {
@@ -4045,6 +4045,13 @@ body[data-theme="light"] .map-status-btn.active {
   gap: 16px;
 }
 
+/* ── Prevent Top Bar Collision on Tablets (<= 960px) ── */
+@media (max-width: 960px) {
+  .floating-search-wrap {
+    top: max(50px, calc(env(safe-area-inset-top, 0px) + 48px));
+  }
+}
+
 /* ── Tablet & Mobile (<= 768px) ── */
 @media (max-width: 768px) {
   /* Floating Top Row: Profile + Poster button */
@@ -4158,7 +4165,7 @@ body[data-theme="light"] .map-status-btn.active {
   .map-search-results {
     max-height: 220px;
     -webkit-overflow-scrolling: touch;
-    z-index: 2001;
+    z-index: 2600;
   }
   .search-item {
     min-height: 40px;
