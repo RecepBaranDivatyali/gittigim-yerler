@@ -8,8 +8,10 @@ import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../util
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
 
+const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
+
 const COUNTRY_LABEL_OFFSETS = {
-  'HR': [45.4, 17.5],  // Croatia (Deep inside Slavonia heartland, 100% inside borders)
+  'HR': [45.6, 16.0],  // Croatia (Central mainland area near Zagreb/Karlovac, safely inside borders)
   'AT': [47.5, 14.5],  // Austria (Lower/Upper Austria central interior)
   'BA': [44.1, 17.8],  // Bosnia & Herzegovina
   'SI': [46.1, 14.8],  // Slovenia
@@ -294,8 +296,6 @@ export function renderWorldMapView(container, options = {}) {
   initMap(container);
 
   // Setup UI button events
-  const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
-
   function attachUIEvents() {
     clearDocListeners();
 
@@ -715,8 +715,11 @@ function initMap(container) {
 
   el.style.backgroundColor = themeCfg.oceanBg;
 
+  const baseUrl = import.meta.env.BASE_URL || './';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+
   // Load World Countries
-  fetch('/data/world-countries.json').then(r => {
+  fetch(`${cleanBase}data/world-countries.json`).then(r => {
     if (!r.ok) throw new Error('Network ' + r.status);
     return r.json();
   }).then(data => {
@@ -738,7 +741,7 @@ function initMap(container) {
           selectedCountryCode = c.code;
           refreshStats();
           const displayName = getCountryDisplayName(c);
-          openStatusPopup(e.latlng, c.code, `${getFlagHtml(c.code)} ${displayName}`, 'country', c.code);
+          openStatusPopup(e.latlng, c.code, displayName, 'country', c.code);
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
@@ -758,7 +761,7 @@ function initMap(container) {
   });
 
   // Load Turkey Provinces
-  fetch('/data/turkey-provinces.json').then(r => {
+  fetch(`${cleanBase}data/turkey-provinces.json`).then(r => {
     if (!r.ok) throw new Error('Network ' + r.status);
     return r.json();
   }).then(data => {
@@ -777,7 +780,7 @@ function initMap(container) {
           L.DomEvent.stopPropagation(e);
           selectedCountryCode = 'TR';
           refreshStats();
-          openStatusPopup(e.latlng, `TR::${prov.id}`, `${getFlagHtml('TR')} ${prov.name}`, 'province', 'TR');
+          openStatusPopup(e.latlng, `TR::${prov.id}`, prov.name, 'province', 'TR');
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
@@ -1091,13 +1094,13 @@ function updateCountryLabels() {
         return;
       }
 
-      // Measure actual rendered text width
+      // Measure actual rendered text width with letter spacing consideration
       const actualTextWidth = measureTextWidth(countryName, fontSize);
-      const letterSpacingExtra = textLen * fontSize * 0.12;
+      const letterSpacingExtra = textLen * fontSize * 0.16;
       const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-      // Strict boundary enforcement: text must fit comfortably within 68% of country width & 55% of height
-      if (totalTextWidth > pixelWidth * 0.68 || (fontSize + 6) > pixelHeight * 0.55) {
+      // Strict boundary enforcement: text must fit comfortably within 72% of country width & 60% of height
+      if (totalTextWidth > pixelWidth * 0.72 || (fontSize + 6) > pixelHeight * 0.60) {
         return;
       }
 
@@ -1106,7 +1109,7 @@ function updateCountryLabels() {
       const centerPt = map.latLngToContainerPoint(visualCenter);
 
       // Generous buffer (500px outside screen) so half-visible countries have their labels ready
-      const halfW = totalTextWidth / 2 + 5;
+      const halfW = totalTextWidth / 2 + 8;
       const halfH = fontSize / 2 + 4;
       const vpBuffer = 500;
       if (centerPt.x < -vpBuffer || centerPt.x > mapSize.x + vpBuffer ||
@@ -1131,13 +1134,13 @@ function updateCountryLabels() {
 
       activeLabelPlacedBoxes.push(box);
 
-      // Render label centered at visual centroid with active theme styling
-      const renderWidth = Math.ceil(totalTextWidth) + 4;
-      const renderHeight = fontSize + 4;
+      // Render label centered at visual centroid with generous buffer so letters are never clipped
+      const renderWidth = Math.ceil(totalTextWidth) + 24;
+      const renderHeight = fontSize + 8;
 
       const icon = L.divIcon({
         className: 'country-watermark-wrap',
-        html: `<div class="country-tattoo" style="width:${renderWidth}px;font-size:${fontSize}px;color:${themeCfg.labelColor};text-shadow:${themeCfg.labelShadow};">${countryName}</div>`,
+        html: `<div class="country-tattoo" style="font-size:${fontSize}px;color:${themeCfg.labelColor};text-shadow:${themeCfg.labelShadow};">${countryName}</div>`,
         iconSize: [renderWidth, renderHeight],
         iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
@@ -1278,12 +1281,12 @@ function updateProvinceLabels() {
     activeLabelPlacedBoxes.push(box);
 
     // Create marker
-    const renderWidth = Math.ceil(textWidth) + 8;
+    const renderWidth = Math.ceil(textWidth) + 16;
     const renderHeight = fontSize + 6;
 
     const icon = L.divIcon({
       className: 'map-province-label',
-      html: `<div class="prov-label-text" style="width:${renderWidth}px;font-size:${fontSize}px;color:${labelColor};text-shadow:${labelShadow};">${item.name}</div>`,
+      html: `<div class="prov-label-text" style="font-size:${fontSize}px;color:${labelColor};text-shadow:${labelShadow};">${item.name}</div>`,
       iconSize: [renderWidth, renderHeight],
       iconAnchor: [renderWidth / 2, renderHeight / 2]
     });
@@ -1408,12 +1411,15 @@ async function loadRegionData(code) {
 
   inFlightRegions[code] = (async () => {
     try {
-      const r = await fetch(`/data/regions/${code}.json`);
+      const baseUrl = import.meta.env.BASE_URL || './';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+      const r = await fetch(`${cleanBase}data/regions/${code}.json`);
       if (!r.ok) { regionCache[code] = null; return; }
       const data = await r.json();
       regionCache[code] = data;
       attachRegionLayer(code, data);
-    } catch {
+    } catch (err) {
+      console.warn(`[RegionLayer] Failed loading regions for ${code}:`, err);
       regionCache[code] = null;
     } finally {
       delete inFlightRegions[code];
@@ -1455,7 +1461,7 @@ function attachRegionLayer(code, data) {
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'region', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'region', code);
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
@@ -1510,12 +1516,15 @@ async function loadSubregionData(code) {
 
   inFlightSubregions[code] = (async () => {
     try {
-      const r = await fetch(`/data/subregions/${code}.json`);
+      const baseUrl = import.meta.env.BASE_URL || './';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+      const r = await fetch(`${cleanBase}data/subregions/${code}.json`);
       if (!r.ok) { subregionCache[code] = null; return; }
       const data = await r.json();
       subregionCache[code] = data;
       attachSubregionLayer(code, data);
-    } catch {
+    } catch (err) {
+      console.warn(`[SubregionLayer] Failed loading subregions for ${code}:`, err);
       subregionCache[code] = null;
     } finally {
       delete inFlightSubregions[code];
@@ -1556,7 +1565,7 @@ function attachSubregionLayer(code, data) {
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, `${getFlagHtml(code)} ${display}`, 'subregion', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'subregion', code);
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
@@ -1608,9 +1617,14 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
   L.DomEvent.disableClickPropagation(content);
   L.DomEvent.disableScrollPropagation(content);
 
+  const cleanTitle = typeof title === 'string' ? title.replace(/<[^>]*>/g, '').trim() : '';
+  const flagBadgeHtml = getFlagHtml(countryCode);
+
   content.innerHTML = `
     <div class="map-status-popup-header" style="justify-content:center;margin-bottom:10px;">
-      <div class="map-status-popup-title" style="text-align:center;">${escapeHtml(title)}</div>
+      <div class="map-status-popup-title" style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">
+        ${flagBadgeHtml} <span>${escapeHtml(cleanTitle)}</span>
+      </div>
     </div>
 
     <div class="map-status-popup-buttons">

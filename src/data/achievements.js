@@ -109,7 +109,7 @@ export const ACHIEVEMENTS = [
   { id: 'sky_giant', title: 'Gökyüzü Devi', desc: 'A380 veya B747 ile uçuş yap', icon: '🐘', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a380' || id === 'b747') },
   { id: 'modern_fleet', title: 'Yeni Nesil Filo', desc: 'B787 Dreamliner veya A350 ile uçuş yap', icon: '🚀', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'b787' || id === 'a350') },
   { id: 'fleet_collector', title: 'Hangar Koleksiyoneri', desc: 'En az 4 farklı uçak modelini koleksiyonuna ekle', icon: '🛫', category: 'aviation', check: s => (s.flownAircraft || []).length >= 4 },
-  { id: 'frequent_flyer', title: 'Sadık Yolcu', desc: 'Toplam 10 veya daha fazla uçuş kaydet', icon: '🎫', category: 'aviation', check: s => (s.totalFlightCount || 0) >= 10 },
+  { id: 'frequent_flyer', title: 'Sadık Yolcu', desc: '5 veya daha fazla farklı havayolu ile uç', icon: '🎫', category: 'aviation', check: s => (s.flownAirlines || []).length >= 5 },
 
   // ─── ÖZEL & TEMATİK ROTALAR ───────────────────────────────────
   { id: 'planner', title: 'Planlı Gezgin', desc: '5+ yeri "Planlanıyor" olarak işaretle', icon: '📅', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 5 },
@@ -139,7 +139,7 @@ export function computeAchievementStats(storageData, baseStats) {
   } catch {}
 
   const flownAirlines = Object.keys(userAirlines).filter(k => userAirlines[k]?.flown);
-  const totalFlightCount = Object.values(userAirlines).reduce((acc, curr) => acc + ((curr?.flown) ? (curr.count || 1) : 0), 0);
+  const totalFlightCount = flownAirlines.length;
   const flownAircraft = Object.keys(userAircraft).filter(k => userAircraft[k]?.flown);
   
   // Visited country codes (including TR if at least 1 Turkish province is visited)

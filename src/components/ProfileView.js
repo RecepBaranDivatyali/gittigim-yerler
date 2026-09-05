@@ -493,17 +493,18 @@ export function renderProfileView(container, onBack) {
     const userAirlines = getUserAirlines();
     const userAircraft = getUserAircraft();
     
-    // Calculate total flights and airline counts
-    let totalFlightsCount = 0;
+    // Calculate flown airline and aircraft counts
     let flownAirlinesCount = 0;
     Object.values(userAirlines).forEach(a => {
       if (a && a.flown) {
         flownAirlinesCount++;
-        totalFlightsCount += (a.count || 1);
       }
     });
 
     const flownAircraftCount = Object.values(userAircraft).filter(a => a && a.flown).length;
+    const completedAlliancesCount = AIRLINE_ALLIANCES.filter(al => {
+      return al.airlines.length > 0 && al.airlines.every(line => userAirlines[line.id]?.flown);
+    }).length;
 
     contentArea.innerHTML = `
       <div class="profile-main">
@@ -518,16 +519,16 @@ export function renderProfileView(container, onBack) {
           <!-- Top Aviation Stats Grid -->
           <div class="profile-stats" style="grid-template-columns:repeat(3, 1fr);margin-bottom:20px;">
             <div class="pstat">
-              <span class="pstat-num" style="color:#3b82f6;">${totalFlightsCount}</span>
-              <span class="pstat-lbl">${t('totalFlights')}</span>
+              <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount} / ${ALL_AIRLINES.length}</span>
+              <span class="pstat-lbl">${currentLang === 'tr' ? 'Uçulan Havayolu' : 'Flown Airlines'}</span>
             </div>
             <div class="pstat">
-              <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount}</span>
-              <span class="pstat-lbl">${currentLang === 'tr' ? 'Havayolu' : 'Airlines'}</span>
-            </div>
-            <div class="pstat">
-              <span class="pstat-num" style="color:#8b5cf6;">${flownAircraftCount}/${AIRCRAFT_MODELS.length}</span>
+              <span class="pstat-num" style="color:#8b5cf6;">${flownAircraftCount} / ${AIRCRAFT_MODELS.length}</span>
               <span class="pstat-lbl">${currentLang === 'tr' ? 'Uçak Modeli' : 'Aircraft'}</span>
+            </div>
+            <div class="pstat">
+              <span class="pstat-num" style="color:#f59e0b;">${completedAlliancesCount} / ${AIRLINE_ALLIANCES.length}</span>
+              <span class="pstat-lbl">${currentLang === 'tr' ? 'Kazanılan Birlik' : 'Completed Alliances'}</span>
             </div>
           </div>
 
@@ -577,25 +578,14 @@ export function renderProfileView(container, onBack) {
                     ${allianceAirlines.map(airline => {
                       const uData = userAirlines[airline.id] || {};
                       const isFlown = !!uData.flown;
-                      const count = uData.count || 1;
                       return `
-                        <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}">
+                        <div class="airline-card ${isFlown ? 'active' : ''}" data-id="${airline.id}" style="cursor:pointer;">
                           <div class="airline-top">
                             <span class="airline-flag">${airline.flag}</span>
                             <span class="airline-code">${airline.code}</span>
-                            <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}">${isFlown ? '✓' : '+'}</button>
+                            <button type="button" class="airline-check-btn ${isFlown ? 'checked' : ''}" aria-label="Seç">${isFlown ? '✓' : ''}</button>
                           </div>
                           <div class="airline-name">${airline.name}</div>
-                          ${isFlown ? `
-                            <div class="airline-count-row">
-                              <span class="airline-count-label">${currentLang === 'tr' ? 'Uçuş:' : 'Flights:'}</span>
-                              <div class="airline-stepper">
-                                <button type="button" class="stepper-btn minus" data-id="${airline.id}">-</button>
-                                <span class="stepper-val">${count}</span>
-                                <button type="button" class="stepper-btn plus" data-id="${airline.id}">+</button>
-                              </div>
-                            </div>
-                          ` : ''}
                         </div>
                       `;
                     }).join('')}
@@ -646,41 +636,13 @@ export function renderProfileView(container, onBack) {
       renderFlightsTab(contentArea);
     });
 
-    // Airline check button click
-    contentArea.querySelectorAll('.airline-check-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const card = btn.closest('.airline-card');
-        const id = card.dataset.id;
-        toggleUserAirline(id);
-        renderFlightsTab(contentArea);
-      });
-    });
-
+    // Airline card click toggles flown status directly
     contentArea.querySelectorAll('.airline-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.airline-stepper') || e.target.closest('.airline-check-btn')) return;
+      card.addEventListener('click', () => {
         const id = card.dataset.id;
+        if (!id) return;
         toggleUserAirline(id);
         renderFlightsTab(contentArea);
-      });
-    });
-
-    // Stepper buttons
-    contentArea.querySelectorAll('.stepper-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.id;
-        const airlines = getUserAirlines();
-        if (airlines[id]) {
-          if (btn.classList.contains('plus')) {
-            airlines[id].count = (airlines[id].count || 1) + 1;
-          } else if (btn.classList.contains('minus')) {
-            airlines[id].count = Math.max(1, (airlines[id].count || 1) - 1);
-          }
-          saveUserAirlines(airlines);
-          renderFlightsTab(contentArea);
-        }
       });
     });
 
