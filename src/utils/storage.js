@@ -1,5 +1,5 @@
-import { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS } from '../data/airlineData.js';
-export { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS };
+import { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint } from '../data/airlineData.js';
+export { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint };
 import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
@@ -326,7 +326,23 @@ export function saveBucketRanks(ranks) {
 export function getUserAirlines() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRLINES);
-    return raw ? JSON.parse(raw) : {};
+    const data = raw ? JSON.parse(raw) : {};
+    let changed = false;
+    for (const airline of ALL_AIRLINES) {
+      if (airline.code && data[airline.id]) {
+        const siblings = ALL_AIRLINES.filter(a => a.code === airline.code);
+        for (const sib of siblings) {
+          if (!data[sib.id]) {
+            data[sib.id] = { ...data[airline.id] };
+            changed = true;
+          }
+        }
+      }
+    }
+    if (changed) {
+      saveUserAirlines(data);
+    }
+    return data;
   } catch {
     return {};
   }
@@ -343,11 +359,24 @@ export function saveUserAirlines(airlines) {
 
 export function toggleUserAirline(airlineId, flightsCount = 1) {
   const data = getUserAirlines();
-  if (data[airlineId]) {
-    delete data[airlineId];
-  } else {
-    data[airlineId] = { flown: true, count: Math.max(1, flightsCount), date: new Date().toISOString().split('T')[0] };
-  }
+  const currentItem = ALL_AIRLINES.find(a => a.id === airlineId);
+  const targetCode = currentItem?.code;
+
+  // Find all airline IDs that represent the same airline (e.g. 'thy' and 'thy_star' for TK)
+  const matchingIds = targetCode
+    ? ALL_AIRLINES.filter(a => a.code === targetCode).map(a => a.id)
+    : [airlineId];
+
+  const willRemove = !!data[airlineId];
+
+  matchingIds.forEach(id => {
+    if (willRemove) {
+      delete data[id];
+    } else {
+      data[id] = { flown: true, count: Math.max(1, flightsCount), date: new Date().toISOString().split('T')[0] };
+    }
+  });
+
   saveUserAirlines(data);
   return data;
 }

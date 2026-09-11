@@ -2359,6 +2359,9 @@ svg, g, path {
   border: none !important;
   pointer-events: none !important;
   user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .country-tattoo {
@@ -2370,7 +2373,7 @@ svg, g, path {
   text-shadow: 0 0 4px rgba(0, 0, 0, 1), 0 1px 3px rgba(0, 0, 0, 0.95);
   white-space: nowrap;
   overflow: visible;
-  width: max-content !important;
+  width: auto !important;
   pointer-events: none;
   user-select: none;
   display: flex;
@@ -2378,6 +2381,53 @@ svg, g, path {
   justify-content: center;
   text-align: center;
   line-height: 1;
+}
+
+/* ── Map Selective Dim/Blur & Popup Clarity ── */
+#leaflet-map.map-dimmed .leaflet-map-pane > .leaflet-pane:not(.no-blur-pane):not(.leaflet-activeFeature-pane):not(.leaflet-activefeature-pane):not(.leaflet-popup-pane) {
+  filter: blur(2.5px) brightness(0.58);
+  -webkit-filter: blur(2.5px) brightness(0.58);
+  transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#leaflet-map.map-dimmed .no-blur-pane,
+#leaflet-map.map-dimmed .leaflet-activeFeature-pane,
+#leaflet-map.map-dimmed .leaflet-activefeature-pane,
+#leaflet-map.map-dimmed .leaflet-popup-pane,
+#leaflet-map.map-dimmed .leaflet-popup {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+.map-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 650;
+  background: transparent !important;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* ── Active Country / Region Crisp Glow Label (Above Blur) ── */
+.active-country-glow-label {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: #ffffff !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 0, 0, 0.9) !important;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+@keyframes mapBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 
@@ -4028,40 +4078,120 @@ body[data-theme="light"] .map-status-btn.active {
   background: rgba(59, 130, 246, 0.08);
   box-shadow: 0 0 24px var(--aircraft-accent, #3b82f6) 25;
 }
-.aircraft-photo-wrap {
+.aircraft-blueprint-wrap {
   width: 100%;
-  height: 125px;
+  height: 155px;
   position: relative;
   overflow: hidden;
-  background: #0f172a;
+  background: #081120;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.20);
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch;
 }
-.aircraft-photo-img {
+.aircraft-blueprint-art {
+  flex: 0.95;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #081120;
+}
+.aircraft-blueprint-svg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
   display: block;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.aircraft-card:hover .aircraft-photo-img {
-  transform: scale(1.06);
+.aircraft-card:hover .aircraft-blueprint-svg {
+  transform: scale(1.03);
 }
-.aircraft-photo-overlay {
+.aircraft-blueprint-art .aircraft-badge {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.25) 55%, transparent 100%);
-}
-.aircraft-photo-wrap .aircraft-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(15, 23, 42, 0.8);
+  top: 8px;
+  left: 8px;
+  background: rgba(8, 17, 32, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid;
   border-radius: 6px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 3px 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  padding: 2px 7px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+.aircraft-telemetry-hud {
+  flex: 1.25;
+  min-width: 0;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(8, 17, 32, 0.96), rgba(15, 23, 42, 0.94));
+  border-left: 1px solid rgba(56, 189, 248, 0.22);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  z-index: 2;
+}
+.hud-blueprint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.22);
+  gap: 6px;
+}
+.hud-tech-badge,
+.hud-aero-code {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.hud-country-pill {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-grid-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 5px;
+  margin-top: 2px;
+}
+.hud-stat-cell {
+  display: flex;
+  flex-direction: column;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-radius: 6px;
+  padding: 2px 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+.hud-lbl {
+  color: #94a3b8;
+  font-size: 0.58rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-val {
+  color: #f8fafc;
+  font-family: 'Outfit', Consolas, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .aircraft-card-content {
   padding: 14px 16px;
@@ -4129,17 +4259,12 @@ body[data-theme="light"] .map-status-btn.active {
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
-/* ── Capital City Map Label Highlight ── */
+/* ── Capital City Map Label Highlight (Subtle Bolder Distinction) ── */
 .capital-label-text {
   font-weight: 800 !important;
-  color: #fbbf24 !important;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(245,158,11,0.5) !important;
+  color: #ffffff !important;
   letter-spacing: 0.3px;
-  background: rgba(15, 23, 42, 0.6);
-  padding: 2px 7px;
-  border-radius: 6px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 5px rgba(0,0,0,0.85) !important;
   white-space: nowrap;
 }
 

@@ -3,7 +3,7 @@ import {
   getBucketRanks, saveBucketRanks, 
   getUserAirlines, saveUserAirlines, toggleUserAirline,
   getUserAircraft, saveUserAircraft, toggleUserAircraft,
-  AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS,
+  AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint,
   getSavedFriends, saveFriend, deleteFriend 
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
@@ -13,7 +13,6 @@ import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
-import { POSTER_WORLD_MAP_SVG } from '../data/posterWorldMapSvg.js';
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -603,37 +602,100 @@ export function renderProfileView(container, onBack) {
             }).join('')}
           </div>
 
-          <!-- PANE 2: AIRCRAFT FLEET MODELS TRACKER -->
+          <!-- PANE 2: AIRCRAFT FLEET MODELS TRACKER (Categorized Families & Technical Blueprints) -->
           <div id="flight-pane-aircraft" style="display:${flightSubTab === 'aircraft' ? 'block' : 'none'};">
-            <div class="aircraft-grid">
-              ${AIRCRAFT_MODELS.map(model => {
-                const isFlown = !!userAircraft[model.id]?.flown;
-                return `
-                  <div class="aircraft-card ${isFlown ? 'active' : ''}" data-id="${model.id}" style="--aircraft-accent:${model.color};">
-                    <div class="aircraft-photo-wrap">
-                      <img src="${model.image}" alt="${escapeHtml(model.name)}" class="aircraft-photo-img" loading="lazy" />
-                      <div class="aircraft-photo-overlay"></div>
-                      <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
+            ${AIRCRAFT_FAMILIES.map(family => {
+              const familyModels = AIRCRAFT_MODELS.filter(m => m.familyId === family.id);
+              const completedCount = familyModels.filter(m => userAircraft[m.id]?.flown).length;
+              const totalCount = familyModels.length;
+              const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+              const isFull = completedCount === totalCount && totalCount > 0;
+
+              return `
+                <div class="alliance-set-card" style="border-left: 4px solid ${family.color}; margin-bottom: 24px;">
+                  <div class="alliance-set-header">
+                    <div class="alliance-title-wrap">
+                      <span class="alliance-icon">${family.icon}</span>
+                      <div>
+                        <div class="alliance-name">${family.name}</div>
+                        <div class="alliance-sub">${family.desc}</div>
+                      </div>
                     </div>
-                    <div class="aircraft-card-content">
-                      <div class="aircraft-header">
-                        <span class="aircraft-icon">${model.icon}</span>
-                        <div class="aircraft-model-name">${escapeHtml(model.name)}</div>
+                    <div class="alliance-progress-wrap">
+                      <div class="alliance-count-badge" style="color:${family.color};background:${family.color}18;border-color:${family.color}44;">
+                        ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
                       </div>
-                      <div class="aircraft-builder">${model.builder} • ${model.type}</div>
-                      <div class="aircraft-desc">${model.desc}</div>
-                      <div class="aircraft-specs-row">
-                        <span>💺 ${model.seats}</span>
-                        <span>🌐 ${model.range}</span>
-                      </div>
-                      <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
-                        ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
-                      </button>
                     </div>
                   </div>
-                `;
-              }).join('')}
-            </div>
+
+                  <!-- Hot Wheels Style Progress Bar -->
+                  <div class="alliance-progress-bar-bg">
+                    <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${family.color};"></div>
+                  </div>
+
+                  <!-- Grid of Aircraft in this Family with Kroki / Blueprint -->
+                  <div class="aircraft-grid" style="margin-top: 14px;">
+                    ${familyModels.map(model => {
+                      const isFlown = !!userAircraft[model.id]?.flown;
+                      const blueprintSvg = getAircraftBlueprint(model.id);
+                      return `
+                        <div class="aircraft-card ${isFlown ? 'active' : ''}" data-id="${model.id}" style="--aircraft-accent:${model.color};">
+                          <div class="aircraft-blueprint-wrap">
+                            <div class="aircraft-blueprint-art">
+                              ${blueprintSvg}
+                              <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
+                            </div>
+                            <div class="aircraft-telemetry-hud">
+                              <div class="hud-blueprint-header">
+                                <span class="hud-tech-badge">✈️ TEKNİK VERİLER</span>
+                                <span class="hud-country-pill">${model.country || '-'}</span>
+                              </div>
+                              <div class="hud-grid-compact">
+                                <div class="hud-stat-cell" title="${model.id === 'a380' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : (model.seatLayout || '-')}">
+                                  <span class="hud-lbl">💺 Düzen</span>
+                                  <span class="hud-val" style="${model.id === 'a380' ? 'font-size:0.62rem;line-height:1.2;color:#f8fafc;' : ''}">${model.id === 'a380' ? 'Alt 3-4-3<br>Üst 2-4-2' : (model.seatLayout || '-')}</span>
+                                </div>
+                                <div class="hud-stat-cell">
+                                  <span class="hud-lbl">👥 Koltuk</span>
+                                  <span class="hud-val">${model.seats}</span>
+                                </div>
+                                <div class="hud-stat-cell">
+                                  <span class="hud-lbl">📅 İlk Uçuş</span>
+                                  <span class="hud-val">${model.firstFlight || '-'}</span>
+                                </div>
+                                <div class="hud-stat-cell">
+                                  <span class="hud-lbl">🛫 Menzil</span>
+                                  <span class="hud-val">${model.range}</span>
+                                </div>
+                                <div class="hud-stat-cell">
+                                  <span class="hud-lbl">⚡ Hız</span>
+                                  <span class="hud-val">${model.speed ? model.speed.split(' ')[0] : '-'}</span>
+                                </div>
+                                <div class="hud-stat-cell">
+                                  <span class="hud-lbl">📐 Kanat</span>
+                                  <span class="hud-val">${model.wingspan || '-'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="aircraft-card-content">
+                            <div class="aircraft-header">
+                              <span class="aircraft-icon">${model.icon}</span>
+                              <div class="aircraft-model-name">${escapeHtml(model.name)}</div>
+                            </div>
+                            <div class="aircraft-builder">${model.builder} • ${model.type}</div>
+                            <div class="aircraft-desc">${model.desc}</div>
+                            <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
+                              ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
+                            </button>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
       </div>
@@ -682,7 +744,8 @@ export function renderProfileView(container, onBack) {
   }
 
   // ─── 📸 Instagram / Story Travel Poster Generator Modal ───────────────────────
-  function openPosterModal() {
+  async function openPosterModal() {
+    const { POSTER_WORLD_MAP_SVG } = await import('../data/posterWorldMapSvg.js');
     const currentLang = getLanguage();
     const currentTheme = getTheme();
     const storageData = getStorageData();

@@ -2,6 +2,8 @@ import L from 'leaflet';
 import { WORLD_REGIONS_INDEX } from '../data/universalSearchData.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
+import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
+import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
 import { getStorageData, saveWorldVisit, saveTurkeyVisit } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
@@ -11,21 +13,21 @@ import { escapeHtml } from '../utils/security.js';
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
 const COUNTRY_LABEL_OFFSETS = {
-  'HR': [45.6, 16.0],  // Croatia (Central mainland area near Zagreb/Karlovac, safely inside borders)
-  'AT': [47.5, 14.5],  // Austria (Lower/Upper Austria central interior)
-  'BA': [44.1, 17.8],  // Bosnia & Herzegovina
-  'SI': [46.1, 14.8],  // Slovenia
-  'ME': [42.8, 19.3],  // Montenegro
-  'RS': [44.0, 20.8],  // Serbia
-  'XK': [42.6, 20.9],  // Kosovo
-  'MK': [41.6, 21.7],  // North Macedonia
-  'AL': [41.3, 20.0],  // Albania
-  'GR': [39.2, 21.9],  // Greece mainland
-  'IT': [42.6, 12.8],  // Italy (Central peninsula)
+  'IT': [42.5, 12.8],  // Italy (Centered in mainland Italian peninsula, Lazio/Abruzzo Apennines)
+  'HR': [45.3, 16.0],  // Croatia (Central mainland body between Zagreb & Karlovac)
+  'AT': [47.5, 14.2],  // Austria (Styria / Upper Austria body, away from edges)
+  'BA': [44.1, 17.8],  // Bosnia & Herzegovina (Central Bosnia Travnik/Zenica)
+  'SI': [46.12, 14.8], // Slovenia (Central body)
+  'ME': [42.8, 19.3],  // Montenegro (Central Kolašin)
+  'RS': [44.0, 20.8],  // Serbia (Central Šumadija Kragujevac)
+  'XK': [42.6, 20.9],  // Kosovo (Central body)
+  'MK': [41.6, 21.7],  // North Macedonia (Central body Veles)
+  'AL': [41.1, 20.1],  // Albania (Central body Elbasan)
+  'GR': [39.3, 22.0],  // Greece (Mainland Thessaly/Larissa)
   'CL': [-33.5, -70.6],// Chile (Central valley)
-  'NO': [60.8, 8.5],   // Norway (Southern interior)
-  'SE': [60.0, 15.0],  // Sweden
-  'FI': [63.0, 26.0],  // Finland
+  'NO': [61.0, 8.5],   // Norway (Southern interior body)
+  'SE': [60.5, 15.5],  // Sweden (Central mainland)
+  'FI': [63.0, 26.0],  // Finland (Central body)
   'VN': [21.0, 105.8], // Vietnam (Red River plain)
   'MY': [4.0, 102.0],  // Peninsular Malaysia
   'ID': [-2.0, 117.0], // Indonesia
@@ -34,23 +36,35 @@ const COUNTRY_LABEL_OFFSETS = {
   'US': [38.5, -97.0], // USA (Lower 48)
   'RU': [60.0, 95.0],  // Russia
   'TR': [39.0, 35.2],  // Turkey (Central Anatolia)
-  'DE': [51.2, 10.4],  // Germany
-  'FR': [46.8, 2.4],   // France (Central)
-  'ES': [40.2, -3.7],  // Spain (Central)
-  'PT': [39.5, -8.2],  // Portugal
-  'GB': [53.8, -2.0],  // UK (Central England)
-  'IE': [53.4, -7.9],  // Ireland
-  'PL': [52.0, 19.3],  // Poland
-  'UA': [49.0, 31.5],  // Ukraine
-  'CH': [46.8, 8.2],   // Switzerland
-  'CZ': [49.8, 15.5],  // Czechia
-  'SK': [48.7, 19.5],  // Slovakia
-  'HU': [47.1, 19.3],  // Hungary
-  'RO': [45.9, 24.8],  // Romania
-  'BG': [42.6, 25.3],  // Bulgaria
-  'NL': [52.2, 5.6],   // Netherlands mainland
-  'BE': [50.6, 4.6],   // Belgium
-  'DK': [55.7, 9.5],   // Denmark mainland
+  'DE': [51.2, 10.4],  // Germany (Central Thuringia)
+  'FR': [46.8, 2.4],   // France (Central Berry)
+  'ES': [40.2, -3.7],  // Spain (Central Madrid/Castile)
+  'PT': [39.5, -8.0],  // Portugal (Central interior)
+  'GB': [53.5, -1.8],  // UK (Central England / Pennines)
+  'IE': [53.4, -7.9],  // Ireland (Central)
+  'PL': [52.1, 19.4],  // Poland (Central body Łódź)
+  'UA': [49.0, 31.5],  // Ukraine (Central body)
+  'CH': [46.8, 8.2],   // Switzerland (Central)
+  'CZ': [49.8, 15.5],  // Czechia (Central Highlands)
+  'SK': [48.7, 19.6],  // Slovakia (Central Banská Bystrica)
+  'HU': [47.15, 19.5], // Hungary (Pannonian basin center)
+  'RO': [45.9, 25.0],  // Romania (Central Transylvania Sibiu)
+  'BG': [42.7, 25.3],  // Bulgaria (Thracian plain center)
+  'NL': [52.2, 5.5],   // Netherlands mainland
+  'BE': [50.6, 4.6],   // Belgium (Central)
+  'DK': [55.8, 9.3],   // Denmark mainland Jutland
+  'CY': [35.0, 33.2],  // Cyprus (Central Troodos/Nicosia)
+  'GE': [42.0, 43.5],  // Georgia (Central body)
+  'AM': [40.1, 44.8],  // Armenia (Central body)
+  'AZ': [40.4, 47.5],  // Azerbaijan (Central body)
+  'IQ': [33.2, 43.7],  // Iraq (Mesopotamian plain)
+  'IR': [32.5, 53.7],  // Iran (Central plateau)
+  'SY': [35.0, 38.5],  // Syria (Central body)
+  'JO': [31.2, 36.5],  // Jordan (Central)
+  'IL': [31.5, 34.8],  // Israel (Central)
+  'LB': [33.9, 35.8],  // Lebanon (Central)
+  'EG': [26.8, 30.0],  // Egypt (Nile Valley interior)
+  'SA': [24.0, 45.0],  // Saudi Arabia (Central Najd)
 };
 
 const PROVINCE_LABEL_OFFSETS = {
@@ -130,6 +144,7 @@ function ns(s) {
 let map = null;
 let mapRenderer = null;
 let countriesLayer = null;
+let countryBordersLayer = null;
 let countryLabelsLayer = null;
 let turkeyLayer = null;
 let regionLayers = {};
@@ -140,8 +155,153 @@ const inFlightRegions = {};
 const inFlightSubregions = {};
 let selectedCountryCode = null;
 let activeStatusPopup = null;
+let activePopupOutsideListener = null;
+let popupBackdropEl = null;
 let provinceLabelsLayer = null;
 let activeLabelPlacedBoxes = [];
+let countryBordersRenderer = null;
+let stateBordersRenderer = null;
+let activeFeatureRenderer = null;
+let activeFeatureLayer = null;
+let activeLabelLayer = null;
+let stateBordersLayers = {};
+let countryFeaturesByCode = {};
+let promotedLabelMarker = null;
+let promotedLabelParent = null;
+
+function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayName = '', latlng = null, id = '', type = '', countryCode = '') {
+  const mapContainer = map?.getContainer();
+  if (mapContainer) {
+    mapContainer.classList.add('map-dimmed');
+  }
+
+  if (activeFeatureLayer && map) {
+    try { map.removeLayer(activeFeatureLayer); } catch {}
+    activeFeatureLayer = null;
+  }
+  if (promotedLabelMarker && promotedLabelMarker._icon && promotedLabelParent) {
+    try { promotedLabelParent.appendChild(promotedLabelMarker._icon); } catch {}
+    promotedLabelMarker = null;
+    promotedLabelParent = null;
+  }
+
+  if (feature && map) {
+    const STATUS = getStatusConfig();
+    const cfg = STATUS[currentStatus] || STATUS.unvisited;
+    const themeCfg = getThemeConfig();
+    const fillColor = currentStatus === 'unvisited' ? themeCfg.landFill : cfg.color;
+    const normalBorder = countryBorderStyle();
+
+    // Preserve exact normal border thickness and color (no thickening per user request)
+    activeFeatureLayer = L.geoJSON(feature, {
+      pane: 'activeFeaturePane',
+      style: {
+        color: normalBorder.color,
+        weight: normalBorder.weight,
+        opacity: normalBorder.opacity,
+        fillColor: fillColor,
+        fillOpacity: 1,
+        interactive: false
+      }
+    }).addTo(map);
+    try {
+      activeFeatureLayer.bringToFront();
+    } catch {}
+
+    // Find the exact existing marker element on the map and promote it to activeFeaturePane
+    // This keeps ONLY this active label sharp while all other labels blur with labelsPane!
+    // Zero coordinate shift, zero font change, zero color change, zero casing change!
+    let targetMarker = null;
+    if (type === 'province' || type === 'region' || type === 'subregion') {
+      if (provinceLabelsLayer) {
+        provinceLabelsLayer.eachLayer(m => {
+          if (targetMarker) return;
+          if (m.featureId && (m.featureId === id || m.featureId === `${countryCode}::${id}`)) {
+            targetMarker = m;
+          } else if (m.featureCountry === countryCode && (
+            (m.featureName && displayName && m.featureName.toLowerCase() === displayName.toLowerCase()) ||
+            (m.rawName && id && id.includes(m.rawName))
+          )) {
+            targetMarker = m;
+          }
+        });
+      }
+    }
+
+    if (!targetMarker && (type === 'country' || countryCode || id)) {
+      const cCode = countryCode || id;
+      if (countryLabelsLayer) {
+        countryLabelsLayer.eachLayer(m => {
+          if (targetMarker) return;
+          if (m.featureCode === cCode) {
+            targetMarker = m;
+          }
+        });
+      }
+    }
+
+    if (targetMarker && targetMarker._icon) {
+      const afPane = map.getPane('activeFeaturePane');
+      if (afPane && targetMarker._icon.parentNode) {
+        promotedLabelMarker = targetMarker;
+        promotedLabelParent = targetMarker._icon.parentNode;
+        afPane.appendChild(targetMarker._icon);
+      }
+    }
+  }
+
+  if (popupBackdropEl) return;
+  const mapRoot = document.getElementById('map-root');
+  if (!mapRoot) return;
+
+  popupBackdropEl = document.createElement('div');
+  popupBackdropEl.id = 'map-popup-backdrop';
+  popupBackdropEl.className = 'map-popup-backdrop';
+
+  const dismiss = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    closeActivePopup();
+  };
+
+  popupBackdropEl.addEventListener('click', dismiss);
+  popupBackdropEl.addEventListener('pointerdown', dismiss);
+  popupBackdropEl.addEventListener('touchstart', dismiss, { passive: false });
+
+  mapRoot.appendChild(popupBackdropEl);
+}
+
+function hidePopupBackdrop() {
+  const mapContainer = map?.getContainer();
+  if (mapContainer) {
+    mapContainer.classList.remove('map-dimmed');
+  }
+  if (activeFeatureLayer && map) {
+    try { map.removeLayer(activeFeatureLayer); } catch {}
+    activeFeatureLayer = null;
+  }
+  if (promotedLabelMarker && promotedLabelMarker._icon && promotedLabelParent) {
+    try { promotedLabelParent.appendChild(promotedLabelMarker._icon); } catch {}
+    promotedLabelMarker = null;
+    promotedLabelParent = null;
+  }
+  if (popupBackdropEl) {
+    popupBackdropEl.remove();
+    popupBackdropEl = null;
+  }
+}
+
+function closeActivePopup() {
+  hidePopupBackdrop();
+  if (activePopupOutsideListener) {
+    document.removeEventListener('pointerdown', activePopupOutsideListener, true);
+    activePopupOutsideListener = null;
+  }
+  if (activeStatusPopup && map) {
+    try { map.closePopup(activeStatusPopup); } catch {}
+    activeStatusPopup = null;
+  }
+}
 
 function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
   return `
@@ -298,35 +458,56 @@ export function renderWorldMapView(container, options = {}) {
   // Setup UI button events
   function attachUIEvents() {
     clearDocListeners();
+    const currentLang = getLanguage();
 
     // Search Autocomplete Handler
     const searchInput = container.querySelector('#map-search-input');
     const searchClear = container.querySelector('#map-search-clear');
     const searchResults = container.querySelector('#map-search-results');
 
-    // ── Universal Search Database: Every Clickable Country, Province & World Region ──
+    // ── Universal Search Database: Every Clickable Country, Province, Capital, City & World Region ──
     const searchDatabase = [
       // 1. Turkey 81 Provinces
       ...TURKEY_PROVINCES.map(p => ({
         type: 'province',
         id: `TR::${p.id}`,
         name: p.name,
+        altName: '',
         sub: 'Türkiye (İl)',
         flag: getFlagHtml('TR'),
         coords: [p.lat, p.lng],
         countryCode: 'TR'
       })),
-      // 2. World Countries
+      // 2. World Countries (All 241 countries with accurate centroids)
       ...WORLD_COUNTRIES.map(c => ({
         type: 'country',
         id: c.code,
         name: getCountryDisplayName(c),
-        sub: c.name,
+        altName: c.nameEn || c.name,
+        sub: currentLang === 'tr' ? (c.nameEn || c.name) : c.name,
         flag: getFlagHtml(c.code),
-        coords: COUNTRY_LABEL_OFFSETS[c.code] || null,
+        coords: COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code] || null,
         countryCode: c.code
       })),
-      // 3. All World Regions & Subdivisions (3,500+ states, provinces, prefectures, cantons)
+      // 3. World Capitals & Major Global Cities (Over 240 global hubs with TR/EN names)
+      ...WORLD_CITIES_INDEX.map(city => {
+        const c = countryByCode.get(city.countryCode);
+        const countryName = c ? getCountryDisplayName(c) : city.countryCode;
+        const isTr = currentLang === 'tr';
+        const primary = isTr ? city.nameTr : city.nameEn;
+        const secondary = isTr ? city.nameEn : city.nameTr;
+        return {
+          type: 'city',
+          id: `${city.countryCode}::${city.nameEn}`,
+          name: primary,
+          altName: secondary,
+          sub: `${countryName} (Şehir/Başkent)`,
+          flag: getFlagHtml(city.countryCode),
+          coords: [city.lat, city.lng],
+          countryCode: city.countryCode
+        };
+      }),
+      // 4. All World Regions & Subdivisions (3,500+ states, provinces, prefectures, cantons)
       ...WORLD_REGIONS_INDEX.map(r => {
         const c = countryByCode.get(r.countryCode);
         const countryName = c ? getCountryDisplayName(c) : r.countryCode;
@@ -334,9 +515,10 @@ export function renderWorldMapView(container, options = {}) {
           type: 'region',
           id: `${r.countryCode}::${r.name}`,
           name: r.name,
+          altName: '',
           sub: `${countryName} (Bölge/Eyalet)`,
           flag: getFlagHtml(r.countryCode),
-          coords: (r.lat && r.lng) ? [r.lat, r.lng] : null,
+          coords: (r.lat && r.lng) ? [r.lat, r.lng] : (COUNTRY_CENTROIDS[r.countryCode] || null),
           countryCode: r.countryCode
         };
       })
@@ -355,18 +537,29 @@ export function renderWorldMapView(container, options = {}) {
           }
           if (searchClear) searchClear.style.display = 'block';
 
-          // Search matches with prioritization: Exact start > includes
+          const norm = (s) => (s || '').toLowerCase()
+            .replace(/ı/g, 'i')
+            .replace(/ğ/g, 'g')
+            .replace(/ü/g, 'u')
+            .replace(/ş/g, 's')
+            .replace(/ö/g, 'o')
+            .replace(/ç/g, 'c');
+          const qNorm = norm(query);
+
+          // Search matches with prioritization: Exact start on name > altName > includes
           const matches = [];
           for (let i = 0; i < searchDatabase.length; i++) {
             const item = searchDatabase[i];
-            const nameLower = item.name.toLowerCase();
-            const subLower = item.sub ? item.sub.toLowerCase() : '';
-            if (nameLower.startsWith(query) || (subLower && subLower.startsWith(query))) {
+            const nameNorm = norm(item.name);
+            const altNorm = norm(item.altName);
+            const subNorm = norm(item.sub);
+
+            if (nameNorm.startsWith(qNorm) || altNorm.startsWith(qNorm)) {
               matches.push(item);
-            } else if (nameLower.includes(query) || subLower.includes(query)) {
+            } else if (nameNorm.includes(qNorm) || altNorm.includes(qNorm) || subNorm.includes(qNorm)) {
               matches.push(item);
             }
-            if (matches.length >= 10) break;
+            if (matches.length >= 12) break;
           }
 
           if (matches.length === 0) {
@@ -379,7 +572,7 @@ export function renderWorldMapView(container, options = {}) {
             <div class="search-item" data-idx="${idx}">
               <span class="search-item-flag">${m.flag}</span>
               <div class="search-item-info">
-                <span class="search-item-title">${m.name}</span>
+                <span class="search-item-title">${m.name}${m.altName && m.altName !== m.name ? ` <span style="opacity:0.6;font-size:0.8em;">(${m.altName})</span>` : ''}</span>
                 <span class="search-item-sub">${m.sub}</span>
               </div>
             </div>
@@ -402,12 +595,17 @@ export function renderWorldMapView(container, options = {}) {
                 }
               }
 
-              if (m.coords && map) {
-                const targetZoom = m.type === 'province' ? 6.5 : (m.type === 'region' ? 6.2 : 4.5);
-                map.flyTo(m.coords, targetZoom, { duration: 0.8 });
+              const coords = m.coords || (m.countryCode ? COUNTRY_CENTROIDS[m.countryCode] : null);
+              if (coords && map) {
+                const targetZoom = m.type === 'country' ? 5.0 : (m.type === 'province' ? 6.5 : (m.type === 'city' ? 7.5 : 6.5));
+                map.flyTo(coords, targetZoom, { duration: 0.8 });
                 setTimeout(() => {
+                  if (m.countryCode) {
+                    selectedCountryCode = m.countryCode;
+                    refreshStats();
+                  }
                   const titleHtml = `${m.flag} ${m.name}`;
-                  openStatusPopup(m.coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
+                  openStatusPopup(coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
                 }, 850);
               }
             });
@@ -651,6 +849,9 @@ export function renderWorldMapView(container, options = {}) {
 
 function refreshAllStyles() {
   invalidateStorageCache();
+  if (countryBordersLayer) {
+    countryBordersLayer.setStyle(countryBorderStyle());
+  }
   if (countriesLayer) {
     countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
   }
@@ -667,12 +868,17 @@ function initMap(container) {
   if (!el) return;
   if (map) { map.remove(); map = null; }
   regionLayers = {};
+  stateBordersLayers = {};
   subregionLayers = {};
   countriesLayer = null;
+  countryBordersLayer = null;
   turkeyLayer = null;
   countryLabelsLayer = null;
   provinceLabelsLayer = null;
   activeStatusPopup = null;
+  activePopupOutsideListener = null;
+  activeFeatureLayer = null;
+  activeLabelLayer = null;
   activeLabelPlacedBoxes = [];
 
   const themeCfg = getThemeConfig();
@@ -691,11 +897,20 @@ function initMap(container) {
   });
 
   map.on('popupclose', () => {
+    hidePopupBackdrop();
+    if (activePopupOutsideListener) {
+      document.removeEventListener('pointerdown', activePopupOutsideListener, true);
+      activePopupOutsideListener = null;
+    }
     activeStatusPopup = null;
   });
 
-  // Huge 200% SVG renderer buffer: eliminates all panning cutoff lines!
-  mapRenderer = L.svg({ padding: 2.0 });
+  map.on('click', () => {
+    closeActivePopup();
+  });
+
+  // Optimized SVG renderer buffer: eliminates panning cutoff lines without bloating GPU memory
+  mapRenderer = L.svg({ padding: 0.5 });
 
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
@@ -706,9 +921,33 @@ function initMap(container) {
   map.createPane('citiesPane');
   map.getPane('citiesPane').style.zIndex = 430;
 
+  // Level 3 State / Province Borders Pane: Always drawn above cities!
+  map.createPane('stateBordersPane');
+  map.getPane('stateBordersPane').style.zIndex = 440;
+  map.getPane('stateBordersPane').style.pointerEvents = 'none';
+  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.5 });
+
+  // Prominent Country Borders Pane: Level 1 & Level 2 bold country borders, always above states and cities!
+  map.createPane('countryBordersPane');
+  map.getPane('countryBordersPane').style.zIndex = 450;
+  map.getPane('countryBordersPane').style.pointerEvents = 'none';
+  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.5 });
+
   map.createPane('labelsPane');
-  map.getPane('labelsPane').style.zIndex = 450;
+  map.getPane('labelsPane').style.zIndex = 460;
   map.getPane('labelsPane').style.pointerEvents = 'none';
+
+  // Active Feature Pane: rendered crystal clear above backdrop (650), completely unblurred!
+  const afPane = map.createPane('activeFeaturePane');
+  afPane.style.zIndex = 660;
+  afPane.style.pointerEvents = 'none';
+  afPane.classList.add('no-blur-pane', 'leaflet-activefeature-pane', 'leaflet-activeFeature-pane');
+
+  const ppPane = map.getPane('popupPane');
+  if (ppPane) {
+    ppPane.classList.add('no-blur-pane');
+  }
+  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.5 });
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
   provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
@@ -723,6 +962,15 @@ function initMap(container) {
     if (!r.ok) throw new Error('Network ' + r.status);
     return r.json();
   }).then(data => {
+    countryFeaturesByCode = {};
+    if (data && data.features) {
+      data.features.forEach(f => {
+        const c = findCountry(f);
+        if (c && c.code) {
+          countryFeaturesByCode[c.code] = f;
+        }
+      });
+    }
     countriesLayer = L.geoJSON(data, {
       renderer: mapRenderer,
       pane: 'countriesPane',
@@ -730,6 +978,10 @@ function initMap(container) {
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
         layer.on('click', e => {
+          if (activeStatusPopup) {
+            closeActivePopup();
+            return;
+          }
           if (!c) return;
           const zoom = map?.getZoom() || 3;
           if (zoom >= REGION_ZOOM) {
@@ -741,7 +993,7 @@ function initMap(container) {
           selectedCountryCode = c.code;
           refreshStats();
           const displayName = getCountryDisplayName(c);
-          openStatusPopup(e.latlng, c.code, displayName, 'country', c.code);
+          openStatusPopup(e.latlng, c.code, displayName, 'country', c.code, f);
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
@@ -749,6 +1001,15 @@ function initMap(container) {
         });
       }
     }).addTo(map);
+
+    // Prominent outer country borders: always visible above regions and cities
+    countryBordersLayer = L.geoJSON(data, {
+      renderer: countryBordersRenderer,
+      pane: 'countryBordersPane',
+      style: () => countryBorderStyle(),
+      interactive: false
+    }).addTo(map);
+
     scheduleLabelUpdate();
     
     // Hide loading indicator
@@ -777,10 +1038,14 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
+          if (activeStatusPopup) {
+            closeActivePopup();
+            return;
+          }
           L.DomEvent.stopPropagation(e);
           selectedCountryCode = 'TR';
           refreshStats();
-          openStatusPopup(e.latlng, `TR::${prov.id}`, prov.name, 'province', 'TR');
+          openStatusPopup(e.latlng, `TR::${prov.id}`, prov.name, 'province', 'TR', f);
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
@@ -972,6 +1237,7 @@ function polylabelFast(ring, precision = 0.01) {
 // Find the visual centroid and bounding box of ONLY the largest mainland polygon,
 // guaranteed inside the landmass via polylabel
 function getMainlandInfo(feature) {
+  if (feature?._cachedMainland) return feature._cachedMainland;
   const geom = feature?.geometry;
   if (!geom) return null;
 
@@ -1005,6 +1271,7 @@ function getMainlandInfo(feature) {
     }
   } catch (e) {}
 
+  if (feature) feature._cachedMainland = best;
   return best;
 }
 
@@ -1077,30 +1344,25 @@ function updateCountryLabels() {
       const pixelWidth = Math.abs(se.x - nw.x);
       const pixelHeight = Math.abs(se.y - nw.y);
 
-      // Strict minimum pixel size: country must have ample screen space
-      if (pixelWidth < 52 || pixelHeight < 28) {
+      // Balanced pixel dimensions: allow medium European countries to display clearly at Zoom 4
+      if (pixelWidth < 36 || pixelHeight < 18) {
         return;
       }
 
-      const textLen = countryName.length;
+      const textLen = Math.max(countryName.length, 3);
 
-      // Calculate font size strictly proportionate to country's mainland size
-      const maxFontByWidth = Math.floor(pixelWidth / (textLen * 1.55));
-      const maxFontByHeight = Math.floor(pixelHeight / 2.6);
-      let fontSize = Math.min(15, Math.min(maxFontByWidth, maxFontByHeight));
+      // Proportionate font size with minimum 9px for legibility
+      const byWidth = Math.floor(pixelWidth / (textLen * 0.95));
+      const byHeight = Math.floor(pixelHeight / 1.8);
+      let fontSize = Math.min(14, Math.max(9, Math.min(byWidth, byHeight)));
 
-      // If font size is under 10px to fit inside country, HIDE IT until user zooms in!
-      if (fontSize < 10) {
-        return;
-      }
-
-      // Measure actual rendered text width with letter spacing consideration
+      // Measure actual rendered text width
       const actualTextWidth = measureTextWidth(countryName, fontSize);
-      const letterSpacingExtra = textLen * fontSize * 0.16;
+      const letterSpacingExtra = textLen * fontSize * 0.12;
       const totalTextWidth = actualTextWidth + letterSpacingExtra;
 
-      // Strict boundary enforcement: text must fit comfortably within 72% of country width & 60% of height
-      if (totalTextWidth > pixelWidth * 0.72 || (fontSize + 6) > pixelHeight * 0.60) {
+      // Balanced boundary enforcement: allows clean fit without dropping European countries
+      if (totalTextWidth > pixelWidth * 1.05 || fontSize > pixelHeight * 0.90) {
         return;
       }
 
@@ -1145,7 +1407,9 @@ function updateCountryLabels() {
         iconAnchor: [renderWidth / 2, renderHeight / 2]
       });
 
-      L.marker(visualCenter, { icon, interactive: false, pane: 'labelsPane' }).addTo(countryLabelsLayer);
+      const cMarker = L.marker(visualCenter, { icon, interactive: false, pane: 'labelsPane' });
+      cMarker.featureCode = c.code;
+      cMarker.addTo(countryLabelsLayer);
     } catch (e) {}
   });
 }
@@ -1193,6 +1457,41 @@ const CAPITAL_COORDINATES = {
   'CN': [39.9042, 116.4074]
 };
 
+const COUNTRY_CAPITALS = {
+  'IT': { name: 'Roma', match: ['lazio', 'roma', 'rome'] },
+  'ME': { name: 'Podgorica', match: ['podgorica'] },
+  'CY': { name: 'Lefkoşa', match: ['nicosia', 'lefkoşa', 'lefkosa'] },
+  'UA': { name: 'Kiev', match: ['kyiv', 'kiev'] },
+  'GR': { name: 'Atina', match: ['attica', 'attiki', 'atina', 'athens'] },
+  'NL': { name: 'Amsterdam', match: ['noord-holland', 'amsterdam'] },
+  'FR': { name: 'Paris', match: ['île-de-france', 'ile-de-france', 'paris'] },
+  'ES': { name: 'Madrid', match: ['madrid'] },
+  'DE': { name: 'Berlin', match: ['berlin'] },
+  'GB': { name: 'Londra', match: ['greater london', 'london', 'londra'] },
+  'AT': { name: 'Viyana', match: ['wien', 'vienna', 'viyana'] },
+  'HU': { name: 'Budapeşte', match: ['budapest', 'budapeşte'] },
+  'CZ': { name: 'Prag', match: ['praha', 'prague', 'prag'] },
+  'SK': { name: 'Bratislava', match: ['bratislavsky', 'bratislava'] },
+  'PL': { name: 'Varşova', match: ['mazowieckie', 'warsaw', 'warszawa', 'varşova'] },
+  'PT': { name: 'Lizbon', match: ['lisboa', 'lisbon', 'lizbon'] },
+  'BE': { name: 'Brüksel', match: ['brussels', 'bruxelles', 'brüksel'] },
+  'CH': { name: 'Bern', match: ['bern'] },
+  'SE': { name: 'Stockholm', match: ['stockholm'] },
+  'NO': { name: 'Oslo', match: ['oslo'] },
+  'FI': { name: 'Helsinki', match: ['helsinki', 'uusimaa'] },
+  'DK': { name: 'Kopenhag', match: ['copenhagen', 'hovedstaden', 'kopenhag'] },
+  'IE': { name: 'Dublin', match: ['dublin'] },
+  'RS': { name: 'Belgrad', match: ['beograd', 'belgrade', 'belgrad'] },
+  'BA': { name: 'Saraybosna', match: ['sarajevo', 'saraybosna'] },
+  'HR': { name: 'Zagreb', match: ['grad zagreb', 'zagreb'] },
+  'MK': { name: 'Üsküp', match: ['skopje', 'üsküp'] },
+  'AL': { name: 'Tiran', match: ['tiran', 'tirane', 'tirana'] },
+  'XK': { name: 'Priştine', match: ['pristina', 'priştine'] },
+  'BG': { name: 'Sofya', match: ['sofia', 'sofya', 'grad sofiya'] },
+  'RO': { name: 'Bükreş', match: ['bucharest', 'bucuresti', 'bükreş'] },
+  'TR': { name: 'Ankara', match: ['ankara'] }
+};
+
 const CAPITAL_KEYWORDS = [
   'ankara', 'budapest', 'budapeşte', 'wien', 'vienna', 'viyana', 'bratislava', 'bratislavsky',
   'prague', 'praha', 'prag', 'berlin', 'paris', 'london', 'londra', 'roma', 'rome',
@@ -1205,14 +1504,29 @@ const CAPITAL_KEYWORDS = [
   'washington', 'tokyo', 'seoul', 'seul', 'beijing', 'pekin'
 ];
 
+function matchesWord(str, target) {
+  if (!str || !target) return false;
+  const s = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const t = target.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (t.includes(' ') || t.includes('-')) {
+    return s.includes(t);
+  }
+  return new RegExp('(^|[^a-z0-9])' + t + '([^a-z0-9]|$)', 'i').test(s);
+}
+
 function isCapitalItem(item) {
   if (!item) return false;
-  const rawLower = (item.rawName || item.name || '').toLowerCase();
-  const displayLower = (item.name || '').toLowerCase();
+  const rawLower = (item.rawName || item.name || '').toLowerCase().trim();
+  const displayLower = (item.name || '').toLowerCase().trim();
   if (rawLower.includes('başkent') || displayLower.includes('başkent') || rawLower.includes('capital') || displayLower.includes('capital')) {
     return true;
   }
-  return CAPITAL_KEYWORDS.some(k => rawLower.includes(k) || displayLower.includes(k));
+  const cap = COUNTRY_CAPITALS[item.countryCode];
+  if (cap) {
+    if (item.countryCode === 'BA' && rawLower.includes('sarajevo-romanija')) return false;
+    if (cap.match.some(m => matchesWord(rawLower, m) || matchesWord(displayLower, m))) return true;
+  }
+  return CAPITAL_KEYWORDS.some(k => matchesWord(rawLower, k) || matchesWord(displayLower, k));
 }
 
 function updateProvinceLabels() {
@@ -1321,8 +1635,36 @@ function updateProvinceLabels() {
     // Capitals are exempt from strict minimum dimensions so they are never suppressed
     if (!item.isCapital && (item.pixelWidth < 50 || item.pixelHeight < 22)) return;
 
-    // 2. Measure text width
+    // 2. Measure text width & Determine clean display name
     let displayName = item.name;
+    const rawLower = (item.rawName || '').toLowerCase().trim();
+    const displayLower = (item.name || '').toLowerCase().trim();
+    const cap = COUNTRY_CAPITALS[item.countryCode];
+
+    if (item.isCapital && cap && cap.match.some(m => matchesWord(rawLower, m) || matchesWord(displayLower, m))) {
+      displayName = cap.name;
+    } else {
+      // Check if parentheses contain a famous city (e.g. "Lombardiya (Milano)" -> "Milano")
+      const parenMatch = displayName.match(/\(([^)]+)\)/);
+      if (parenMatch) {
+        const cityPart = parenMatch[1].split('/')[0].split(',')[0].trim();
+        const basePart = displayName.replace(/\s*\([^)]+\)/g, '').replace(/\s+Bölgesi$/i, '').trim();
+        const FAMOUS_CITIES = new Set([
+          'Milano', 'Venedik', 'Floransa', 'Napoli', 'Torino', 'Bolonya', 'Bologna', 'Cenova', 'Palermo', 'Bari', 'Trieste',
+          'Barselona', 'Sevilla', 'Bilbao', 'Valensiya', 'Valencia', 'Granada', 'Málaga', 'Zaragoza',
+          'Lyon', 'Marseille', 'Marsilya', 'Nice', 'Bordeaux', 'Toulouse', 'Lille', 'Strazburg', 'Rennes',
+          'Münih', 'Frankfurt', 'Köln', 'Hamburg', 'Stuttgart', 'Dresden', 'Hannover', 'Nürnberg',
+          'Rotterdam', 'Lahey', 'Eindhoven', 'Krakov', 'Gdansk', 'Selanik', 'Porto'
+        ]);
+        if (FAMOUS_CITIES.has(cityPart)) {
+          displayName = cityPart;
+        } else {
+          displayName = basePart;
+        }
+      } else {
+        displayName = displayName.replace(/\s+Bölgesi$/i, '').replace(/\s+Region$/i, '').trim();
+      }
+    }
     if (item.isCapital) {
       displayName = displayName.replace(/\s*\([^)]*başkent[^)]*\)/gi, '').trim();
     }
@@ -1360,7 +1702,7 @@ function updateProvinceLabels() {
       box.x1 < p.x2 && box.x2 > p.x1 &&
       box.y1 < p.y2 && box.y2 > p.y1
     ));
-    if (collides && !item.isCapital) return;
+    if (collides) return;
 
     // Register collision box
     activeLabelPlacedBoxes.push(box);
@@ -1371,12 +1713,17 @@ function updateProvinceLabels() {
 
     const icon = L.divIcon({
       className: `map-province-label ${item.isCapital ? 'is-capital' : ''}`,
-      html: `<div class="prov-label-text ${item.isCapital ? 'capital-label-text' : ''}" style="font-size:${fontSize}px;color:${item.isCapital ? '#fbbf24' : labelColor};text-shadow:${labelShadow};">${item.isCapital ? '⭐ ' : ''}${escapeHtml(displayName)}</div>`,
+      html: `<div class="prov-label-text ${item.isCapital ? 'capital-label-text' : ''}" style="font-size:${fontSize}px;color:${item.isCapital ? '#ffffff' : labelColor};text-shadow:${labelShadow};">${escapeHtml(displayName)}</div>`,
       iconSize: [renderWidth, renderHeight],
       iconAnchor: [renderWidth / 2, renderHeight / 2]
     });
 
-    L.marker(item.center, { icon, interactive: false, pane: 'labelsPane' }).addTo(provinceLabelsLayer);
+    const pMarker = L.marker(item.center, { icon, interactive: false, pane: 'labelsPane' });
+    pMarker.featureId = item.idKey;
+    pMarker.featureCountry = item.countryCode;
+    pMarker.featureName = displayName;
+    pMarker.rawName = item.rawName;
+    pMarker.addTo(provinceLabelsLayer);
   });
 }
 
@@ -1384,6 +1731,10 @@ function updateProvinceLabels() {
 async function onViewChange() {
   if (!map) return;
   const zoom = map.getZoom();
+
+  if (countryBordersLayer) {
+    countryBordersLayer.setStyle(countryBorderStyle());
+  }
 
   // ── Turkey Level 2 (81 Provinces) ──────────────────────────────────────────
   if (isTurkeyInView()) {
@@ -1444,15 +1795,25 @@ async function onViewChange() {
     }
     if (map && map.getZoom() >= SUBREGION_ZOOM) {
       for (const code of visibleCodes) {
-        if (code !== 'TR' && subregionLayers[code] && !map.hasLayer(subregionLayers[code])) {
-          subregionLayers[code].addTo(map);
-          refreshRegionLayer(code);
+        if (code !== 'TR') {
+          if (subregionLayers[code] && !map.hasLayer(subregionLayers[code])) {
+            subregionLayers[code].addTo(map);
+            refreshRegionLayer(code);
+          }
+          if (stateBordersLayers[code] && !map.hasLayer(stateBordersLayers[code])) {
+            stateBordersLayers[code].addTo(map);
+          }
         }
       }
     }
   } else {
     // ZOOM OUT — remove ALL subregion layers from map
     Object.entries(subregionLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+    Object.entries(stateBordersLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
       }
@@ -1543,10 +1904,14 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
+        if (activeStatusPopup) {
+          closeActivePopup();
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'region', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'region', code, l.feature);
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
@@ -1556,8 +1921,28 @@ function attachRegionLayer(code, data) {
   });
 
   regionLayers[code] = layer;
+
+  // Dedicated Level 3 State / Province border outlines above city fills
+  const stateBorder = L.geoJSON(sortedData, {
+    renderer: stateBordersRenderer,
+    pane: 'stateBordersPane',
+    style: () => ({
+      fill: false,
+      fillOpacity: 0,
+      color: getTheme() !== 'light' ? 'rgba(226, 232, 240, 0.70)' : 'rgba(30, 41, 59, 0.65)',
+      weight: 1.7,
+      opacity: 1,
+      interactive: false
+    }),
+    interactive: false
+  });
+  stateBordersLayers[code] = stateBorder;
+
   if (map.getZoom() >= REGION_ZOOM) {
     layer.addTo(map);
+    if (map.getZoom() >= SUBREGION_ZOOM) {
+      stateBorder.addTo(map);
+    }
     if (countriesLayer) {
       countriesLayer.eachLayer(l => {
         if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
@@ -1647,10 +2032,14 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
+        if (activeStatusPopup) {
+          closeActivePopup();
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         selectedCountryCode = code;
         refreshStats();
-        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'subregion', code);
+        openStatusPopup(e.latlng, `${code}::${raw}`, display, 'subregion', code, l.feature);
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
@@ -1675,7 +2064,7 @@ function refreshSubregionLayer(code) {
 
 // ─── Status Popup & Two-Way Sync Logic ─────────────────────────────────────────
 // ─── Status Popup & Two-Way Sync Logic (Clean Centered Popup with Glow Buttons) ───
-function openStatusPopup(latlng, id, title, type, countryCode) {
+function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const currentLang = getLanguage();
   const STATUS = getStatusConfig();
   const { turkeyVisits, worldVisits } = getStorageData();
@@ -1920,6 +2309,14 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
         }
       }
 
+      if (activeFeatureLayer) {
+        const STATUS = getStatusConfig();
+        const cfg = STATUS[val] || STATUS.unvisited;
+        const themeCfg = getThemeConfig();
+        const fillColor = val === 'unvisited' ? themeCfg.landFill : cfg.color;
+        activeFeatureLayer.setStyle({ fillColor });
+      }
+
       refreshAllStyles();
       refreshStats();
 
@@ -1942,6 +2339,13 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
     });
   });
 
+  let activeGeoFeature = feature;
+  if (!activeGeoFeature && countryCode && countryFeaturesByCode[countryCode]) {
+    activeGeoFeature = countryFeaturesByCode[countryCode];
+  }
+  closeActivePopup();
+  showPopupBackdrop(activeGeoFeature, currentStatus, cleanTitle, latlng, id, type, countryCode);
+
   activeStatusPopup = L.popup({
     closeButton: false,
     className: 'clean-status-popup',
@@ -1951,6 +2355,18 @@ function openStatusPopup(latlng, id, title, type, countryCode) {
   .setLatLng(latlng)
   .setContent(content)
   .openOn(map);
+
+  activePopupOutsideListener = (e) => {
+    if (content && !content.contains(e.target)) {
+      closeActivePopup();
+    }
+  };
+
+  setTimeout(() => {
+    if (activeStatusPopup && activePopupOutsideListener) {
+      document.addEventListener('pointerdown', activePopupOutsideListener, true);
+    }
+  }, 100);
 }
 
 
@@ -2007,6 +2423,20 @@ function getEffectiveCountryStatus(countryCode) {
   return 'unvisited';
 }
 
+function countryBorderStyle() {
+  const zoom = map?.getZoom() || 3;
+  const isDark = getTheme() !== 'light';
+  const zoomed = zoom >= REGION_ZOOM;
+  return {
+    fill: false,
+    fillOpacity: 0,
+    color: isDark ? 'rgba(255, 255, 255, 0.90)' : 'rgba(15, 23, 42, 0.85)',
+    weight: zoomed ? (zoom >= SUBREGION_ZOOM ? 2.1 : 1.9) : 1.3,
+    opacity: 1,
+    interactive: false
+  };
+}
+
 function countryStyle(c) {
   const code = c?.code;
   const status = ns(getEffectiveCountryStatus(code));
@@ -2014,6 +2444,7 @@ function countryStyle(c) {
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
+  const isDark = getTheme() !== 'light';
   const zoomed = zoom >= REGION_ZOOM;
 
   let isInteractive = true;
@@ -2035,11 +2466,9 @@ function countryStyle(c) {
   return {
     fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
     fillOpacity,
-    color: zoomed
-      ? (hasRegions ? 'rgba(255,255,255,0.35)' : (status === 'unvisited' ? themeCfg.landBorderZoomed : '#ffffff'))
-      : (status === 'unvisited' ? themeCfg.landBorder : 'rgba(255,255,255,0.7)'),
-    weight: zoomed ? (hasRegions ? 1.5 : 2.5) : 1.5,
-    opacity: hasRegions ? 0.5 : 1.0,
+    color: isDark ? 'rgba(255, 255, 255, 0.70)' : 'rgba(15, 23, 42, 0.65)',
+    weight: zoomed ? 2.0 : 1.5,
+    opacity: hasRegions ? 0 : 1.0,
     interactive: isInteractive
   };
 }
@@ -2051,6 +2480,7 @@ function regionStyle(rawName, countryCode) {
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
+  const isDark = getTheme() !== 'light';
 
   let isInteractive = true;
   let hasSubregions = false;
@@ -2080,9 +2510,9 @@ function regionStyle(rawName, countryCode) {
     return {
       fillColor: blended,
       fillOpacity: hasSubregions ? 0 : 0.95,
-      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
-      weight: 1.0,
-      opacity: hasSubregions ? 0.3 : 0.85,
+      color: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(100, 116, 139, 0.45)',
+      weight: hasSubregions ? 1.8 : 1.0,
+      opacity: hasSubregions ? 0.6 : 0.85,
       interactive: isInteractive
     };
   }
@@ -2091,9 +2521,9 @@ function regionStyle(rawName, countryCode) {
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: hasSubregions ? 0 : 0.95,
-    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
-    weight: 1.0,
-    opacity: hasSubregions ? 0.3 : 0.7,
+    color: isDark ? 'rgba(148, 163, 184, 0.40)' : 'rgba(100, 116, 139, 0.40)',
+    weight: hasSubregions ? 1.8 : 1.0,
+    opacity: hasSubregions ? 0.6 : 0.8,
     interactive: isInteractive
   };
 }
@@ -2104,6 +2534,7 @@ function provinceStyle(provinceId) {
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
+  const isDark = getTheme() !== 'light';
 
   // 1. Durum: İl bizzat ziyaret edilmiş / planlanmış / istek listesinde
   if (status !== 'unvisited') {
@@ -2125,7 +2556,7 @@ function provinceStyle(provinceId) {
     return {
       fillColor: blended,
       fillOpacity: 0.95,
-      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+      color: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(100, 116, 139, 0.45)',
       weight: 1.0,
       opacity: 0.85
     };
@@ -2135,7 +2566,7 @@ function provinceStyle(provinceId) {
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: 0.95,
-    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
+    color: isDark ? 'rgba(148, 163, 184, 0.40)' : 'rgba(100, 116, 139, 0.40)',
     weight: 1.0,
     opacity: 0.8
   };
@@ -2148,6 +2579,7 @@ function subregionStyle(name, code) {
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
+  const isDark = getTheme() !== 'light';
   
   // 1. Durum: Alt şehir bizzat ziyaret edilmiş / planlanmış / istek
   if (status !== 'unvisited') {
@@ -2169,9 +2601,9 @@ function subregionStyle(name, code) {
     return {
       fillColor: blended,
       fillOpacity: 0.95,
-      color: themeCfg.landBorderZoomed || themeCfg.landBorder,
-      weight: 0.9,
-      opacity: 0.85
+      color: isDark ? 'rgba(148, 163, 184, 0.30)' : 'rgba(100, 116, 139, 0.30)',
+      weight: 0.7,
+      opacity: 0.75
     };
   }
 
@@ -2179,8 +2611,8 @@ function subregionStyle(name, code) {
   return {
     fillColor: themeCfg.landFill,
     fillOpacity: 0.95,
-    color: themeCfg.landBorderZoomed || themeCfg.landBorder,
-    weight: 0.8,
+    color: isDark ? 'rgba(148, 163, 184, 0.25)' : 'rgba(100, 116, 139, 0.25)',
+    weight: 0.7,
     opacity: 0.7
   };
 }
