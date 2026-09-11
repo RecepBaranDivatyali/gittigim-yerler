@@ -166,6 +166,9 @@ let activeFeatureLayer = null;
 let activeLabelLayer = null;
 let stateBordersLayers = {};
 let countryFeaturesByCode = {};
+let countryLayersByCode = {};
+let sortedCountryLayers = [];
+let lastZoomCategory = -1;
 let promotedLabelMarker = null;
 let promotedLabelParent = null;
 
@@ -250,25 +253,30 @@ function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayN
     }
   }
 
-  if (popupBackdropEl) return;
-  const mapRoot = document.getElementById('map-root');
-  if (!mapRoot) return;
+  if (!popupBackdropEl) {
+    const mapRoot = document.getElementById('map-root');
+    if (!mapRoot) return;
 
-  popupBackdropEl = document.createElement('div');
-  popupBackdropEl.id = 'map-popup-backdrop';
-  popupBackdropEl.className = 'map-popup-backdrop';
+    popupBackdropEl = document.createElement('div');
+    popupBackdropEl.id = 'map-popup-backdrop';
+    popupBackdropEl.className = 'map-popup-backdrop';
 
-  const dismiss = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    closeActivePopup();
-  };
+    const dismiss = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      closeActivePopup();
+    };
 
-  popupBackdropEl.addEventListener('click', dismiss);
-  popupBackdropEl.addEventListener('pointerdown', dismiss);
-  popupBackdropEl.addEventListener('touchstart', dismiss, { passive: false });
+    popupBackdropEl.addEventListener('click', dismiss);
+    popupBackdropEl.addEventListener('pointerdown', dismiss);
+    popupBackdropEl.addEventListener('touchstart', dismiss, { passive: false });
 
-  mapRoot.appendChild(popupBackdropEl);
+    mapRoot.appendChild(popupBackdropEl);
+  }
+
+  requestAnimationFrame(() => {
+    if (popupBackdropEl) popupBackdropEl.classList.add('active');
+  });
 }
 
 function hidePopupBackdrop() {
@@ -286,8 +294,13 @@ function hidePopupBackdrop() {
     promotedLabelParent = null;
   }
   if (popupBackdropEl) {
-    popupBackdropEl.remove();
-    popupBackdropEl = null;
+    popupBackdropEl.classList.remove('active');
+    setTimeout(() => {
+      if (popupBackdropEl && !popupBackdropEl.classList.contains('active')) {
+        popupBackdropEl.remove();
+        popupBackdropEl = null;
+      }
+    }, 180);
   }
 }
 
@@ -909,8 +922,8 @@ function initMap(container) {
     closeActivePopup();
   });
 
-  // Optimized SVG renderer buffer: eliminates panning cutoff lines without bloating GPU memory
-  mapRenderer = L.svg({ padding: 0.5 });
+  // Optimized SVG renderer buffer: lightweight memory for 60fps mobile drag & pan
+  mapRenderer = L.svg({ padding: 0.18 });
 
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
@@ -925,13 +938,13 @@ function initMap(container) {
   map.createPane('stateBordersPane');
   map.getPane('stateBordersPane').style.zIndex = 440;
   map.getPane('stateBordersPane').style.pointerEvents = 'none';
-  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.5 });
+  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.18 });
 
   // Prominent Country Borders Pane: Level 1 & Level 2 bold country borders, always above states and cities!
   map.createPane('countryBordersPane');
   map.getPane('countryBordersPane').style.zIndex = 450;
   map.getPane('countryBordersPane').style.pointerEvents = 'none';
-  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.5 });
+  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.18 });
 
   map.createPane('labelsPane');
   map.getPane('labelsPane').style.zIndex = 460;
@@ -947,7 +960,7 @@ function initMap(container) {
   if (ppPane) {
     ppPane.classList.add('no-blur-pane');
   }
-  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.5 });
+  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.18 });
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
   provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
@@ -971,12 +984,16 @@ function initMap(container) {
         }
       });
     }
+    countryLayersByCode = {};
     countriesLayer = L.geoJSON(data, {
       renderer: mapRenderer,
       pane: 'countriesPane',
       style: f => countryStyle(findCountry(f)),
       onEachFeature: (f, layer) => {
         const c = findCountry(f);
+        if (c && c.code) {
+          countryLayersByCode[c.code] = layer;
+        }
         layer.on('click', e => {
           if (activeStatusPopup) {
             closeActivePopup();
@@ -1001,6 +1018,23 @@ function initMap(container) {
         });
       }
     }).addTo(map);
+
+    // Pre-sort country layers once by polygon area descending (no sorting per frame!)
+    sortedCountryLayers = [...(data.features || [])].map(f => {
+      const c = findCountry(f);
+      const layer = c && c.code ? countryLayersByCode[c.code] : null;
+      return { feature: f, country: c, layer };
+    }).filter(item => item.country && item.layer);
+
+    sortedCountryLayers.sort((a, b) => {
+      try {
+        const ba = a.layer.getBounds();
+        const bb = b.layer.getBounds();
+        const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
+        const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
+        return areaB - areaA;
+      } catch { return 0; }
+    });
 
     // Prominent outer country borders: always visible above regions and cities
     countryBordersLayer = L.geoJSON(data, {
@@ -1290,24 +1324,15 @@ function updateCountryLabels() {
   activeLabelPlacedBoxes = [];
   const themeCfg = getThemeConfig();
 
-  const layers = [];
-  countriesLayer.eachLayer(layer => layers.push(layer));
-
-  // Sort country layers by polygon area descending (largest first for priority)
-  layers.sort((a, b) => {
-    try {
-      const ba = a.getBounds();
-      const bb = b.getBounds();
-      const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
-      const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
-      return areaB - areaA;
-    } catch { return 0; }
-  });
+  const items = (sortedCountryLayers && sortedCountryLayers.length > 0)
+    ? sortedCountryLayers
+    : [];
 
   const mapSize = map.getSize();
+  const mapBounds = map.getBounds().pad(0.15);
 
-  layers.forEach(layer => {
-    const f = layer.feature;
+  items.forEach(({ feature: f, country: c, layer }) => {
+    if (layer.getBounds && !mapBounds.intersects(layer.getBounds())) return;
     const iso = (f?.properties?.['ISO3166-1-Alpha-2'] || f?.properties?.iso_a2 || f?.properties?.ISO_A2 || f?.id || '').toUpperCase();
     const rawName = f?.properties?.name || '';
 
@@ -1321,7 +1346,6 @@ function updateCountryLabels() {
       return;
     }
 
-    const c = findCountry(f);
     if (!c) return;
     const countryName = getCountryDisplayName(c);
     if (!countryName) return;
@@ -1544,9 +1568,12 @@ function updateProvinceLabels() {
   // Collect candidate region / province features from active layers on map
   const candidates = [];
 
+  const mapBounds = map.getBounds().pad(0.12);
+
   // 1. Turkey Layer
   if (turkeyLayer && map.hasLayer(turkeyLayer)) {
     turkeyLayer.eachLayer(l => {
+      if (l.getBounds && !mapBounds.intersects(l.getBounds())) return;
       const name = l.feature?.properties?.name;
       const num = l.feature?.properties?.number;
       if (name) candidates.push({ layer: l, name, rawName: name, countryCode: 'TR', idKey: `TR::${num}` });
@@ -1557,6 +1584,7 @@ function updateProvinceLabels() {
   Object.entries(regionLayers).forEach(([code, rLayer]) => {
     if (rLayer && map.hasLayer(rLayer)) {
       rLayer.eachLayer(l => {
+        if (l.getBounds && !mapBounds.intersects(l.getBounds())) return;
         const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
         if (raw) {
           const display = getLocalizedName(raw, code);
@@ -1571,6 +1599,7 @@ function updateProvinceLabels() {
     Object.entries(subregionLayers).forEach(([code, sLayer]) => {
       if (sLayer && map.hasLayer(sLayer)) {
         sLayer.eachLayer(l => {
+          if (l.getBounds && !mapBounds.intersects(l.getBounds())) return;
           const raw = l.feature?.properties?.name;
           if (raw) {
             const display = getLocalizedName(raw, code);
@@ -1728,29 +1757,71 @@ function updateProvinceLabels() {
 }
 
 // ─── Level 2 & Level 3 Region Coordinators ─────────────────────────────────────
+const OVERSEAS_MAINLAND_BBOX = {
+  'FR': { minLat: 41.3, maxLat: 51.1, minLng: -5.2, maxLng: 9.6 },
+  'GB': { minLat: 49.8, maxLat: 60.9, minLng: -8.7, maxLng: 1.8 },
+  'US': { minLat: 24.5, maxLat: 49.4, minLng: -125.0, maxLng: -66.9 },
+  'NL': { minLat: 50.7, maxLat: 53.6, minLng: 3.3, maxLng: 7.3 },
+  'DK': { minLat: 54.5, maxLat: 57.8, minLng: 8.0, maxLng: 15.2 },
+  'NO': { minLat: 57.9, maxLat: 71.2, minLng: 4.5, maxLng: 31.1 },
+  'ES': { minLat: 35.9, maxLat: 43.8, minLng: -9.3, maxLng: 4.4 },
+  'PT': { minLat: 36.9, maxLat: 42.2, minLng: -9.5, maxLng: -6.1 }
+};
+
+function getVisibleCountries() {
+  if (!map) return [];
+  const bounds = map.getBounds().pad(0.18); // 18% padding around screen for fast preloading without bloat
+  const visible = [];
+
+  Object.entries(countryLayersByCode).forEach(([code, layer]) => {
+    if (!code || code.length !== 2 || code === '-99') return;
+    if (!layer || !layer.getBounds) return;
+    if (!bounds.intersects(layer.getBounds())) return;
+
+    // Guard against distant overseas territories pulling countries across the planet
+    if (OVERSEAS_MAINLAND_BBOX[code]) {
+      const mb = OVERSEAS_MAINLAND_BBOX[code];
+      const mBounds = L.latLngBounds([[mb.minLat, mb.minLng], [mb.maxLat, mb.maxLng]]);
+      if (!bounds.intersects(mBounds)) return;
+    }
+
+    visible.push(code);
+  });
+  return visible;
+}
+
 async function onViewChange() {
   if (!map) return;
   const zoom = map.getZoom();
 
-  if (countryBordersLayer) {
-    countryBordersLayer.setStyle(countryBorderStyle());
+  // Only restyle borders if zoom category actually changed (avoids 250 SVG re-stylings per drag)
+  const currentZoomCategory = zoom >= SUBREGION_ZOOM ? 3 : (zoom >= REGION_ZOOM ? 2 : 1);
+  if (currentZoomCategory !== lastZoomCategory) {
+    lastZoomCategory = currentZoomCategory;
+    if (countryBordersLayer) {
+      countryBordersLayer.setStyle(countryBorderStyle());
+    }
   }
 
   // ── Turkey Level 2 (81 Provinces) ──────────────────────────────────────────
   if (isTurkeyInView()) {
     if (zoom >= REGION_ZOOM && turkeyLayer && !map.hasLayer(turkeyLayer)) {
       turkeyLayer.addTo(map);
-      if (countriesLayer) {
-        countriesLayer.eachLayer(l => {
-          if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
-        });
+      if (countryLayersByCode['TR']) {
+        countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
     } else if (zoom < REGION_ZOOM && turkeyLayer && map.hasLayer(turkeyLayer)) {
       map.removeLayer(turkeyLayer);
-      if (countriesLayer) {
-        countriesLayer.eachLayer(l => {
-          if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
-        });
+      if (countryLayersByCode['TR']) {
+        countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
+      }
+    }
+  } else {
+    // If Turkey is scrolled away at high zoom, unmount it to keep SVG DOM lean
+    if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+      map.removeLayer(turkeyLayer);
+      if (countryLayersByCode['TR']) {
+        countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
     }
   }
@@ -1759,6 +1830,18 @@ async function onViewChange() {
 
   // ── World region layers (Level 2) ──────────────────────────────────────────
   if (zoom >= REGION_ZOOM) {
+    const visibleSet = new Set(visibleCodes);
+
+    // Evict off-screen region layers from the SVG DOM to keep memory tiny & 60fps
+    Object.entries(regionLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+        map.removeLayer(layer);
+        if (countryLayersByCode[code]) {
+          countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+        }
+      }
+    });
+
     const toLoad = visibleCodes.filter(code => code !== 'TR' && !regionLayers[code]);
     if (toLoad.length > 0) {
       await Promise.all(toLoad.map(code => loadRegionData(code)));
@@ -1767,10 +1850,8 @@ async function onViewChange() {
       for (const code of visibleCodes) {
         if (code !== 'TR' && regionLayers[code] && !map.hasLayer(regionLayers[code])) {
           regionLayers[code].addTo(map);
-          if (countriesLayer) {
-            countriesLayer.eachLayer(l => {
-              if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
-            });
+          if (countryLayersByCode[code]) {
+            countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
           }
         }
       }
@@ -1789,6 +1870,20 @@ async function onViewChange() {
 
   // ── World subregion layers (Level 3) ──────────────────────────────────────
   if (zoom >= SUBREGION_ZOOM) {
+    const visibleSet = new Set(visibleCodes);
+
+    // Evict off-screen subregion layers
+    Object.entries(subregionLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+        map.removeLayer(layer);
+      }
+    });
+    Object.entries(stateBordersLayers).forEach(([code, layer]) => {
+      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+        map.removeLayer(layer);
+      }
+    });
+
     const toLoadSub = visibleCodes.filter(code => code !== 'TR' && !subregionLayers[code]);
     if (toLoadSub.length > 0) {
       await Promise.all(toLoadSub.map(code => loadSubregionData(code)));
@@ -1822,19 +1917,6 @@ async function onViewChange() {
       Object.keys(regionLayers).forEach(code => refreshRegionLayer(code));
     }
   }
-}
-
-function getVisibleCountries() {
-  if (!countriesLayer || !map) return [];
-  const bounds = map.getBounds().pad(1.0); // 100% padding around screen for seamless preloading
-  const visible = [];
-  countriesLayer.eachLayer(layer => {
-    if (layer.getBounds && bounds.intersects(layer.getBounds())) {
-      const c = findCountry(layer.feature);
-      if (c) visible.push(c.code);
-    }
-  });
-  return visible;
 }
 
 function isTurkeyInView() {
