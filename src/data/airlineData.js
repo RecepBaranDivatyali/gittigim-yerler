@@ -27,7 +27,13 @@ export const AIRLINE_ALLIANCES = [
       { id: 'brussels', code: 'SN', name: 'Brussels Airlines', country: 'Belçika', flag: '🇧🇪', hub: 'BRU' },
       { id: 'airindia', code: 'AI', name: 'Air India', country: 'Hindistan', flag: '🇮🇳', hub: 'DEL' },
       { id: 'egyptair', code: 'MS', name: 'EgyptAir', country: 'Mısır', flag: '🇪🇬', hub: 'CAI' },
-      { id: 'eva', code: 'BR', name: 'EVA Air', country: 'Tayvan', flag: '🇹🇼', hub: 'TPE' }
+      { id: 'eva', code: 'BR', name: 'EVA Air', country: 'Tayvan', flag: '🇹🇼', hub: 'TPE' },
+      { id: 'airchina', code: 'CA', name: 'Air China', country: 'Çin', flag: '🇨🇳', hub: 'PEK' },
+      { id: 'thai', code: 'TG', name: 'Thai Airways', country: 'Tayland', flag: '🇹🇭', hub: 'BKK' },
+      { id: 'airnewzealand', code: 'NZ', name: 'Air New Zealand', country: 'Yeni Zelanda', flag: '🇳🇿', hub: 'AKL' },
+      { id: 'asiana', code: 'OZ', name: 'Asiana Airlines', country: 'G. Kore', flag: '🇰🇷', hub: 'ICN' },
+      { id: 'copa', code: 'CM', name: 'Copa Airlines', country: 'Panama', flag: '🇵🇦', hub: 'PTY' },
+      { id: 'avianca', code: 'AV', name: 'Avianca', country: 'Kolombiya', flag: '🇨🇴', hub: 'BOG' }
     ]
   },
   {
@@ -51,7 +57,9 @@ export const AIRLINE_ALLIANCES = [
       { id: 'garuda', code: 'GA', name: 'Garuda Indonesia', country: 'Endonezya', flag: '🇮🇩', hub: 'CGK' },
       { id: 'aireuropa', code: 'UX', name: 'Air Europa', country: 'İspanya', flag: '🇪🇸', hub: 'MAD' },
       { id: 'tarom', code: 'RO', name: 'TAROM', country: 'Romanya', flag: '🇷🇴', hub: 'OTP' },
-      { id: 'mea', code: 'ME', name: 'Middle East Airlines (MEA)', country: 'Lübnan', flag: '🇱🇧', hub: 'BEY' }
+      { id: 'mea', code: 'ME', name: 'Middle East Airlines (MEA)', country: 'Lübnan', flag: '🇱🇧', hub: 'BEY' },
+      { id: 'xiamen', code: 'MF', name: 'XiamenAir', country: 'Çin', flag: '🇨🇳', hub: 'XMN' },
+      { id: 'aerolineas', code: 'AR', name: 'Aerolíneas Argentinas', country: 'Arjantin', flag: '🇦🇷', hub: 'EZE' }
     ]
   },
   {
@@ -93,7 +101,6 @@ export const AIRLINE_ALLIANCES = [
       { id: 'freebird', code: 'FH', name: 'Freebird Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
       { id: 'tailwind', code: 'TI', name: 'Tailwind Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
       { id: 'southwind', code: '2S', name: 'Southwind Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
-      { id: 'mng', code: 'MB', name: 'MNG Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'ISL' }
     ]
   },
   {
