@@ -169,6 +169,7 @@ let countryFeaturesByCode = {};
 let countryLayersByCode = {};
 let sortedCountryLayers = [];
 let lastZoomCategory = -1;
+let lastPopupClosedAt = 0;
 let promotedLabelMarker = null;
 let promotedLabelParent = null;
 
@@ -295,6 +296,9 @@ function hidePopupBackdrop() {
 }
 
 function closeActivePopup() {
+  if (activeStatusPopup) {
+    lastPopupClosedAt = Date.now();
+  }
   hidePopupBackdrop();
   if (activePopupOutsideListener) {
     document.removeEventListener('pointerdown', activePopupOutsideListener, true);
@@ -900,6 +904,7 @@ function initMap(container) {
   });
 
   map.on('popupclose', () => {
+    lastPopupClosedAt = Date.now();
     hidePopupBackdrop();
     if (activePopupOutsideListener) {
       document.removeEventListener('pointerdown', activePopupOutsideListener, true);
@@ -985,7 +990,7 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup) {
+          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
             closeActivePopup();
             return;
           }
@@ -1062,7 +1067,7 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
-          if (activeStatusPopup) {
+          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
             closeActivePopup();
             return;
           }
@@ -1976,7 +1981,7 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
-        if (activeStatusPopup) {
+        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
           closeActivePopup();
           return;
         }
@@ -2104,7 +2109,7 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
-        if (activeStatusPopup) {
+        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
           closeActivePopup();
           return;
         }
