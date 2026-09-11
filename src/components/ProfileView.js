@@ -443,12 +443,12 @@ export function renderProfileView(container, onBack) {
                 const statusBadge = isPlanned ? `<span class="bucket-status-tag planned">🟡 ${t('planned')}</span>` : `<span class="bucket-status-tag wishlist">🟣 ${t('wishlist')}</span>`;
                 const flagHtml = item.flag.startsWith('http') ? `<img src="${item.flag}" class="bucket-item-flag" alt="" />` : `<span style="font-size:1.4rem;">${item.flag}</span>`;
                 return `
-                  <div class="bucket-item-card" data-id="${item.id}" data-idx="${index}">
+                  <div class="bucket-item-card" data-id="${escapeHtml(item.id)}" data-idx="${index}">
                     <div class="bucket-rank-num">#${index + 1}</div>
                     <div class="bucket-flag-wrap">${flagHtml}</div>
                     <div class="bucket-info-wrap">
-                      <div class="bucket-item-title">${item.name}</div>
-                      <div class="bucket-item-sub">${item.sub}</div>
+                      <div class="bucket-item-title">${escapeHtml(item.name)}</div>
+                      <div class="bucket-item-sub">${escapeHtml(item.sub)}</div>
                     </div>
                     ${statusBadge}
                     <div class="bucket-order-btns">
@@ -519,7 +519,7 @@ export function renderProfileView(container, onBack) {
           </div>
 
           <!-- Top Aviation Stats Grid -->
-          <div class="profile-stats" style="grid-template-columns:repeat(3, 1fr);margin-bottom:20px;">
+          <div class="profile-stats" style="margin-bottom:20px;">
             <div class="pstat">
               <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount} / ${ALL_AIRLINES.length}</span>
               <span class="pstat-lbl">${currentLang === 'tr' ? 'Uçulan Havayolu' : 'Flown Airlines'}</span>
@@ -805,12 +805,12 @@ export function renderProfileView(container, onBack) {
               <div class="poster-stat-box">
                 <span class="poster-stat-num">${stats.worldCountryCount}</span>
                 <span class="poster-stat-lbl">${currentLang === 'tr' ? 'Ülke' : 'Countries'}</span>
-                <span class="poster-stat-sub">%${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'}</span>
+                <span class="poster-stat-sub">${currentLang === 'tr' ? '%' + stats.worldPercentage : stats.worldPercentage + '%'} ${currentLang === 'tr' ? 'Dünya' : 'World'}</span>
               </div>
               <div class="poster-stat-box">
                 <span class="poster-stat-num">${stats.turkeyCount}</span>
                 <span class="poster-stat-lbl">${currentLang === 'tr' ? 'İl' : 'Provinces'}</span>
-                <span class="poster-stat-sub">%${stats.turkeyPercentage} ${currentLang === 'tr' ? 'Türkiye' : 'Turkey'}</span>
+                <span class="poster-stat-sub">${currentLang === 'tr' ? '%' + stats.turkeyPercentage : stats.turkeyPercentage + '%'} ${currentLang === 'tr' ? 'Türkiye' : 'Turkey'}</span>
               </div>
               <div class="poster-stat-box">
                 <span class="poster-stat-num">${stats.worldCityCount}</span>

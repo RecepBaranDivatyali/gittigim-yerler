@@ -30,7 +30,7 @@ export function renderLoginPage(container, onLogin) {
 
     container.innerHTML = `
       <div class="login-overlay">
-        <div style="position:absolute;top:20px;right:20px;z-index:10001;">
+        <div style="position:fixed;top:max(12px, env(safe-area-inset-top, 12px));right:max(12px, env(safe-area-inset-right, 12px));z-index:10001;">
           <div class="lang-toggle-btn" id="login-lang-toggle" style="background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;color:#f8fafc;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px);">
             <span>🌐</span>
             <span style="font-weight:700;">${currentLang.toUpperCase()}</span>

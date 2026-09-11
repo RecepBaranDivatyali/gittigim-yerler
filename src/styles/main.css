@@ -70,6 +70,7 @@ body {
   align-items: center;
   padding: 1rem 2rem;
   background: rgba(15, 23, 42, 0.85);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-glass);
   position: sticky;
@@ -197,6 +198,7 @@ body {
 .portal-card {
   position: relative;
   background: var(--bg-card);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
@@ -355,6 +357,7 @@ body {
 
 .stat-box {
   background: var(--bg-card);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-glass);
   padding: 1.25rem;
@@ -497,6 +500,7 @@ body {
 /* Ultra Clean Sleek Dark Hover Tooltip (Been App Style) */
 .leaflet-tooltip.clean-hover-tooltip {
   background: rgba(15, 23, 42, 0.94) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 8px !important;
@@ -516,6 +520,7 @@ body {
 /* List Side Panel */
 .side-panel {
   background: var(--bg-card);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
@@ -620,6 +625,7 @@ body {
   right: 0;
   bottom: 0;
   background: rgba(15, 23, 42, 0.85);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   z-index: 2000;
   display: flex;
@@ -886,6 +892,7 @@ body {
   border-radius: 16px !important;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
   padding: 0 !important;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 .leaflet-popup.clean-status-popup .leaflet-popup-tip-container {
@@ -985,6 +992,7 @@ html, body, #app {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 14px 18px;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -1045,6 +1053,7 @@ html, body, #app {
   display: flex;
   align-items: center;
   gap: 14px;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   flex-wrap: wrap;
   max-width: 480px;
@@ -1104,6 +1113,7 @@ svg, g, path {
 
 .floating-profile-btn {
   background: rgba(15, 23, 42, 0.90);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1.5px solid rgba(255, 87, 34, 0.45);
@@ -1159,6 +1169,7 @@ svg, g, path {
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -1229,6 +1240,7 @@ svg, g, path {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   padding: 12px 16px;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
@@ -2065,6 +2077,7 @@ svg, g, path {
   border-radius: 20px;
   padding: 14px 18px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 24px rgba(245, 158, 11, 0.25);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -2462,6 +2475,8 @@ svg, g, path {
   --theme-ui-border: rgba(255, 255, 255, 0.12);
   --theme-text-main: #f8fafc;
   --theme-text-muted: #94a3b8;
+  --theme-card-bg: rgba(15, 23, 42, 0.65);
+  --theme-card-border: rgba(148, 163, 184, 0.12);
 }
 
 body[data-theme="ocean"] {
@@ -2676,18 +2691,18 @@ body[data-theme="light"] .map-status-popup-title {
   color: #0f172a !important;
 }
 
-body[data-theme="light"] .map-status-popup-close {
+body[data-theme="light"] .map-status-popup-close-btn {
   color: #64748b !important;
 }
 
-body[data-theme="light"] .map-status-popup-close:hover {
+body[data-theme="light"] .map-status-popup-close-btn:hover {
   color: #0f172a !important;
 }
 
 body[data-theme="light"] .map-status-btn {
-  background: #f8fafc !important;
-  border: 1px solid rgba(203, 213, 225, 0.8) !important;
-  color: #334155 !important;
+  background: rgba(241, 245, 249, 0.85);
+  color: #334155;
+  border-color: rgba(51, 65, 85, 0.15);
 }
 
 body[data-theme="light"] .map-status-btn:hover {
@@ -2697,10 +2712,118 @@ body[data-theme="light"] .map-status-btn:hover {
 }
 
 body[data-theme="light"] .map-status-btn.active {
-  background: rgba(255, 87, 34, 0.12) !important;
-  border-color: #ff5722 !important;
-  color: #ff5722 !important;
+  border-color: var(--btn-color, #ff5722);
+  color: var(--btn-color, #ff5722);
+  background: rgba(255, 87, 34, 0.08);
   font-weight: 700 !important;
+}
+
+/* Airlines */
+body[data-theme="light"] .airline-card {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .airline-name { color: #1e293b; }
+body[data-theme="light"] .airline-code { color: #64748b; }
+body[data-theme="light"] .alliance-set-card {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+
+/* Aircraft Fleet */
+body[data-theme="light"] .aircraft-card {
+  background: rgba(241, 245, 249, 0.85) !important;
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .aircraft-blueprint-wrap {
+  background: #e8eef5 !important;
+}
+body[data-theme="light"] .aircraft-model-name { color: #1e293b; }
+body[data-theme="light"] .aircraft-telemetry-hud {
+  background: linear-gradient(135deg, rgba(241,245,249,0.96), rgba(226,232,240,0.92)) !important;
+}
+body[data-theme="light"] .hud-lbl { color: #64748b; }
+body[data-theme="light"] .hud-val { color: #1e293b; }
+body[data-theme="light"] .aircraft-toggle-btn {
+  background: rgba(241, 245, 249, 0.9);
+  color: #334155;
+  border-color: rgba(51, 65, 85, 0.15);
+}
+
+/* Bucket List */
+body[data-theme="light"] .bucket-item-card {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .bucket-item-title { color: #1e293b; }
+body[data-theme="light"] .bucket-item-sub { color: #64748b; }
+body[data-theme="light"] .bucket-move-btn {
+  background: rgba(241, 245, 249, 0.9);
+  color: #334155;
+}
+
+/* Saved Friends */
+body[data-theme="light"] .saved-friends-panel {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .saved-friend-chip {
+  background: rgba(226, 232, 240, 0.8);
+  color: #1e293b;
+}
+
+/* Compare */
+body[data-theme="light"] .compare-bars-card {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .compare-subtab {
+  background: rgba(226, 232, 240, 0.6);
+  color: #334155;
+}
+body[data-theme="light"] .compare-subtab.active {
+  background: rgba(255, 87, 34, 0.1);
+  color: #ff5722;
+}
+body[data-theme="light"] .comp-card-box {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+
+/* Search Bar */
+body[data-theme="light"] .map-search-input-box {
+  background: rgba(241, 245, 249, 0.92);
+  border-color: rgba(51, 65, 85, 0.15);
+  color: #1e293b;
+}
+body[data-theme="light"] .map-search-input-box input {
+  color: #1e293b;
+}
+body[data-theme="light"] .map-search-input-box input::placeholder {
+  color: #94a3b8;
+}
+body[data-theme="light"] .map-search-results {
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .search-item {
+  color: #1e293b;
+  border-bottom-color: rgba(51, 65, 85, 0.08);
+}
+body[data-theme="light"] .search-item:hover {
+  background: rgba(226, 232, 240, 0.6);
+}
+
+/* Floating Controls */
+body[data-theme="light"] .floating-layer-hud {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(51, 65, 85, 0.15);
+  color: #334155;
+}
+body[data-theme="light"] .floating-poster-btn {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(51, 65, 85, 0.15);
+  color: #334155;
 }
 
 .floating-feedback-wrap {
@@ -2724,6 +2847,7 @@ body[data-theme="light"] .map-status-btn.active {
   font-size: 0.85rem;
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -2739,6 +2863,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.75);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   z-index: 10001;
   display: flex;
@@ -2914,6 +3039,7 @@ body[data-theme="light"] .map-status-btn.active {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: calc(16px * var(--ui-font-scale, 1.05));
   padding: calc(12px * var(--ui-font-scale, 1.05)) calc(16px * var(--ui-font-scale, 1.05));
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -2962,6 +3088,7 @@ body[data-theme="light"] .map-status-btn.active {
   font-size: calc(0.95rem * var(--ui-font-scale, 1.05));
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -2986,6 +3113,7 @@ body[data-theme="light"] .map-status-btn.active {
   border-radius: calc(16px * var(--ui-font-scale, 1.05));
   padding: calc(10px * var(--ui-font-scale, 1.05)) calc(16px * var(--ui-font-scale, 1.05));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 
@@ -3033,6 +3161,7 @@ body[data-theme="light"] .map-status-btn.active {
   font-size: calc(0.9rem * var(--ui-font-scale, 1.05));
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -3055,6 +3184,7 @@ body[data-theme="light"] .map-status-btn.active {
   align-items: center;
   gap: 8px;
   background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 99px;
@@ -3098,6 +3228,7 @@ body[data-theme="light"] .map-status-btn.active {
   left: 0;
   right: 0;
   background: var(--theme-card-bg, rgba(15, 23, 42, 0.95));
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 16px;
@@ -3159,6 +3290,7 @@ body[data-theme="light"] .map-status-btn.active {
   align-items: center;
   gap: 6px;
   background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.12));
   border-radius: 99px;
@@ -3178,6 +3310,7 @@ body[data-theme="light"] .map-status-btn.active {
   align-items: center;
   gap: 6px;
   background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 99px;
@@ -3725,6 +3858,7 @@ body[data-theme="light"] .map-status-btn.active {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   z-index: 10000;
   display: flex;
@@ -3779,7 +3913,7 @@ body[data-theme="light"] .map-status-btn.active {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 24px;
   padding: 22px 18px;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.85), 0 0 40px var(--poster-accent, #10b981) 22;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.85), 0 0 40px var(--poster-accent, #10b981);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -4094,7 +4228,7 @@ body[data-theme="light"] .map-status-btn.active {
 .aircraft-card.active {
   border-color: var(--aircraft-accent, #3b82f6);
   background: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 0 24px var(--aircraft-accent, #3b82f6) 25;
+  box-shadow: 0 0 24px var(--aircraft-accent, #3b82f6);
 }
 .aircraft-blueprint-wrap {
   width: 100%;
@@ -4131,6 +4265,7 @@ body[data-theme="light"] .map-status-btn.active {
   top: 8px;
   left: 8px;
   background: rgba(8, 17, 32, 0.88);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border: 1px solid;
   border-radius: 6px;
@@ -4207,9 +4342,6 @@ body[data-theme="light"] .map-status-btn.active {
   font-family: 'Outfit', Consolas, sans-serif;
   font-size: 0.66rem;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .aircraft-card-content {
   padding: 14px 16px;
@@ -4297,7 +4429,13 @@ body[data-theme="light"] .map-status-btn.active {
   gap: 16px;
 }
 
-/* ── Prevent Top Bar Collision on Tablets (<= 960px) ── */
+/* ── Prevent Top Bar Collision on Tablets (<= 1050px) ── */
+@media (max-width: 1050px) and (min-width: 961px) {
+  .floating-search-wrap {
+    left: calc(50% + 60px);
+  }
+}
+
 @media (max-width: 960px) {
   .floating-search-wrap {
     top: max(50px, calc(env(safe-area-inset-top, 0px) + 48px));
@@ -4769,3 +4907,14 @@ body[data-theme="light"] .map-status-btn.active {
   }
 }
 
+@media (max-width: 768px) {
+  #map-legend.floating-legend.expanded {
+    max-width: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-feedback-wrap {
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 14px)) + 48px);
+  }
+}

@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -806,9 +806,9 @@ export function renderWorldMapView(container, options = {}) {
     legendEl.innerHTML = `
       <div class="legend-items-list" style="margin-top:2px;">
         ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
-          `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span>${v.label.replace(/^.+? /, '')}</span>`
+          `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span><span class="legend-text">${v.label.replace(/^.+? /, '')}</span></span>`
         ).join('')}
-        <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};box-shadow:none;"></span>${t('unvisited')}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};box-shadow:none;"></span><span class="legend-text">${t('unvisited')}</span></span>
       </div>
     `;
   }
@@ -990,7 +990,7 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
+          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
             closeActivePopup();
             return;
           }
@@ -1067,7 +1067,7 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
-          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
+          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
             closeActivePopup();
             return;
           }
@@ -1981,7 +1981,7 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
-        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
+        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
           closeActivePopup();
           return;
         }
@@ -2109,7 +2109,7 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
-        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 400)) {
+        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
           closeActivePopup();
           return;
         }
@@ -2279,6 +2279,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       } else {
         saveWorldVisit(id, 'visited', { rating: currentRating });
       }
+      invalidateStorageCache();
+      refreshStats();
     });
   });
 
@@ -2299,6 +2301,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     } else {
       saveWorldVisit(id, 'visited', { notes: noteVal });
     }
+    invalidateStorageCache();
+    refreshStats();
     const saveBtn = content.querySelector('#popup-note-save-btn');
     if (saveBtn) {
       saveBtn.textContent = '✓';
@@ -2330,7 +2334,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
         // ── Symmetrical Two-Way Sync for Turkey (visited, planned, wishlist) ──
         if (val === 'visited') {
-          saveWorldVisit('TR', 'visited', { notes: 'Auto-marked' });
+          saveWorldVisit('TR', 'visited');
         } else if (val === 'planned') {
           const data = getStorageData();
           if (data.worldVisits['TR']?.status !== 'visited') saveWorldVisit('TR', 'planned');
@@ -2343,7 +2347,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           if (provs.some(v => v.status === 'visited')) saveWorldVisit('TR', 'visited');
           else if (provs.some(v => v.status === 'planned')) saveWorldVisit('TR', 'planned');
           else if (provs.some(v => v.status === 'wishlist')) saveWorldVisit('TR', 'wishlist');
-          else saveWorldVisit('TR', 'unvisited');
         }
       } else if (type === 'country') {
         saveWorldVisit(id, val);
@@ -2367,7 +2370,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         // ── Symmetrical Two-Way Sync for World Regions / Subregions (visited, planned, wishlist) ──
         if (countryCode) {
           if (val === 'visited') {
-            saveWorldVisit(countryCode, 'visited', { notes: 'Auto-marked' });
+            saveWorldVisit(countryCode, 'visited');
           } else if (val === 'planned') {
             const data = getStorageData();
             if (data.worldVisits[countryCode]?.status !== 'visited') saveWorldVisit(countryCode, 'planned');
@@ -2381,8 +2384,14 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
             if (subs.includes('visited')) saveWorldVisit(countryCode, 'visited');
             else if (subs.includes('planned')) saveWorldVisit(countryCode, 'planned');
             else if (subs.includes('wishlist')) saveWorldVisit(countryCode, 'wishlist');
-            else saveWorldVisit(countryCode, 'unvisited');
           }
+        }
+      } else if (type === 'city') {
+        if (val === 'unvisited') {
+          toggleWorldCity(countryCode, id, false);
+        } else {
+          toggleWorldCity(countryCode, id, true);
+          saveWorldVisit(countryCode, val);
         }
       }
 

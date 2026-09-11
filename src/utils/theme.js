@@ -37,6 +37,57 @@ export const THEMES = {
     uiBorder: 'rgba(203, 213, 225, 0.9)',
     textMain: '#0f172a',
     textMuted: '#64748b'
+  },
+  ocean: {
+    id: 'ocean',
+    name: 'Okyanus',
+    nameEn: 'Ocean',
+    icon: '🌊',
+    oceanBg: '#0c1929',
+    landFill: '#1a3a5c',
+    provinceFill: '#1e4470',
+    landBorder: '#2a5a8c',
+    landBorderZoomed: '#3a7ab0',
+    labelColor: '#e0f0ff',
+    labelShadow: '0 1px 3px rgba(0,20,60,0.7)',
+    uiBg: 'rgba(12, 25, 41, 0.92)',
+    uiBorder: 'rgba(42, 90, 140, 0.35)',
+    textMain: '#e0f0ff',
+    textMuted: '#7ab0d4'
+  },
+  emerald: {
+    id: 'emerald',
+    name: 'Zümrüt',
+    nameEn: 'Emerald',
+    icon: '🌲',
+    oceanBg: '#0a1f0a',
+    landFill: '#1a3d1a',
+    provinceFill: '#1e4a1e',
+    landBorder: '#2d6b2d',
+    landBorderZoomed: '#3d8b3d',
+    labelColor: '#d4f5d4',
+    labelShadow: '0 1px 3px rgba(0,30,0,0.7)',
+    uiBg: 'rgba(10, 31, 10, 0.92)',
+    uiBorder: 'rgba(45, 107, 45, 0.35)',
+    textMain: '#d4f5d4',
+    textMuted: '#7abf7a'
+  },
+  vintage: {
+    id: 'vintage',
+    name: 'Nostalji',
+    nameEn: 'Vintage',
+    icon: '📜',
+    oceanBg: '#2c1810',
+    landFill: '#4a3828',
+    provinceFill: '#3d2e20',
+    landBorder: '#6b5240',
+    landBorderZoomed: '#8b7260',
+    labelColor: '#f5e6d0',
+    labelShadow: '0 1px 3px rgba(40,20,0,0.7)',
+    uiBg: 'rgba(44, 24, 16, 0.92)',
+    uiBorder: 'rgba(107, 82, 64, 0.35)',
+    textMain: '#f5e6d0',
+    textMuted: '#b8a088'
   }
 };
 

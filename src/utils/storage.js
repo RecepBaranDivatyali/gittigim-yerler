@@ -15,6 +15,14 @@ export const STORAGE_KEYS = {
   SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1'
 };
 
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn('LocalStorage save error for key:', key, e);
+  }
+}
+
 // Store default initial state
 export function getStorageData() {
   let turkeyVisits = {};
@@ -32,8 +40,11 @@ export function getStorageData() {
     const rawCities = localStorage.getItem(STORAGE_KEYS.WORLD_CITIES);
     if (rawCities) worldCities = JSON.parse(rawCities);
 
-    const rawProfile = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-    if (rawProfile) userProfile = JSON.parse(rawProfile);
+    const rawProfile = localStorage.getItem('gv_profile') || localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    if (rawProfile) {
+      const parsed = JSON.parse(rawProfile);
+      if (parsed && typeof parsed === 'object') userProfile = parsed;
+    }
   } catch (err) {
     console.error('Error loading LocalStorage:', err);
   }
@@ -57,7 +68,7 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       triggerConfetti();
     }
   }
-  localStorage.setItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(turkeyVisits));
+  safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(turkeyVisits));
 
   // Two-way synchronization with Turkey (TR) country status
   syncCountryFromSubdivision('TR', status);
@@ -79,7 +90,7 @@ export function syncCountryFromSubdivision(countryCode, subStatus) {
         date: currentCountry.date || new Date().toISOString().split('T')[0],
         notes: currentCountry.notes || 'Alt bölge ziyareti ile otomatik işaretlendi'
       };
-      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+      safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
     }
   } else if (subStatus === 'planned') {
     // Only upgrade to planned if not already visited
@@ -89,7 +100,7 @@ export function syncCountryFromSubdivision(countryCode, subStatus) {
         status: 'planned',
         date: currentCountry.date || new Date().toISOString().split('T')[0]
       };
-      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+      safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
     }
   } else if (subStatus === 'wishlist') {
     // Only upgrade to wishlist if unvisited
@@ -99,7 +110,7 @@ export function syncCountryFromSubdivision(countryCode, subStatus) {
         status: 'wishlist',
         date: currentCountry.date || new Date().toISOString().split('T')[0]
       };
-      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+      safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
     }
   }
 }
@@ -120,7 +131,7 @@ export function saveWorldVisit(countryCode, status, details = {}) {
       triggerConfetti();
     }
   }
-  localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+  safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
 
   // If this is a region/subregion (contains '::'), synchronize with parent country
   if (countryCode.includes('::')) {
@@ -142,14 +153,14 @@ export function toggleWorldCity(countryCode, cityName, isVisited, notes = '') {
     // Auto-mark country as visited if not already
     if (!worldVisits[countryCode] || worldVisits[countryCode].status !== 'visited') {
       worldVisits[countryCode] = { status: 'visited', date: new Date().toISOString().split('T')[0], notes: 'Şehir ziyareti ile otomatik işaretlendi' };
-      localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+      safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
     }
     triggerConfetti();
   } else {
     worldCities = worldCities.filter(c => !(c.countryCode === countryCode && c.cityName.toLowerCase() === cityName.toLowerCase()));
   }
 
-  localStorage.setItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(worldCities));
+  safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(worldCities));
   notifyStateChange();
 }
 
@@ -221,7 +232,22 @@ export function calculateStats() {
 
 export function exportBackup() {
   const data = getStorageData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  let userProfile = null;
+  try {
+    const raw = localStorage.getItem('gv_profile');
+    if (raw) userProfile = JSON.parse(raw);
+  } catch {}
+
+  const backupPayload = {
+    ...data,
+    userProfile: userProfile || data.userProfile,
+    userAirlines: getUserAirlines(),
+    userAircraft: getUserAircraft(),
+    bucketRanks: getBucketRanks(),
+    savedFriends: getSavedFriends(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -235,6 +261,7 @@ export function resetTravelData() {
   localStorage.removeItem(STORAGE_KEYS.WORLD_VISITS);
   localStorage.removeItem(STORAGE_KEYS.WORLD_CITIES);
   localStorage.removeItem('gv_unlocked_achievements');
+  localStorage.removeItem(STORAGE_KEYS.BUCKET_RANKS);
   unlockedCache = [];
   notifyStateChange();
 }
@@ -242,10 +269,10 @@ export function resetTravelData() {
 export function importBackup(fileContent) {
   try {
     const data = JSON.parse(fileContent);
-    if (data.turkeyVisits) localStorage.setItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
-    if (data.worldVisits) localStorage.setItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
-    if (data.worldCities) localStorage.setItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
-    if (data.userProfile) localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.userProfile));
+    if (data.turkeyVisits) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
+    if (data.worldVisits) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
+    if (data.worldCities) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
+    if (data.userProfile) safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.userProfile));
     notifyStateChange();
     return true;
   } catch (e) {
@@ -290,7 +317,7 @@ export function checkAndNotifyAchievements(storageData, baseStats) {
     }
 
     unlockedCache = earnedIds;
-    localStorage.setItem('gv_unlocked_achievements', JSON.stringify(earnedIds));
+    safeSetItem('gv_unlocked_achievements', JSON.stringify(earnedIds));
   } catch (e) {
     console.error('Achievement check error', e);
   }
@@ -315,7 +342,7 @@ export function getBucketRanks() {
 
 export function saveBucketRanks(ranks) {
   try {
-    localStorage.setItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(ranks));
+    safeSetItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(ranks));
     notifyStateChange();
   } catch (e) {
     console.error('Error saving bucket ranks', e);
@@ -350,7 +377,7 @@ export function getUserAirlines() {
 
 export function saveUserAirlines(airlines) {
   try {
-    localStorage.setItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(airlines));
+    safeSetItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(airlines));
     notifyStateChange();
   } catch (e) {
     console.error('Error saving user airlines', e);
@@ -407,14 +434,14 @@ export function saveFriend(friendObj) {
       savedAt: new Date().toISOString()
     });
   }
-  localStorage.setItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
+  safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
   notifyStateChange();
   return friends;
 }
 
 export function deleteFriend(friendId) {
   const friends = getSavedFriends().filter(f => f.id !== friendId);
-  localStorage.setItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
+  safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(friends));
   notifyStateChange();
   return friends;
 }
@@ -431,7 +458,7 @@ export function getUserAircraft() {
 
 export function saveUserAircraft(aircraft) {
   try {
-    localStorage.setItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(aircraft));
+    safeSetItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(aircraft));
     notifyStateChange();
   } catch (e) {
     console.error('Error saving user aircraft', e);
