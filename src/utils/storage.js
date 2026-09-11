@@ -12,7 +12,9 @@ export const STORAGE_KEYS = {
   BUCKET_RANKS: 'gittigim_yerler_bucket_ranks_v1',
   USER_AIRLINES: 'gittigim_yerler_airlines_v1',
   USER_AIRCRAFT: 'gittigim_yerler_aircraft_v1',
-  SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1'
+  SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1',
+  USER_FEEDBACKS: 'gv_user_feedbacks_v1',
+  FEEDBACK_STATUS_OVERRIDES: 'gv_feedback_status_overrides_v1'
 };
 
 function safeSetItem(key, value) {
@@ -245,6 +247,8 @@ export function exportBackup() {
     userAircraft: getUserAircraft(),
     bucketRanks: getBucketRanks(),
     savedFriends: getSavedFriends(),
+    userFeedbacks: getUserFeedbacks(),
+    feedbackOverrides: getFeedbackStatusOverrides(),
     exportedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
@@ -474,4 +478,93 @@ export function toggleUserAircraft(modelId) {
   }
   saveUserAircraft(data);
   return data;
+}
+
+
+// ─── Feedback & Bug Report Tracker ──────────────────────────────────────────
+export function getUserFeedbacks() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const parsed = raw ? JSON.parse(raw) : null;
+    let feedbacks = Array.isArray(parsed) ? parsed : [];
+    
+    // Apply any status overrides (e.g. from developer/admin or shared status)
+    const overrides = getFeedbackStatusOverrides();
+    return feedbacks.map(fb => {
+      if (overrides[fb.id]) {
+        return { ...fb, ...overrides[fb.id] };
+      }
+      return fb;
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function saveUserFeedback(item) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const parsed = raw ? JSON.parse(raw) : null;
+    let feedbacks = Array.isArray(parsed) ? parsed : [];
+    
+    const feedbackObj = {
+      id: item.id || ('fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
+      type: item.type || 'suggestion',
+      message: item.message || '',
+      contact: item.contact || '',
+      username: item.username || 'Gezgin',
+      status: item.status || 'pending', // pending, considering, in_progress, resolved, declined
+      devResponse: item.devResponse || '',
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    feedbacks.unshift(feedbackObj);
+    safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+    notifyStateChange();
+    return feedbackObj;
+  } catch (e) {
+    console.error('Error saving user feedback', e);
+    return item;
+  }
+}
+
+export function getFeedbackStatusOverrides() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function updateFeedbackStatus(id, newStatus, devResponse = '') {
+  try {
+    const overrides = getFeedbackStatusOverrides();
+    overrides[id] = {
+      status: newStatus,
+      devResponse: devResponse !== undefined ? devResponse : (overrides[id]?.devResponse || ''),
+      updatedAt: new Date().toISOString()
+    };
+    safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(overrides));
+    
+    // Also update directly in user feedbacks if present
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const parsed = raw ? JSON.parse(raw) : null;
+    let feedbacks = Array.isArray(parsed) ? parsed : [];
+    const idx = feedbacks.findIndex(f => f.id === id);
+    if (idx !== -1) {
+      feedbacks[idx].status = newStatus;
+      if (devResponse) feedbacks[idx].devResponse = devResponse;
+      feedbacks[idx].updatedAt = new Date().toISOString();
+      safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+    }
+    
+    notifyStateChange();
+    return true;
+  } catch (e) {
+    console.error('Error updating feedback status', e);
+    return false;
+  }
 }

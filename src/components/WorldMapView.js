@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -406,20 +406,70 @@ export function renderWorldMapView(container, options = {}) {
               <h3>${t('feedbackTitle')}</h3>
               <button id="feedback-close-btn" class="feedback-close-btn">&times;</button>
             </div>
-            <p class="feedback-modal-sub">${t('feedbackSubtitle')}</p>
-            
-            <div class="feedback-form">
-              <div class="feedback-type-group">
-                <button type="button" class="feedback-type-btn active" data-type="suggestion">${t('feedbackSuggestion')}</button>
-                <button type="button" class="feedback-type-btn" data-type="bug">${t('feedbackBug')}</button>
-                <button type="button" class="feedback-type-btn" data-type="other">${t('feedbackOther')}</button>
+
+            <!-- Subtabs: [New Feedback] [My Feedbacks] -->
+            <div class="feedback-nav-tabs">
+              <button type="button" class="feedback-nav-tab active" id="fb-tab-new">${t('tabNewFeedback')}</button>
+              <button type="button" class="feedback-nav-tab" id="fb-tab-list">
+                ${t('tabMyFeedbacks')}
+                <span id="fb-count-badge" class="fb-count-badge" style="display:none;">0</span>
+              </button>
+            </div>
+
+            <!-- TAB 1: New Feedback Form -->
+            <div id="fb-panel-new" class="feedback-tab-panel">
+              <p class="feedback-modal-sub">${t('feedbackSubtitle')}</p>
+              
+              <div class="feedback-form">
+                <div class="feedback-type-group">
+                  <button type="button" class="feedback-type-btn active" data-type="suggestion">${t('feedbackSuggestion')}</button>
+                  <button type="button" class="feedback-type-btn" data-type="bug">${t('feedbackBug')}</button>
+                  <button type="button" class="feedback-type-btn" data-type="other">${t('feedbackOther')}</button>
+                </div>
+                
+                <textarea id="feedback-message" class="feedback-textarea" rows="4" placeholder="${t('feedbackMsgPlaceholder')}"></textarea>
+                <input type="text" id="feedback-contact" class="feedback-input" placeholder="${t('feedbackEmailPlaceholder')}" />
+                
+                <button type="button" id="feedback-submit-btn" class="feedback-submit-btn">${t('feedbackSend')}</button>
+                <div id="feedback-success-msg" class="feedback-success-msg" style="display:none;">${t('feedbackSent')}</div>
               </div>
-              
-              <textarea id="feedback-message" class="feedback-textarea" rows="4" placeholder="${t('feedbackMsgPlaceholder')}"></textarea>
-              <input type="text" id="feedback-contact" class="feedback-input" placeholder="${t('feedbackEmailPlaceholder')}" />
-              
-              <button type="button" id="feedback-submit-btn" class="feedback-submit-btn">${t('feedbackSend')}</button>
-              <div id="feedback-success-msg" class="feedback-success-msg" style="display:none;">${t('feedbackSent')}</div>
+            </div>
+
+            <!-- TAB 2: My Feedbacks & Status List -->
+            <div id="fb-panel-list" class="feedback-tab-panel" style="display:none;">
+              <div id="fb-list-container" class="feedback-list-wrap">
+                <!-- Injected dynamically -->
+              </div>
+
+              <!-- Admin Mode Collapsible Section -->
+              <div class="fb-admin-section">
+                <div class="fb-admin-toggle-row">
+                  <button type="button" id="btn-toggle-admin" class="fb-admin-toggle-btn">
+                    <span>👑</span> <span>${t('adminMode')}</span>
+                  </button>
+                </div>
+                <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;">
+                  <div class="fb-admin-auth-row" id="fb-admin-auth-row">
+                    <input type="password" id="fb-admin-pin" class="feedback-input" style="width:140px;margin:0;" placeholder="${t('adminPinPlaceholder')}" />
+                    <button type="button" id="btn-admin-login" class="feedback-submit-btn" style="width:auto;padding:8px 16px;margin:0;">Giriş</button>
+                  </div>
+                  <div id="fb-admin-controls" class="fb-admin-controls" style="display:none;">
+                    <div style="font-size:0.8rem;color:#10b981;font-weight:700;margin-bottom:8px;">✓ Yönetici Modu Aktif</div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:10px;">ID girerek veya yukarıdaki kartlardan durumu ve geliştirici yanıtını güncelleyebilirsiniz:</div>
+                    <input type="text" id="fb-admin-target-id" class="feedback-input" placeholder="Bildirim ID (örn: fb_123...)" style="margin-bottom:8px;" />
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="fb-status-btn-group">
+                      <button type="button" class="fb-status-set-btn" data-status="pending" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;">⏳ İnceleniyor</button>
+                      <button type="button" class="fb-status-set-btn" data-status="considering" style="background:#3b82f622;color:#3b82f6;border:1px solid #3b82f655;">💡 Düşünülüyor</button>
+                      <button type="button" class="fb-status-set-btn" data-status="in_progress" style="background:#8b5cf622;color:#8b5cf6;border:1px solid #8b5cf655;">🛠️ Hazırlanıyor</button>
+                      <button type="button" class="fb-status-set-btn selected" data-status="resolved" style="background:#10b98122;color:#10b981;border:1px solid #10b98155;">✅ Yapıldı</button>
+                      <button type="button" class="fb-status-set-btn" data-status="declined" style="background:#ef444422;color:#ef4444;border:1px solid #ef444455;">🛑 Vazgeçildi</button>
+                    </div>
+                    <textarea id="fb-admin-note" class="feedback-textarea" rows="2" placeholder="Geliştirici Yanıt Notu (Kullanıcıya iletilecek...)" style="margin-bottom:8px;"></textarea>
+                    <button type="button" id="btn-admin-save-status" class="feedback-submit-btn" style="padding:10px;">Durumu Kaydet & Güncelle</button>
+                    <div id="fb-admin-msg" style="display:none;font-size:0.8rem;color:#10b981;margin-top:6px;text-align:center;"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

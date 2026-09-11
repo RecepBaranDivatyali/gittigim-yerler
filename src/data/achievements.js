@@ -8,6 +8,7 @@ export const ACHIEVEMENT_CATEGORIES = {
   city: { label: 'Şehir Avcısı', color: '#f59e0b' },
   aviation: { label: 'Havacılık & Filo', color: '#0ea5e9' },
   special: { label: 'Özel & Rotalar', color: '#10b981' },
+  community: { label: 'Topluluk & Katkı', color: '#ec4899' },
 };
 
 function getContinentCount(s, continentKey) {
@@ -123,6 +124,12 @@ export const ACHIEVEMENTS = [
   { id: 'nordic', title: 'Kuzey Işıkları', desc: 'En az 2 İskandinav/Nordik ülkesini ziyaret et (İsveç, Norveç, Finlandiya, Danimarka, İzlanda)', icon: '❄️', category: 'special', check: s => ['SE','NO','FI','DK','IS'].filter(c => getVisitedCodes(s).includes(c)).length >= 2 },
   { id: 'far_east', title: 'Uzak Doğu Kâşifi', desc: 'En az 2 Uzak Doğu ülkesini ziyaret et (Japonya, Güney Kore, Çin)', icon: '🏮', category: 'special', check: s => ['JP','KR','CN'].filter(c => getVisitedCodes(s).includes(c)).length >= 2 },
   { id: 'turkic_world', title: 'Türk Dünyası', desc: 'En az 2 Türk devletini ziyaret et (Azerbaycan, Kazakistan, Özbekistan, Türkmenistan, Kırgızistan)', icon: '🐺', category: 'special', check: s => ['AZ','KZ','UZ','TM','KG'].filter(c => getVisitedCodes(s).includes(c)).length >= 2 },
+
+  // ─── TOPLULUK & KATKI ─────────────────────────────────────────
+  { id: 'first_feedback', title: 'İlk Ses', desc: 'Uygulamayı geliştirmek için ilk geri bildirimini paylaş', icon: '📮', category: 'community', check: s => (s.feedbackCount || 0) >= 1 },
+  { id: 'bug_hunter', title: 'Hata Avcısı', desc: 'Uygulamanın gelişmesi için en az 1 hata (bug) bildirimi yap', icon: '🐞', category: 'community', check: s => (s.bugReportCount || 0) >= 1 },
+  { id: 'feature_contributor', title: 'Fikir Mimarı', desc: 'Geliştiriciye 3 veya daha fazla öneri/fikir gönder', icon: '💡', category: 'community', check: s => (s.suggestionCount || 0) >= 3 },
+  { id: 'issue_resolved', title: 'Sorun Çözücü', desc: 'Bildirdiğin bir öneri veya hatanın çözülmesini sağla', icon: '🏆', category: 'community', check: s => (s.resolvedFeedbackCount || 0) >= 1 },
 ];
 
 export function computeAchievementStats(storageData, baseStats) {
@@ -176,6 +183,26 @@ export function computeAchievementStats(storageData, baseStats) {
   const worldWishlistCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && v?.status === 'wishlist').length + turkeyWishlistCount;
   const worldPlannedCount = Object.entries(worldVisits).filter(([k, v]) => !k.includes('::') && (v?.status === 'planned' || v?.status === 'target')).length + turkeyPlannedCount;
 
+  // ── Read feedback stats from localStorage ──
+  let userFeedbacks = [];
+  try {
+    const fbRaw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    if (fbRaw) userFeedbacks = JSON.parse(fbRaw);
+  } catch {}
+  if (!Array.isArray(userFeedbacks)) userFeedbacks = [];
+
+  let fbOverrides = {};
+  try {
+    const ovRaw = localStorage.getItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES);
+    if (ovRaw) fbOverrides = JSON.parse(ovRaw);
+  } catch {}
+
+  const mergedFeedbacks = userFeedbacks.map(f => fbOverrides[f.id] ? { ...f, ...fbOverrides[f.id] } : f);
+  const feedbackCount = mergedFeedbacks.length;
+  const bugReportCount = mergedFeedbacks.filter(f => f.type === 'bug').length;
+  const suggestionCount = mergedFeedbacks.filter(f => f.type === 'suggestion' || f.type === 'feature').length;
+  const resolvedFeedbackCount = mergedFeedbacks.filter(f => f.status === 'resolved' || f.status === 'completed' || f.status === 'Yapıldı').length;
+
   return {
     ...baseStats,
     visitedCodes,
@@ -186,7 +213,11 @@ export function computeAchievementStats(storageData, baseStats) {
     worldTargetCount: Math.max(baseStats?.worldTargetCount || 0, worldPlannedCount),
     flownAirlines,
     totalFlightCount,
-    flownAircraft
+    flownAircraft,
+    feedbackCount,
+    bugReportCount,
+    suggestionCount,
+    resolvedFeedbackCount
   };
 }
 

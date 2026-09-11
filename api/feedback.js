@@ -27,7 +27,8 @@ export default async function handler(req, res) {
     const typeLabel = cleanType === 'bug' ? '🐞 Hata / Bug' : (cleanType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
     const nowStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
 
-    const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${cleanUsername}\n📱 *İletişim:* ${cleanContact}\n\n📝 *Mesaj:*\n"${cleanMsg}"\n\n🕒 *Zaman:* ${nowStr}`;
+    const cleanId = (req.body && req.body.id) ? String(req.body.id).trim().slice(0, 50) : ('fb_' + Date.now());
+    const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🆔 *ID:* \`${cleanId}\`\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${cleanUsername}\n📱 *İletişim:* ${cleanContact}\n\n📝 *Mesaj:*\n"${cleanMsg}"\n\n🕒 *Zaman:* ${nowStr}`;
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN || '8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU';
     const chatId = process.env.TELEGRAM_CHAT_ID || '7906240525';

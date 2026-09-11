@@ -4905,3 +4905,290 @@ body[data-theme="light"] .floating-poster-btn {
     bottom: calc(max(14px, env(safe-area-inset-bottom, 14px)) + 48px);
   }
 }
+
+
+/* ── Feedback Navigation Subtabs & Badges ── */
+.feedback-nav-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.feedback-nav-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  color: var(--theme-text-muted, #94a3b8);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.feedback-nav-tab.active {
+  background: rgba(255, 87, 34, 0.2);
+  color: #ff5722;
+  font-weight: 700;
+}
+
+.fb-count-badge {
+  background: #ff5722;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 99px;
+  line-height: 1.2;
+}
+
+/* ── Feedback List Tab & Cards ── */
+.feedback-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 16px;
+}
+
+.fb-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--theme-text-muted, #94a3b8);
+  font-size: 0.9rem;
+}
+
+.feedback-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+
+.feedback-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.fb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fb-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fb-type-icon {
+  font-size: 1.1rem;
+}
+
+.fb-card-date {
+  font-size: 0.72rem;
+  color: var(--theme-text-muted, #94a3b8);
+}
+
+.feedback-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.feedback-status-badge.status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.feedback-status-badge.status-considering {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.feedback-status-badge.status-progress {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.feedback-status-badge.status-resolved {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.feedback-status-badge.status-declined {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.fb-card-msg {
+  font-size: 0.85rem;
+  color: var(--theme-text-main, #f1f5f9);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.fb-dev-response {
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 10px 10px 0;
+  padding: 8px 12px;
+  margin-top: 2px;
+}
+
+.fb-dev-response-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 2px;
+}
+
+.fb-dev-response-text {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* ── Admin Section ── */
+.fb-admin-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.fb-admin-toggle-btn {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: var(--theme-text-muted, #94a3b8);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-family: inherit;
+  margin: 0 auto;
+}
+
+.fb-admin-toggle-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #f8fafc;
+}
+
+.fb-admin-drawer {
+  margin-top: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fb-admin-auth-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fb-status-set-btn {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+
+.fb-status-set-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+.fb-status-set-btn.selected {
+  outline: 2px solid #fff;
+}
+
+.fb-admin-quick-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.fb-quick-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.fb-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Light theme overrides for feedback elements */
+body[data-theme="light"] .feedback-nav-tabs {
+  background: rgba(226, 232, 240, 0.8);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .feedback-nav-tab {
+  color: #64748b;
+}
+body[data-theme="light"] .feedback-nav-tab.active {
+  background: rgba(255, 87, 34, 0.12);
+  color: #ea580c;
+}
+body[data-theme="light"] .feedback-card {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(51, 65, 85, 0.12);
+}
+body[data-theme="light"] .fb-card-msg {
+  color: #1e293b;
+}
+body[data-theme="light"] .fb-dev-response {
+  background: rgba(59, 130, 246, 0.08);
+}
+body[data-theme="light"] .fb-dev-response-text {
+  color: #334155;
+}
+body[data-theme="light"] .fb-admin-drawer {
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(51, 65, 85, 0.12);
+}
