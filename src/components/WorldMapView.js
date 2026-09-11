@@ -688,15 +688,323 @@ export function renderWorldMapView(container, options = {}) {
     const closeFeedbackBtn = container.querySelector('#feedback-close-btn');
     const submitFeedbackBtn = container.querySelector('#feedback-submit-btn');
 
-    if (openFeedbackBtn && feedbackModal) {
-      openFeedbackBtn.addEventListener('click', () => {
+    // Subtabs: New / List
+    const tabNew = container.querySelector('#fb-tab-new');
+    const tabList = container.querySelector('#fb-tab-list');
+    const panelNew = container.querySelector('#fb-panel-new');
+    const panelList = container.querySelector('#fb-panel-list');
+    const countBadge = container.querySelector('#fb-count-badge');
+
+    // Admin Mode state
+    let isAdminActive = false;
+    let selectedAdminStatus = 'resolved';
+
+    function updateBadgeCount() {
+      const fbs = getUserFeedbacks();
+      if (countBadge) {
+        if (fbs.length > 0) {
+          countBadge.textContent = fbs.length;
+          countBadge.style.display = 'inline-flex';
+        } else {
+          countBadge.style.display = 'none';
+        }
+      }
+    }
+
+    function renderFeedbackList() {
+      const feedbacks = getUserFeedbacks();
+      const listWrap = container.querySelector('#fb-list-container');
+      updateBadgeCount();
+      if (!listWrap) return;
+
+      if (feedbacks.length === 0) {
+        listWrap.innerHTML = `
+          <div class="fb-empty-state">
+            <span style="font-size:2.5rem;display:block;margin-bottom:8px;">📬</span>
+            <p>${t('noFeedbacksYet')}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const statusMap = {
+        pending: { label: t('statusPending'), class: 'status-pending' },
+        considering: { label: t('statusConsidering'), class: 'status-considering' },
+        in_progress: { label: t('statusProgress'), class: 'status-progress' },
+        resolved: { label: t('statusResolved'), class: 'status-resolved' },
+        declined: { label: t('statusDeclined'), class: 'status-declined' }
+      };
+
+      const typeIconMap = {
+        bug: '🐞',
+        feature: '✨',
+        suggestion: '💡',
+        other: '💬'
+      };
+
+      listWrap.innerHTML = feedbacks.map(fb => {
+        const st = statusMap[fb.status] || statusMap.pending;
+        const icon = typeIconMap[fb.type] || '💡';
+        const dateStr = fb.createdAt ? new Date(fb.createdAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+          <div class="feedback-card" data-id="${escapeHtml(fb.id)}">
+            <div class="fb-card-header">
+              <div class="fb-card-meta">
+                <span class="fb-type-icon">${icon}</span>
+                <span class="fb-card-date">${dateStr}</span>
+                <span style="font-size:0.68rem;color:#64748b;font-family:monospace;">#${escapeHtml(fb.id.slice(-6))}</span>
+              </div>
+              <span class="feedback-status-badge ${st.class}">${st.label}</span>
+            </div>
+            <div class="fb-card-msg">${escapeHtml(fb.message)}</div>
+            ${fb.devResponse ? `
+              <div class="fb-dev-response">
+                <div class="fb-dev-response-title">💬 ${t('devResponse')}:</div>
+                <div class="fb-dev-response-text">${escapeHtml(fb.devResponse)}</div>
+              </div>
+            ` : ''}
+            ${isAdminActive ? `
+              <div class="fb-admin-quick-actions">
+                <button type="button" class="fb-quick-btn" data-action="resolved" data-id="${escapeHtml(fb.id)}">✅ Yapıldı</button>
+                <button type="button" class="fb-quick-btn" data-action="in_progress" data-id="${escapeHtml(fb.id)}">🛠️ Hazırlanıyor</button>
+                <button type="button" class="fb-quick-btn" data-action="considering" data-id="${escapeHtml(fb.id)}">💡 Düşünülüyor</button>
+                <button type="button" class="fb-quick-btn" data-action="declined" data-id="${escapeHtml(fb.id)}">🛑 Vazgeçildi</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Attach quick action listeners in Admin Mode
+      if (isAdminActive) {
+        listWrap.querySelectorAll('.fb-quick-btn').forEach(qb => {
+          qb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = qb.getAttribute('data-id');
+            const targetStatus = qb.getAttribute('data-action');
+            updateFeedbackStatus(targetId, targetStatus);
+            renderFeedbackList();
+          });
+        });
+      }
+    }
+
+    // Initialize badge count immediately
+    updateBadgeCount();
+
+    // Modal open/close listeners with ghost-click protection
+    let lastModalOpenedAt = 0;
+    const handleOpenModal = (e) => {
+      if (e) {
+        e.stopPropagation();
+        if (e.type === 'touchend') e.preventDefault();
+      }
+      lastModalOpenedAt = Date.now();
+      if (feedbackModal) {
         feedbackModal.style.display = 'flex';
-      });
+        updateBadgeCount();
+        if (tabList && tabList.classList.contains('active')) {
+          renderFeedbackList();
+        }
+      }
+    };
+
+    if (openFeedbackBtn) {
+      openFeedbackBtn.addEventListener('click', handleOpenModal);
+      openFeedbackBtn.addEventListener('touchend', handleOpenModal);
     }
 
     if (closeFeedbackBtn && feedbackModal) {
-      closeFeedbackBtn.addEventListener('click', () => {
+      const handleCloseModal = (e) => {
+        if (e) {
+          e.stopPropagation();
+          if (e.type === 'touchend') e.preventDefault();
+        }
         feedbackModal.style.display = 'none';
+      };
+      closeFeedbackBtn.addEventListener('click', handleCloseModal);
+      closeFeedbackBtn.addEventListener('touchend', handleCloseModal);
+    }
+
+    if (feedbackModal) {
+      feedbackModal.addEventListener('click', (e) => {
+        // Prevent accidental closing right after touch-opening
+        if (Date.now() - lastModalOpenedAt < 350) return;
+        if (e.target === feedbackModal) feedbackModal.style.display = 'none';
+      });
+    }
+
+    // Subtab click handlers (New Feedback / My Feedbacks)
+    if (tabNew && tabList && panelNew && panelList) {
+      const showNewTab = (e) => {
+        if (e) {
+          e.stopPropagation();
+          if (e.type === 'touchend') e.preventDefault();
+        }
+        tabNew.classList.add('active');
+        tabList.classList.remove('active');
+        panelNew.style.display = 'block';
+        panelList.style.display = 'none';
+      };
+
+      const showListTab = (e) => {
+        if (e) {
+          e.stopPropagation();
+          if (e.type === 'touchend') e.preventDefault();
+        }
+        tabList.classList.add('active');
+        tabNew.classList.remove('active');
+        panelList.style.display = 'block';
+        panelNew.style.display = 'none';
+        renderFeedbackList();
+      };
+
+      tabNew.addEventListener('click', showNewTab);
+      tabNew.addEventListener('touchend', showNewTab);
+      tabList.addEventListener('click', showListTab);
+      tabList.addEventListener('touchend', showListTab);
+    }
+
+    // Feedback type buttons
+    let activeFeedbackType = 'suggestion';
+    container.querySelectorAll('.feedback-type-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        container.querySelectorAll('.feedback-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFeedbackType = btn.getAttribute('data-type');
+      });
+    });
+
+    // Feedback submit button
+    if (submitFeedbackBtn) {
+      submitFeedbackBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const msg = container.querySelector('#feedback-message')?.value?.trim();
+        const contact = container.querySelector('#feedback-contact')?.value?.trim();
+        if (!msg) return;
+
+        submitFeedbackBtn.disabled = true;
+        const origText = submitFeedbackBtn.textContent;
+        submitFeedbackBtn.textContent = '⏳ Gönderiliyor...';
+
+        const feedbackId = 'fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
+        // 1. Send via secure Vercel serverless API endpoint
+        try {
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const apiUrl = isLocal && !window.Capacitor
+            ? 'https://gittigim-yerler.vercel.app/api/feedback'
+            : '/api/feedback';
+
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: feedbackId,
+              type: activeFeedbackType,
+              message: msg,
+              contact,
+              username: userName
+            })
+          });
+
+          if (!res.ok) {
+            console.warn('Feedback serverless endpoint returned status:', res.status);
+          }
+        } catch (err) {
+          console.warn('Feedback send notification notice:', err);
+        }
+
+        // 2. Save to user feedbacks storage
+        saveUserFeedback({
+          id: feedbackId,
+          type: activeFeedbackType,
+          message: msg,
+          contact,
+          username: userName
+        });
+
+        submitFeedbackBtn.disabled = false;
+        submitFeedbackBtn.textContent = origText;
+
+        const successMsg = container.querySelector('#feedback-success-msg');
+        if (successMsg) {
+          successMsg.style.display = 'block';
+          updateBadgeCount();
+          setTimeout(() => {
+            successMsg.style.display = 'none';
+            if (container.querySelector('#feedback-message')) container.querySelector('#feedback-message').value = '';
+            if (container.querySelector('#feedback-contact')) container.querySelector('#feedback-contact').value = '';
+            // Switch to list tab to see submitted item!
+            if (tabList) tabList.click();
+          }, 1200);
+        }
+      });
+    }
+
+    // Admin Drawer & Auth Handlers
+    const btnToggleAdmin = container.querySelector('#btn-toggle-admin');
+    const adminDrawer = container.querySelector('#fb-admin-drawer');
+    const btnAdminLogin = container.querySelector('#btn-admin-login');
+    const adminPinInput = container.querySelector('#fb-admin-pin');
+    const adminAuthRow = container.querySelector('#fb-admin-auth-row');
+    const adminControls = container.querySelector('#fb-admin-controls');
+
+    if (btnToggleAdmin && adminDrawer) {
+      btnToggleAdmin.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = adminDrawer.style.display === 'none';
+        adminDrawer.style.display = isHidden ? 'block' : 'none';
+      });
+    }
+
+    if (btnAdminLogin && adminPinInput) {
+      btnAdminLogin.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pin = adminPinInput.value.trim();
+        if (pin === '1923' || pin === 'admin') {
+          isAdminActive = true;
+          if (adminAuthRow) adminAuthRow.style.display = 'none';
+          if (adminControls) adminControls.style.display = 'block';
+          renderFeedbackList();
+        } else {
+          alert('Hatalı PIN!');
+        }
+      });
+    }
+
+    const statusBtns = container.querySelectorAll('.fb-status-set-btn');
+    statusBtns.forEach(sb => {
+      sb.addEventListener('click', (e) => {
+        e.stopPropagation();
+        statusBtns.forEach(b => b.classList.remove('selected'));
+        sb.classList.add('selected');
+        selectedAdminStatus = sb.getAttribute('data-status');
+      });
+    });
+
+    const btnAdminSaveStatus = container.querySelector('#btn-admin-save-status');
+    if (btnAdminSaveStatus) {
+      btnAdminSaveStatus.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetId = container.querySelector('#fb-admin-target-id')?.value?.trim();
+        const note = container.querySelector('#fb-admin-note')?.value?.trim() || '';
+        const adminMsg = container.querySelector('#fb-admin-msg');
+        if (!targetId) {
+          alert('Lütfen bir Bildirim ID girin!');
+          return;
+        }
+
+        updateFeedbackStatus(targetId, selectedAdminStatus, note);
+        renderFeedbackList();
+
+        if (adminMsg) {
+          adminMsg.textContent = '✓ ' + (t('statusUpdated') || 'Durum güncellendi!');
+          adminMsg.style.display = 'block';
+          setTimeout(() => { adminMsg.style.display = 'none'; }, 2000);
+        }
       });
     }
 
@@ -706,8 +1014,7 @@ export function renderWorldMapView(container, options = {}) {
       '.floating-profile-wrap',
       '.floating-poster-btn',
       '.floating-search-wrap',
-      '#stats-overlay',
-      '#feedback-btn-wrap'
+      '#stats-overlay'
     ];
     floatingSelectors.forEach(sel => {
       const el = container.querySelector(sel);
@@ -727,79 +1034,6 @@ export function renderWorldMapView(container, options = {}) {
       addDocListener('click', (e) => {
         if (mapLegend && !mapLegend.contains(e.target) && mapLegend.classList.contains('expanded')) {
           mapLegend.classList.remove('expanded');
-        }
-      });
-    }
-
-    if (feedbackModal) {
-      feedbackModal.addEventListener('click', (e) => {
-        if (e.target === feedbackModal) feedbackModal.style.display = 'none';
-      });
-    }
-
-    let activeFeedbackType = 'suggestion';
-    container.querySelectorAll('.feedback-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        container.querySelectorAll('.feedback-type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFeedbackType = btn.getAttribute('data-type');
-      });
-    });
-
-    if (submitFeedbackBtn) {
-      submitFeedbackBtn.addEventListener('click', async () => {
-        const msg = container.querySelector('#feedback-message')?.value?.trim();
-        const contact = container.querySelector('#feedback-contact')?.value?.trim();
-        if (!msg) return;
-
-        submitFeedbackBtn.disabled = true;
-        const origText = submitFeedbackBtn.textContent;
-        submitFeedbackBtn.textContent = '⏳ Gönderiliyor...';
-
-        // 1. Send via secure Vercel serverless API endpoint (hides bot token from client)
-        try {
-          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          const apiUrl = isLocal && !window.Capacitor
-            ? 'https://gittigim-yerler.vercel.app/api/feedback'
-            : '/api/feedback';
-
-          const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: activeFeedbackType,
-              message: msg,
-              contact,
-              username: userName
-            })
-          });
-
-          if (!res.ok) {
-            console.warn('Feedback serverless endpoint returned status:', res.status);
-          }
-        } catch (err) {
-          console.warn('Feedback send notification notice:', err);
-        }
-
-        // 2. Also save to localStorage as backup
-        try {
-          const stored = JSON.parse(localStorage.getItem('gv_feedbacks') || '[]');
-          stored.push({ type: activeFeedbackType, message: msg, contact, date: new Date().toISOString() });
-          localStorage.setItem('gv_feedbacks', JSON.stringify(stored));
-        } catch {}
-
-        submitFeedbackBtn.disabled = false;
-        submitFeedbackBtn.textContent = origText;
-
-        const successMsg = container.querySelector('#feedback-success-msg');
-        if (successMsg) {
-          successMsg.style.display = 'block';
-          setTimeout(() => {
-            feedbackModal.style.display = 'none';
-            successMsg.style.display = 'none';
-            if (container.querySelector('#feedback-message')) container.querySelector('#feedback-message').value = '';
-            if (container.querySelector('#feedback-contact')) container.querySelector('#feedback-contact').value = '';
-          }, 2000);
         }
       });
     }
