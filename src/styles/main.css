@@ -2421,25 +2421,12 @@ svg, g, path {
 }
 
 .map-popup-backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 650;
-  background: rgba(15, 23, 42, 0.35);
-  pointer-events: none !important;
-  opacity: 0;
-  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity;
+  display: none !important;
 }
 
 .clean-status-popup {
   pointer-events: auto !important;
   z-index: 99999 !important;
-}
-
-.map-popup-backdrop.active {
-  opacity: 1;
 }
 
 /* ── Active Country / Region Crisp Glow Label (Above Blur) ── */

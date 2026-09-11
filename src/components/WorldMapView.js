@@ -170,6 +170,7 @@ let countryLayersByCode = {};
 let sortedCountryLayers = [];
 let lastZoomCategory = -1;
 let lastPopupClosedAt = 0;
+let _popupClosedOnPointerDown = false;
 let promotedLabelMarker = null;
 let promotedLabelParent = null;
 
@@ -253,21 +254,6 @@ function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayN
       }
     }
   }
-
-  if (!popupBackdropEl) {
-    const mapRoot = document.getElementById('map-root');
-    if (!mapRoot) return;
-
-    popupBackdropEl = document.createElement('div');
-    popupBackdropEl.id = 'map-popup-backdrop';
-    popupBackdropEl.className = 'map-popup-backdrop';
-
-    mapRoot.appendChild(popupBackdropEl);
-  }
-
-  requestAnimationFrame(() => {
-    if (popupBackdropEl) popupBackdropEl.classList.add('active');
-  });
 }
 
 function hidePopupBackdrop() {
@@ -283,15 +269,6 @@ function hidePopupBackdrop() {
     try { promotedLabelParent.appendChild(promotedLabelMarker._icon); } catch {}
     promotedLabelMarker = null;
     promotedLabelParent = null;
-  }
-  if (popupBackdropEl) {
-    popupBackdropEl.classList.remove('active');
-    setTimeout(() => {
-      if (popupBackdropEl && !popupBackdropEl.classList.contains('active')) {
-        popupBackdropEl.remove();
-        popupBackdropEl = null;
-      }
-    }, 180);
   }
 }
 
@@ -917,6 +894,14 @@ function initMap(container) {
     closeActivePopup();
   });
 
+  document.addEventListener('pointerup', () => {
+    if (_popupClosedOnPointerDown) {
+      setTimeout(() => {
+        _popupClosedOnPointerDown = false;
+      }, 150);
+    }
+  }, true);
+
   // Optimized SVG renderer buffer: lightweight memory for 60fps mobile drag & pan
   mapRenderer = L.svg({ padding: 0.18 });
 
@@ -990,8 +975,10 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+            _popupClosedOnPointerDown = false;
             closeActivePopup();
+            L.DomEvent.stopPropagation(e);
             return;
           }
           if (!c) return;
@@ -1067,8 +1054,10 @@ function initMap(container) {
           sticky: true, permanent: false
         });
         layer.on('click', e => {
-          if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+            _popupClosedOnPointerDown = false;
             closeActivePopup();
+            L.DomEvent.stopPropagation(e);
             return;
           }
           L.DomEvent.stopPropagation(e);
@@ -1981,8 +1970,10 @@ function attachRegionLayer(code, data) {
       });
 
       l.on('click', e => {
-        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+          _popupClosedOnPointerDown = false;
           closeActivePopup();
+          L.DomEvent.stopPropagation(e);
           return;
         }
         L.DomEvent.stopPropagation(e);
@@ -2109,8 +2100,10 @@ function attachSubregionLayer(code, data) {
         sticky: true, permanent: false
       });
       l.on('click', e => {
-        if (activeStatusPopup || (Date.now() - lastPopupClosedAt < 200)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+          _popupClosedOnPointerDown = false;
           closeActivePopup();
+          L.DomEvent.stopPropagation(e);
           return;
         }
         L.DomEvent.stopPropagation(e);
@@ -2447,6 +2440,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if ((content && content.contains(e.target)) || (popupEl && popupEl.contains(e.target))) {
       return;
     }
+    _popupClosedOnPointerDown = true;
+    lastPopupClosedAt = Date.now();
     closeActivePopup();
   };
 
@@ -2454,7 +2449,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if (activeStatusPopup && activePopupOutsideListener) {
       document.addEventListener('pointerdown', activePopupOutsideListener, true);
     }
-  }, 100);
+  }, 20);
 }
 
 
