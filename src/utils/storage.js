@@ -266,6 +266,8 @@ export function resetTravelData() {
   localStorage.removeItem(STORAGE_KEYS.WORLD_CITIES);
   localStorage.removeItem('gv_unlocked_achievements');
   localStorage.removeItem(STORAGE_KEYS.BUCKET_RANKS);
+  localStorage.removeItem(STORAGE_KEYS.USER_AIRLINES);
+  localStorage.removeItem(STORAGE_KEYS.USER_AIRCRAFT);
   unlockedCache = [];
   notifyStateChange();
 }
@@ -276,7 +278,16 @@ export function importBackup(fileContent) {
     if (data.turkeyVisits) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
     if (data.worldVisits) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
     if (data.worldCities) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
-    if (data.userProfile) safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.userProfile));
+    if (data.userProfile) {
+      safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.userProfile));
+      safeSetItem('gv_profile', JSON.stringify(data.userProfile));
+    }
+    if (data.userAirlines) safeSetItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(data.userAirlines));
+    if (data.userAircraft) safeSetItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(data.userAircraft));
+    if (data.bucketRanks) safeSetItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(data.bucketRanks));
+    if (data.savedFriends) safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(data.savedFriends));
+    if (data.userFeedbacks) safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(data.userFeedbacks));
+    if (data.feedbackOverrides) safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(data.feedbackOverrides));
     notifyStateChange();
     return true;
   } catch (e) {
