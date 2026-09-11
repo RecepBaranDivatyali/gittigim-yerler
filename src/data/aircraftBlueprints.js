@@ -310,7 +310,190 @@ export const AIRCRAFT_BLUEPRINTS = {
     `,
     '#e11d48'
   )
-};
+,
+
+  // ── 13. BOEING 757 (FLYING PENCIL) ────────────────────────────────────
+  b757: getBlueprintBase(
+    'BOEING 757-200 / 300',
+    'KANAT: 38.0m • UZUNLUK: 47.3m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#0284c7" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Swept Narrow Wings -->
+        <path d="M 98 83 L 168 20 L 176 22 L 140 83 Z M 98 97 L 168 160 L 176 158 L 140 97 Z" fill="rgba(2, 132, 199, 0.12)"/>
+        <line x1="168" y1="20" x2="174" y2="15" stroke="#38bdf8" stroke-width="1.8"/>
+        <line x1="168" y1="160" x2="174" y2="165" stroke="#38bdf8" stroke-width="1.8"/>
+        <!-- 2x Rolls-Royce RB211 / PW2000 Turbofans -->
+        <rect x="110" y="50" width="22" height="9" rx="3" fill="#0b172a" stroke="#38bdf8" stroke-width="1.2"/>
+        <rect x="110" y="121" width="22" height="9" rx="3" fill="#0b172a" stroke="#38bdf8" stroke-width="1.2"/>
+        <line x1="118" y1="50" x2="118" y2="42" stroke="#38bdf8" stroke-width="1"/>
+        <line x1="118" y1="130" x2="118" y2="138" stroke="#38bdf8" stroke-width="1"/>
+        <!-- Swept Horizontal Tail -->
+        <path d="M 230 86 L 258 56 L 265 58 L 248 86 Z M 230 94 L 258 124 L 265 122 L 248 94 Z" fill="rgba(2, 132, 199, 0.1)"/>
+        <!-- Long Slender Fuselage (The Pencil) -->
+        <path d="M 22 90 C 22 83 36 83 54 83 L 244 83 C 256 83 264 87 266 90 C 264 93 256 97 244 97 L 54 97 C 36 97 22 97 22 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 32 87 Q 38 85 42 87 M 32 93 Q 38 95 42 93" stroke="#38bdf8" stroke-width="1.4"/>
+      </g>
+    `,
+    '#0284c7'
+  ),
+
+  // ── 14. BOEING 767 ────────────────────────────────────────────────────
+  b767: getBlueprintBase(
+    'BOEING 767-300ER',
+    'KANAT: 47.6m • UZUNLUK: 54.9m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#2563eb" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 94 81 L 170 18 L 180 20 L 144 81 Z M 94 99 L 170 162 L 180 160 L 144 99 Z" fill="rgba(37, 99, 235, 0.12)"/>
+        <line x1="170" y1="18" x2="178" y2="12" stroke="#60a5fa" stroke-width="1.8"/>
+        <line x1="170" y1="162" x2="178" y2="168" stroke="#60a5fa" stroke-width="1.8"/>
+        <rect x="108" y="46" width="24" height="10" rx="3.5" fill="#0b172a" stroke="#60a5fa" stroke-width="1.2"/>
+        <rect x="108" y="124" width="24" height="10" rx="3.5" fill="#0b172a" stroke="#60a5fa" stroke-width="1.2"/>
+        <path d="M 226 84 L 258 52 L 266 55 L 248 84 Z M 226 96 L 258 128 L 266 125 L 248 96 Z" fill="rgba(37, 99, 235, 0.1)"/>
+        <!-- 7-abreast 2-3-2 Fuselage -->
+        <path d="M 26 90 C 26 81 40 81 60 81 L 242 81 C 258 81 266 86 268 90 C 266 94 258 99 242 99 L 60 99 C 40 99 26 99 26 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 36 86 Q 42 83 48 86 M 36 94 Q 42 97 48 94" stroke="#60a5fa" stroke-width="1.4"/>
+      </g>
+    `,
+    '#2563eb'
+  ),
+
+  // ── 15. BOEING 777X ───────────────────────────────────────────────────
+  b777x: getBlueprintBase(
+    'BOEING 777-9 (777X)',
+    'KANAT: 71.8m (KATLANIR) • UZUNLUK: 76.7m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#1d4ed8" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 88 78 L 174 12 L 188 15 L 148 78 Z M 88 102 L 174 168 L 188 165 L 148 102 Z" fill="rgba(29, 78, 216, 0.14)"/>
+        <!-- Folding Wingtip Hinges -->
+        <line x1="172" y1="13" x2="176" y2="24" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <line x1="172" y1="167" x2="176" y2="156" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <!-- Enormous GE9X Turbofan Engines -->
+        <rect x="104" y="42" width="28" height="12" rx="4" fill="#0b172a" stroke="#60a5fa" stroke-width="1.4"/>
+        <rect x="104" y="126" width="28" height="12" rx="4" fill="#0b172a" stroke="#60a5fa" stroke-width="1.4"/>
+        <path d="M 228 82 L 264 48 L 272 51 L 252 82 Z M 228 98 L 264 132 L 272 129 L 252 98 Z" fill="rgba(29, 78, 216, 0.1)"/>
+        <!-- Super-Stretched Fuselage -->
+        <path d="M 18 90 C 18 78 34 78 58 78 L 248 78 C 266 78 274 86 276 90 C 274 94 266 102 248 102 L 58 102 C 34 102 18 102 18 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.6"/>
+        <path d="M 28 85 Q 36 82 42 85 M 28 95 Q 36 98 42 95" stroke="#60a5fa" stroke-width="1.5"/>
+      </g>
+    `,
+    '#1d4ed8'
+  ),
+
+  // ── 16. AIRBUS A340 (QUAD-JET) ────────────────────────────────────────
+  a340: getBlueprintBase(
+    'AIRBUS A340-300 / 600',
+    'KANAT: 60.3m • UZUNLUK: 63.6m / 75.3m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#4f46e5" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 92 80 L 170 16 L 182 18 L 144 80 Z M 92 100 L 170 164 L 182 162 L 144 100 Z" fill="rgba(79, 70, 229, 0.12)"/>
+        <line x1="170" y1="16" x2="178" y2="24" stroke="#818cf8" stroke-width="1.8"/>
+        <line x1="170" y1="164" x2="178" y2="156" stroke="#818cf8" stroke-width="1.8"/>
+        <!-- 4x Turbofan Engines (2 on each wing) -->
+        <rect x="108" y="52" width="20" height="8.5" rx="3" fill="#0b172a" stroke="#818cf8" stroke-width="1.2"/>
+        <rect x="134" y="34" width="20" height="8.5" rx="3" fill="#0b172a" stroke="#818cf8" stroke-width="1.2"/>
+        <rect x="108" y="119.5" width="20" height="8.5" rx="3" fill="#0b172a" stroke="#818cf8" stroke-width="1.2"/>
+        <rect x="134" y="137.5" width="20" height="8.5" rx="3" fill="#0b172a" stroke="#818cf8" stroke-width="1.2"/>
+        <!-- Tail -->
+        <path d="M 226 83 L 260 50 L 268 53 L 250 83 Z M 226 97 L 260 130 L 268 127 L 250 97 Z" fill="rgba(79, 70, 229, 0.1)"/>
+        <!-- Long Fuselage -->
+        <path d="M 22 90 C 22 80 36 80 58 80 L 244 80 C 260 80 268 86 270 90 C 268 94 260 100 244 100 L 58 100 C 36 100 22 100 22 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 32 86 Q 38 83 44 86 M 32 94 Q 38 97 44 94" stroke="#818cf8" stroke-width="1.4"/>
+      </g>
+    `,
+    '#4f46e5'
+  ),
+
+  // ── 17. AIRBUS A321XLR ────────────────────────────────────────────────
+  a321xlr: getBlueprintBase(
+    'AIRBUS A321XLR',
+    'KANAT: 35.8m • UZUNLUK: 44.5m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#059669" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 96 83.5 L 166 22 L 174 24 L 138 83.5 Z M 96 96.5 L 166 158 L 174 156 L 138 96.5 Z" fill="rgba(5, 150, 105, 0.12)"/>
+        <!-- Tall Sharklets -->
+        <line x1="166" y1="22" x2="168" y2="12" stroke="#34d399" stroke-width="2"/>
+        <line x1="166" y1="158" x2="168" y2="168" stroke="#34d399" stroke-width="2"/>
+        <rect x="110" y="52" width="22" height="9" rx="3" fill="#0b172a" stroke="#34d399" stroke-width="1.2"/>
+        <rect x="110" y="119" width="22" height="9" rx="3" fill="#0b172a" stroke="#34d399" stroke-width="1.2"/>
+        <path d="M 228 85 L 258 56 L 265 58 L 248 85 Z M 228 95 L 258 124 L 265 122 L 248 95 Z" fill="rgba(5, 150, 105, 0.1)"/>
+        <!-- Stretched Single-Aisle Body -->
+        <path d="M 24 90 C 24 83.5 38 83.5 56 83.5 L 242 83.5 C 254 83.5 262 86 264 90 C 262 94 254 96.5 242 96.5 L 56 96.5 C 38 96.5 24 96.5 24 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 34 87 Q 40 85 46 87 M 34 93 Q 40 95 46 93" stroke="#34d399" stroke-width="1.4"/>
+      </g>
+    `,
+    '#059669'
+  ),
+
+  // ── 18. BOMBARDIER CRJ SERIES ─────────────────────────────────────────
+  crj: getBlueprintBase(
+    'BOMBARDIER CRJ900 / 1000',
+    'KANAT: 24.9m • UZUNLUK: 36.2m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#d97706" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 106 85 L 164 30 L 172 32 L 138 85 Z M 106 95 L 164 150 L 172 148 L 138 95 Z" fill="rgba(217, 119, 6, 0.12)"/>
+        <line x1="164" y1="30" x2="170" y2="24" stroke="#fbbf24" stroke-width="1.6"/>
+        <line x1="164" y1="150" x2="170" y2="156" stroke="#fbbf24" stroke-width="1.6"/>
+        <!-- Rear Fuselage Mounted Twin Turbofans -->
+        <rect x="194" y="66" width="22" height="8" rx="2.5" fill="#0b172a" stroke="#fbbf24" stroke-width="1.2"/>
+        <rect x="194" y="106" width="22" height="8" rx="2.5" fill="#0b172a" stroke="#fbbf24" stroke-width="1.2"/>
+        <!-- T-Tail Horizontal Stabilizer -->
+        <path d="M 238 68 L 260 56 L 266 58 L 248 85 L 248 95 L 266 122 L 260 124 L 238 112 Z" fill="rgba(217, 119, 6, 0.12)" stroke="#fbbf24"/>
+        <path d="M 34 90 C 34 85 46 85 62 85 L 234 85 C 244 85 250 88 252 90 C 250 92 244 95 234 95 L 62 95 C 46 95 34 95 34 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 42 87 Q 48 85 52 87 M 42 93 Q 48 95 52 93" stroke="#fbbf24" stroke-width="1.3"/>
+      </g>
+    `,
+    '#d97706'
+  ),
+
+  // ── 19. COMAC C919 ────────────────────────────────────────────────────
+  c919: getBlueprintBase(
+    'COMAC C919',
+    'KANAT: 35.8m • UZUNLUK: 38.9m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#dc2626" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M 96 83 L 166 22 L 174 24 L 138 83 Z M 96 97 L 166 158 L 174 156 L 138 97 Z" fill="rgba(220, 38, 38, 0.12)"/>
+        <line x1="166" y1="22" x2="176" y2="28" stroke="#f87171" stroke-width="1.8"/>
+        <line x1="166" y1="158" x2="176" y2="152" stroke="#f87171" stroke-width="1.8"/>
+        <rect x="110" y="52" width="22" height="9" rx="3" fill="#0b172a" stroke="#f87171" stroke-width="1.2"/>
+        <rect x="110" y="119" width="22" height="9" rx="3" fill="#0b172a" stroke="#f87171" stroke-width="1.2"/>
+        <path d="M 226 85 L 256 58 L 263 60 L 246 85 Z M 226 95 L 256 122 L 263 120 L 246 95 Z" fill="rgba(220, 38, 38, 0.1)"/>
+        <path d="M 28 90 C 28 83 42 83 60 83 L 238 83 C 250 83 258 86 260 90 C 258 94 250 97 238 97 L 60 97 C 42 97 28 97 28 90 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 38 87 Q 44 85 48 87 M 38 93 Q 44 95 48 93" stroke="#f87171" stroke-width="1.4"/>
+      </g>
+    `,
+    '#dc2626'
+  ),
+
+  // ── 20. PRIVATE JET (GULFSTREAM G650 / CITATION) ──────────────────────
+  private_jet: getBlueprintBase(
+    'GULFSTREAM G650 / CITATION',
+    'KANAT: 30.3m • UZUNLUK: 30.4m',
+    'KROKİ // 1:500',
+    `
+      <g fill="none" stroke="#eab308" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Swept High-Aspect Wings with Winglets -->
+        <path d="M 104 86 L 168 20 L 176 22 L 138 86 Z M 104 94 L 168 160 L 176 158 L 138 94 Z" fill="rgba(234, 179, 8, 0.14)"/>
+        <line x1="168" y1="20" x2="172" y2="12" stroke="#facc15" stroke-width="1.8"/>
+        <line x1="168" y1="160" x2="172" y2="168" stroke="#facc15" stroke-width="1.8"/>
+        <!-- Rear Fuselage Twin Rolls-Royce BR725 Engines -->
+        <rect x="180" y="68" width="22" height="7.5" rx="2.5" fill="#0b172a" stroke="#facc15" stroke-width="1.2"/>
+        <rect x="180" y="104.5" width="22" height="7.5" rx="2.5" fill="#0b172a" stroke="#facc15" stroke-width="1.2"/>
+        <!-- T-Tail Stabilizer -->
+        <path d="M 230 66 L 254 52 L 260 55 L 244 90 L 260 125 L 254 128 L 230 114 Z" fill="rgba(234, 179, 8, 0.12)" stroke="#facc15"/>
+        <!-- Aerodynamic Needle Cockpit & VIP Cabin -->
+        <path d="M 30 90 L 48 85 L 226 85 C 236 85 244 87 246 90 C 244 93 236 95 226 95 L 48 95 Z" fill="#081120" stroke="#f1f5f9" stroke-width="1.5"/>
+        <path d="M 42 88 Q 50 86 54 88 M 42 92 Q 50 94 54 92" stroke="#facc15" stroke-width="1.3"/>
+      </g>
+    `,
+    '#eab308'
+  )};
 
 export function getAircraftBlueprint(id) {
   return AIRCRAFT_BLUEPRINTS[id] || AIRCRAFT_BLUEPRINTS.b737;

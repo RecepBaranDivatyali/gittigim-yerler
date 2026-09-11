@@ -2,7 +2,7 @@
 import { AIRCRAFT_BLUEPRINTS, getAircraftBlueprint } from './aircraftBlueprints.js';
 export { AIRCRAFT_BLUEPRINTS, getAircraftBlueprint };
 
-// ── 5 Major Airline Alliances & Groups ──────────────────────────────────────
+// ── 6 Major Airline Alliances & Groups ──────────────────────────────────────
 export const AIRLINE_ALLIANCES = [
   {
     id: 'star_alliance',
@@ -19,7 +19,15 @@ export const AIRLINE_ALLIANCES = [
       { id: 'swiss', code: 'LX', name: 'Swiss Int. Air Lines', country: 'İsviçre', flag: '🇨🇭', hub: 'ZRH' },
       { id: 'ana', code: 'NH', name: 'ANA All Nippon', country: 'Japonya', flag: '🇯🇵', hub: 'HND' },
       { id: 'aircanada', code: 'AC', name: 'Air Canada', country: 'Kanada', flag: '🇨🇦', hub: 'YYZ' },
-      { id: 'austrian', code: 'OS', name: 'Austrian Airlines', country: 'Avusturya', flag: '🇦🇹', hub: 'VIE' }
+      { id: 'austrian', code: 'OS', name: 'Austrian Airlines', country: 'Avusturya', flag: '🇦🇹', hub: 'VIE' },
+      { id: 'sas', code: 'SK', name: 'Scandinavian Airlines (SAS)', country: 'İskandinavya', flag: '🇸🇪', hub: 'CPH' },
+      { id: 'tap', code: 'TP', name: 'TAP Air Portugal', country: 'Portekiz', flag: '🇵🇹', hub: 'LIS' },
+      { id: 'aegean', code: 'A3', name: 'Aegean Airlines', country: 'Yunanistan', flag: '🇬🇷', hub: 'ATH' },
+      { id: 'lot', code: 'LO', name: 'LOT Polish Airlines', country: 'Polonya', flag: '🇵🇱', hub: 'WAW' },
+      { id: 'brussels', code: 'SN', name: 'Brussels Airlines', country: 'Belçika', flag: '🇧🇪', hub: 'BRU' },
+      { id: 'airindia', code: 'AI', name: 'Air India', country: 'Hindistan', flag: '🇮🇳', hub: 'DEL' },
+      { id: 'egyptair', code: 'MS', name: 'EgyptAir', country: 'Mısır', flag: '🇪🇬', hub: 'CAI' },
+      { id: 'eva', code: 'BR', name: 'EVA Air', country: 'Tayvan', flag: '🇹🇼', hub: 'TPE' }
     ]
   },
   {
@@ -37,7 +45,13 @@ export const AIRLINE_ALLIANCES = [
       { id: 'virgin', code: 'VS', name: 'Virgin Atlantic', country: 'Birleşik Krallık', flag: '🇬🇧', hub: 'LHR' },
       { id: 'saudia', code: 'SV', name: 'Saudia', country: 'S. Arabistan', flag: '🇸🇦', hub: 'JED' },
       { id: 'aeromexico', code: 'AM', name: 'Aeroméxico', country: 'Meksika', flag: '🇲🇽', hub: 'MEX' },
-      { id: 'ita', code: 'AZ', name: 'ITA Airways', country: 'İtalya', flag: '🇮🇹', hub: 'FCO' }
+      { id: 'ita', code: 'AZ', name: 'ITA Airways', country: 'İtalya', flag: '🇮🇹', hub: 'FCO' },
+      { id: 'chinaeastern', code: 'MU', name: 'China Eastern', country: 'Çin', flag: '🇨🇳', hub: 'PVG' },
+      { id: 'vietnam', code: 'VN', name: 'Vietnam Airlines', country: 'Vietnam', flag: '🇻🇳', hub: 'SGN' },
+      { id: 'garuda', code: 'GA', name: 'Garuda Indonesia', country: 'Endonezya', flag: '🇮🇩', hub: 'CGK' },
+      { id: 'aireuropa', code: 'UX', name: 'Air Europa', country: 'İspanya', flag: '🇪🇸', hub: 'MAD' },
+      { id: 'tarom', code: 'RO', name: 'TAROM', country: 'Romanya', flag: '🇷🇴', hub: 'OTP' },
+      { id: 'mea', code: 'ME', name: 'Middle East Airlines (MEA)', country: 'Lübnan', flag: '🇱🇧', hub: 'BEY' }
     ]
   },
   {
@@ -55,7 +69,12 @@ export const AIRLINE_ALLIANCES = [
       { id: 'qantas', code: 'QF', name: 'Qantas', country: 'Avustralya', flag: '🇦🇺', hub: 'SYD' },
       { id: 'iberia', code: 'IB', name: 'Iberia', country: 'İspanya', flag: '🇪🇸', hub: 'MAD' },
       { id: 'finnair', code: 'AY', name: 'Finnair', country: 'Finlandiya', flag: '🇫🇮', hub: 'HEL' },
-      { id: 'jal', code: 'JL', name: 'Japan Airlines', country: 'Japonya', flag: '🇯🇵', hub: 'NRT' }
+      { id: 'jal', code: 'JL', name: 'Japan Airlines', country: 'Japonya', flag: '🇯🇵', hub: 'NRT' },
+      { id: 'malaysia', code: 'MH', name: 'Malaysia Airlines', country: 'Malezya', flag: '🇲🇾', hub: 'KUL' },
+      { id: 'royaljordanian', code: 'RJ', name: 'Royal Jordanian', country: 'Ürdün', flag: '🇯🇴', hub: 'AMM' },
+      { id: 'royalairmaroc', code: 'AT', name: 'Royal Air Maroc', country: 'Fas', flag: '🇲🇦', hub: 'CMN' },
+      { id: 'alaska', code: 'AS', name: 'Alaska Airlines', country: 'ABD', flag: '🇺🇸', hub: 'SEA' },
+      { id: 'srilankan', code: 'UL', name: 'SriLankan Airlines', country: 'Sri Lanka', flag: '🇱🇰', hub: 'CMB' }
     ]
   },
   {
@@ -71,7 +90,10 @@ export const AIRLINE_ALLIANCES = [
       { id: 'ajet', code: 'VF', name: 'AJet', country: 'Türkiye', flag: '🇹🇷', hub: 'SAW' },
       { id: 'sunexpress', code: 'XQ', name: 'SunExpress', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
       { id: 'corendon', code: 'XC', name: 'Corendon Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
-      { id: 'freebird', code: 'FH', name: 'Freebird Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' }
+      { id: 'freebird', code: 'FH', name: 'Freebird Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
+      { id: 'tailwind', code: 'TI', name: 'Tailwind Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
+      { id: 'southwind', code: '2S', name: 'Southwind Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'AYT' },
+      { id: 'mng', code: 'MB', name: 'MNG Airlines', country: 'Türkiye', flag: '🇹🇷', hub: 'ISL' }
     ]
   },
   {
@@ -87,7 +109,29 @@ export const AIRLINE_ALLIANCES = [
       { id: 'etihad', code: 'EY', name: 'Etihad Airways', country: 'BAE', flag: '🇦🇪', hub: 'AUH' },
       { id: 'omanair', code: 'WY', name: 'Oman Air', country: 'Umman', flag: '🇴🇲', hub: 'MCT' },
       { id: 'gulfair', code: 'GF', name: 'Gulf Air', country: 'Bahreyn', flag: '🇧🇭', hub: 'BAH' },
-      { id: 'kuwait', code: 'KU', name: 'Kuwait Airways', country: 'Kuveyt', flag: '🇰🇼', hub: 'KWI' }
+      { id: 'kuwait', code: 'KU', name: 'Kuwait Airways', country: 'Kuveyt', flag: '🇰🇼', hub: 'KWI' },
+      { id: 'flydubai', code: 'FZ', name: 'flydubai', country: 'BAE', flag: '🇦🇪', hub: 'DXB' },
+      { id: 'airarabia', code: 'G9', name: 'Air Arabia', country: 'BAE', flag: '🇦🇪', hub: 'SHJ' },
+      { id: 'flynas', code: 'XY', name: 'Flynas', country: 'S. Arabistan', flag: '🇸🇦', hub: 'RUH' },
+      { id: 'jazeera', code: 'J9', name: 'Jazeera Airways', country: 'Kuveyt', flag: '🇰🇼', hub: 'KWI' }
+    ]
+  },
+  {
+    id: 'europe_lowcost',
+    name: 'Avrupa Düşük Maliyetli (Low-Cost)',
+    icon: '⚡',
+    badge: 'Ekonomik Gezgin',
+    color: '#eab308',
+    desc: 'Avrupa şehirleri arasında uygun fiyatlı seyahatin ve sırt çantalı gezginlerin tercihi.',
+    airlines: [
+      { id: 'ryanair', code: 'FR', name: 'Ryanair', country: 'İrlanda', flag: '🇮🇪', hub: 'DUB' },
+      { id: 'easyjet', code: 'U2', name: 'easyJet', country: 'Birleşik Krallık', flag: '🇬🇧', hub: 'LGW' },
+      { id: 'wizzair', code: 'W6', name: 'Wizz Air', country: 'Macaristan', flag: '🇭🇺', hub: 'BUD' },
+      { id: 'vueling', code: 'VY', name: 'Vueling', country: 'İspanya', flag: '🇪🇸', hub: 'BCN' },
+      { id: 'eurowings', code: 'EW', name: 'Eurowings', country: 'Almanya', flag: '🇩🇪', hub: 'DUS' },
+      { id: 'norwegian', code: 'DY', name: 'Norwegian Air', country: 'Norveç', flag: '🇳🇴', hub: 'OSL' },
+      { id: 'transavia', code: 'HV', name: 'Transavia', country: 'Hollanda', flag: '🇳🇱', hub: 'AMS' },
+      { id: 'volotea', code: 'V7', name: 'Volotea', country: 'İspanya', flag: '🇪🇸', hub: 'BCN' }
     ]
   }
 ];
@@ -115,8 +159,8 @@ export const AIRCRAFT_FAMILIES = [
     icon: '🇺🇸',
     badge: 'Amerikan Havacılık Devi',
     color: '#3b82f6',
-    desc: '1960\'lardan günümüze gökyüzüne hükmeden efsanevi Amerikan jet ailesi.',
-    models: ['b737', 'b777', 'b787', 'b747']
+    desc: "1960'lardan günümüze gökyüzüne hükmeden efsanevi Amerikan jet ailesi.",
+    models: ['b737', 'b777', 'b787', 'b747', 'b757', 'b767', 'b777x']
   },
   {
     id: 'airbus',
@@ -125,7 +169,7 @@ export const AIRCRAFT_FAMILIES = [
     badge: 'Avrupa Mühendisliği',
     color: '#ef4444',
     desc: 'Fly-by-wire teknolojisinin ve modern geniş gövdelerin öncüsü Avrupa filosu.',
-    models: ['a320', 'a330', 'a350', 'a380', 'a220']
+    models: ['a320', 'a321xlr', 'a330', 'a350', 'a380', 'a220', 'a340']
   },
   {
     id: 'regional',
@@ -134,11 +178,11 @@ export const AIRCRAFT_FAMILIES = [
     badge: 'Özel & Bölgesel Jetler',
     color: '#10b981',
     desc: 'Bölgesel hatların çevik jetleri, turboprop pervaneliler ve süpersonik efsaneler.',
-    models: ['e_jets', 'atr72', 'concorde']
+    models: ['e_jets', 'atr72', 'crj', 'c919', 'private_jet', 'concorde']
   }
 ];
 
-// ── Aircraft Models Fleet ───────────────────────────────────────────────────
+// ── Aircraft Models Fleet (20 Detailed Aircraft Models) ──────────────────────
 export const AIRCRAFT_MODELS = [
   // ── BOEING AILESI ──
   {
@@ -221,6 +265,66 @@ export const AIRCRAFT_MODELS = [
     color: '#f59e0b',
     desc: 'Havacılık çağını başlatan efsanevi 4 motorlu kambur gövdeli dev.'
   },
+  {
+    id: 'b757',
+    familyId: 'boeing',
+    name: 'Boeing 757 (Flying Pencil)',
+    nick: 'Uçan Kalem',
+    builder: 'Boeing',
+    type: 'Uzun Dar Gövde',
+    icon: '✏️',
+    badge: 'Kıta Aşan Dar Gövde',
+    seatLayout: '3-3',
+    country: '🇺🇸 ABD',
+    firstFlight: '1982',
+    speed: '850 km/s (Mach 0.80)',
+    wingspan: '38.0 m',
+    length: '47.3 m',
+    seats: '200 - 280',
+    range: '7.250 km',
+    color: '#0284c7',
+    desc: 'İnce uzun silueti ve güçlü motorlarıyla pilotların ve havacılık severlerin en sevdiği efsane dar gövde.'
+  },
+  {
+    id: 'b767',
+    familyId: 'boeing',
+    name: 'Boeing 767-300ER',
+    nick: 'Transatlantik Emektarı',
+    builder: 'Boeing',
+    type: 'Geniş Gövde 2-3-2',
+    icon: '✈️',
+    badge: 'Okyanus Aşırı Öncü',
+    seatLayout: '2-3-2',
+    country: '🇺🇸 ABD',
+    firstFlight: '1981',
+    speed: '851 km/s (Mach 0.80)',
+    wingspan: '47.6 m',
+    length: '54.9 m',
+    seats: '210 - 290',
+    range: '11.070 km',
+    color: '#2563eb',
+    desc: '2-3-2 koltuk dizilimiyle orta koltuk oranının en az olduğu konforlu transatlantik emektarı.'
+  },
+  {
+    id: 'b777x',
+    familyId: 'boeing',
+    name: 'Boeing 777X (777-9)',
+    nick: 'Katlanır Kanatlı Dev',
+    builder: 'Boeing',
+    type: 'Yeni Nesil Süper Geniş Gövde',
+    icon: '🦅',
+    badge: 'Dünyanın En Uzunu',
+    seatLayout: '3-4-3',
+    country: '🇺🇸 ABD',
+    firstFlight: '2020',
+    speed: '905 km/s (Mach 0.84)',
+    wingspan: '71.8 m (64.8m Katlı)',
+    length: '76.7 m',
+    seats: '384 - 426',
+    range: '13.500 km',
+    color: '#1d4ed8',
+    desc: 'Dünyanın en uzun yolcu uçağı; kapılara sığabilmek için kanat uçları katlanan mühendislik harikası.'
+  },
 
   // ── AIRBUS AILESI ──
   {
@@ -242,6 +346,26 @@ export const AIRCRAFT_MODELS = [
     range: '6.500 km',
     color: '#10b981',
     desc: 'Fly-by-wire teknolojisiyle üretilmiş, dünyada en sık binilen dar gövde.'
+  },
+  {
+    id: 'a321xlr',
+    familyId: 'airbus',
+    name: 'Airbus A321XLR (Extra Long Range)',
+    nick: 'Okyanus Aşan Dar Gövde',
+    builder: 'Airbus',
+    type: 'Ultra Uzun Menzilli Dar Gövde',
+    icon: '⚡',
+    badge: '8.700 km Menzil',
+    seatLayout: '3-3',
+    country: '🇪🇺 Avrupa',
+    firstFlight: '2022',
+    speed: '840 km/s (Mach 0.78)',
+    wingspan: '35.8 m',
+    length: '44.5 m',
+    seats: '180 - 220',
+    range: '8.700 km',
+    color: '#059669',
+    desc: 'Tek koridorlu dar gövdeyle 11 saat kesintisiz uçabilen ve havacılıkta yeni bir devir açan uçak.'
   },
   {
     id: 'a330',
@@ -323,6 +447,26 @@ export const AIRCRAFT_MODELS = [
     color: '#14b8a6',
     desc: 'Geniş koltukları ve büyük pencereleriyle yolcuların en sevdiği bölgesel jet.'
   },
+  {
+    id: 'a340',
+    familyId: 'airbus',
+    name: 'Airbus A340-300 / 600',
+    nick: '4 Motorlu Klasik',
+    builder: 'Airbus',
+    type: '4 Motorlu Uzun Menzil',
+    icon: '🛫',
+    badge: 'Efsane 4 Motorlu',
+    seatLayout: '2-4-2',
+    country: '🇪🇺 Avrupa',
+    firstFlight: '1991',
+    speed: '871 km/s (Mach 0.82)',
+    wingspan: '60.3 m',
+    length: '63.6 m',
+    seats: '260 - 380',
+    range: '13.700 km',
+    color: '#4f46e5',
+    desc: "Türk Hava Yolları'nın ilk transatlantik seferlerini gerçekleştirdiği ('Deli Nurhan' lakaplı) unutulmaz 4 motorlu dev."
+  },
 
   // ── BOLGESEL & OZEL FILO ──
   {
@@ -364,6 +508,66 @@ export const AIRCRAFT_MODELS = [
     range: '1.528 km',
     color: '#84cc16',
     desc: 'Kısa pistler, ada uçuşları ve dağlık havaalanlarının vazgeçilmez pervaneli uçağı.'
+  },
+  {
+    id: 'crj',
+    familyId: 'regional',
+    name: 'Bombardier CRJ Series (CRJ900/1000)',
+    nick: 'Kanada Roketi',
+    builder: 'Bombardier / MHI',
+    type: 'Kuyruktan Motorlu Bölgesel Jet',
+    icon: '🛩️',
+    badge: 'Kuyruktan Motorlu',
+    seatLayout: '2-2',
+    country: '🇨🇦 Kanada',
+    firstFlight: '1991',
+    speed: '830 km/s (Mach 0.78)',
+    wingspan: '24.9 m',
+    length: '36.2 m',
+    seats: '70 - 104',
+    range: '2.800 km',
+    color: '#d97706',
+    desc: 'Arka gövdeye monteli motorları ve alçak profiliyle bölgesel hatların çevik işçisi.'
+  },
+  {
+    id: 'c919',
+    familyId: 'regional',
+    name: 'COMAC C919',
+    nick: 'Doğunun Yükselişi',
+    builder: 'COMAC',
+    type: 'Yeni Nesil Dar Gövde',
+    icon: '🐉',
+    badge: 'Çin Yolcu Jeti',
+    seatLayout: '3-3',
+    country: '🇨🇳 Çin',
+    firstFlight: '2017',
+    speed: '834 km/s (Mach 0.78)',
+    wingspan: '35.8 m',
+    length: '38.9 m',
+    seats: '158 - 192',
+    range: '5.555 km',
+    color: '#dc2626',
+    desc: "Boeing 737 ve Airbus A320 ikilisine rakip olarak geliştirilen Çin'in ilk yerli ticari yolcu uçağı."
+  },
+  {
+    id: 'private_jet',
+    familyId: 'regional',
+    name: 'Gulfstream G650 / Özel İş Jeti',
+    nick: 'Lüksün Zirvesi',
+    builder: 'Gulfstream / Cessna',
+    type: 'Ultra Lüks İş Jeti',
+    icon: '🥂',
+    badge: '51.000 Feet Tavan',
+    seatLayout: '1-1 & VIP Club',
+    country: '🇺🇸 ABD',
+    firstFlight: '2009',
+    speed: '956 km/s (Mach 0.90)',
+    wingspan: '30.3 m',
+    length: '30.4 m',
+    seats: '11 - 18',
+    range: '12.960 km',
+    color: '#eab308',
+    desc: "Yolcu uçaklarının üstünde, 51.000 feet irtifada ses hızına yakın uçan dünyanın en prestijli özel jeti."
   },
   {
     id: 'concorde',
