@@ -261,16 +261,6 @@ function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayN
     popupBackdropEl.id = 'map-popup-backdrop';
     popupBackdropEl.className = 'map-popup-backdrop';
 
-    const dismiss = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      closeActivePopup();
-    };
-
-    popupBackdropEl.addEventListener('click', dismiss);
-    popupBackdropEl.addEventListener('pointerdown', dismiss);
-    popupBackdropEl.addEventListener('touchstart', dismiss, { passive: false });
-
     mapRoot.appendChild(popupBackdropEl);
   }
 
@@ -2439,9 +2429,11 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   .openOn(map);
 
   activePopupOutsideListener = (e) => {
-    if (content && !content.contains(e.target)) {
-      closeActivePopup();
+    const popupEl = activeStatusPopup ? activeStatusPopup.getElement() : null;
+    if ((content && content.contains(e.target)) || (popupEl && popupEl.contains(e.target))) {
+      return;
     }
+    closeActivePopup();
   };
 
   setTimeout(() => {

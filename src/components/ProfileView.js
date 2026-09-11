@@ -111,11 +111,13 @@ export function renderProfileView(container, onBack) {
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
-          <div class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</div>
           <div class="profile-header">
             <div class="profile-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
-            <div style="flex:1;">
-              <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
+                <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
+              </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
             <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
@@ -996,11 +998,13 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('compare-mine-area').innerHTML = `
       <div class="profile-card">
-        <div class="profile-card-label" style="background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.3);color:#3b82f6;">${currentLang === 'tr' ? 'SENİN PROFİLİN' : 'YOUR PROFILE'}</div>
         <div class="profile-header">
           <div class="profile-avatar">${escapeHtml(myProfile.avatar || '🧭')}</div>
-          <div>
-            <div class="profile-username">${escapeHtml(myProfile.username || 'Sen')}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+              <span class="profile-username">${escapeHtml(myProfile.username || 'Sen')}</span>
+              <span class="profile-card-label" style="background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.3);color:#3b82f6;">${currentLang === 'tr' ? 'SENİN PROFİLİN' : 'YOUR PROFILE'}</span>
+            </div>
             <div class="profile-bio">${escapeHtml(myProfile.bio || '')}</div>
           </div>
         </div>
@@ -1036,11 +1040,13 @@ export function renderProfileView(container, onBack) {
       otherCard.style.display = 'block';
       otherCard.innerHTML = `
         <div class="profile-card">
-          <div class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</div>
           <div class="profile-header">
             <div class="profile-avatar">${escapeHtml(safeProfile.avatar || '✈️')}</div>
-            <div style="flex:1;">
-              <div class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
+                <span class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</span>
+              </div>
               <div class="profile-bio">${escapeHtml(safeProfile.bio || '')}</div>
             </div>
             ${rawCode && !isAlreadySaved ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
