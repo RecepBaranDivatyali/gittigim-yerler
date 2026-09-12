@@ -132,7 +132,7 @@ const TRANSLATIONS = {
     resetColors: 'Varsayılan Renklere Dön',
     colorsReset: 'Durum renkleri varsayılana sıfırlandı.',
     appInfoTitle: 'Gezgin Hakkında',
-    appInfoDesc: 'Sürüm 1.2 (Build 3) • %100 Çevrimdışı ve Kişisel Cihaz Güvenliği'
+    appInfoDesc: 'Sürüm 1.4 (Build 5) • %100 Çevrimdışı ve Kişisel Cihaz Güvenliği'
   },
   en: {
     appName: 'Gezgin',
@@ -263,7 +263,7 @@ const TRANSLATIONS = {
     resetColors: 'Reset to Default Colors',
     colorsReset: 'Status colors restored to default.',
     appInfoTitle: 'About Gezgin',
-    appInfoDesc: 'Version 1.2 (Build 3) • 100% Offline & Personal Device Privacy'
+    appInfoDesc: 'Version 1.4 (Build 5) • 100% Offline & Personal Device Privacy'
   }
 };
 
