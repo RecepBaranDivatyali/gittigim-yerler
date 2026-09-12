@@ -272,6 +272,8 @@ let lastPopupClosedAt = 0;
 let _popupClosedOnPointerDown = false;
 let promotedLabelMarker = null;
 let promotedLabelParent = null;
+let cachedWorldCountriesData = null;
+let cachedTurkeyProvincesData = null;
 
 function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayName = '', latlng = null, id = '', type = '', countryCode = '') {
   const mapContainer = map?.getContainer();
@@ -1220,6 +1222,7 @@ export function renderWorldMapView(container, options = {}) {
   });
 
   window.__refreshMapStats = refreshStats;
+  window.__leafletMapInstance = map;
   refreshStats();
 
   const cleanup = () => {
@@ -1227,6 +1230,7 @@ export function renderWorldMapView(container, options = {}) {
     if (typeof unsubLang === 'function') unsubLang();
     if (typeof unsubTheme === 'function') unsubTheme();
     if (_labelUpdateTimer) { clearTimeout(_labelUpdateTimer); _labelUpdateTimer = null; }
+    if (window.__leafletMapInstance === map) window.__leafletMapInstance = null;
     if (map) { map.remove(); map = null; }
     regionLayers = {};
     subregionLayers = {};
@@ -1381,10 +1385,17 @@ function initMap(container) {
   const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
 
   // Load World Countries
-  fetch(`${cleanBase}data/world-countries.json`).then(r => {
-    if (!r.ok) throw new Error('Network ' + r.status);
-    return r.json();
-  }).then(data => {
+  const loadWorldPromise = cachedWorldCountriesData
+    ? Promise.resolve(cachedWorldCountriesData)
+    : fetch(`${cleanBase}data/world-countries.json`).then(r => {
+        if (!r.ok) throw new Error('Network ' + r.status);
+        return r.json();
+      }).then(d => {
+        cachedWorldCountriesData = d;
+        return d;
+      });
+
+  loadWorldPromise.then(data => {
     countryFeaturesByCode = {};
     if (data && data.features) {
       data.features.forEach(f => {
@@ -1474,10 +1485,17 @@ function initMap(container) {
   });
 
   // Load Turkey Provinces
-  fetch(`${cleanBase}data/turkey-provinces.json`).then(r => {
-    if (!r.ok) throw new Error('Network ' + r.status);
-    return r.json();
-  }).then(data => {
+  const loadTurkeyPromise = cachedTurkeyProvincesData
+    ? Promise.resolve(cachedTurkeyProvincesData)
+    : fetch(`${cleanBase}data/turkey-provinces.json`).then(r => {
+        if (!r.ok) throw new Error('Network ' + r.status);
+        return r.json();
+      }).then(d => {
+        cachedTurkeyProvincesData = d;
+        return d;
+      });
+
+  loadTurkeyPromise.then(data => {
     turkeyLayer = L.geoJSON(data, {
       renderer: mapRenderer,
       pane: 'statesPane',

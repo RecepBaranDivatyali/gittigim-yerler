@@ -25,20 +25,45 @@ function initApp() {
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
 
-  let cleanupMap = null;
+  // Dedicated permanent Map container - Never wiped or reloaded between profile views
+  const mapContainer = document.createElement('div');
+  mapContainer.id = 'map-app-root';
+  mapContainer.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:hidden;';
+  appContainer.appendChild(mapContainer);
+
+  // Dedicated Profile overlay container - Opens and closes instantly (0ms)
+  const profileContainer = document.createElement('div');
+  profileContainer.id = 'profile-app-root';
+  profileContainer.style.cssText = 'position:fixed;inset:0;width:100vw;height:100%;z-index:9999;display:none;';
+  appContainer.appendChild(profileContainer);
+
+  // Login container
+  const loginContainer = document.createElement('div');
+  loginContainer.id = 'login-app-root';
+  loginContainer.style.cssText = 'position:fixed;inset:0;width:100vw;height:100%;z-index:10000;';
+  appContainer.appendChild(loginContainer);
+
+  let mapInitialized = false;
 
   function showMap() {
-    if (cleanupMap) { cleanupMap(); cleanupMap = null; }
-    else if (window.__cleanupWorldMap) { window.__cleanupWorldMap(); }
-    appContainer.innerHTML = '';
-    cleanupMap = renderWorldMapView(appContainer, { onOpenProfile: showProfile });
+    profileContainer.style.display = 'none';
+    profileContainer.innerHTML = '';
+    if (!mapInitialized) {
+      mapInitialized = true;
+      renderWorldMapView(mapContainer, { onOpenProfile: showProfile });
+    } else {
+      if (window.__refreshMapStats) window.__refreshMapStats();
+      if (window.__leafletMapInstance) {
+        window.__leafletMapInstance.invalidateSize();
+      }
+    }
   }
 
   function showProfile() {
-    if (cleanupMap) { cleanupMap(); cleanupMap = null; }
-    else if (window.__cleanupWorldMap) { window.__cleanupWorldMap(); }
-    appContainer.innerHTML = '';
-    renderProfileView(appContainer, showMap);
+    profileContainer.style.display = 'block';
+    renderProfileView(profileContainer, () => {
+      showMap();
+    });
   }
 
   if (typeof onStateChange === 'function') {
@@ -47,7 +72,8 @@ function initApp() {
     });
   }
 
-  renderLoginPage(appContainer, (profile) => {
+  renderLoginPage(loginContainer, (profile) => {
+    loginContainer.remove();
     showMap();
   });
 }
