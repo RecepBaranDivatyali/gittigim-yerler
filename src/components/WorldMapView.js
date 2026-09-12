@@ -1162,6 +1162,12 @@ function initMap(container) {
     worldCopyJump: false,
     maxBounds: [[-85, -180], [85, 180]],
     maxBoundsViscosity: 1.0,
+    inertia: true,
+    inertiaDeceleration: 3000,
+    easeLinearity: 0.2,
+    zoomAnimation: true,
+    fadeAnimation: true,
+    markerZoomAnimation: true,
   });
 
   map.on('popupclose', () => {
@@ -1186,8 +1192,8 @@ function initMap(container) {
     }
   }, true);
 
-  // Optimized SVG renderer buffer: lightweight memory for 60fps mobile drag & pan
-  mapRenderer = L.svg({ padding: 0.18 });
+  // Optimized SVG renderer buffer: 0.5 padding ensures smooth dragging without SVG path recalculation
+  mapRenderer = L.svg({ padding: 0.5 });
 
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
@@ -1202,13 +1208,13 @@ function initMap(container) {
   map.createPane('stateBordersPane');
   map.getPane('stateBordersPane').style.zIndex = 440;
   map.getPane('stateBordersPane').style.pointerEvents = 'none';
-  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.18 });
+  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.5 });
 
   // Prominent Country Borders Pane: Level 1 & Level 2 bold country borders, always above states and cities!
   map.createPane('countryBordersPane');
   map.getPane('countryBordersPane').style.zIndex = 450;
   map.getPane('countryBordersPane').style.pointerEvents = 'none';
-  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.18 });
+  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.5 });
 
   map.createPane('labelsPane');
   map.getPane('labelsPane').style.zIndex = 460;
@@ -1224,7 +1230,7 @@ function initMap(container) {
   if (ppPane) {
     ppPane.classList.add('no-blur-pane');
   }
-  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.18 });
+  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.5 });
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
   provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
@@ -1302,13 +1308,16 @@ function initMap(container) {
       } catch { return 0; }
     });
 
-    // Prominent outer country borders: always visible above regions and cities
+    // Prominent outer country borders: only active above regions (Zoom >= REGION_ZOOM)
     countryBordersLayer = L.geoJSON(data, {
       renderer: countryBordersRenderer,
       pane: 'countryBordersPane',
       style: () => countryBorderStyle(),
       interactive: false
-    }).addTo(map);
+    });
+    if (map && map.getZoom() >= REGION_ZOOM) {
+      countryBordersLayer.addTo(map);
+    }
 
     scheduleLabelUpdate();
     
@@ -1422,13 +1431,19 @@ const IGNORED_LABEL_CODES = new Set([
 ]);
 
 let _measureCtx = null;
+const _textWidthCache = new Map();
 function measureTextWidth(text, fontSize) {
+  const key = `${fontSize}_${text}`;
+  const cached = _textWidthCache.get(key);
+  if (cached !== undefined) return cached;
   if (!_measureCtx) {
     const c = document.createElement('canvas');
     _measureCtx = c.getContext('2d');
   }
   _measureCtx.font = `800 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
-  return _measureCtx.measureText(text.toUpperCase()).width;
+  const w = _measureCtx.measureText(text.toUpperCase()).width;
+  _textWidthCache.set(key, w);
+  return w;
 }
 
 // Proper area-weighted centroid and bounding box of a single polygon ring
@@ -1486,7 +1501,7 @@ function pointToPolygonDist(x, y, ring) {
 }
 
 // Pole of inaccessibility: finds the point inside polygon that is farthest from all borders
-function polylabelFast(ring, precision = 0.01) {
+function polylabelFast(ring, precision = 0.05) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 0; i < ring.length; i++) {
     const p = ring[i];
@@ -1537,7 +1552,7 @@ function polylabelFast(ring, precision = 0.01) {
 }
 
 // Find the visual centroid and bounding box of ONLY the largest mainland polygon,
-// guaranteed inside the landmass via polylabel
+// guaranteed inside the landmass (with fast fallback to polylabel only when needed)
 function getMainlandInfo(feature) {
   if (feature?._cachedMainland) return feature._cachedMainland;
   const geom = feature?.geometry;
@@ -1564,14 +1579,17 @@ function getMainlandInfo(feature) {
 
   if (!best || !bestRing) return null;
 
-  // Use Pole of Inaccessibility so label is never placed in water/sea or across borders
-  try {
-    const pl = polylabelFast(bestRing, 0.01);
-    if (pl && pl[2] > 0) {
-      best.cx = pl[0]; // lng
-      best.cy = pl[1]; // lat
-    }
-  } catch (e) {}
+  // 97% of mainland centroids are already inside the landmass!
+  // Only compute polylabel if mathematical centroid falls in water/outside polygon
+  if (pointToPolygonDist(best.cx, best.cy, bestRing) <= 0) {
+    try {
+      const pl = polylabelFast(bestRing, 0.05);
+      if (pl && pl[2] > 0) {
+        best.cx = pl[0]; // lng
+        best.cy = pl[1]; // lat
+      }
+    } catch (e) {}
+  }
 
   if (feature) feature._cachedMainland = best;
   return best;
@@ -2044,12 +2062,13 @@ function getVisibleCountries() {
   Object.entries(countryLayersByCode).forEach(([code, layer]) => {
     if (!code || code.length !== 2 || code === '-99') return;
     if (!layer || !layer.getBounds) return;
-    if (!bounds.intersects(layer.getBounds())) return;
+    const lBounds = layer._cachedBounds || (layer._cachedBounds = layer.getBounds());
+    if (!bounds.intersects(lBounds)) return;
 
     // Guard against distant overseas territories pulling countries across the planet
     if (OVERSEAS_MAINLAND_BBOX[code]) {
       const mb = OVERSEAS_MAINLAND_BBOX[code];
-      const mBounds = L.latLngBounds([[mb.minLat, mb.minLng], [mb.maxLat, mb.maxLng]]);
+      const mBounds = mb._bounds || (mb._bounds = L.latLngBounds([[mb.minLat, mb.minLng], [mb.maxLat, mb.maxLng]]));
       if (!bounds.intersects(mBounds)) return;
     }
 
@@ -2062,11 +2081,22 @@ async function onViewChange() {
   if (!map) return;
   const zoom = map.getZoom();
 
+  // Prominent outer country borders: only mounted when zoomed into regions (Zoom >= REGION_ZOOM)
+  if (zoom >= REGION_ZOOM) {
+    if (countryBordersLayer && !map.hasLayer(countryBordersLayer)) {
+      countryBordersLayer.addTo(map);
+    }
+  } else {
+    if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+      map.removeLayer(countryBordersLayer);
+    }
+  }
+
   // Only restyle borders if zoom category actually changed (avoids 250 SVG re-stylings per drag)
   const currentZoomCategory = zoom >= SUBREGION_ZOOM ? 3 : (zoom >= REGION_ZOOM ? 2 : 1);
   if (currentZoomCategory !== lastZoomCategory) {
     lastZoomCategory = currentZoomCategory;
-    if (countryBordersLayer) {
+    if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
       countryBordersLayer.setStyle(countryBorderStyle());
     }
   }

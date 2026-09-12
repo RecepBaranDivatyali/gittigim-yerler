@@ -1112,10 +1112,7 @@ svg, g, path {
 }
 
 .floating-profile-btn {
-  background: rgba(15, 23, 42, 0.90);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(15, 23, 42, 0.94);
   border: 1.5px solid rgba(255, 87, 34, 0.45);
   color: #f8fafc;
   border-radius: 999px;
@@ -1161,7 +1158,7 @@ svg, g, path {
   top: max(14px, env(safe-area-inset-top));
   right: max(14px, env(safe-area-inset-right));
   z-index: 2200;
-  background: rgba(15, 23, 42, 0.90);
+  background: rgba(15, 23, 42, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   padding: 10px 14px;
@@ -1169,9 +1166,6 @@ svg, g, path {
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
   min-width: 125px;
@@ -1236,13 +1230,10 @@ svg, g, path {
 }
 
 .stats-chip {
-  background: rgba(15, 23, 42, 0.94);
+  background: rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   padding: 12px 16px;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
@@ -2398,16 +2389,15 @@ svg, g, path {
   line-height: 1;
 }
 
-/* ── Hardware Accelerated Leaflet Panes for Mobile ── */
-#leaflet-map .leaflet-pane {
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+/* ── Hardware Accelerated Leaflet Map Pane ── */
+#leaflet-map .leaflet-map-pane {
+  will-change: transform;
 }
 
-/* ── Map Selective Dim/Blur & Popup Clarity (Zero-Lag Optimized) ── */
+/* ── Map Selective Dim & Popup Clarity (Zero-Lag Fast Shader) ── */
 #leaflet-map.map-dimmed .leaflet-map-pane > .leaflet-pane:not(.no-blur-pane):not(.leaflet-activeFeature-pane):not(.leaflet-activefeature-pane):not(.leaflet-popup-pane) {
-  filter: blur(2px) brightness(0.60);
-  -webkit-filter: blur(2px) brightness(0.60);
+  opacity: 0.40;
+  transition: opacity 0.2s ease;
 }
 
 #leaflet-map.map-dimmed .no-blur-pane,
@@ -2415,8 +2405,6 @@ svg, g, path {
 #leaflet-map.map-dimmed .leaflet-activefeature-pane,
 #leaflet-map.map-dimmed .leaflet-popup-pane,
 #leaflet-map.map-dimmed .leaflet-popup {
-  filter: none !important;
-  -webkit-filter: none !important;
   opacity: 1 !important;
 }
 
@@ -2821,7 +2809,7 @@ body[data-theme="light"] .floating-poster-btn {
 }
 
 .floating-feedback-btn {
-  background: rgba(30, 41, 59, 0.88);
+  background: rgba(30, 41, 59, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 99px;
   color: #f8fafc;
@@ -2834,8 +2822,6 @@ body[data-theme="light"] .floating-poster-btn {
   font-size: 0.85rem;
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3170,9 +3156,7 @@ body[data-theme="light"] .floating-poster-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  background: var(--theme-card-bg, rgba(15, 23, 42, 0.94));
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 99px;
   padding: 8px 16px;
@@ -3214,9 +3198,7 @@ body[data-theme="light"] .floating-poster-btn {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: var(--theme-card-bg, rgba(15, 23, 42, 0.95));
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: var(--theme-card-bg, rgba(15, 23, 42, 0.98));
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 16px;
   max-height: 280px;
@@ -3276,9 +3258,7 @@ body[data-theme="light"] .floating-poster-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: var(--theme-card-bg, rgba(15, 23, 42, 0.94));
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.12));
   border-radius: 99px;
   padding: 6px 14px;
@@ -3296,9 +3276,7 @@ body[data-theme="light"] .floating-poster-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--theme-card-bg, rgba(15, 23, 42, 0.85));
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  background: var(--theme-card-bg, rgba(15, 23, 42, 0.94));
   border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
   border-radius: 99px;
   padding: 8px 14px;
