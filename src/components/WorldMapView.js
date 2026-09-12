@@ -6,7 +6,7 @@ import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
 import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, getHomeCountry } from '../utils/storage.js';
-import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
+import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
 
@@ -396,7 +396,7 @@ function closeActivePopup() {
 
 
 function buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor) {
-  const flag = homeCountryObj?.flag || '🇹🇷';
+  const flagHtml = getCountryFlagHtml(homeCountryObj?.code, homeCountryObj?.flag, { width: 26, height: 18 });
   const label = homeCountryObj?.code === 'TR' ? t('provincesVisited') : (t('regionsVisited') || 'Bölge Gezildi');
   const denom = totalHomeSubdivisions > 0 ? `/${totalHomeSubdivisions}` : '';
 
@@ -410,7 +410,7 @@ function buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions,
     </div>
     <div class="stats-divider-mobile"></div>
     <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
-      <span class="stats-icon-flag" style="font-size:1.35rem;line-height:1;" title="${homeCountryObj?.name || 'Türkiye'}">${flag}</span>
+      <span class="stats-icon-flag" style="display:inline-flex;align-items:center;justify-content:center;line-height:1;" title="${homeCountryObj?.name || 'Türkiye'}">${flagHtml}</span>
       <div>
         <div class="stats-number" style="color:${visitedColor};">${homeVisited}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">${denom}</span></div>
         <div class="stats-label">${label}</div>

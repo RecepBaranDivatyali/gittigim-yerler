@@ -1002,10 +1002,18 @@ html, body, #app {
   gap: 10px;
 }
 
-.stats-icon {
+.stats-icon, .stats-icon-flag {
   font-size: 1.4rem;
   line-height: 1;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stats-icon-flag svg,
+.stats-icon-flag img {
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .stats-number {
@@ -4598,6 +4606,11 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   .stats-icon, .stats-icon-flag {
     font-size: 1.05rem;
     line-height: 1;
+  }
+  .stats-icon-flag svg,
+  .stats-icon-flag img {
+    width: 22px !important;
+    height: 15px !important;
   }
 
   /* Floating Bottom Right: Feedback Button */

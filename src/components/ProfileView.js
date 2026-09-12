@@ -10,7 +10,7 @@ import {
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
-import { t, getLanguage, setLanguage, getCountryDisplayName } from '../utils/i18n.js';
+import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
@@ -103,15 +103,16 @@ export function renderProfileView(container, onBack) {
 
     const currentHomeCountry = getHomeCountry();
     const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+    const homeFlagHtml = getCountryFlagHtml(homeCountryObj.code, homeCountryObj.flag, { width: 20, height: 14 });
     let homeSubdivisionCount = 0;
     let homeSubdivisionLabel = t('provincesVisited');
     if (currentHomeCountry === 'TR') {
       homeSubdivisionCount = baseStats.turkeyCount || 0;
-      homeSubdivisionLabel = `${homeCountryObj.flag} ${t('provincesVisited')}`;
+      homeSubdivisionLabel = `${homeFlagHtml} ${t('provincesVisited')}`;
     } else {
       const prefix = `${currentHomeCountry}::`;
       homeSubdivisionCount = Object.entries(storageData.worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
-      homeSubdivisionLabel = `${homeCountryObj.flag} ${t('regionsVisited') || 'Bölge Gezildi'}`;
+      homeSubdivisionLabel = `${homeFlagHtml} ${t('regionsVisited') || 'Bölge Gezildi'}`;
     }
 
     const shareData = {
@@ -187,6 +188,9 @@ export function renderProfileView(container, onBack) {
     const plannedColor = getStatusColor('planned');
     const wishlistColor = getStatusColor('wishlist');
 
+    const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+    const homeCountryFlagHtml = getCountryFlagHtml(currentHomeCountry, homeCountryObj?.flag, { width: 32, height: 22 });
+
     const sortedCountries = [...WORLD_COUNTRIES].sort((a, b) => {
       const nameA = currentLang === 'tr' ? (a.name || a.nameEn) : (a.nameEn || a.name);
       const nameB = currentLang === 'tr' ? (b.name || b.nameEn) : (b.nameEn || b.name);
@@ -199,11 +203,15 @@ export function renderProfileView(container, onBack) {
         <div class="share-section" style="margin-top:0;">
           <h3 style="margin-bottom:8px;font-size:1.1rem;">📍 ${t('homeCountry')}</h3>
           <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:14px;">${t('homeCountryDesc')}</p>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px 14px;background:rgba(15,23,42,0.6);border-radius:12px;border:1px solid rgba(255,255,255,0.08);width:fit-content;">
+            <span id="settings-home-country-flag">${homeCountryFlagHtml}</span>
+            <span style="font-weight:700;font-size:0.95rem;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
+          </div>
           <div style="max-width:380px;">
             <select id="settings-home-country-select" style="width:100%;padding:11px 14px;border-radius:12px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.18);color:var(--theme-text-main, #f8fafc);font-size:0.92rem;outline:none;cursor:pointer;font-family:inherit;">
               ${sortedCountries.map(c => `
                 <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
-                  ${c.flag || '🏳️'} ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
+                  ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
                 </option>
               `).join('')}
             </select>
