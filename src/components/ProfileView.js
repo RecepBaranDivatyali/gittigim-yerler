@@ -5,7 +5,8 @@ import {
   getUserAircraft, saveUserAircraft, toggleUserAircraft,
   AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint,
   getSavedFriends, saveFriend, deleteFriend,
-  getHomeCountry, setHomeCountry
+  getHomeCountry, setHomeCountry,
+  exportBackup, importBackup
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -14,6 +15,8 @@ import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml 
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
+
+const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁'];
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -208,8 +211,17 @@ export function renderProfileView(container, onBack) {
     const plannedColor = getStatusColor('planned');
     const wishlistColor = getStatusColor('wishlist');
 
+    let userProfile = { username: 'Gezgin', avatar: '🧭', bio: '' };
+    try {
+      const raw = localStorage.getItem('gv_profile');
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p === 'object') userProfile = p;
+      }
+    } catch (e) {}
+
     const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
-    const homeCountryFlagHtml = getCountryFlagHtml(currentHomeCountry, homeCountryObj?.flag, { width: 32, height: 22 });
+    const homeCountryFlagHtml = getCountryFlagHtml(currentHomeCountry, homeCountryObj?.flag, { width: 34, height: 24 });
 
     const sortedCountries = [...WORLD_COUNTRIES].sort((a, b) => {
       const nameA = currentLang === 'tr' ? (a.name || a.nameEn) : (a.nameEn || a.name);
@@ -217,18 +229,138 @@ export function renderProfileView(container, onBack) {
       return nameA.localeCompare(nameB, currentLang === 'tr' ? 'tr' : 'en');
     });
 
+    const themeList = [
+      { id: 'dark', name: currentLang === 'tr' ? 'Karanlık' : 'Dark', icon: '🌙', colors: ['#090d16', '#1e293b', '#ff5722'] },
+      { id: 'light', name: currentLang === 'tr' ? 'Aydınlık' : 'Light', icon: '☀️', colors: ['#c5dff6', '#f8fafc', '#ff5722'] },
+      { id: 'ocean', name: currentLang === 'tr' ? 'Okyanus' : 'Ocean', icon: '🌊', colors: ['#0c1929', '#1a3a5c', '#38bdf8'] },
+      { id: 'emerald', name: currentLang === 'tr' ? 'Zümrüt' : 'Emerald', icon: '🌲', colors: ['#0a1f0a', '#1a3d1a', '#10b981'] },
+      { id: 'vintage', name: currentLang === 'tr' ? 'Nostalji' : 'Vintage', icon: '📜', colors: ['#2c1810', '#4a3828', '#d97706'] }
+    ];
+
+    const uiScaleOptions = [
+      { id: 'small', label: t('uiSizeSmall'), icon: '🔍' },
+      { id: 'medium', label: t('uiSizeMedium'), icon: '⚖️' },
+      { id: 'large', label: t('uiSizeLarge'), icon: '🔎' }
+    ];
+
     contentArea.innerHTML = `
-      <div class="profile-main">
-        <!-- Home Country Selector Card -->
-        <div class="share-section" style="margin-top:0;">
-          <h3 style="margin-bottom:8px;font-size:1.1rem;">📍 ${t('homeCountry')}</h3>
-          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:14px;">${t('homeCountryDesc')}</p>
-          <div class="home-country-badge-row" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px 14px;border-radius:12px;width:fit-content;">
-            <span id="settings-home-country-flag">${homeCountryFlagHtml}</span>
-            <span style="font-weight:700;font-size:0.95rem;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
+      <div class="settings-container">
+        
+        <!-- 1. Traveler Identity & Profile Customization -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">👤 ${t('profileSettingsTitle')}</h3>
           </div>
-          <div style="max-width:380px;">
-            <select id="settings-home-country-select" style="width:100%;padding:11px 14px;border-radius:12px;font-size:0.92rem;outline:none;cursor:pointer;font-family:inherit;">
+          <p class="settings-card-desc">${t('profileSettingsDesc')}</p>
+          
+          <div class="settings-profile-preview">
+            <div class="settings-profile-avatar" id="settings-preview-avatar">${escapeHtml(userProfile.avatar || '🧭')}</div>
+            <div class="settings-profile-info">
+              <div class="settings-profile-name">
+                <span>${escapeHtml(userProfile.username || 'Gezgin')}</span>
+              </div>
+              <div class="settings-profile-bio">${escapeHtml(userProfile.bio) || (currentLang === 'tr' ? 'Dünyayı keşfediyor...' : 'Exploring the world...')}</div>
+            </div>
+            <button type="button" class="settings-edit-toggle-btn" id="settings-toggle-edit-btn">
+              ✏️ ${t('editProfile')}
+            </button>
+          </div>
+
+          <!-- Collapsible Profile Edit Drawer -->
+          <div class="settings-edit-drawer" id="settings-edit-drawer" style="display:none;">
+            <div class="settings-input-group">
+              <label>${t('selectAvatar')}</label>
+              <div class="settings-avatar-picker-grid" id="settings-avatar-picker-grid">
+                ${ALLOWED_AVATARS.map(em => `
+                  <button type="button" class="settings-avatar-pick-btn ${em === (userProfile.avatar || '🧭') ? 'selected' : ''}" data-avatar="${em}">${em}</button>
+                `).join('')}
+              </div>
+            </div>
+            <div class="settings-input-group">
+              <label for="settings-edit-username">${t('username')} (Max 20)</label>
+              <input type="text" id="settings-edit-username" class="settings-text-input" maxlength="20" value="${escapeHtml(userProfile.username || '')}" placeholder="${t('usernamePlaceholder')}">
+            </div>
+            <div class="settings-input-group">
+              <label for="settings-edit-bio">${t('bio')} (Max 60)</label>
+              <input type="text" id="settings-edit-bio" class="settings-text-input" maxlength="60" value="${escapeHtml(userProfile.bio || '')}" placeholder="${t('bioPlaceholder')}">
+            </div>
+            <button type="button" class="settings-save-profile-btn" id="settings-save-profile-btn">
+              💾 ${t('saveProfile')}
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Theme & Atmosphere Studio -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">🎨 ${t('themeStudio')}</h3>
+          </div>
+          <p class="settings-card-desc">${t('themeStudioDesc')}</p>
+          <div class="settings-themes-grid">
+            ${themeList.map(th => {
+              const isActive = currentTheme === th.id;
+              return `
+                <button type="button" class="theme-card-btn ${isActive ? 'active' : ''}" data-theme="${th.id}">
+                  ${isActive ? `<span class="theme-active-tag">✓</span>` : ''}
+                  <span class="theme-card-icon">${th.icon}</span>
+                  <span class="theme-card-name">${th.name}</span>
+                  <div class="theme-swatch-bar">
+                    <span style="background:${th.colors[0]};"></span>
+                    <span style="background:${th.colors[1]};"></span>
+                    <span style="background:${th.colors[2]};"></span>
+                  </div>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- 3. UI & Font Scale -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">📐 ${t('uiScaleTitle')}</h3>
+          </div>
+          <p class="settings-card-desc">${t('uiScaleDesc')}</p>
+          <div class="settings-scale-row">
+            ${uiScaleOptions.map(opt => `
+              <button type="button" class="scale-btn ${currentUiSize === opt.id ? 'active' : ''}" data-size="${opt.id}">
+                <span>${opt.icon}</span>
+                <span>${opt.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 4. Language & Region -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">🌐 ${t('language')}</h3>
+          </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Uygulama arayüzünün dilini seçin:' : 'Select application interface language:'}</p>
+          <div class="lang-btn-group">
+            <button type="button" class="lang-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr">
+              <span style="font-size:1.25rem;">🇹🇷</span>
+              <span style="font-weight:700;">Türkçe</span>
+            </button>
+            <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en">
+              <span style="font-size:1.25rem;">🇬🇧</span>
+              <span style="font-weight:700;">English</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. Home Country (Ana Ülke) -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">📍 ${t('homeCountry')}</h3>
+          </div>
+          <p class="settings-card-desc">${t('homeCountryDesc')}</p>
+          <div class="home-country-picker-box">
+            <div class="home-country-current-pill">
+              <span id="settings-home-country-flag">${homeCountryFlagHtml}</span>
+              <span class="home-country-current-name">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
+            </div>
+            <select id="settings-home-country-select" class="home-country-select-styled">
               ${sortedCountries.map(c => `
                 <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
                   ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
@@ -238,130 +370,207 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
-        <!-- Appearance Theme & Language -->
-        <div class="share-section">
-          <h3 style="margin-bottom:16px;font-size:1.1rem;">🎨 ${t('theme')} & 🌐 ${t('language')}</h3>
-          
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px;">
-            <!-- Language Selector -->
-            <div>
-              <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌐 ${t('language')}</div>
-              <div style="display:flex;gap:8px;">
-                <button class="lang-select-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr">🇹🇷 Türkçe</button>
-                <button class="lang-select-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en">🇬🇧 English</button>
-              </div>
-            </div>
-
-            <!-- Theme Selector (Dark & Light) -->
-            <div>
-              <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌗 ${t('theme')}</div>
-              <div style="display:flex;gap:8px;">
-                <button class="theme-select-btn ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark" style="display:flex;align-items:center;justify-content:center;gap:6px;">
-                  <span>🌙</span> <span>${t('themeDark')}</span>
-                </button>
-                <button class="theme-select-btn ${currentTheme === 'light' ? 'active' : ''}" data-theme="light" style="display:flex;align-items:center;justify-content:center;gap:6px;">
-                  <span>☀️</span> <span>${t('themeLight')}</span>
-                </button>
-              </div>
-            </div>
+        <!-- 6. Custom Map Status Colors -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">🌈 ${t('customizeColors')}</h3>
           </div>
-        </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Haritada gezdiğiniz, planladığınız ve istek listenizdeki yerlerin parlak vurgu renklerini belirleyin:' : 'Customize highlighting colors for visited, planned and wishlist locations:'}</p>
 
-        <!-- Custom Map Colors Card -->
-        <div class="share-section">
-          <h3 style="margin-bottom:12px;font-size:1.1rem;">🌈 ${t('customizeColors')}</h3>
-          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:18px;">${currentLang === 'tr' ? 'Haritada gezdiğiniz ve planladığınız yerlerin vurgu renklerini dilediğiniz gibi özelleştirin.' : 'Customize the accent colors for visited and planned locations on the map.'}</p>
-          
           <!-- Visited Color Selection -->
-          <div style="margin-bottom:20px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${visitedColor};"></span>
-              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorVisited')}</span>
+          <div class="color-status-group">
+            <div class="color-status-header">
+              <span class="color-status-dot" style="background:${visitedColor};color:${visitedColor};"></span>
+              <span class="color-status-title">✅ ${t('colorVisited')}</span>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;">
-              ${COLOR_PALETTES.map(p => `
-                <button class="color-chip-btn ${p.color.toLowerCase() === visitedColor.toLowerCase() ? 'selected' : ''}" 
-                        data-status="visited" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
-                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === visitedColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === visitedColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
-                  ${p.color.toLowerCase() === visitedColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
-                </button>
-              `).join('')}
+            <div class="color-chips-row">
+              ${COLOR_PALETTES.map(p => {
+                const isSelected = p.color.toLowerCase() === visitedColor.toLowerCase();
+                return `
+                  <button type="button" class="settings-color-chip ${isSelected ? 'selected' : ''}"
+                          data-status="visited" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                          style="background:${p.color};box-shadow:${isSelected ? '0 0 12px ' + p.color : 'none'};">
+                    ${isSelected ? '<span class="chip-check">✓</span>' : ''}
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
 
           <!-- Planned Color Selection -->
-          <div style="margin-bottom:20px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${plannedColor};"></span>
-              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorPlanned')}</span>
+          <div class="color-status-group">
+            <div class="color-status-header">
+              <span class="color-status-dot" style="background:${plannedColor};color:${plannedColor};"></span>
+              <span class="color-status-title">⏳ ${t('colorPlanned')}</span>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;">
-              ${COLOR_PALETTES.map(p => `
-                <button class="color-chip-btn ${p.color.toLowerCase() === plannedColor.toLowerCase() ? 'selected' : ''}" 
-                        data-status="planned" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
-                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === plannedColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === plannedColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
-                  ${p.color.toLowerCase() === plannedColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
-                </button>
-              `).join('')}
+            <div class="color-chips-row">
+              ${COLOR_PALETTES.map(p => {
+                const isSelected = p.color.toLowerCase() === plannedColor.toLowerCase();
+                return `
+                  <button type="button" class="settings-color-chip ${isSelected ? 'selected' : ''}"
+                          data-status="planned" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                          style="background:${p.color};box-shadow:${isSelected ? '0 0 12px ' + p.color : 'none'};">
+                    ${isSelected ? '<span class="chip-check">✓</span>' : ''}
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
 
           <!-- Wishlist Color Selection -->
+          <div class="color-status-group">
+            <div class="color-status-header">
+              <span class="color-status-dot" style="background:${wishlistColor};color:${wishlistColor};"></span>
+              <span class="color-status-title">💜 ${t('colorWishlist')}</span>
+            </div>
+            <div class="color-chips-row">
+              ${COLOR_PALETTES.map(p => {
+                const isSelected = p.color.toLowerCase() === wishlistColor.toLowerCase();
+                return `
+                  <button type="button" class="settings-color-chip ${isSelected ? 'selected' : ''}"
+                          data-status="wishlist" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
+                          style="background:${p.color};box-shadow:${isSelected ? '0 0 12px ' + p.color : 'none'};">
+                    ${isSelected ? '<span class="chip-check">✓</span>' : ''}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
           <div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${wishlistColor};"></span>
-              <span style="font-weight:600;font-size:0.9rem;color:var(--theme-text-main, #f8fafc);">${t('colorWishlist')}</span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;">
-              ${COLOR_PALETTES.map(p => `
-                <button class="color-chip-btn ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? 'selected' : ''}" 
-                        data-status="wishlist" data-color="${p.color}" title="${currentLang === 'tr' ? p.name : p.nameEn}"
-                        style="width:36px;height:36px;border-radius:50%;background:${p.color};border:2px solid ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '#ffffff' : 'transparent'};box-shadow:${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '0 0 10px ' + p.color : 'none'};cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;">
-                  ${p.color.toLowerCase() === wishlistColor.toLowerCase() ? '<span style="color:#fff;font-size:0.85rem;font-weight:900;">✓</span>' : ''}
-                </button>
-              `).join('')}
-            </div>
+            <button type="button" class="reset-colors-btn" id="settings-reset-colors-btn">
+              <span>↺</span> <span>${t('resetColors')}</span>
+            </button>
           </div>
         </div>
 
-        <!-- Danger Zone: Reset Map Data -->
-        <div class="share-section" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);">
-          <h3 style="color:#ef4444;margin-bottom:8px;font-size:1.05rem;">⚠️ ${t('dangerZone')}</h3>
-          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:16px;">${t('resetDataDesc')}</p>
-          <button id="profile-reset-map-btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all .2s;font-family:inherit;">
-            ${t('reset')}
+        <!-- 7. Data Backup & Restore -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">💾 ${t('backupTitle')}</h3>
+          </div>
+          <p class="settings-card-desc">${t('backupDesc')}</p>
+          <div class="backup-actions-grid">
+            <button type="button" class="backup-action-card" id="settings-export-backup-btn">
+              <span class="backup-icon">📥</span>
+              <div>
+                <div class="backup-title">${t('downloadBackup')}</div>
+                <div class="backup-subtitle">${currentLang === 'tr' ? 'Tüm verilerinizi tek bir .json dosyasında cihazınıza indirin' : 'Export all your travel data as a .json backup'}</div>
+              </div>
+            </button>
+            <button type="button" class="backup-action-card" id="settings-import-backup-btn">
+              <span class="backup-icon">📤</span>
+              <div>
+                <div class="backup-title">${t('restoreBackup')}</div>
+                <div class="backup-subtitle">${currentLang === 'tr' ? 'Daha önce aldığınız bir yedek dosyasını geri yükleyin' : 'Restore from a previously saved backup file'}</div>
+              </div>
+            </button>
+            <input type="file" id="settings-backup-file-input" accept=".json" style="display:none;">
+          </div>
+        </div>
+
+        <!-- 8. Danger Zone -->
+        <div class="settings-card settings-danger-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title" style="color:#ef4444;">⚠️ ${t('dangerZone')}</h3>
+          </div>
+          <p class="settings-card-desc">${t('resetDataDesc')}</p>
+          <button type="button" id="profile-reset-map-btn" class="settings-danger-btn">
+            <span>🗑️</span> <span>${t('reset')}</span>
           </button>
         </div>
+
+        <!-- 9. App Info & Security Footnote -->
+        <div class="settings-about-box">
+          <div class="settings-about-logo">
+            <span style="font-size:1.8rem;">🧭</span>
+            <div>
+              <div class="settings-about-title">${t('appName')}</div>
+              <div class="settings-about-sub">${t('appInfoDesc')}</div>
+            </div>
+          </div>
+          <div class="settings-privacy-badge">
+            <span>🛡️</span>
+            <span>%100 Offline & Safe</span>
+          </div>
+        </div>
+
       </div>
     `;
 
-    // Language selection
-    contentArea.querySelectorAll('.lang-select-btn').forEach(btn => {
+    // ── Bind Interactive Event Handlers ──────────────────────────────────────────
+
+    // 1. Profile Edit Drawer Toggle & Avatar Picker
+    const toggleEditBtn = document.getElementById('settings-toggle-edit-btn');
+    const editDrawer = document.getElementById('settings-edit-drawer');
+    let selectedAvatarEmoji = userProfile.avatar || '🧭';
+
+    toggleEditBtn?.addEventListener('click', () => {
+      const isHidden = editDrawer.style.display === 'none';
+      editDrawer.style.display = isHidden ? 'flex' : 'none';
+      toggleEditBtn.textContent = isHidden ? (currentLang === 'tr' ? '✕ Kapat' : '✕ Close') : `✏️ ${t('editProfile')}`;
+    });
+
+    document.querySelectorAll('.settings-avatar-pick-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.settings-avatar-pick-btn').forEach(btn => btn.classList.remove('selected'));
+        b.classList.add('selected');
+        selectedAvatarEmoji = b.getAttribute('data-avatar');
+        const preview = document.getElementById('settings-preview-avatar');
+        if (preview) preview.textContent = selectedAvatarEmoji;
+      });
+    });
+
+    document.getElementById('settings-save-profile-btn')?.addEventListener('click', () => {
+      const nameInput = document.getElementById('settings-edit-username');
+      const bioInput = document.getElementById('settings-edit-bio');
+      const newName = sanitizeText(nameInput?.value || '', 20) || 'Gezgin';
+      const newBio = sanitizeText(bioInput?.value || '', 60);
+
+      const updated = {
+        ...userProfile,
+        username: newName,
+        bio: newBio,
+        avatar: selectedAvatarEmoji
+      };
+
+      try {
+        localStorage.setItem('gv_profile', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Could not save profile', e);
+      }
+
+      alert(t('profileSaved'));
+      render();
+    });
+
+    // 2. Theme Selection
+    contentArea.querySelectorAll('.theme-card-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tid = btn.getAttribute('data-theme');
+        setTheme(tid);
+        render();
+      });
+    });
+
+    // 3. UI Scale Selection
+    contentArea.querySelectorAll('.scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sizeKey = btn.getAttribute('data-size');
+        setUiSize(sizeKey);
+        render();
+      });
+    });
+
+    // 4. Language Selection
+    contentArea.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         setLanguage(btn.getAttribute('data-lang'));
         render();
       });
     });
 
-    // Theme selection
-    contentArea.querySelectorAll('.theme-select-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        setTheme(btn.getAttribute('data-theme'));
-        render();
-      });
-    });
-
-    // Color chips selection
-    contentArea.querySelectorAll('.color-chip-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const statusKey = btn.getAttribute('data-status');
-        const color = btn.getAttribute('data-color');
-        setStatusColor(statusKey, color);
-        render();
-      });
-    });
-
-    // Home country selection
+    // 5. Home Country Selection
     document.getElementById('settings-home-country-select')?.addEventListener('change', (e) => {
       setHomeCountry(e.target.value);
       if (window.__refreshMapStats) {
@@ -370,7 +579,61 @@ export function renderProfileView(container, onBack) {
       render();
     });
 
-    // Reset button
+    // 6. Color Chips Selection
+    contentArea.querySelectorAll('.settings-color-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const statusKey = btn.getAttribute('data-status');
+        const color = btn.getAttribute('data-color');
+        setStatusColor(statusKey, color);
+        render();
+      });
+    });
+
+    // Reset Colors to Default
+    document.getElementById('settings-reset-colors-btn')?.addEventListener('click', () => {
+      setStatusColor('visited', '#ff5722');
+      setStatusColor('planned', '#f59e0b');
+      setStatusColor('wishlist', '#8b5cf6');
+      alert(t('colorsReset'));
+      render();
+    });
+
+    // 7. Backup & Restore
+    document.getElementById('settings-export-backup-btn')?.addEventListener('click', () => {
+      exportBackup();
+    });
+
+    const fileInput = document.getElementById('settings-backup-file-input');
+    document.getElementById('settings-import-backup-btn')?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result;
+        if (content) {
+          const success = importBackup(content);
+          if (success) {
+            alert(t('backupRestored'));
+            render();
+            if (window.__refreshMapStats) {
+              window.__refreshMapStats();
+            }
+          } else {
+            alert(t('backupError'));
+          }
+        }
+      };
+      reader.onerror = () => {
+        alert(t('backupError'));
+      };
+      reader.readAsText(file);
+    });
+
+    // 8. Danger Zone - Reset Data
     document.getElementById('profile-reset-map-btn')?.addEventListener('click', () => {
       if (confirm(t('resetConfirm'))) {
         resetTravelData();

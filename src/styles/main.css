@@ -5521,3 +5521,669 @@ body[data-theme="light"] .fb-card-date {
   color: #64748b;
 }
 
+/* ══════════════════════════════════════════════════════
+   MODERN SETTINGS PAGE OVERHAUL (AYARLAR SAYFASI)
+   ══════════════════════════════════════════════════════ */
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 840px;
+  margin: 0 auto;
+  padding-bottom: 30px;
+}
+
+.settings-card {
+  background: var(--bg-card, rgba(30, 41, 59, 0.75));
+  border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.settings-card:hover {
+  border-color: rgba(255, 87, 34, 0.35);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.settings-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  margin: 0;
+}
+
+.settings-card-desc {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 18px;
+  margin-top: 4px;
+}
+
+/* Traveler Identity Card in Settings */
+.settings-profile-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+}
+
+.settings-profile-avatar {
+  font-size: 2.8rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.settings-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-profile-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-main, #f8fafc);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-profile-bio {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-edit-toggle-btn {
+  background: rgba(255, 87, 34, 0.15);
+  border: 1px solid rgba(255, 87, 34, 0.35);
+  border-radius: 12px;
+  color: #ff5722;
+  font-weight: 700;
+  font-size: 0.86rem;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.settings-edit-toggle-btn:hover {
+  background: rgba(255, 87, 34, 0.28);
+  transform: translateY(-1px);
+}
+
+.settings-edit-drawer {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideDownFade 0.25s ease;
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-avatar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.settings-avatar-pick-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 1.6rem;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.settings-avatar-pick-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: scale(1.08);
+}
+
+.settings-avatar-pick-btn.selected {
+  background: rgba(255, 87, 34, 0.22);
+  border-color: #ff5722;
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(255, 87, 34, 0.35);
+}
+
+.settings-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-input-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+}
+
+.settings-text-input {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text-main, #f8fafc);
+  font-size: 0.92rem;
+  padding: 10px 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.settings-text-input:focus {
+  border-color: #ff5722;
+}
+
+.settings-save-profile-btn {
+  background: linear-gradient(135deg, #ff5722, #f59e0b);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 11px 20px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.2s ease;
+}
+
+.settings-save-profile-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+}
+
+/* Theme Studio Grid */
+.settings-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 12px;
+}
+
+.theme-card-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 14px 10px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-card-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 87, 34, 0.4);
+}
+
+.theme-card-btn.active {
+  background: rgba(255, 87, 34, 0.12);
+  border-color: #ff5722;
+  box-shadow: 0 0 16px rgba(255, 87, 34, 0.22);
+}
+
+.theme-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.theme-card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+}
+
+.theme-swatch-bar {
+  display: flex;
+  width: 100%;
+  max-width: 90px;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.theme-swatch-bar span {
+  flex: 1;
+  height: 100%;
+}
+
+.theme-active-tag {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  background: #ff5722;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+/* UI Scale Segmented Row */
+.settings-scale-row {
+  display: flex;
+  gap: 10px;
+}
+
+.scale-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted, #94a3b8);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scale-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+}
+
+.scale-btn.active {
+  background: rgba(255, 87, 34, 0.15);
+  border-color: #ff5722;
+  color: #ff5722;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(255, 87, 34, 0.2);
+}
+
+/* Language Selection Group */
+.lang-btn-group {
+  display: flex;
+  gap: 12px;
+}
+
+.lang-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main, #f8fafc);
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lang-btn.active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.22);
+}
+
+/* Home Country Selector */
+.home-country-picker-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.home-country-current-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.home-country-current-name {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--text-main, #f8fafc);
+}
+
+.home-country-select-styled {
+  flex: 1;
+  min-width: 240px;
+  max-width: 420px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-main, #f8fafc);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.home-country-select-styled:focus {
+  border-color: #ff5722;
+}
+
+/* Custom Status Colors Row */
+.color-status-group {
+  margin-bottom: 22px;
+}
+
+.color-status-group:last-child {
+  margin-bottom: 0;
+}
+
+.color-status-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.color-status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.color-status-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-main, #f8fafc);
+}
+
+.color-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-color-chip {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.settings-color-chip:hover {
+  transform: scale(1.12);
+}
+
+.settings-color-chip.selected {
+  border-color: #ffffff;
+  transform: scale(1.15);
+}
+
+.settings-color-chip .chip-check {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.reset-colors-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reset-colors-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main, #f8fafc);
+}
+
+/* Backup and Restore Cards */
+.backup-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.backup-action-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.backup-action-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  border-color: rgba(255, 87, 34, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.backup-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.backup-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main, #f8fafc);
+  margin-bottom: 3px;
+}
+
+.backup-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
+}
+
+/* Danger Zone Card */
+.settings-danger-card {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(15, 23, 42, 0.6)) !important;
+}
+
+.settings-danger-btn {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #f87171;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-danger-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* App Info Badge */
+.settings-about-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-about-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-about-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-main, #f8fafc);
+}
+
+.settings-about-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.settings-privacy-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+/* ── Light Theme Adaptations for Modern Settings ── */
+body[data-theme="light"] .settings-card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(203, 213, 225, 0.85) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+body[data-theme="light"] .settings-card:hover {
+  border-color: #ff5722 !important;
+}
+
+body[data-theme="light"] .settings-profile-preview,
+body[data-theme="light"] .settings-edit-drawer,
+body[data-theme="light"] .home-country-current-pill,
+body[data-theme="light"] .home-country-select-styled,
+body[data-theme="light"] .settings-about-box,
+body[data-theme="light"] .backup-action-card,
+body[data-theme="light"] .scale-btn,
+body[data-theme="light"] .lang-btn,
+body[data-theme="light"] .theme-card-btn,
+body[data-theme="light"] .settings-avatar-pick-btn {
+  background: #f8fafc !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .settings-profile-avatar {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body[data-theme="light"] .settings-text-input {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .theme-card-btn.active,
+body[data-theme="light"] .scale-btn.active {
+  background: #fff7ed !important;
+  border-color: #ff5722 !important;
+  color: #ea580c !important;
+}
+
+body[data-theme="light"] .lang-btn.active {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+}
+
+body[data-theme="light"] .backup-action-card:hover {
+  background: #f1f5f9 !important;
+  border-color: #ff5722 !important;
+}
+
+body[data-theme="light"] .reset-colors-btn {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .settings-danger-card {
+  background: linear-gradient(135deg, #fef2f2, #ffffff) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
