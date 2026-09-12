@@ -3300,6 +3300,9 @@ body[data-theme="light"] .floating-poster-btn {
   text-align: center;
   pointer-events: none !important;
   user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .prov-label-text {
   font-size: 0.72rem;
@@ -3310,8 +3313,33 @@ body[data-theme="light"] .floating-poster-btn {
   letter-spacing: 0.3px;
   white-space: nowrap;
   overflow: visible;
-  width: max-content !important;
-  display: inline-block;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Country Watermark Label on Map ── */
+.country-watermark-wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.country-tattoo {
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Popup Header with Close Button ── */

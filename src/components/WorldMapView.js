@@ -26,9 +26,9 @@ const COUNTRY_LABEL_OFFSETS = {
   'GR': [39.3, 22.0],  // Greece (Mainland Thessaly/Larissa)
   'CL': [-33.5, -70.6],// Chile (Central valley)
   'NO': [61.0, 8.5],   // Norway (Southern interior body)
-  'SE': [60.5, 15.5],  // Sweden (Central mainland)
-  'FI': [63.0, 26.0],  // Finland (Central body)
-  'VN': [21.0, 105.8], // Vietnam (Red River plain)
+  'SE': [62.5, 16.5],  // Sweden (Central mainland)
+  'FI': [64.5, 26.3],  // Finland (Central body)
+  'VN': [16.0, 107.5], // Vietnam (Central body Da Nang / Hue)
   'MY': [4.0, 102.0],  // Peninsular Malaysia
   'ID': [-2.0, 117.0], // Indonesia
   'JP': [36.2, 138.2], // Japan (Central Honshu)
@@ -72,38 +72,38 @@ const PROVINCE_LABEL_OFFSETS = {
   'TR::7': [36.98, 30.65],  // Antalya (Inland plateau north of gulf, safely away from sea)
   'TR::07': [36.98, 30.65],
   'TR::33': [36.88, 33.80], // Mersin (Inland plateau, safely away from coastline/sea)
-  'TR::35': [38.35, 27.28], // İzmir (Inland valley Bornova/Kemalpaşa, away from Aegean Sea/Çeşme)
-  'TR::48': [37.20, 28.36], // Muğla (Menteşe interior plateau)
-  'TR::34': [41.06, 28.98], // İstanbul (Bosphorus center)
-  'TR::10': [39.65, 27.90], // Balıkesir (Central interior)
-  'TR::17': [39.90, 27.05], // Çanakkale (Biga inland plateau)
-  'TR::14': [40.65, 31.60], // Bolu (Bolu central valley)
-  'TR::41': [40.80, 29.95], // Kocaeli
-  'TR::77': [40.60, 29.25], // Yalova
-  'TR::59': [41.05, 27.50], // Tekirdağ
-  'TR::31': [36.35, 36.20], // Hatay
-  'TR::9': [37.85, 27.85],  // Aydın
-  'TR::09': [37.85, 27.85],
-  'TR::45': [38.65, 27.45], // Manisa
-  'TR::22': [41.25, 26.65], // Edirne
-  'TR::39': [41.70, 27.20], // Kırklareli
-  'TR::6': [39.80, 32.75],  // Ankara
-  'TR::06': [39.80, 32.75],
-  'TR::42': [38.00, 32.50], // Konya
-  'TR::57': [41.80, 34.90], // Sinop
-  'TR::55': [41.25, 36.15], // Samsun
-  'TR::61': [40.85, 39.70], // Trabzon
-  'TR::53': [40.90, 40.75], // Rize
-  'TR::8': [41.15, 41.80],  // Artvin
-  'TR::08': [41.15, 41.80],
+  'TR::35': [38.45, 27.25], // İzmir (Central inland valley, balanced)
+  'TR::48': [37.15, 28.36], // Muğla (Menteşe interior plateau)
+  'TR::34': [41.12, 28.75], // İstanbul (Centrally balanced across landmass)
+  'TR::10': [39.67, 27.87], // Balıkesir (Central interior)
+  'TR::17': [39.98, 26.81], // Çanakkale (Biga mainland geometric center)
+  'TR::14': [40.60, 31.67], // Bolu (Bolu central valley)
+  'TR::41': [40.86, 29.90], // Kocaeli (Geometric center)
+  'TR::77': [40.59, 29.12], // Yalova (Center)
+  'TR::59': [41.11, 27.45], // Tekirdağ (Center)
+  'TR::31': [36.44, 36.26], // Hatay (Center)
+  'TR::9': [37.75, 28.02],  // Aydın (Center)
+  'TR::09': [37.75, 28.02],
+  'TR::45': [38.77, 28.15], // Manisa (Geometric & visual center of the whole province)
+  'TR::22': [41.25, 26.60], // Edirne (Center)
+  'TR::39': [41.68, 27.44], // Kırklareli (Geometric center)
+  'TR::6': [39.80, 32.62],  // Ankara (Center of province)
+  'TR::06': [39.80, 32.62],
+  'TR::42': [38.04, 32.64], // Konya (Center)
+  'TR::57': [41.65, 34.88], // Sinop (Central inland body)
+  'TR::55': [41.21, 36.02], // Samsun (Center)
+  'TR::61': [40.80, 39.82], // Trabzon (Center)
+  'TR::53': [40.93, 40.87], // Rize (Center)
+  'TR::8': [41.11, 41.82],  // Artvin (Center)
+  'TR::08': [41.11, 41.82],
   // Georgia fine-tuned label offsets
   'GE::Ajaria': [41.60, 41.85],      // Batum (Ajaria, safely on land body)
   'GE::Tbilisi': [41.715, 44.827],   // Tiflis
   'GE::Imereti': [42.25, 42.70],     // Kutaisi
   'GE::Abkhazia': [43.05, 41.15],    // Sohum
   // Central European fine-tuned offsets (perfect optical centering in polygon)
-  'AT::Wien': [48.24, 15.85],         // Centered in Vienna / Lower Austria territory
-  'SK::Bratislavský': [48.32, 17.18], // Centered in Bratislava region territory
+  'AT::Wien': [48.21, 16.37],         // Wien city center
+  'SK::Bratislavský': [48.25, 17.15], // Centered in Bratislava region territory
 };
 
 function getProvinceOffset(item) {
@@ -2159,12 +2159,12 @@ function updateProvinceLabels() {
       const isCapital = isCapitalItem(item);
       const { displayName, isFamous } = resolveItemDisplay({ ...item, isCapital });
 
-      // Centroid: fine-tuned province offset takes priority, otherwise exact capital coordinates, otherwise tuned visual center / mainland centroid
+      // Centroid: fine-tuned province offset takes priority, otherwise exact capital coordinates only for micro-regions, otherwise tuned visual center / mainland centroid
       const offset = getProvinceOffset(item);
       let visualCenter;
       if (offset) {
         visualCenter = L.latLng(offset);
-      } else if (isCapital && CAPITAL_COORDINATES[item.countryCode]) {
+      } else if (isCapital && CAPITAL_COORDINATES[item.countryCode] && (!mainland || mainland.area < 0.02)) {
         visualCenter = L.latLng(CAPITAL_COORDINATES[item.countryCode]);
       } else {
         visualCenter = L.latLng(mainland.cy, mainland.cx);
