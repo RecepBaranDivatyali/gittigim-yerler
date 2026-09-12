@@ -104,15 +104,30 @@ export function renderProfileView(container, onBack) {
     const currentHomeCountry = getHomeCountry();
     const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
     const homeFlagHtml = getCountryFlagHtml(homeCountryObj.code, homeCountryObj.flag, { width: 20, height: 14 });
+    let isGermanHome = currentHomeCountry === 'DE';
+    let homeStateCount = 0;
     let homeSubdivisionCount = 0;
     let homeSubdivisionLabel = t('provincesVisited');
     if (currentHomeCountry === 'TR') {
       homeSubdivisionCount = baseStats.turkeyCount || 0;
       homeSubdivisionLabel = `${homeFlagHtml} ${t('provincesVisited')}`;
+    } else if (isGermanHome) {
+      const stateNames = [
+        'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
+        'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
+        'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
+        'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
+      ];
+      homeStateCount = stateNames.filter(sName => storageData.worldVisits?.[`DE::${sName}`]?.status === 'visited').length;
+      const subregionPrefix = 'DE::';
+      homeSubdivisionCount = Object.entries(storageData.worldVisits || {}).filter(([k, v]) => k.startsWith(subregionPrefix) && !stateNames.includes(k.slice(4)) && v?.status === 'visited').length;
     } else {
       const prefix = `${currentHomeCountry}::`;
       homeSubdivisionCount = Object.entries(storageData.worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
-      homeSubdivisionLabel = `${homeFlagHtml} ${t('regionsVisited') || 'Bölge Gezildi'}`;
+      const label = ['US', 'AU', 'BR', 'MX', 'IN', 'CA', 'AT', 'CH', 'NG'].includes(currentHomeCountry)
+        ? (t('statesVisited') || 'Eyalet Gezildi')
+        : (t('regionsVisited') || 'Bölge Gezildi');
+      homeSubdivisionLabel = `${homeFlagHtml} ${label}`;
     }
 
     const shareData = {
@@ -142,7 +157,12 @@ export function renderProfileView(container, onBack) {
           </div>
           <div class="profile-stats">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${homeSubdivisionCount}</span><span class="pstat-lbl">${homeSubdivisionLabel}</span></div>
+            ${isGermanHome ? `
+              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${homeStateCount}</span><span class="pstat-lbl">🏛️ ${t('statesVisited')}</span></div>
+              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${homeSubdivisionCount}</span><span class="pstat-lbl">${homeFlagHtml} ${t('provincesVisited')}</span></div>
+            ` : `
+              <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${homeSubdivisionCount}</span><span class="pstat-lbl">${homeSubdivisionLabel}</span></div>
+            `}
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${baseStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
           </div>

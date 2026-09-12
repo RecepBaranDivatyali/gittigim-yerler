@@ -1568,7 +1568,7 @@ svg, g, path {
 
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
   gap: 10px;
   margin-bottom: 18px;
 }
@@ -4612,12 +4612,13 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     border-radius: 99px;
   }
   .stats-chip {
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: 99px;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: auto;
+    max-width: calc(100vw - 80px);
   }
   .stats-divider-mobile {
     display: block;

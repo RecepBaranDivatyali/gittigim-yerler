@@ -397,11 +397,129 @@ function closeActivePopup() {
 }
 
 
-function buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor) {
-  const flagHtml = getCountryFlagHtml(homeCountryObj?.code, homeCountryObj?.flag, { width: 26, height: 18 });
-  const label = homeCountryObj?.code === 'TR' ? t('provincesVisited') : (t('regionsVisited') || 'Bölge Gezildi');
-  const denom = totalHomeSubdivisions > 0 ? `/${totalHomeSubdivisions}` : '';
+const FEDERAL_STATE_COUNTRIES = new Set([
+  'US', // United States (50 States)
+  'AU', // Australia (States)
+  'BR', // Brazil (States)
+  'MX', // Mexico (States)
+  'IN', // India (States)
+  'CA', // Canada (Provinces/Territories)
+  'AT', // Austria (Bundesländer)
+  'CH', // Switzerland (Cantons)
+  'NG', // Nigeria (States)
+  'RU', // Russia (Federal Subjects)
+]);
 
+const GERMANY_STATE_NAMES = [
+  'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
+  'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
+  'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
+  'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
+];
+
+function getHomeCountrySubdivisionStats(homeCode, turkeyVisits, worldVisits) {
+  const isTr = homeCode === 'TR';
+  const isDe = homeCode === 'DE';
+  const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === homeCode) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+
+  if (isTr) {
+    const visited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
+    return {
+      hasBoth: false,
+      homeCountryObj,
+      visited,
+      total: 81,
+      label: t('provincesVisited') || 'İl Gezildi'
+    };
+  }
+
+  if (isDe) {
+    const subregionNames = Object.keys(KNOWN_SUBREGION_PARENTS)
+      .filter(k => k.startsWith('DE::'))
+      .map(k => k.slice(4));
+
+    const stateVisited = GERMANY_STATE_NAMES.filter(sName => {
+      if (worldVisits?.[`DE::${sName}`]?.status === 'visited') return true;
+      const subregions = getSubregionsForParentRegion('DE', sName);
+      return subregions.some(sub => worldVisits?.[`DE::${sub}`]?.status === 'visited');
+    }).length;
+
+    const provinceVisited = subregionNames.filter(sName => {
+      return worldVisits?.[`DE::${sName}`]?.status === 'visited';
+    }).length;
+
+    return {
+      hasBoth: true,
+      homeCountryObj,
+      stateVisited,
+      totalStates: 16,
+      stateLabel: t('statesVisited') || 'Eyalet Gezildi',
+      provinceVisited,
+      totalProvinces: subregionNames.length || 40,
+      provinceLabel: t('provincesVisited') || 'İl Gezildi'
+    };
+  }
+
+  // Other countries
+  const prefix = `${homeCode}::`;
+  const visited = Object.entries(worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
+  const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
+  const total = homeRegions.length || 0;
+
+  const label = FEDERAL_STATE_COUNTRIES.has(homeCode)
+    ? (t('statesVisited') || 'Eyalet Gezildi')
+    : (t('regionsVisited') || 'Bölge Gezildi');
+
+  return {
+    hasBoth: false,
+    homeCountryObj,
+    visited,
+    total,
+    label
+  };
+}
+
+function buildStatsCountriesHtml(worldCount, stats, visitedColor) {
+  const homeCountryObj = stats?.homeCountryObj;
+  const flagHtml = getCountryFlagHtml(homeCountryObj?.code, homeCountryObj?.flag, { width: 24, height: 16 });
+
+  if (stats?.hasBoth) {
+    const stateDenom = stats.totalStates > 0 ? `/${stats.totalStates}` : '';
+    const provDenom = stats.totalProvinces > 0 ? `/${stats.totalProvinces}` : '';
+
+    return `
+      <!-- 1. Ülke Gezildi -->
+      <div class="stats-item" style="display:flex;align-items:center;gap:8px;">
+        <span class="stats-icon" style="font-size:1.2rem;">🌍</span>
+        <div>
+          <div class="stats-number" style="color:${visitedColor};">${worldCount}</div>
+          <div class="stats-label">${t('countriesVisited')}</div>
+        </div>
+      </div>
+      <div class="stats-divider-mobile"></div>
+
+      <!-- 2. Eyalet Gezildi (Ülke Gezildinin yanında, İl Gezildinin solunda) -->
+      <div class="stats-item" style="display:flex;align-items:center;gap:8px;">
+        <span class="stats-icon" style="font-size:1.2rem;" title="${escapeHtml(stats.stateLabel)}">🏛️</span>
+        <div>
+          <div class="stats-number" style="color:${visitedColor};">${stats.stateVisited}<span class="stats-denom" style="font-size:0.75rem;color:var(--theme-text-muted, #64748b);">${stateDenom}</span></div>
+          <div class="stats-label">${escapeHtml(stats.stateLabel)}</div>
+        </div>
+      </div>
+      <div class="stats-divider-mobile"></div>
+
+      <!-- 3. İl Gezildi -->
+      <div class="stats-item" style="display:flex;align-items:center;gap:8px;">
+        <span class="stats-icon-flag" style="display:inline-flex;align-items:center;justify-content:center;line-height:1;" title="${escapeHtml(homeCountryObj?.name || '')}">${flagHtml}</span>
+        <div>
+          <div class="stats-number" style="color:${visitedColor};">${stats.provinceVisited}<span class="stats-denom" style="font-size:0.75rem;color:var(--theme-text-muted, #64748b);">${provDenom}</span></div>
+          <div class="stats-label">${escapeHtml(stats.provinceLabel)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const denom = (stats?.total > 0) ? `/${stats.total}` : '';
   return `
     <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
       <span class="stats-icon" style="font-size:1.3rem;">🌍</span>
@@ -412,10 +530,10 @@ function buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions,
     </div>
     <div class="stats-divider-mobile"></div>
     <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
-      <span class="stats-icon-flag" style="display:inline-flex;align-items:center;justify-content:center;line-height:1;" title="${homeCountryObj?.name || 'Türkiye'}">${flagHtml}</span>
+      <span class="stats-icon-flag" style="display:inline-flex;align-items:center;justify-content:center;line-height:1;" title="${escapeHtml(homeCountryObj?.name || 'Türkiye')}">${flagHtml}</span>
       <div>
-        <div class="stats-number" style="color:${visitedColor};">${homeVisited}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">${denom}</span></div>
-        <div class="stats-label">${label}</div>
+        <div class="stats-number" style="color:${visitedColor};">${stats?.visited || 0}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">${denom}</span></div>
+        <div class="stats-label">${escapeHtml(stats?.label || '')}</div>
       </div>
     </div>
   `;
@@ -455,19 +573,7 @@ export function renderWorldMapView(container, options = {}) {
 
     const { turkeyVisits, worldVisits } = getStorageData();
     const homeCode = getHomeCountry() || 'TR';
-    const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === homeCode) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
-
-    let homeVisited = 0;
-    let totalHomeSubdivisions = 81;
-    if (homeCode === 'TR') {
-      homeVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
-      totalHomeSubdivisions = 81;
-    } else {
-      const prefix = `${homeCode}::`;
-      homeVisited = Object.entries(worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
-      const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
-      totalHomeSubdivisions = homeRegions.length || 0;
-    }
+    const subStats = getHomeCountrySubdivisionStats(homeCode, turkeyVisits, worldVisits);
 
     const trVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
     const worldCodes = Object.keys(worldVisits || {}).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
@@ -516,7 +622,7 @@ export function renderWorldMapView(container, options = {}) {
             <span id="layer-hud-text">${t('layer1Countries')}</span>
           </div>
           <div id="stats-countries" class="stats-chip">
-            ${buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor)}
+            ${buildStatsCountriesHtml(worldCount, subStats, visitedColor)}
           </div>
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
@@ -3347,29 +3453,17 @@ function refreshStats() {
   const { turkeyVisits, worldVisits, worldCities } = getStorageData();
 
   const homeCode = getHomeCountry() || 'TR';
-  const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === homeCode) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
-
-  let homeVisited = 0;
-  let totalHomeSubdivisions = 81;
-  if (homeCode === 'TR') {
-    homeVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
-    totalHomeSubdivisions = 81;
-  } else {
-    const prefix = `${homeCode}::`;
-    homeVisited = Object.entries(worldVisits).filter(([k, v]) => k.startsWith(prefix) && v.status === 'visited').length;
-    const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
-    totalHomeSubdivisions = homeRegions.length || 0;
-  }
+  const subStats = getHomeCountrySubdivisionStats(homeCode, turkeyVisits, worldVisits);
 
   // World countries visited count
-  const trVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
-  const worldCodes = Object.keys(worldVisits).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
+  const trVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
+  const worldCodes = Object.keys(worldVisits || {}).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
   if (trVisited > 0 && !worldCodes.includes('TR')) worldCodes.push('TR');
   const worldCount = worldCodes.length;
 
   const visitedColor = getStatusColor('visited');
 
-  cEl.innerHTML = buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor);
+  cEl.innerHTML = buildStatsCountriesHtml(worldCount, subStats, visitedColor);
 
   if (selectedCountryCode && selectedCountryCode !== 'TR' && rEl) {
     const c = WORLD_COUNTRIES.find(x => x.code === selectedCountryCode);
