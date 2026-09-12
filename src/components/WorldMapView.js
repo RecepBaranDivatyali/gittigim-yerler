@@ -843,8 +843,8 @@ export function renderWorldMapView(container, options = {}) {
               searchInput.value = '';
               if (searchClear) searchClear.style.display = 'none';
 
-              // If it's a world region, ensure country's region layer is loaded
-              if (m.type === 'region' && m.countryCode && m.countryCode !== 'TR') {
+              // If it's a world region or city, ensure country's region layer is loaded
+              if ((m.type === 'region' || m.type === 'city') && m.countryCode && m.countryCode !== 'TR') {
                 if (!regionLayers[m.countryCode]) {
                   await loadRegionData(m.countryCode);
                 }
@@ -2840,12 +2840,85 @@ function refreshSubregionLayer(code) {
   });
 }
 
+// ─── Geo Point-in-Polygon & Region Resolvers for Cities ────────────────────────
+function pointInPolygon(point, vs) {
+  const x = point[1], y = point[0];
+  let inside = false;
+  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+    const xi = vs[i][0], yi = vs[i][1];
+    const xj = vs[j][0], yj = vs[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function featureContainsPoint(feature, latlng) {
+  if (!feature || !feature.geometry) return false;
+  const { type, coordinates } = feature.geometry;
+  if (type === 'Polygon') {
+    return pointInPolygon(latlng, coordinates[0]);
+  } else if (type === 'MultiPolygon') {
+    return coordinates.some(poly => pointInPolygon(latlng, poly[0]));
+  }
+  return false;
+}
+
+function findRegionRawForPoint(countryCode, latlng, cityName) {
+  if (!countryCode) return null;
+  const features = regionCache[countryCode]?.features;
+  const lat = Array.isArray(latlng) ? latlng[0] : (latlng?.lat !== undefined ? latlng.lat : null);
+  const lng = Array.isArray(latlng) ? latlng[1] : (latlng?.lng !== undefined ? latlng.lng : null);
+
+  if (features && lat !== null && lng !== null) {
+    const matched = [];
+    for (const f of features) {
+      if (featureContainsPoint(f, [lat, lng])) {
+        matched.push(f);
+      }
+    }
+    if (matched.length === 1) {
+      return matched[0].properties?.name || matched[0].properties?.NAME_1;
+    }
+    if (matched.length > 1) {
+      matched.sort((a, b) => {
+        const areaA = a.geometry?.coordinates?.[0]?.length || 1;
+        const areaB = b.geometry?.coordinates?.[0]?.length || 1;
+        return areaA - areaB;
+      });
+      return matched[0].properties?.name || matched[0].properties?.NAME_1;
+    }
+  }
+
+  if (features && cityName) {
+    const cityLower = cityName.toLowerCase().trim();
+    const feat = features.find(f => {
+      const raw = (f.properties?.name || f.properties?.NAME_1 || '').toLowerCase();
+      return raw.includes(cityLower);
+    });
+    if (feat) return feat.properties?.name || feat.properties?.NAME_1;
+  }
+
+  const cap = COUNTRY_CAPITALS[countryCode];
+  if (cap && cityName && (matchesWord(cityName, cap.name) || cap.match.some(m => matchesWord(cityName, m)))) {
+    if (features) {
+      const feat = features.find(f => {
+        const raw = (f.properties?.name || f.properties?.NAME_1 || '').toLowerCase();
+        return cap.match.some(m => raw.includes(m.toLowerCase()));
+      });
+      if (feat) return feat.properties?.name || feat.properties?.NAME_1;
+    }
+  }
+
+  return null;
+}
+
 // ─── Status Popup & Two-Way Sync Logic ─────────────────────────────────────────
 // ─── Status Popup & Two-Way Sync Logic (Clean Centered Popup with Glow Buttons) ───
 function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const currentLang = getLanguage();
   const STATUS = getStatusConfig();
-  const { turkeyVisits, worldVisits } = getStorageData();
+  const { turkeyVisits, worldVisits, worldCities = [] } = getStorageData();
 
   let currentStatus = 'unvisited';
   let currentRating = 0;
@@ -2857,6 +2930,18 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentStatus = ns(pData.status);
     currentRating = pData.rating || 0;
     currentNotes = pData.notes || '';
+  } else if (type === 'city') {
+    const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+    const wData = worldVisits[id] || {};
+    const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+    const regionData = matchedRegionRaw ? (worldVisits[`${countryCode}::${matchedRegionRaw}`] || {}) : {};
+    const isCityInList = (worldCities || []).some(c => c.countryCode === countryCode && c.cityName.toLowerCase() === cleanCityName.toLowerCase());
+
+    currentStatus = ns(wData.status) !== 'unvisited'
+      ? ns(wData.status)
+      : (ns(regionData.status) !== 'unvisited' ? ns(regionData.status) : (isCityInList ? 'visited' : 'unvisited'));
+    currentRating = wData.rating || regionData.rating || 0;
+    currentNotes = wData.notes || regionData.notes || '';
   } else {
     const wData = worldVisits[id] || {};
     currentStatus = ns(wData.status);
@@ -2977,6 +3062,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       if (type === 'province') {
         const num = id.replace('TR::', '');
         saveTurkeyVisit(num, 'visited', { rating: currentRating });
+      } else if (type === 'city') {
+        saveWorldVisit(id, 'visited', { rating: currentRating });
+        const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+        const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+        if (matchedRegionRaw) {
+          saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', { rating: currentRating });
+        }
       } else {
         saveWorldVisit(id, 'visited', { rating: currentRating });
       }
@@ -2999,6 +3091,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if (type === 'province') {
       const num = id.replace('TR::', '');
       saveTurkeyVisit(num, 'visited', { notes: noteVal });
+    } else if (type === 'city') {
+      saveWorldVisit(id, 'visited', { notes: noteVal });
+      const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+      const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+      if (matchedRegionRaw) {
+        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', { notes: noteVal });
+      }
     } else {
       saveWorldVisit(id, 'visited', { notes: noteVal });
     }
@@ -3185,11 +3284,68 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           }
         }
       } else if (type === 'city') {
-        if (val === 'unvisited') {
-          toggleWorldCity(countryCode, id, false);
+        const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+
+        // 1. World cities array (used for stats, profile, achievements, comparisons)
+        if (val === 'visited') {
+          toggleWorldCity(countryCode, cleanCityName, true);
         } else {
-          toggleWorldCity(countryCode, id, true);
-          saveWorldVisit(countryCode, val);
+          toggleWorldCity(countryCode, cleanCityName, false);
+        }
+
+        // 2. Direct city status entry (e.g. "FR::Paris")
+        saveWorldVisit(id, val);
+
+        // 3. Mark the containing region polygon if found
+        const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+        if (matchedRegionRaw) {
+          const regionKey = `${countryCode}::${matchedRegionRaw}`;
+          saveWorldVisit(regionKey, val);
+
+          // Connect activeFeatureLayer to the region polygon so it updates visually
+          if (!activeFeatureLayer && regionLayers[countryCode]) {
+            regionLayers[countryCode].eachLayer(l => {
+              const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
+              if (raw && raw === matchedRegionRaw) {
+                activeFeatureLayer = l;
+              }
+            });
+          }
+        }
+
+        // 4. Symmetrical Upward Sync to Parent Country
+        if (countryCode) {
+          if (val === 'visited') {
+            saveWorldVisit(countryCode, 'visited');
+          } else if (val === 'planned') {
+            const data = getStorageData();
+            if (data.worldVisits[countryCode]?.status !== 'visited') {
+              saveWorldVisit(countryCode, 'planned');
+            }
+          } else if (val === 'wishlist') {
+            const data = getStorageData();
+            const cStatus = data.worldVisits[countryCode]?.status;
+            if (!cStatus || cStatus === 'unvisited') {
+              saveWorldVisit(countryCode, 'wishlist');
+            }
+          } else if (val === 'unvisited') {
+            const data = getStorageData();
+            const prefix = `${countryCode}::`;
+            const allSubs = Object.entries(data.worldVisits)
+              .filter(([k]) => k.startsWith(prefix) && k !== id && (!matchedRegionRaw || k !== `${countryCode}::${matchedRegionRaw}`))
+              .map(([, v]) => v.status);
+            const hasVisitedCities = (data.worldCities || []).some(c => c.countryCode === countryCode && c.cityName.toLowerCase() !== cleanCityName.toLowerCase());
+
+            if (allSubs.includes('visited') || hasVisitedCities) {
+              saveWorldVisit(countryCode, 'visited');
+            } else if (allSubs.includes('planned')) {
+              saveWorldVisit(countryCode, 'planned');
+            } else if (allSubs.includes('wishlist')) {
+              saveWorldVisit(countryCode, 'wishlist');
+            } else {
+              saveWorldVisit(countryCode, 'unvisited');
+            }
+          }
         }
       }
 

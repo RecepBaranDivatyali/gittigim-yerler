@@ -2646,19 +2646,28 @@ body[data-theme="light"] .map-status-popup-close-btn:hover {
   color: #0f172a !important;
 }
 body[data-theme="light"] .map-status-btn {
-  background: rgba(241, 245, 249, 0.9) !important;
-  color: #334155 !important;
-  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  background: color-mix(in srgb, var(--btn-color) 12%, #ffffff) !important;
+  color: color-mix(in srgb, var(--btn-color) 70%, #0f172a) !important;
+  border: 1.5px solid color-mix(in srgb, var(--btn-color) 45%, #cbd5e1) !important;
+  font-weight: 600 !important;
 }
 body[data-theme="light"] .map-status-btn:hover {
-  background: #e2e8f0 !important;
+  background: color-mix(in srgb, var(--btn-color) 22%, #ffffff) !important;
+  border-color: var(--btn-color) !important;
   color: #0f172a !important;
+  transform: translateX(2px);
 }
 body[data-theme="light"] .map-status-btn.active {
-  border-color: var(--btn-color, #ff5722) !important;
-  color: var(--btn-color, #ff5722) !important;
-  background: rgba(255, 87, 34, 0.1) !important;
-  font-weight: 800 !important;
+  border-color: var(--btn-color) !important;
+  color: #ffffff !important;
+  background: var(--btn-color) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--btn-color) 45%, transparent) !important;
+}
+body[data-theme="light"] .map-status-btn.active .map-status-dot {
+  background: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8) !important;
 }
 body[data-theme="light"] .map-status-review-drawer {
   background: rgba(248, 250, 252, 0.96) !important;
@@ -5584,6 +5593,7 @@ body[data-theme="light"] .fb-card-date {
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 14px;
+  position: relative;
 }
 
 .settings-profile-avatar {
@@ -5631,11 +5641,45 @@ body[data-theme="light"] .fb-card-date {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .settings-edit-toggle-btn:hover {
   background: rgba(255, 87, 34, 0.28);
   transform: translateY(-1px);
+}
+
+@media (max-width: 520px) {
+  .settings-profile-preview {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .settings-profile-avatar {
+    font-size: 2.3rem;
+    padding: 6px 10px;
+  }
+  .settings-profile-info {
+    flex: 1 1 170px;
+    min-width: 0;
+  }
+  .settings-profile-name {
+    font-size: 1.1rem;
+  }
+  .settings-profile-bio {
+    white-space: normal;
+    font-size: 0.8rem;
+    word-break: break-word;
+  }
+  .settings-edit-toggle-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4px;
+    padding: 10px 16px;
+    text-align: center;
+  }
 }
 
 .settings-edit-drawer {
