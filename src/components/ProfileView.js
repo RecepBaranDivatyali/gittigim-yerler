@@ -4,7 +4,8 @@ import {
   getUserAirlines, saveUserAirlines, toggleUserAirline,
   getUserAircraft, saveUserAircraft, toggleUserAircraft,
   AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint,
-  getSavedFriends, saveFriend, deleteFriend 
+  getSavedFriends, saveFriend, deleteFriend,
+  getHomeCountry, setHomeCountry
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -27,12 +28,12 @@ export function renderProfileView(container, onBack) {
         <div class="profile-topbar">
           <button class="profile-back-btn" id="profile-back">${t('backToMap')}</button>
           <div class="profile-tabs">
-            <button class="ptab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 ${t('tabProfile')}</button>
-            <button class="ptab ${activeTab === 'medals' ? 'active' : ''}" data-tab="medals">🏅 ${t('tabMedals')}</button>
-            <button class="ptab ${activeTab === 'bucket' ? 'active' : ''}" data-tab="bucket">🎯 ${t('tabBucket')}</button>
-            <button class="ptab ${activeTab === 'flights' ? 'active' : ''}" data-tab="flights">✈️ ${t('tabFlights')}</button>
-            <button class="ptab ${activeTab === 'compare' ? 'active' : ''}" data-tab="compare">⚔️ ${t('tabCompare')}</button>
-            <button class="ptab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️ ${t('settings')}</button>
+            <button class="ptab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile"><span class="tab-icon">👤</span><span class="tab-label">${t('tabProfile')}</span></button>
+            <button class="ptab ${activeTab === 'medals' ? 'active' : ''}" data-tab="medals"><span class="tab-icon">🏅</span><span class="tab-label">${t('tabMedals')}</span></button>
+            <button class="ptab ${activeTab === 'bucket' ? 'active' : ''}" data-tab="bucket"><span class="tab-icon">🎯</span><span class="tab-label">${t('tabBucket')}</span></button>
+            <button class="ptab ${activeTab === 'flights' ? 'active' : ''}" data-tab="flights"><span class="tab-icon">✈️</span><span class="tab-label">${t('tabFlights')}</span></button>
+            <button class="ptab ${activeTab === 'compare' ? 'active' : ''}" data-tab="compare"><span class="tab-icon">⚔️</span><span class="tab-label">${t('tabCompare')}</span></button>
+            <button class="ptab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings"><span class="tab-icon">⚙️</span><span class="tab-label">${t('settings')}</span></button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <button id="profile-logout" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:10px;padding:8px 14px;font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:600;">${t('logout')}</button>
@@ -100,11 +101,25 @@ export function renderProfileView(container, onBack) {
       earnedMedals = getEarnedAchievements(storageData, baseStats);
     } catch(e) { console.error('Error fetching stats', e); }
 
+    const currentHomeCountry = getHomeCountry();
+    const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+    let homeSubdivisionCount = 0;
+    let homeSubdivisionLabel = t('provincesVisited');
+    if (currentHomeCountry === 'TR') {
+      homeSubdivisionCount = baseStats.turkeyCount || 0;
+      homeSubdivisionLabel = `${homeCountryObj.flag} ${t('provincesVisited')}`;
+    } else {
+      const prefix = `${currentHomeCountry}::`;
+      homeSubdivisionCount = Object.entries(storageData.worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
+      homeSubdivisionLabel = `${homeCountryObj.flag} ${t('regionsVisited') || 'Bölge Gezildi'}`;
+    }
+
     const shareData = {
       profile,
       worldVisits: storageData.worldVisits,
       turkeyVisits: storageData.turkeyVisits,
-      worldCities: storageData.worldCities
+      worldCities: storageData.worldCities,
+      homeCountry: currentHomeCountry
     };
     const shareCode = btoa(encodeURIComponent(JSON.stringify(shareData)));
 
@@ -126,7 +141,7 @@ export function renderProfileView(container, onBack) {
           </div>
           <div class="profile-stats">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.turkeyCount || 0}</span><span class="pstat-lbl">${t('provincesVisited')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${homeSubdivisionCount}</span><span class="pstat-lbl">${homeSubdivisionLabel}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${baseStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
           </div>
@@ -167,14 +182,36 @@ export function renderProfileView(container, onBack) {
     const currentLang = getLanguage();
     const currentTheme = getTheme();
     const currentUiSize = getUiSize();
+    const currentHomeCountry = getHomeCountry();
     const visitedColor = getStatusColor('visited');
     const plannedColor = getStatusColor('planned');
     const wishlistColor = getStatusColor('wishlist');
 
+    const sortedCountries = [...WORLD_COUNTRIES].sort((a, b) => {
+      const nameA = currentLang === 'tr' ? (a.name || a.nameEn) : (a.nameEn || a.name);
+      const nameB = currentLang === 'tr' ? (b.name || b.nameEn) : (b.nameEn || b.name);
+      return nameA.localeCompare(nameB, currentLang === 'tr' ? 'tr' : 'en');
+    });
+
     contentArea.innerHTML = `
       <div class="profile-main">
-        <!-- Appearance Theme & Language -->
+        <!-- Home Country Selector Card -->
         <div class="share-section" style="margin-top:0;">
+          <h3 style="margin-bottom:8px;font-size:1.1rem;">📍 ${t('homeCountry')}</h3>
+          <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:14px;">${t('homeCountryDesc')}</p>
+          <div style="max-width:380px;">
+            <select id="settings-home-country-select" style="width:100%;padding:11px 14px;border-radius:12px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.18);color:var(--theme-text-main, #f8fafc);font-size:0.92rem;outline:none;cursor:pointer;font-family:inherit;">
+              ${sortedCountries.map(c => `
+                <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
+                  ${c.flag || '🏳️'} ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- Appearance Theme & Language -->
+        <div class="share-section">
           <h3 style="margin-bottom:16px;font-size:1.1rem;">🎨 ${t('theme')} & 🌐 ${t('language')}</h3>
           
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px;">
@@ -294,6 +331,15 @@ export function renderProfileView(container, onBack) {
         setStatusColor(statusKey, color);
         render();
       });
+    });
+
+    // Home country selection
+    document.getElementById('settings-home-country-select')?.addEventListener('change', (e) => {
+      setHomeCountry(e.target.value);
+      if (window.__refreshMapStats) {
+        window.__refreshMapStats();
+      }
+      render();
     });
 
     // Reset button
@@ -535,12 +581,12 @@ export function renderProfileView(container, onBack) {
           </div>
 
           <!-- Aviation Subtabs Switcher -->
-          <div class="compare-subtabs-row" style="margin-bottom:20px;">
-            <button type="button" class="compare-subtab ${flightSubTab === 'alliances' ? 'active' : ''}" id="tab-btn-alliances">
-              🏢 ${currentLang === 'tr' ? 'Havayolu Birlikleri (Koleksiyon)' : 'Airline Alliances (Collection)'}
+          <div class="aviation-subtabs-row" style="margin-bottom:20px;">
+            <button type="button" class="aviation-subtab-btn ${flightSubTab === 'alliances' ? 'active' : ''}" id="tab-btn-alliances">
+              🏢 ${currentLang === 'tr' ? 'Havayolu Birlikleri' : 'Airline Alliances'}
             </button>
-            <button type="button" class="compare-subtab ${flightSubTab === 'aircraft' ? 'active' : ''}" id="tab-btn-aircraft">
-              🛩️ ${currentLang === 'tr' ? 'Uçak Filosu (Hangar)' : 'Aircraft Fleet (Hangar)'}
+            <button type="button" class="aviation-subtab-btn ${flightSubTab === 'aircraft' ? 'active' : ''}" id="tab-btn-aircraft">
+              🛩️ ${currentLang === 'tr' ? 'Uçak Filosu' : 'Aircraft Fleet'}
             </button>
           </div>
 

@@ -14,7 +14,8 @@ export const STORAGE_KEYS = {
   USER_AIRCRAFT: 'gittigim_yerler_aircraft_v1',
   SAVED_FRIENDS: 'gittigim_yerler_saved_friends_v1',
   USER_FEEDBACKS: 'gv_user_feedbacks_v1',
-  FEEDBACK_STATUS_OVERRIDES: 'gv_feedback_status_overrides_v1'
+  FEEDBACK_STATUS_OVERRIDES: 'gv_feedback_status_overrides_v1',
+  HOME_COUNTRY: 'gv_home_country'
 };
 
 function safeSetItem(key, value) {
@@ -250,6 +251,7 @@ export function exportBackup() {
     savedFriends: getSavedFriends(),
     userFeedbacks: getUserFeedbacks(),
     feedbackOverrides: getFeedbackStatusOverrides(),
+    homeCountry: getHomeCountry(),
     exportedAt: new Date().toISOString()
   };
   const jsonStr = JSON.stringify(backupPayload, null, 2);
@@ -275,6 +277,7 @@ export function resetTravelData() {
   localStorage.removeItem(STORAGE_KEYS.BUCKET_RANKS);
   localStorage.removeItem(STORAGE_KEYS.USER_AIRLINES);
   localStorage.removeItem(STORAGE_KEYS.USER_AIRCRAFT);
+  localStorage.removeItem(STORAGE_KEYS.HOME_COUNTRY);
   unlockedCache = [];
   notifyStateChange();
 }
@@ -296,6 +299,7 @@ export function importBackup(fileContent) {
     if (data.savedFriends) safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(data.savedFriends));
     if (data.userFeedbacks) safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(data.userFeedbacks));
     if (data.feedbackOverrides) safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(data.feedbackOverrides));
+    if (data.homeCountry) setHomeCountry(data.homeCountry);
     notifyStateChange();
     return true;
   } catch (e) {
@@ -587,4 +591,22 @@ export function updateFeedbackStatus(id, newStatus, devResponse = '') {
     console.error('Error updating feedback status', e);
     return false;
   }
+}
+
+// ─── Home Country Selection ───────────────────────────────────────────────────
+export function getHomeCountry() {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.HOME_COUNTRY) || 'TR';
+  } catch {
+    return 'TR';
+  }
+}
+
+export function setHomeCountry(code) {
+  try {
+    safeSetItem(STORAGE_KEYS.HOME_COUNTRY, code || 'TR');
+  } catch (e) {
+    console.warn('Error saving home country', e);
+  }
+  notifyStateChange();
 }

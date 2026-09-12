@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, getHomeCountry } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -395,7 +395,11 @@ function closeActivePopup() {
 }
 
 
-function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
+function buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor) {
+  const flag = homeCountryObj?.flag || '🇹🇷';
+  const label = homeCountryObj?.code === 'TR' ? t('provincesVisited') : (t('regionsVisited') || 'Bölge Gezildi');
+  const denom = totalHomeSubdivisions > 0 ? `/${totalHomeSubdivisions}` : '';
+
   return `
     <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
       <span class="stats-icon" style="font-size:1.3rem;">🌍</span>
@@ -406,10 +410,10 @@ function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
     </div>
     <div class="stats-divider-mobile"></div>
     <div class="stats-item" style="display:flex;align-items:center;gap:10px;">
-      <span class="stats-icon-tr" style="font-size:0.9rem;font-weight:800;color:var(--theme-text-muted, #94a3b8);">TR</span>
+      <span class="stats-icon-flag" style="font-size:1.35rem;line-height:1;" title="${homeCountryObj?.name || 'Türkiye'}">${flag}</span>
       <div>
-        <div class="stats-number" style="color:${visitedColor};">${trVisited}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">/81</span></div>
-        <div class="stats-label">${t('provincesVisited')}</div>
+        <div class="stats-number" style="color:${visitedColor};">${homeVisited}<span class="stats-denom" style="font-size:0.8rem;color:var(--theme-text-muted, #64748b);">${denom}</span></div>
+        <div class="stats-label">${label}</div>
       </div>
     </div>
   `;
@@ -448,6 +452,21 @@ export function renderWorldMapView(container, options = {}) {
     const visitedColor = getStatusColor('visited');
 
     const { turkeyVisits, worldVisits } = getStorageData();
+    const homeCode = getHomeCountry() || 'TR';
+    const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === homeCode) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+
+    let homeVisited = 0;
+    let totalHomeSubdivisions = 81;
+    if (homeCode === 'TR') {
+      homeVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
+      totalHomeSubdivisions = 81;
+    } else {
+      const prefix = `${homeCode}::`;
+      homeVisited = Object.entries(worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
+      const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
+      totalHomeSubdivisions = homeRegions.length || 0;
+    }
+
     const trVisited = Object.values(turkeyVisits || {}).filter(v => v?.status === 'visited').length;
     const worldCodes = Object.keys(worldVisits || {}).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
     if (trVisited > 0 && !worldCodes.includes('TR')) worldCodes.push('TR');
@@ -495,7 +514,7 @@ export function renderWorldMapView(container, options = {}) {
             <span id="layer-hud-text">${t('layer1Countries')}</span>
           </div>
           <div id="stats-countries" class="stats-chip">
-            ${buildStatsCountriesHtml(worldCount, trVisited, visitedColor)}
+            ${buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor)}
           </div>
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
@@ -3309,17 +3328,30 @@ function refreshStats() {
 
   const { turkeyVisits, worldVisits, worldCities } = getStorageData();
 
-  // Turkey province visited count
-  const trVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
+  const homeCode = getHomeCountry() || 'TR';
+  const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === homeCode) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
+
+  let homeVisited = 0;
+  let totalHomeSubdivisions = 81;
+  if (homeCode === 'TR') {
+    homeVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
+    totalHomeSubdivisions = 81;
+  } else {
+    const prefix = `${homeCode}::`;
+    homeVisited = Object.entries(worldVisits).filter(([k, v]) => k.startsWith(prefix) && v.status === 'visited').length;
+    const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
+    totalHomeSubdivisions = homeRegions.length || 0;
+  }
 
   // World countries visited count
+  const trVisited = Object.values(turkeyVisits).filter(v => v.status === 'visited').length;
   const worldCodes = Object.keys(worldVisits).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited');
   if (trVisited > 0 && !worldCodes.includes('TR')) worldCodes.push('TR');
   const worldCount = worldCodes.length;
 
   const visitedColor = getStatusColor('visited');
 
-  cEl.innerHTML = buildStatsCountriesHtml(worldCount, trVisited, visitedColor);
+  cEl.innerHTML = buildStatsCountriesHtml(worldCount, homeVisited, totalHomeSubdivisions, homeCountryObj, visitedColor);
 
   if (selectedCountryCode && selectedCountryCode !== 'TR' && rEl) {
     const c = WORLD_COUNTRIES.find(x => x.code === selectedCountryCode);
