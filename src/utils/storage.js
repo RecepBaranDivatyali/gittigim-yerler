@@ -242,6 +242,7 @@ export function exportBackup() {
 
   const backupPayload = {
     ...data,
+    profile: userProfile || data.userProfile,
     userProfile: userProfile || data.userProfile,
     userAirlines: getUserAirlines(),
     userAircraft: getUserAircraft(),
@@ -251,13 +252,19 @@ export function exportBackup() {
     feedbackOverrides: getFeedbackStatusOverrides(),
     exportedAt: new Date().toISOString()
   };
-  const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `gittigim-yerler-yedek-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const jsonStr = JSON.stringify(backupPayload, null, 2);
+  if (typeof document !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+    try {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gittigim-yerler-yedek-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+  }
+  return jsonStr;
 }
 
 export function resetTravelData() {
@@ -278,9 +285,10 @@ export function importBackup(fileContent) {
     if (data.turkeyVisits) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
     if (data.worldVisits) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
     if (data.worldCities) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
-    if (data.userProfile) {
-      safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.userProfile));
-      safeSetItem('gv_profile', JSON.stringify(data.userProfile));
+    const prof = data.profile || data.userProfile;
+    if (prof) {
+      safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(prof));
+      safeSetItem('gv_profile', JSON.stringify(prof));
     }
     if (data.userAirlines) safeSetItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(data.userAirlines));
     if (data.userAircraft) safeSetItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(data.userAircraft));
@@ -291,7 +299,8 @@ export function importBackup(fileContent) {
     notifyStateChange();
     return true;
   } catch (e) {
-    alert('Geçersiz yedek dosyası formatı!');
+    if (typeof alert !== 'undefined') alert('Geçersiz yedek dosyası formatı!');
+    else console.warn('Geçersiz yedek dosyası formatı:', e);
     return false;
   }
 }

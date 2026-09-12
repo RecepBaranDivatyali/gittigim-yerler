@@ -264,3 +264,5 @@ export function getLocalizedName(rawName, countryCode) {
   return rawName;
 }
 
+export { TRANSLATIONS };
+
