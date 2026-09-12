@@ -223,12 +223,12 @@ export function renderProfileView(container, onBack) {
         <div class="share-section" style="margin-top:0;">
           <h3 style="margin-bottom:8px;font-size:1.1rem;">📍 ${t('homeCountry')}</h3>
           <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;margin-bottom:14px;">${t('homeCountryDesc')}</p>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px 14px;background:rgba(15,23,42,0.6);border-radius:12px;border:1px solid rgba(255,255,255,0.08);width:fit-content;">
+          <div class="home-country-badge-row" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px 14px;border-radius:12px;width:fit-content;">
             <span id="settings-home-country-flag">${homeCountryFlagHtml}</span>
             <span style="font-weight:700;font-size:0.95rem;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
           </div>
           <div style="max-width:380px;">
-            <select id="settings-home-country-select" style="width:100%;padding:11px 14px;border-radius:12px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.18);color:var(--theme-text-main, #f8fafc);font-size:0.92rem;outline:none;cursor:pointer;font-family:inherit;">
+            <select id="settings-home-country-select" style="width:100%;padding:11px 14px;border-radius:12px;font-size:0.92rem;outline:none;cursor:pointer;font-family:inherit;">
               ${sortedCountries.map(c => `
                 <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
                   ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
@@ -247,8 +247,8 @@ export function renderProfileView(container, onBack) {
             <div>
               <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌐 ${t('language')}</div>
               <div style="display:flex;gap:8px;">
-                <button class="lang-select-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentLang === 'tr' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'tr' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;">🇹🇷 Türkçe</button>
-                <button class="lang-select-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentLang === 'en' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentLang === 'en' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;">🇬🇧 English</button>
+                <button class="lang-select-btn ${currentLang === 'tr' ? 'active' : ''}" data-lang="tr">🇹🇷 Türkçe</button>
+                <button class="lang-select-btn ${currentLang === 'en' ? 'active' : ''}" data-lang="en">🇬🇧 English</button>
               </div>
             </div>
 
@@ -256,10 +256,10 @@ export function renderProfileView(container, onBack) {
             <div>
               <div style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);margin-bottom:8px;font-weight:600;">🌗 ${t('theme')}</div>
               <div style="display:flex;gap:8px;">
-                <button class="theme-select-btn ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentTheme === 'dark' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentTheme === 'dark' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <button class="theme-select-btn ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark" style="display:flex;align-items:center;justify-content:center;gap:6px;">
                   <span>🌙</span> <span>${t('themeDark')}</span>
                 </button>
-                <button class="theme-select-btn ${currentTheme === 'light' ? 'active' : ''}" data-theme="light" style="flex:1;padding:12px;border-radius:12px;border:1px solid ${currentTheme === 'light' ? '#ff5722' : 'rgba(255,255,255,0.15)'};background:${currentTheme === 'light' ? 'rgba(255,87,34,0.2)' : 'rgba(15,23,42,0.6)'};color:var(--theme-text-main, #f8fafc);cursor:pointer;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <button class="theme-select-btn ${currentTheme === 'light' ? 'active' : ''}" data-theme="light" style="display:flex;align-items:center;justify-content:center;gap:6px;">
                   <span>☀️</span> <span>${t('themeLight')}</span>
                 </button>
               </div>
@@ -1192,21 +1192,21 @@ export function renderProfileView(container, onBack) {
           <!-- Section 1: Countries -->
           <div id="compare-pane-countries" class="compare-pane active">
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'İkinizin de Gittiği Ortak Ülkeler' : 'Common Countries'} (${commonCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${commonCountries.length > 0 ? commonCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Ortak ülke bulunamadı.' : 'No common countries.')}
                 </div>
               </div>
 
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gittiğin Ülkeler' : 'Only You Visited'} (${onlyMyCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${onlyMyCountries.length > 0 ? onlyMyCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
                 </div>
               </div>
 
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gittiği Ülkeler` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
@@ -1218,21 +1218,21 @@ export function renderProfileView(container, onBack) {
           <!-- Section 2: Turkey 81 Provinces -->
           <div id="compare-pane-provinces" class="compare-pane" style="display:none;">
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'Ortak Gezilen İller' : 'Common Provinces'} (${commonProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${commonProvs.length > 0 ? commonProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Ortak il bulunamadı.' : 'No common provinces.')}
                 </div>
               </div>
 
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gezdiğin İller' : 'Only You Visited'} (${onlyMyProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${onlyMyProvs.length > 0 ? onlyMyProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
                 </div>
               </div>
 
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gezdiği İller` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherProvs.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${onlyOtherProvs.length > 0 ? onlyOtherProvs.map(pid => `• ${escapeHtml(getPName(pid))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı il yok.' : 'No unique provinces.')}
@@ -1245,7 +1245,7 @@ export function renderProfileView(container, onBack) {
           <div id="compare-pane-reviews" class="compare-pane" style="display:none;">
             <div class="compare-reviews-grid" style="gap:16px;">
               <!-- My Reviews -->
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#3b82f6;margin-bottom:12px;">📝 ${currentLang === 'tr' ? 'Senin Yorumların & Puanların' : 'Your Reviews & Scores'}</div>
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
                   ${(() => {
@@ -1264,12 +1264,12 @@ export function renderProfileView(container, onBack) {
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz puan veya not girmediniz.' : 'No reviews or notes yet.'}</span>`;
                     return reviews.map(r => `
-                      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
+                      <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                        <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                           <span>${escapeHtml(r.flag)} ${escapeHtml(r.name)}</span>
                           ${r.rating > 0 ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
-                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
+                        ${r.notes ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
                     `).join('');
                   })()}
@@ -1277,7 +1277,7 @@ export function renderProfileView(container, onBack) {
               </div>
 
               <!-- Friend's Reviews -->
-              <div style="background:rgba(15,23,42,0.6);border-radius:12px;padding:16px;">
+              <div class="comp-card-box">
                 <div style="font-weight:700;color:#10b981;margin-bottom:12px;">📝 ${currentLang === 'tr' ? `${escapeHtml(safeProfile.username)} Yorumları & Puanları` : `${escapeHtml(safeProfile.username)} Reviews`}</div>
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
                   ${(() => {
@@ -1296,12 +1296,12 @@ export function renderProfileView(container, onBack) {
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının henüz yorumu yok.' : 'Friend has no reviews yet.'}</span>`;
                     return reviews.map(r => `
-                      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;font-size:0.85rem;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#f8fafc;">
+                      <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                        <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                           <span>${escapeHtml(r.flag)} ${escapeHtml(r.name)}</span>
                           ${r.rating > 0 ? `<span style="color:#f59e0b;font-size:0.8rem;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:6px;">⭐ ${r.rating}/10</span>` : ''}
                         </div>
-                        ${r.notes ? `<div style="color:#94a3b8;font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
+                        ${r.notes ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(r.notes)}"</div>` : ''}
                       </div>
                     `).join('');
                   })()}

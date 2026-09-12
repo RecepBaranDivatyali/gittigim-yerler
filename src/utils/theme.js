@@ -181,6 +181,13 @@ export function applyTheme(themeId) {
   root.style.setProperty('--theme-ui-border', cfg.uiBorder);
   root.style.setProperty('--theme-text-main', cfg.textMain);
   root.style.setProperty('--theme-text-muted', cfg.textMuted);
+  root.style.setProperty('--text-main', cfg.textMain);
+  root.style.setProperty('--text-muted', cfg.textMuted);
+  root.style.setProperty('--bg-dark', cfg.id === 'light' ? '#f1f5f9' : '#0f172a');
+  root.style.setProperty('--bg-card', cfg.id === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(30, 41, 59, 0.7)');
+  root.style.setProperty('--border-glass', cfg.id === 'light' ? 'rgba(203, 213, 225, 0.85)' : 'rgba(255, 255, 255, 0.1)');
+  root.style.setProperty('--theme-card-bg', cfg.id === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(15, 23, 42, 0.65)');
+  root.style.setProperty('--theme-card-border', cfg.id === 'light' ? 'rgba(203, 213, 225, 0.85)' : 'rgba(148, 163, 184, 0.12)');
 
   const uiSize = getUiSize();
   const uiScale = UI_SCALES[uiSize] || '1.05';

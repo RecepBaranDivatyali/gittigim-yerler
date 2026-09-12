@@ -123,7 +123,7 @@ function getProvinceOffset(item) {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const REGION_ZOOM = 5.2;
+const REGION_ZOOM = 5.5;
 const SUBREGION_ZOOM = 6.8;
 
 function getFlagHtml(code) {
@@ -1502,8 +1502,8 @@ function initMap(container) {
     }
   }, true);
 
-  // Optimized SVG renderer buffer: 0.5 padding ensures smooth dragging without SVG path recalculation
-  mapRenderer = L.svg({ padding: 0.5 });
+  // Optimized SVG renderer buffer: 0.2 padding keeps SVG canvas compact and eliminates GPU stalls
+  mapRenderer = L.svg({ padding: 0.2 });
 
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
@@ -1518,13 +1518,13 @@ function initMap(container) {
   map.createPane('stateBordersPane');
   map.getPane('stateBordersPane').style.zIndex = 440;
   map.getPane('stateBordersPane').style.pointerEvents = 'none';
-  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.5 });
+  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.2 });
 
   // Prominent Country Borders Pane: Level 1 & Level 2 bold country borders, always above states and cities!
   map.createPane('countryBordersPane');
   map.getPane('countryBordersPane').style.zIndex = 450;
   map.getPane('countryBordersPane').style.pointerEvents = 'none';
-  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.5 });
+  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.2 });
 
   map.createPane('labelsPane');
   map.getPane('labelsPane').style.zIndex = 460;
@@ -1540,7 +1540,7 @@ function initMap(container) {
   if (ppPane) {
     ppPane.classList.add('no-blur-pane');
   }
-  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.5 });
+  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.2 });
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
   provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
@@ -2442,7 +2442,7 @@ const OVERSEAS_MAINLAND_BBOX = {
 
 function getVisibleCountries() {
   if (!map) return [];
-  const bounds = map.getBounds().pad(0.18); // 18% padding around screen for fast preloading without bloat
+  const bounds = map.getBounds().pad(0.12); // Tighter padding for lean DOM and rapid loading
   const visible = [];
 
   Object.entries(countryLayersByCode).forEach(([code, layer]) => {
@@ -2460,6 +2460,18 @@ function getVisibleCountries() {
 
     visible.push(code);
   });
+
+  // Prioritize countries closest to map viewport center (where the user is looking)
+  const mapCenter = map.getCenter();
+  visible.sort((a, b) => {
+    const cA = COUNTRY_CENTROIDS[a] || (countryLayersByCode[a]?._cachedBounds ? [countryLayersByCode[a]._cachedBounds.getCenter().lat, countryLayersByCode[a]._cachedBounds.getCenter().lng] : null);
+    const cB = COUNTRY_CENTROIDS[b] || (countryLayersByCode[b]?._cachedBounds ? [countryLayersByCode[b]._cachedBounds.getCenter().lat, countryLayersByCode[b]._cachedBounds.getCenter().lng] : null);
+    if (!cA || !cB) return 0;
+    const distA = Math.hypot(cA[0] - mapCenter.lat, cA[1] - mapCenter.lng);
+    const distB = Math.hypot(cB[0] - mapCenter.lat, cB[1] - mapCenter.lng);
+    return distA - distB;
+  });
+
   return visible;
 }
 
@@ -2489,12 +2501,12 @@ async function onViewChange() {
 
   // ── Turkey Level 2 (81 Provinces) ──────────────────────────────────────────
   if (isTurkeyInView()) {
-    if (zoom >= REGION_ZOOM && turkeyLayer && !map.hasLayer(turkeyLayer)) {
+    if (zoom >= 5.0 && turkeyLayer && !map.hasLayer(turkeyLayer)) {
       turkeyLayer.addTo(map);
       if (countryLayersByCode['TR']) {
         countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
-    } else if (zoom < REGION_ZOOM && turkeyLayer && map.hasLayer(turkeyLayer)) {
+    } else if (zoom < 5.0 && turkeyLayer && map.hasLayer(turkeyLayer)) {
       map.removeLayer(turkeyLayer);
       if (countryLayersByCode['TR']) {
         countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
@@ -2514,11 +2526,13 @@ async function onViewChange() {
 
   // ── World region layers (Level 2) ──────────────────────────────────────────
   if (zoom >= REGION_ZOOM) {
-    const visibleSet = new Set(visibleCodes);
+    // Top 8 visible countries nearest to screen center get region layers mounted (prevents 40-country lag)
+    const targetCodes = visibleCodes.slice(0, 8);
+    const targetSet = new Set(targetCodes);
 
-    // Evict off-screen region layers from the SVG DOM to keep memory tiny & 60fps
+    // Evict off-screen or non-priority region layers from the SVG DOM to keep memory tiny & 60fps
     Object.entries(regionLayers).forEach(([code, layer]) => {
-      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+      if (layer && map.hasLayer(layer) && !targetSet.has(code)) {
         map.removeLayer(layer);
         if (countryLayersByCode[code]) {
           countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
@@ -2526,12 +2540,12 @@ async function onViewChange() {
       }
     });
 
-    const toLoad = visibleCodes.filter(code => code !== 'TR' && !regionLayers[code]);
+    const toLoad = targetCodes.filter(code => code !== 'TR' && !regionLayers[code]);
     if (toLoad.length > 0) {
       await Promise.all(toLoad.map(code => loadRegionData(code)));
     }
     if (map && map.getZoom() >= REGION_ZOOM) {
-      for (const code of visibleCodes) {
+      for (const code of targetCodes) {
         if (code !== 'TR' && regionLayers[code] && !map.hasLayer(regionLayers[code])) {
           regionLayers[code].addTo(map);
           if (countryLayersByCode[code]) {
@@ -2554,26 +2568,28 @@ async function onViewChange() {
 
   // ── World subregion layers (Level 3) ──────────────────────────────────────
   if (zoom >= SUBREGION_ZOOM) {
-    const visibleSet = new Set(visibleCodes);
+    // At deep zoom, only the top 4 most central visible countries need subregions
+    const targetSubCodes = visibleCodes.slice(0, 4);
+    const targetSubSet = new Set(targetSubCodes);
 
     // Evict off-screen subregion layers
     Object.entries(subregionLayers).forEach(([code, layer]) => {
-      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+      if (layer && map.hasLayer(layer) && !targetSubSet.has(code)) {
         map.removeLayer(layer);
       }
     });
     Object.entries(stateBordersLayers).forEach(([code, layer]) => {
-      if (layer && map.hasLayer(layer) && !visibleSet.has(code)) {
+      if (layer && map.hasLayer(layer) && !targetSubSet.has(code)) {
         map.removeLayer(layer);
       }
     });
 
-    const toLoadSub = visibleCodes.filter(code => code !== 'TR' && !subregionLayers[code]);
+    const toLoadSub = targetSubCodes.filter(code => code !== 'TR' && !subregionLayers[code]);
     if (toLoadSub.length > 0) {
       await Promise.all(toLoadSub.map(code => loadSubregionData(code)));
     }
     if (map && map.getZoom() >= SUBREGION_ZOOM) {
-      for (const code of visibleCodes) {
+      for (const code of targetSubCodes) {
         if (code !== 'TR') {
           if (subregionLayers[code] && !map.hasLayer(subregionLayers[code])) {
             subregionLayers[code].addTo(map);
