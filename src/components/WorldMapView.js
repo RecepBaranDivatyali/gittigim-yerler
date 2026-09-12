@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, getHomeCountry } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -676,32 +676,17 @@ export function renderWorldMapView(container, options = {}) {
                 <!-- Injected dynamically -->
               </div>
 
-              <!-- Admin Mode Collapsible Section -->
-              <div class="fb-admin-section">
+              <!-- Admin Mode Toggle & Login Section -->
+              <div class="fb-admin-section" id="fb-admin-auth-section">
                 <div class="fb-admin-toggle-row">
                   <button type="button" id="btn-toggle-admin" class="fb-admin-toggle-btn">
                     <span>👑</span> <span>${t('adminMode')}</span>
                   </button>
                 </div>
-                <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;">
+                <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;margin-top:8px;">
                   <div class="fb-admin-auth-row" id="fb-admin-auth-row">
                     <input type="password" id="fb-admin-pin" class="feedback-input" style="width:140px;margin:0;" placeholder="${t('adminPinPlaceholder')}" />
                     <button type="button" id="btn-admin-login" class="feedback-submit-btn" style="width:auto;padding:8px 16px;margin:0;">Giriş</button>
-                  </div>
-                  <div id="fb-admin-controls" class="fb-admin-controls" style="display:none;">
-                    <div style="font-size:0.8rem;color:#10b981;font-weight:700;margin-bottom:8px;">✓ Yönetici Modu Aktif</div>
-                    <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:10px;">ID girerek veya yukarıdaki kartlardan durumu ve geliştirici yanıtını güncelleyebilirsiniz:</div>
-                    <input type="text" id="fb-admin-target-id" class="feedback-input" placeholder="Bildirim ID (örn: fb_123...)" style="margin-bottom:8px;" />
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="fb-status-btn-group">
-                      <button type="button" class="fb-status-set-btn" data-status="pending" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;">⏳ İnceleniyor</button>
-                      <button type="button" class="fb-status-set-btn" data-status="considering" style="background:#3b82f622;color:#3b82f6;border:1px solid #3b82f655;">💡 Düşünülüyor</button>
-                      <button type="button" class="fb-status-set-btn" data-status="in_progress" style="background:#8b5cf622;color:#8b5cf6;border:1px solid #8b5cf655;">🛠️ Hazırlanıyor</button>
-                      <button type="button" class="fb-status-set-btn selected" data-status="resolved" style="background:#10b98122;color:#10b981;border:1px solid #10b98155;">✅ Yapıldı</button>
-                      <button type="button" class="fb-status-set-btn" data-status="declined" style="background:#ef444422;color:#ef4444;border:1px solid #ef444455;">🛑 Vazgeçildi</button>
-                    </div>
-                    <textarea id="fb-admin-note" class="feedback-textarea" rows="2" placeholder="Geliştirici Yanıt Notu (Kullanıcıya iletilecek...)" style="margin-bottom:8px;"></textarea>
-                    <button type="button" id="btn-admin-save-status" class="feedback-submit-btn" style="padding:10px;">Durumu Kaydet & Güncelle</button>
-                    <div id="fb-admin-msg" style="display:none;font-size:0.8rem;color:#10b981;margin-top:6px;text-align:center;"></div>
                   </div>
                 </div>
               </div>
@@ -931,9 +916,8 @@ export function renderWorldMapView(container, options = {}) {
     const panelList = container.querySelector('#fb-panel-list');
     const countBadge = container.querySelector('#fb-count-badge');
 
-    // Admin Mode state
-    let isAdminActive = false;
-    let selectedAdminStatus = 'resolved';
+    // Admin Mode state (persisted across reloads)
+    let isAdminActive = localStorage.getItem('gv_admin_active') === '1';
 
     function updateBadgeCount() {
       const fbs = getUserFeedbacks();
@@ -950,17 +934,12 @@ export function renderWorldMapView(container, options = {}) {
     function renderFeedbackList() {
       const feedbacks = getUserFeedbacks();
       const listWrap = container.querySelector('#fb-list-container');
+      const authSection = container.querySelector('#fb-admin-auth-section');
       updateBadgeCount();
       if (!listWrap) return;
 
-      if (feedbacks.length === 0) {
-        listWrap.innerHTML = `
-          <div class="fb-empty-state">
-            <span style="font-size:2.5rem;display:block;margin-bottom:8px;">📬</span>
-            <p>${t('noFeedbacksYet')}</p>
-          </div>
-        `;
-        return;
+      if (authSection) {
+        authSection.style.display = isAdminActive ? 'none' : 'block';
       }
 
       const statusMap = {
@@ -978,18 +957,55 @@ export function renderWorldMapView(container, options = {}) {
         other: '💬'
       };
 
-      listWrap.innerHTML = feedbacks.map(fb => {
+      let html = '';
+
+      if (isAdminActive) {
+        html += `
+          <div class="fb-admin-status-banner">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.3rem;">👑</span>
+              <div>
+                <div style="font-weight:800;font-size:0.85rem;color:#10b981;">Yönetici Modu (${feedbacks.length} Bildirim)</div>
+                <div style="font-size:0.72rem;color:#94a3b8;">Aşağı kaydırarak her bildirimin durumuna dokunabilirsiniz</div>
+              </div>
+            </div>
+            <button type="button" id="btn-admin-logout" class="fb-admin-logout-btn">Çıkış Yap</button>
+          </div>
+        `;
+      }
+
+      if (feedbacks.length === 0) {
+        html += `
+          <div class="fb-empty-state">
+            <span style="font-size:2.5rem;display:block;margin-bottom:8px;">📬</span>
+            <p>${t('noFeedbacksYet')}</p>
+            ${isAdminActive ? '<p style="font-size:0.75rem;color:#64748b;margin-top:6px;">Kullanıcılar bildirim gönderdikçe bu listede görünecektir.</p>' : ''}
+          </div>
+        `;
+        listWrap.innerHTML = html;
+        if (isAdminActive) {
+          container.querySelector('#btn-admin-logout')?.addEventListener('click', () => {
+            isAdminActive = false;
+            localStorage.removeItem('gv_admin_active');
+            renderFeedbackList();
+          });
+        }
+        return;
+      }
+
+      html += feedbacks.map(fb => {
         const st = statusMap[fb.status] || statusMap.pending;
         const icon = typeIconMap[fb.type] || '💡';
         const dateStr = fb.createdAt ? new Date(fb.createdAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
         return `
-          <div class="feedback-card" data-id="${escapeHtml(fb.id)}">
+          <div class="feedback-card ${isAdminActive ? 'is-admin-card' : ''}" data-id="${escapeHtml(fb.id)}">
             <div class="fb-card-header">
               <div class="fb-card-meta">
                 <span class="fb-type-icon">${icon}</span>
                 <span class="fb-card-date">${dateStr}</span>
-                <span style="font-size:0.68rem;color:#64748b;font-family:monospace;">#${escapeHtml(fb.id.slice(-6))}</span>
+                ${isAdminActive ? `<span style="font-size:0.72rem;color:#38bdf8;font-weight:700;">👤 ${escapeHtml(fb.username || 'Gezgin')}</span>` : ''}
+                ${(isAdminActive && fb.contact) ? `<span style="font-size:0.72rem;color:#94a3b8;">📱 ${escapeHtml(fb.contact)}</span>` : ''}
               </div>
               <span class="feedback-status-badge ${st.class}">${st.label}</span>
             </div>
@@ -1001,26 +1017,95 @@ export function renderWorldMapView(container, options = {}) {
               </div>
             ` : ''}
             ${isAdminActive ? `
-              <div class="fb-admin-quick-actions">
-                <button type="button" class="fb-quick-btn" data-action="resolved" data-id="${escapeHtml(fb.id)}">✅ Yapıldı</button>
-                <button type="button" class="fb-quick-btn" data-action="in_progress" data-id="${escapeHtml(fb.id)}">🛠️ Hazırlanıyor</button>
-                <button type="button" class="fb-quick-btn" data-action="considering" data-id="${escapeHtml(fb.id)}">💡 Düşünülüyor</button>
-                <button type="button" class="fb-quick-btn" data-action="declined" data-id="${escapeHtml(fb.id)}">🛑 Vazgeçildi</button>
+              <div class="fb-admin-direct-controls">
+                <div class="fb-admin-controls-title">Durum Seçin (Tek Tıkla Belirleyin):</div>
+                <div class="fb-admin-pills-row">
+                  <button type="button" class="fb-pill-btn ${fb.status === 'pending' ? 'active status-pending' : ''}" data-id="${escapeHtml(fb.id)}" data-status="pending">⏳ İnceleniyor</button>
+                  <button type="button" class="fb-pill-btn ${fb.status === 'considering' ? 'active status-considering' : ''}" data-id="${escapeHtml(fb.id)}" data-status="considering">💡 Düşünülüyor</button>
+                  <button type="button" class="fb-pill-btn ${fb.status === 'in_progress' ? 'active status-progress' : ''}" data-id="${escapeHtml(fb.id)}" data-status="in_progress">🛠️ Hazırlanıyor</button>
+                  <button type="button" class="fb-pill-btn ${fb.status === 'resolved' ? 'active status-resolved' : ''}" data-id="${escapeHtml(fb.id)}" data-status="resolved">✅ Yapıldı</button>
+                  <button type="button" class="fb-pill-btn ${fb.status === 'declined' ? 'active status-declined' : ''}" data-id="${escapeHtml(fb.id)}" data-status="declined">🛑 Vazgeçildi</button>
+                </div>
+
+                <div class="fb-admin-actions-bar">
+                  <button type="button" class="fb-action-link-btn fb-toggle-note-btn" data-id="${escapeHtml(fb.id)}">
+                    ${fb.devResponse ? '✏️ Yanıtı Güncelle' : '💬 Kullanıcıya Yanıt Yaz'}
+                  </button>
+                  <button type="button" class="fb-action-link-btn fb-delete-card-btn" data-id="${escapeHtml(fb.id)}" style="color:#ef4444;">
+                    🗑️ Sil
+                  </button>
+                </div>
+
+                <div class="fb-inline-note-box" id="note-box-${escapeHtml(fb.id)}" style="display:none;">
+                  <textarea class="feedback-textarea fb-note-text" rows="2" placeholder="Kullanıcıya gösterilecek geliştirici yanıtı yazın...">${escapeHtml(fb.devResponse || '')}</textarea>
+                  <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px;">
+                    <button type="button" class="feedback-submit-btn fb-save-note-btn" data-id="${escapeHtml(fb.id)}" style="width:auto;padding:6px 14px;font-size:0.8rem;margin:0;">Kaydet</button>
+                  </div>
+                </div>
               </div>
             ` : ''}
           </div>
         `;
       }).join('');
 
-      // Attach quick action listeners in Admin Mode
+      listWrap.innerHTML = html;
+
+      // Attach listeners in Admin Mode
       if (isAdminActive) {
-        listWrap.querySelectorAll('.fb-quick-btn').forEach(qb => {
-          qb.addEventListener('click', (e) => {
+        // Logout listener
+        container.querySelector('#btn-admin-logout')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isAdminActive = false;
+          localStorage.removeItem('gv_admin_active');
+          renderFeedbackList();
+        });
+
+        // Quick status pills (1-click direct status toggle)
+        listWrap.querySelectorAll('.fb-pill-btn[data-status]').forEach(pb => {
+          pb.addEventListener('click', (e) => {
             e.stopPropagation();
-            const targetId = qb.getAttribute('data-id');
-            const targetStatus = qb.getAttribute('data-action');
+            const targetId = pb.getAttribute('data-id');
+            const targetStatus = pb.getAttribute('data-status');
             updateFeedbackStatus(targetId, targetStatus);
             renderFeedbackList();
+          });
+        });
+
+        // Toggle developer response box
+        listWrap.querySelectorAll('.fb-toggle-note-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-id');
+            const box = container.querySelector('#note-box-' + targetId);
+            if (box) {
+              const isHidden = box.style.display === 'none';
+              box.style.display = isHidden ? 'block' : 'none';
+            }
+          });
+        });
+
+        // Save developer response note
+        listWrap.querySelectorAll('.fb-save-note-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-id');
+            const box = container.querySelector('#note-box-' + targetId);
+            const noteText = box?.querySelector('.fb-note-text')?.value?.trim() || '';
+            const fbItem = feedbacks.find(f => f.id === targetId);
+            updateFeedbackStatus(targetId, fbItem?.status || 'pending', noteText);
+            renderFeedbackList();
+          });
+        });
+
+        // Delete feedback card
+        listWrap.querySelectorAll('.fb-delete-card-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-id');
+            if (confirm('Bu bildirimi silmek istediğinize emin misiniz?')) {
+              deleteUserFeedback(targetId);
+              renderFeedbackList();
+            }
           });
         });
       }
@@ -1185,61 +1270,36 @@ export function renderWorldMapView(container, options = {}) {
     const adminDrawer = container.querySelector('#fb-admin-drawer');
     const btnAdminLogin = container.querySelector('#btn-admin-login');
     const adminPinInput = container.querySelector('#fb-admin-pin');
-    const adminAuthRow = container.querySelector('#fb-admin-auth-row');
-    const adminControls = container.querySelector('#fb-admin-controls');
 
     if (btnToggleAdmin && adminDrawer) {
       btnToggleAdmin.addEventListener('click', (e) => {
         e.stopPropagation();
         const isHidden = adminDrawer.style.display === 'none';
         adminDrawer.style.display = isHidden ? 'block' : 'none';
+        if (isHidden && adminPinInput) adminPinInput.focus();
       });
     }
 
     if (btnAdminLogin && adminPinInput) {
-      btnAdminLogin.addEventListener('click', (e) => {
-        e.stopPropagation();
+      const handleAdminLogin = (e) => {
+        if (e) e.stopPropagation();
         const pin = adminPinInput.value.trim();
         if (pin === '1923' || pin === 'admin') {
           isAdminActive = true;
-          if (adminAuthRow) adminAuthRow.style.display = 'none';
-          if (adminControls) adminControls.style.display = 'block';
+          localStorage.setItem('gv_admin_active', '1');
+          adminPinInput.value = '';
+          if (adminDrawer) adminDrawer.style.display = 'none';
           renderFeedbackList();
         } else {
           alert('Hatalı PIN!');
         }
-      });
-    }
+      };
 
-    const statusBtns = container.querySelectorAll('.fb-status-set-btn');
-    statusBtns.forEach(sb => {
-      sb.addEventListener('click', (e) => {
-        e.stopPropagation();
-        statusBtns.forEach(b => b.classList.remove('selected'));
-        sb.classList.add('selected');
-        selectedAdminStatus = sb.getAttribute('data-status');
-      });
-    });
-
-    const btnAdminSaveStatus = container.querySelector('#btn-admin-save-status');
-    if (btnAdminSaveStatus) {
-      btnAdminSaveStatus.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetId = container.querySelector('#fb-admin-target-id')?.value?.trim();
-        const note = container.querySelector('#fb-admin-note')?.value?.trim() || '';
-        const adminMsg = container.querySelector('#fb-admin-msg');
-        if (!targetId) {
-          alert('Lütfen bir Bildirim ID girin!');
-          return;
-        }
-
-        updateFeedbackStatus(targetId, selectedAdminStatus, note);
-        renderFeedbackList();
-
-        if (adminMsg) {
-          adminMsg.textContent = '✓ ' + (t('statusUpdated') || 'Durum güncellendi!');
-          adminMsg.style.display = 'block';
-          setTimeout(() => { adminMsg.style.display = 'none'; }, 2000);
+      btnAdminLogin.addEventListener('click', handleAdminLogin);
+      adminPinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAdminLogin(e);
         }
       });
     }

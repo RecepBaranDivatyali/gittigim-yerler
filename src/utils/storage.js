@@ -593,6 +593,29 @@ export function updateFeedbackStatus(id, newStatus, devResponse = '') {
   }
 }
 
+export function deleteUserFeedback(id) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const parsed = raw ? JSON.parse(raw) : null;
+    let feedbacks = Array.isArray(parsed) ? parsed : [];
+    feedbacks = feedbacks.filter(f => f.id !== id);
+    safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+    
+    // Also clean override if present
+    const overrides = getFeedbackStatusOverrides();
+    if (overrides[id]) {
+      delete overrides[id];
+      safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(overrides));
+    }
+    
+    notifyStateChange();
+    return true;
+  } catch (e) {
+    console.error('Error deleting feedback', e);
+    return false;
+  }
+}
+
 // ─── Home Country Selection ───────────────────────────────────────────────────
 export function getHomeCountry() {
   try {

@@ -5217,39 +5217,149 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   transition: all 0.18s;
 }
 
-.fb-status-set-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.2);
+.fb-admin-status-banner {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fb-admin-logout-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.fb-admin-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
 }
 
-.fb-status-set-btn.selected {
-  outline: 2px solid #fff;
+.feedback-card.is-admin-card {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(15, 23, 42, 0.85);
 }
 
-.fb-admin-quick-actions {
+.fb-admin-direct-controls {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fb-admin-controls-title {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.fb-admin-pills-row {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  align-items: center;
 }
 
-.fb-quick-btn {
-  background: rgba(255, 255, 255, 0.08);
+.fb-pill-btn {
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  color: #cbd5e1;
+  border-radius: 8px;
+  color: #94a3b8;
   cursor: pointer;
-  font-size: 0.7rem;
-  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 9px;
   font-family: inherit;
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.fb-quick-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+.fb-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.fb-pill-btn.active.status-pending {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+.fb-pill-btn.active.status-considering {
+  background: rgba(59, 130, 246, 0.25) !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+}
+.fb-pill-btn.active.status-progress {
+  background: rgba(139, 92, 246, 0.25) !important;
+  border-color: #8b5cf6 !important;
+  color: #a78bfa !important;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+}
+.fb-pill-btn.active.status-resolved {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+}
+.fb-pill-btn.active.status-declined {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: #ef4444 !important;
+  color: #f87171 !important;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+}
+
+.fb-admin-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.fb-action-link-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #38bdf8;
+  cursor: pointer;
+  padding: 4px 2px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+.fb-action-link-btn:hover {
+  opacity: 0.8;
+}
+
+.fb-inline-note-box {
+  margin-top: 6px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Light theme overrides for feedback elements */
