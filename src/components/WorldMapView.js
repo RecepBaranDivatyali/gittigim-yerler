@@ -1522,7 +1522,7 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
             if (map) {
@@ -1607,9 +1607,11 @@ function initMap(container) {
       pane: 'statesPane',
       style: f => provinceStyle(f.properties?.number),
       onEachFeature: (f, layer) => {
+        const id = f.properties?.number;
+        const prov = TURKEY_PROVINCES.find(p => p.id === id) || { id, name: f.properties?.name || 'İl' };
         // Province name is rendered cleanly on map via provinceLabelsLayer
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
             L.DomEvent.stopPropagation(e);
@@ -2599,9 +2601,11 @@ function attachRegionLayer(code, data) {
     pane: 'statesPane',
     style: f => regionStyle(f.properties?.name || f.properties?.NAME_1, code),
     onEachFeature: (f, l) => {
+      const raw = f.properties?.name || f.properties?.NAME_1 || 'Bölge';
+      const display = getLocalizedName(raw, code);
       // Region name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
@@ -2724,9 +2728,11 @@ function attachSubregionLayer(code, data) {
     pane: 'citiesPane',
     style: f => subregionStyle(f.properties?.name, code),
     onEachFeature: (f, l) => {
+      const raw = f.properties?.name || 'Şehir';
+      const display = getLocalizedName(raw, code);
       // City name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
