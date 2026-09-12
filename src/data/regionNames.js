@@ -11,7 +11,7 @@ export const REGION_TR_NAMES = {
   'Friuli-Venezia Giulia': 'Friuli-Venedik Giulia (Trieste)',
 
   // ─── ALMANYA ──────────────────────────────────────────────
-  'Bayern': 'Bavyera (Münih)', 'Nordrhein-Westfalen': 'Kuzey Ren-Vestfalya (Köln)',
+  'Bayern': 'Bavyera', 'Nordrhein-Westfalen': 'Kuzey Ren-Vestfalya (Köln)',
   'Baden-Württemberg': 'Baden-Württemberg (Stuttgart)', 'Niedersachsen': 'Aşağı Saksonya (Hannover)',
   'Hessen': 'Hessen (Frankfurt)', 'Sachsen': 'Saksonya (Dresden)', 'Rheinland-Pfalz': 'Ren-Palatinat (Mainz)',
   'Berlin': 'Berlin', 'Schleswig-Holstein': 'Schleswig-Holstein (Kiel)',
@@ -153,7 +153,127 @@ export const REGION_TR_NAMES = {
   // ─── BREZİLYA ─────────────────────────────────────────────
   'São Paulo': 'Sao Paulo', 'Rio de Janeiro': 'Rio de Janeiro', 'Bahia': 'Bahia (Salvador)',
   'Minas Gerais': 'Minas Gerais (Belo Horizonte)', 'Paraná': 'Parana (Curitiba)',
-  'Rio Grande do Sul': 'Rio Grande do Sul (Porto Alegre)', 'Distrito Federal': 'Brasilia (Başkent)'
+  'Rio Grande do Sul': 'Rio Grande do Sul (Porto Alegre)', 'Distrito Federal': 'Brasilia (Başkent)',
+// ─── GÜRCİSTAN ─────────────────────────────────────────────
+  'Ajaria': 'Acara (Batum)', 'Tbilisi': 'Tiflis (Başkent)', 'Imereti': 'İmereti (Kutaisi)',
+  'Abkhazia': 'Abhazya (Sohum)', 'Samegrelo-Zemo Svaneti': 'Samegrelo (Zugdidi)',
+  'Samtskhe-Javakheti': 'Samtshe-Cavaheti (Ahıska)', 'Kakheti': 'Kaheti (Telavi)',
+  'Mtskheta-Mtianeti': 'Mtsheta-Mtianeti (Kazbegi)', 'Shida Kartli': 'Şida Kartli (Gori)',
+  'Kvemo Kartli': 'Kvemo Kartli (Rustavi)', 'Guria': 'Guria (Ozurgeti)',
+  'Racha-Lechkhumi-Kvemo Svaneti': 'Raça-Leçhumi (Ambrolauri)',
+
+  // ─── AZERBAYCAN ────────────────────────────────────────────
+  'Qazax': 'Gence-Qazax (Gence)', 'Xizı': 'Abşeron (Bakü, Sumqayıt)',
+  'Xaçmaz': 'Quba-Xaçmaz (Quba)', 'Şərur': 'Nahçıvan (Şərur)',
+  'Balakən': 'Şeki-Zaqatala (Şəki, Balakən)', 'İmişli': 'Aran (Mingəçevir, İmişli)',
+  'Cəlilabad': 'Lenkeran-Astara (Cəlilabad)', 'Kəlbəcər': 'Karabağ (Kəlbəcər, Şuşa)',
+  'Cəbrayıl': 'Cebrayıl-Füzuli', 'Ağsu': 'Şirvan (Ağsu, Şamaxı)',
+
+  // ─── ERMENİSTAN ────────────────────────────────────────────
+  'Erevan': 'Erivan (Başkent)', 'Shirak': 'Şirak (Gümrü)', 'Lori': 'Lori (Vanadzor)',
+  'Tavush': 'Tavuş (Dilican)', 'Kotayk': 'Kotayk (Garni)', 'Gegharkunik': 'Geğarkunik (Sevan Gölü)',
+  'Syunik': 'Sünik (Goris, Tatev)', 'Ararat': 'Ararat (Artashat)', 'Armavir': 'Armavir (Eçmiadzin)',
+  'Aragatsotn': 'Aragatsotn (Aştarak)', 'Vayots Dzor': 'Vayots Dzor (Cermuk)',
+
+  // ─── UKRAYNA ───────────────────────────────────────────────
+  'L\'viv': 'Lviv', 'Odessa': 'Odessa', 'Kiev': 'Kiev Bölgesi', 'Kiev City': 'Kiev (Başkent)',
+  'Kharkiv': 'Harkov (Kharkiv)', 'Dnipropetrovs\'k': 'Dnipro', 'Zaporizhzhya': 'Zaporijya',
+  'Donets\'k': 'Donetsk', 'Luhans\'k': 'Luhansk', 'Chernivtsi': 'Çernivtsi',
+  'Ivano-Frankivs\'k': 'İvano-Frankivsk', 'Transcarpathia': 'Zakarpatya (Ujhorod)',
+  'Kherson': 'Herson', 'Mykolayiv': 'Mıkolayiv', 'Poltava': 'Poltava', 'Chernihiv': 'Çernihiv',
+  'Crimea': 'Kırım (Sivastopol, Yalta)',
+
+  // ─── ROMANYA ───────────────────────────────────────────────
+  'Constanta': 'Köstence (Constanța)', 'Cluj': 'Kaloşvar (Cluj-Napoca)',
+  'Timis': 'Temeşvar (Timișoara)', 'Brasov': 'Braşov (Brașov)', 'Sibiu': 'Sibiu',
+  'Iasi': 'Yaş (Iași)', 'Prahova': 'Prahova (Ploiești, Sinaia)', 'Bihor': 'Bihor (Oradea)',
+  'Arad': 'Arad', 'Maramures': 'Maramureș (Baia Mare)', 'Suceava': 'Suceava (Bucovina)',
+  'Tulcea': 'Tulça (Tuna Deltası)', 'Bucharest': 'Bükreş (Başkent)', 'Ilfov': 'Ilfov (Bükreş Çevresi)',
+
+  // ─── BULGARİSTAN ───────────────────────────────────────────
+  'Varna': 'Varna', 'Burgas': 'Burgaz', 'Plovdiv': 'Filibe (Plovdiv)',
+  'Grad Sofiya': 'Sofya (Başkent)', 'Sofia': 'Sofya Bölgesi', 'Ruse': 'Rusçuk (Ruse)',
+  'Stara Zagora': 'Eski Zağra', 'Veliko Tarnovo': 'Veliko Tırnovo', 'Kardzhali': 'Kırcaali',
+  'Haskovo': 'Hasköy', 'Shumen': 'Şumnu', 'Dobrich': 'Hacıoğlu Pazarcık (Dobriç)',
+  'Blagoevgrad': 'Yukarı Cuma (Bansko)', 'Smolyan': 'Paşmaklı (Smolyan, Pamporovo)',
+  'Pleven': 'Plevne', 'Sliven': 'İslimiye',
+
+  // ─── BOSNA-HERSEK ──────────────────────────────────────────
+  'Herzegovina-Neretva': 'Hersek (Mostar)', 'Sarajevo': 'Saraybosna (Başkent)',
+  'Banja Luka': 'Banja Luka', 'Tuzla': 'Tuzla', 'Zenica-Doboj': 'Zenica',
+  'Una-Sana': 'Una-Sana (Bihać)', 'Central Bosnia': 'Orta Bosna (Travnik, Jajce)',
+  'Trebinje': 'Trebinje', 'West Herzegovina': 'Batı Hersek (Široki Brijeg)',
+  'Brčko Distrikt': 'Brčko Bölgesi', 'Bijeljina': 'Bijeljina',
+
+  // ─── KARADAĞ ───────────────────────────────────────────────
+  'Kotor': 'Kotor', 'Budva': 'Budva', 'Podgorica': 'Podgorica (Başkent)',
+  'Herceg Novi': 'Herceg Novi', 'Tivat': 'Tivat', 'Bar': 'Bar', 'Ulcinj': 'Ülgün (Ulcinj)',
+  'Cetinje': 'Çetine', 'Žabljak': 'Žabljak (Durmitor)', 'Kolašin': 'Kolašin',
+  'Nikšic': 'Nikšić',
+
+  // ─── HIRVATİSTAN ───────────────────────────────────────────
+  'Dubrovacko-Neretvanska': 'Dubrovnik', 'Splitsko-Dalmatinska': 'Dalmaçya (Split)',
+  'Zadarska': 'Zadar', 'Istarska': 'İstriya (Pula, Rovinj)',
+  'Primorsko-Goranska': 'Kvarner (Rijeka, Opatija)', 'Grad Zagreb': 'Zagreb (Başkent)',
+  'Šibensko-Kninska': 'Şibenik (Šibenik, Krka)', 'Licko-Senjska': 'Lika (Plitvice Gölleri)',
+  'Osjecko-Baranjska': 'Slavonya (Osijek)', 'Varaždinska': 'Varaždin',
+
+  // ─── KUZEY MAKEDONYA ───────────────────────────────────────
+  'Güneybatı (Ohri / Struga)': 'Ohri ve Struga', 'Polog (Kalkandelen / Tetovo)': 'Kalkandelen (Tetovo)',
+  'Pelagonya (Manastır / Bitola)': 'Manastır (Bitola)', 'Üsküp Bölgesi (Skopje)': 'Üsküp (Başkent)',
+  'Güneydoğu (Ustrumca)': 'Ustrumca', 'Vardar (Köprülü / Veles)': 'Köprülü (Veles)',
+  'Kuzeydoğu (Kumanova)': 'Kumanova', 'Doğu (İştip)': 'İştip',
+
+  // ─── ARNAVUTLUK ────────────────────────────────────────────
+  'Tiranë': 'Tiran (Başkent)', 'Durrës': 'Dıraç (Durrës)', 'Vlorë': 'Avlonya (Vlorë, Saranda)',
+  'Shkodër': 'İşkodra', 'Berat': 'Berat', 'Gjirokastër': 'Ergiri (Gjirokastër)',
+  'Korçë': 'Görice (Korçë)', 'Elbasan': 'İlbasan', 'Lezhë': 'Leş',
+
+  // ─── SIRBİSTAN ─────────────────────────────────────────────
+  'Grad Beograd': 'Belgrad (Başkent)', 'Južno-Backi': 'Voyvodina (Novi Sad)',
+  'Nišavski': 'Niş', 'Raški': 'Sancak (Yeni Pazar)', 'Zlatiborski': 'Zlatibor (Užice)',
+  'Šumadijski': 'Kragujevac', 'Severno-Backi': 'Subotica',
+
+  // ─── KIBRIS ────────────────────────────────────────────────
+  'Nicosia': 'Lefkoşa (Başkent)', 'Limassol': 'Limasol', 'Larnaca': 'Larnaka',
+  'Paphos': 'Baf (Paphos)', 'Famagusta': 'Gazimağusa',
+
+  // ─── ÖZBEKİSTAN ────────────────────────────────────────────
+  'Samarkand': 'Semerkant', 'Bukhoro': 'Buhara', 'Khorezm': 'Harezm (Hive)',
+  'Tashkent': 'Taşkent (Başkent)', 'Ferghana': 'Fergana Vadisi', 'Namangan': 'Namangan',
+  'Andijon': 'Andican',
+
+  // ─── KAZAKİSTAN ────────────────────────────────────────────
+  'Almaty City': 'Almatı', 'Astana': 'Astana (Başkent)', 'Almaty': 'Almatı Eyaleti',
+  'South Kazakhstan': 'Güney Kazakistan (Çimkent, Türkistan)', 'Mangghystau': 'Mangıstau (Aktau)',
+
+  // ─── BİRLEŞİK ARAP EMİRLİKLERİ ─────────────────────────────
+  'Dubay': 'Dubai', 'Abu Dhabi': 'Abu Dabi (Başkent)', 'Sharjah': 'Şarika (Sharjah)',
+  'Ras Al Khaymah': 'Resü\'l-Hayme', 'Ajman': 'Acman', 'Fujayrah': 'Füceyre',
+
+  // ─── MISIR ─────────────────────────────────────────────────
+  'Al Qahirah': 'Kahire (Başkent)', 'Al Jizah': 'Gize (Piramitler)',
+  'Al Iskandariyah': 'İskenderiye (Alexandria)', 'Janub Sina\'': 'Güney Sina (Şarm El-Şeyh)',
+  'Al Bahr al Ahmar': 'Kızıldeniz (Hurgada)', 'Luxor': 'Luksor', 'Aswan': 'Asvan',
+
+  // ─── FAS ───────────────────────────────────────────────────
+  'Grand Casablanca': 'Kazablanka', 'Marrakech - Tensift - Al Haouz': 'Marakeş',
+  'Fès - Boulemane': 'Fes', 'Tanger - Tétouan': 'Tanca (Cebelitarık)',
+  'Rabat - Salé - Zemmour - Zaer': 'Rabat (Başkent)', 'Souss - Massa - Draâ': 'Agadir',
+
+  // ─── SUUDİ ARABİSTAN ───────────────────────────────────────
+  'Makkah': 'Mekke (Cidde)', 'Al Madinah': 'Medine', 'Ar Riyad': 'Riyad (Başkent)',
+  'Ash Sharqiyah': 'Doğu Eyaleti (Dammam, Khobar)',
+
+  // ─── TAYLAND ───────────────────────────────────────────────
+  'Phuket': 'Phuket', 'Bangkok Metropolis': 'Bangkok (Başkent)',
+  'Chon Buri': 'Pattaya (Chonburi)', 'Chiang Mai': 'Chiang Mai',
+  'Krabi': 'Krabi (Phi Phi)', 'Surat Thani': 'Koh Samui',
+
+  // ─── ENDONEZYA ─────────────────────────────────────────────
+  'Bali': 'Bali', 'Jakarta Raya': 'Cakarta (Başkent)', 'Yogyakarta': 'Yogyakarta',
+  'Jawa Timur': 'Doğu Cava (Surabaya)', 'Jawa Barat': 'Batı Cava (Bandung)',
+  'Nusa Tenggara Barat': 'Lombok (Gili Adaları)',
 };
 
 export const COUNTRY_TR_NAMES = {

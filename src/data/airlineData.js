@@ -198,7 +198,7 @@ export const AIRCRAFT_MODELS = [
     name: 'Boeing 737 / 737 MAX',
     nick: 'Havacılık Efsanesi',
     builder: 'Boeing',
-    type: 'Dar Gövde Efsanesi',
+    type: 'Dar Gövde Yolcu Uçağı',
     icon: '✈️',
     badge: 'En Çok Satan Jet',
     seatLayout: '3-3',
@@ -210,7 +210,7 @@ export const AIRCRAFT_MODELS = [
     seats: '138 - 230',
     range: '6.570 km',
     color: '#3b82f6',
-    desc: "1967'den beri 11 binden fazla üretilmiş tüm zamanların rekor sahibi uçağı."
+    desc: "1967'den beri 11 binden fazla üretilmiş tüm zamanların rekor sahibi dar gövde uçağı."
   },
   {
     id: 'b777',
@@ -219,7 +219,7 @@ export const AIRCRAFT_MODELS = [
     nick: 'Kıtalararası Lider',
     builder: 'Boeing',
     type: 'Çift Motorlu Geniş Gövde',
-    icon: '✈️',
+    icon: '🌐',
     badge: 'Uzun Yol Şampiyonu',
     seatLayout: '3-3-3',
     country: '🇺🇸 ABD',
@@ -230,7 +230,7 @@ export const AIRCRAFT_MODELS = [
     seats: '300 - 450',
     range: '15.840 km',
     color: '#6366f1',
-    desc: 'Devasa GE90 motorlarıyla okyanusları aşan çift motorlu dünya devi.'
+    desc: 'Devasa GE90 motorlarıyla okyanusları ve kıtaları birbirine bağlayan dünya devi.'
   },
   {
     id: 'b787',
@@ -250,15 +250,15 @@ export const AIRCRAFT_MODELS = [
     seats: '248 - 336',
     range: '14.140 km',
     color: '#0ea5e9',
-    desc: 'Karbon kompozit gövdesi ve devasa pencereleriyle sessiz konfor ikonu.'
+    desc: 'Karbon kompozit gövdesi, LED ambiyansı ve elektronik kararan pencereleriyle sessiz rüya uçak.'
   },
   {
     id: 'b747',
     familyId: 'boeing',
     name: 'Boeing 747 (Queen of the Skies)',
-    nick: 'Queen of the Skies',
+    nick: 'Gökyüzü Kraliçesi',
     builder: 'Boeing',
-    type: 'Kambur Geniş Gövde',
+    type: '4 Motorlu Çift Katlı Geniş Gövde',
     icon: '👑',
     badge: 'Gökyüzü Kraliçesi',
     seatLayout: '3-4-3',
@@ -270,7 +270,7 @@ export const AIRCRAFT_MODELS = [
     seats: '416 - 660',
     range: '14.320 km',
     color: '#f59e0b',
-    desc: 'Havacılık çağını başlatan efsanevi 4 motorlu kambur gövdeli dev.'
+    desc: 'Havacılık çağını başlatan, kendine has üst kat kamburu ve 4 motoruyla efsanevi Gökyüzü Kraliçesi.'
   },
   {
     id: 'b757',
@@ -278,7 +278,7 @@ export const AIRCRAFT_MODELS = [
     name: 'Boeing 757 (Flying Pencil)',
     nick: 'Uçan Kalem',
     builder: 'Boeing',
-    type: 'Uzun Dar Gövde',
+    type: 'Uzun Menzilli Dar Gövde',
     icon: '✏️',
     badge: 'Kıta Aşan Dar Gövde',
     seatLayout: '3-3',
@@ -290,7 +290,7 @@ export const AIRCRAFT_MODELS = [
     seats: '200 - 280',
     range: '7.250 km',
     color: '#0284c7',
-    desc: 'İnce uzun silueti ve güçlü motorlarıyla pilotların ve havacılık severlerin en sevdiği efsane dar gövde.'
+    desc: 'İnce uzun zarif silueti, güçlü tırmanış motorları ve transatlantik menziliyle meşhur "Uçan Kalem".'
   },
   {
     id: 'b767',
@@ -298,9 +298,9 @@ export const AIRCRAFT_MODELS = [
     name: 'Boeing 767-300ER',
     nick: 'Transatlantik Emektarı',
     builder: 'Boeing',
-    type: 'Geniş Gövde 2-3-2',
-    icon: '✈️',
-    badge: 'Okyanus Aşırı Öncü',
+    type: 'Çift Koridorlu Geniş Gövde',
+    icon: '🌊',
+    badge: '2-3-2 Koltuk Konforu',
     seatLayout: '2-3-2',
     country: '🇺🇸 ABD',
     firstFlight: '1981',
@@ -310,7 +310,7 @@ export const AIRCRAFT_MODELS = [
     seats: '210 - 290',
     range: '11.070 km',
     color: '#2563eb',
-    desc: '2-3-2 koltuk dizilimiyle orta koltuk oranının en az olduğu konforlu transatlantik emektarı.'
+    desc: 'Atlantik Okyanusu\'nu çift motorla düzenli aşan ve 2-3-2 ferah oturma düzenine sahip okyanus öncüsü.'
   },
   {
     id: 'b777x',
@@ -320,7 +320,7 @@ export const AIRCRAFT_MODELS = [
     builder: 'Boeing',
     type: 'Yeni Nesil Süper Geniş Gövde',
     icon: '🦅',
-    badge: 'Dünyanın En Uzunu',
+    badge: 'Dünyanın En Uzun Jeti',
     seatLayout: '3-4-3',
     country: '🇺🇸 ABD',
     firstFlight: '2020',
@@ -330,7 +330,7 @@ export const AIRCRAFT_MODELS = [
     seats: '384 - 426',
     range: '13.500 km',
     color: '#1d4ed8',
-    desc: 'Dünyanın en uzun yolcu uçağı; kapılara sığabilmek için kanat uçları katlanan mühendislik harikası.'
+    desc: 'Dünyanın en uzun yolcu uçağı; standart kapılara sığabilmek için kanat uçları kartal gibi katlanan mühendislik harikası.'
   },
 
   // ── AIRBUS AILESI ──
@@ -341,7 +341,7 @@ export const AIRCRAFT_MODELS = [
     nick: 'Avrupa Yıldızı',
     builder: 'Airbus',
     type: 'Modern Dar Gövde',
-    icon: '✈️',
+    icon: '🌟',
     badge: 'En Sık Uçulan',
     seatLayout: '3-3',
     country: '🇪🇺 Avrupa',
@@ -352,13 +352,13 @@ export const AIRCRAFT_MODELS = [
     seats: '140 - 240',
     range: '6.500 km',
     color: '#10b981',
-    desc: 'Fly-by-wire teknolojisiyle üretilmiş, dünyada en sık binilen dar gövde.'
+    desc: "Fly-by-wire teknolojisiyle üretilmiş, dünyada ve Türkiye'de gökyüzünün en popüler yıldız dar gövdesi."
   },
   {
     id: 'a321xlr',
     familyId: 'airbus',
-    name: 'Airbus A321XLR (Extra Long Range)',
-    nick: 'Okyanus Aşan Dar Gövde',
+    name: 'Airbus A321XLR',
+    nick: 'Xtra Long Range',
     builder: 'Airbus',
     type: 'Ultra Uzun Menzilli Dar Gövde',
     icon: '⚡',
@@ -372,7 +372,7 @@ export const AIRCRAFT_MODELS = [
     seats: '180 - 220',
     range: '8.700 km',
     color: '#059669',
-    desc: 'Tek koridorlu dar gövdeyle 11 saat kesintisiz uçabilen ve havacılıkta yeni bir devir açan uçak.'
+    desc: 'Tek koridorlu dar gövdeyle 11 saat kesintisiz uçabilen ve kıtalararası rotalarda şimşek gibi devrim yapan uçak.'
   },
   {
     id: 'a330',
@@ -380,8 +380,8 @@ export const AIRCRAFT_MODELS = [
     name: 'Airbus A330 / A330neo',
     nick: 'Kıtalararası Klasik',
     builder: 'Airbus',
-    type: 'Geniş Gövde Çift Koridor',
-    icon: '🛬',
+    type: 'Çift Koridorlu Geniş Gövde',
+    icon: '🌍',
     badge: 'Güvenilir Klasik',
     seatLayout: '2-4-2',
     country: '🇪🇺 Avrupa',
@@ -392,7 +392,7 @@ export const AIRCRAFT_MODELS = [
     seats: '250 - 400',
     range: '13.450 km',
     color: '#06b6d4',
-    desc: 'Türk Hava Yolları filosunun da bel kemiği olan konforlu kıtalararası uçak.'
+    desc: 'Türk Hava Yolları filosunun da bel kemiği olan, 2-4-2 yerleşimiyle ferah ve güvenilir kıtalararası yolcu uçağı.'
   },
   {
     id: 'a350',
@@ -412,7 +412,7 @@ export const AIRCRAFT_MODELS = [
     seats: '315 - 440',
     range: '16.100 km',
     color: '#3b82f6',
-    desc: 'Ultra uzun menzilli, son derece sessiz ve aerodinamik geniş gövde.'
+    desc: 'Ultra uzun menzilli, fısıltı sessizliğinde kabinli ve uzay çağı kompozit gövdeli yeni nesil dev.'
   },
   {
     id: 'a380',
@@ -420,9 +420,9 @@ export const AIRCRAFT_MODELS = [
     name: 'Airbus A380 Superjumbo',
     nick: 'Superjumbo',
     builder: 'Airbus',
-    type: 'Çift Katlı Geniş Gövde',
-    icon: '🛫',
-    badge: 'Dünyanın En Büyüğü',
+    type: 'Çift Katlı Süper Geniş Gövde',
+    icon: '🏰',
+    badge: 'Gökyüzü Sarayı',
     seatLayout: 'Alt 3-4-3 / Üst 2-4-2',
     country: '🇪🇺 Avrupa',
     firstFlight: '2005',
@@ -432,7 +432,7 @@ export const AIRCRAFT_MODELS = [
     seats: '525 - 853',
     range: '14.800 km',
     color: '#8b5cf6',
-    desc: 'Havacılık tarihinin en büyük çift katlı lüks yolcu uçağı.'
+    desc: 'Havacılık tarihinin en büyük tam boy çift katlı, barlı ve süitli "Uçan Saray" lakaplı süper yolcu uçağı.'
   },
   {
     id: 'a220',
@@ -440,7 +440,7 @@ export const AIRCRAFT_MODELS = [
     name: 'Airbus A220',
     nick: 'Sessiz Konfor',
     builder: 'Airbus Canada',
-    type: 'Modern Bölgesel Jet',
+    type: 'Modern Bölgesel Dar Gövde',
     icon: '🕊️',
     badge: 'Ferah 2-3 Düzen',
     seatLayout: '2-3',
@@ -452,7 +452,7 @@ export const AIRCRAFT_MODELS = [
     seats: '100 - 160',
     range: '6.300 km',
     color: '#14b8a6',
-    desc: 'Geniş koltukları ve büyük pencereleriyle yolcuların en sevdiği bölgesel jet.'
+    desc: 'Geniş koltukları, panoramik pencereleri ve fısıltı sessizliğindeki motorlarıyla yolcuların en sevdiği konforlu jet.'
   },
   {
     id: 'a340',
@@ -472,7 +472,7 @@ export const AIRCRAFT_MODELS = [
     seats: '260 - 380',
     range: '13.700 km',
     color: '#4f46e5',
-    desc: "Türk Hava Yolları'nın ilk transatlantik seferlerini gerçekleştirdiği ('Deli Nurhan' lakaplı) unutulmaz 4 motorlu dev."
+    desc: "Türk Hava Yolları'nın ilk okyanus aşırı seferlerini gerçekleştirdiği ('Deli Nurhan' lakaplı) unutulmaz 4 motorlu klasik."
   },
 
   // ── BOLGESEL & OZEL FILO ──
@@ -480,10 +480,10 @@ export const AIRCRAFT_MODELS = [
     id: 'e_jets',
     familyId: 'regional',
     name: 'Embraer E-Jets E2 (E190/E195)',
-    nick: 'Brezilya Kartalı',
+    nick: 'Bölgesel Avcı',
     builder: 'Embraer',
-    type: 'Bölgesel Jet',
-    icon: '🦅',
+    type: 'Bölgesel Yolcu Jeti',
+    icon: '🐆',
     badge: 'Ortada Koltuk Yok (2-2)',
     seatLayout: '2-2',
     country: '🇧🇷 Brezilya',
@@ -494,19 +494,19 @@ export const AIRCRAFT_MODELS = [
     seats: '76 - 146',
     range: '5.300 km',
     color: '#f97316',
-    desc: 'Orta koltuk olmayan 2-2 ferah oturma düzeniyle bilinen Brezilya üretimi jet.'
+    desc: 'Orta koltuk bulunmayan 2-2 ferah kabinli ve çevik yapısıyla bilinen Brezilya üretimi "Profit Hunter" jeti.'
   },
   {
     id: 'atr72',
     familyId: 'regional',
     name: 'ATR 72 / Dash 8',
-    nick: 'Pervaneli Ada Avcısı',
+    nick: 'Bölgesel Turboprop',
     builder: 'ATR (Airbus & Leonardo)',
-    type: 'Turboprop Pervaneli',
-    icon: '🚁',
-    badge: 'Ada & Bölge Uçağı',
+    type: 'Çift Motorlu Turboprop',
+    icon: '🛩️',
+    badge: 'Ada & Kısa Pist Uzmanı',
     seatLayout: '2-2',
-    country: '🇫🇷/🇮🇹 FR & IT',
+    country: '🇫🇷/🇮🇹 Fransa & İtalya',
     firstFlight: '1988',
     speed: '510 km/s',
     wingspan: '27.1 m',
@@ -514,16 +514,16 @@ export const AIRCRAFT_MODELS = [
     seats: '68 - 78',
     range: '1.528 km',
     color: '#84cc16',
-    desc: 'Kısa pistler, ada uçuşları ve dağlık havaalanlarının vazgeçilmez pervaneli uçağı.'
+    desc: 'Kısa pistler, ada hatları ve dağlık meydanların vazgeçilmez çift turboprop pervaneli güvenilir uçağı.'
   },
   {
     id: 'crj',
     familyId: 'regional',
     name: 'Bombardier CRJ Series (CRJ900/1000)',
-    nick: 'Kanada Roketi',
+    nick: 'Bölgesel Jet',
     builder: 'Bombardier / MHI',
     type: 'Kuyruktan Motorlu Bölgesel Jet',
-    icon: '🛩️',
+    icon: '🍁',
     badge: 'Kuyruktan Motorlu',
     seatLayout: '2-2',
     country: '🇨🇦 Kanada',
@@ -534,13 +534,13 @@ export const AIRCRAFT_MODELS = [
     seats: '70 - 104',
     range: '2.800 km',
     color: '#d97706',
-    desc: 'Arka gövdeye monteli motorları ve alçak profiliyle bölgesel hatların çevik işçisi.'
+    desc: 'Kanada tasarımı arka gövdeye monteli motorları ve alçak profiliyle bölgesel hatların çevik işçisi.'
   },
   {
     id: 'c919',
     familyId: 'regional',
     name: 'COMAC C919',
-    nick: 'Doğunun Yükselişi',
+    nick: 'Çin Ticari Jeti',
     builder: 'COMAC',
     type: 'Yeni Nesil Dar Gövde',
     icon: '🐉',
@@ -554,16 +554,16 @@ export const AIRCRAFT_MODELS = [
     seats: '158 - 192',
     range: '5.555 km',
     color: '#dc2626',
-    desc: "Boeing 737 ve Airbus A320 ikilisine rakip olarak geliştirilen Çin'in ilk yerli ticari yolcu uçağı."
+    desc: "Boeing 737 ve Airbus A320 ikilisine rakip olarak geliştirilen Çin'in ilk yerli ticari dar gövde yolcu uçağı."
   },
   {
     id: 'private_jet',
     familyId: 'regional',
     name: 'Gulfstream G650 / Özel İş Jeti',
-    nick: 'Lüksün Zirvesi',
+    nick: 'Özel İş Jeti',
     builder: 'Gulfstream / Cessna',
-    type: 'Ultra Lüks İş Jeti',
-    icon: '🥂',
+    type: 'Ultra Uzun Menzilli İş Jeti',
+    icon: '💎',
     badge: '51.000 Feet Tavan',
     seatLayout: '1-1 & VIP Club',
     country: '🇺🇸 ABD',
@@ -574,7 +574,7 @@ export const AIRCRAFT_MODELS = [
     seats: '11 - 18',
     range: '12.960 km',
     color: '#eab308',
-    desc: "Yolcu uçaklarının üstünde, 51.000 feet irtifada ses hızına yakın uçan dünyanın en prestijli özel jeti."
+    desc: 'Ticari yolcu uçaklarının üstünde, 51.000 feet irtifada ses hızına yakın uçan en prestijli özel jet.'
   },
   {
     id: 'concorde',
@@ -583,17 +583,17 @@ export const AIRCRAFT_MODELS = [
     nick: 'Süpersonik Efsane',
     builder: 'Aérospatiale / BAC',
     type: 'Süpersonik Yolcu Uçağı (Mach 2)',
-    icon: '⚡',
+    icon: '🔥',
     badge: 'Ses Hızını Aşan Dev',
     seatLayout: '2-2',
-    country: '🇬🇧/🇫🇷 UK & FR',
+    country: '🇬🇧/🇫🇷 Birleşik Krallık & Fransa',
     firstFlight: '1969',
-    speed: '2,179 km/s (Mach 2.04)',
+    speed: '2.179 km/s (Mach 2.04)',
     wingspan: '25.6 m',
     length: '61.7 m',
     seats: '92 - 128',
     range: '7.222 km',
     color: '#e11d48',
-    desc: "Atlantik'i ses hızının iki katıyla (Mach 2.04) 3.5 saatte aşan süpersonik efsane."
+    desc: "Atlantik'i ses hızının iki katıyla (Mach 2.04) 3.5 saatte aşan efsanevi süpersonik yolcu uçağı."
   }
 ];

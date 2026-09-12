@@ -205,14 +205,6 @@ function drawGeoJsonPolygons(container, geojson) {
           openProvinceModal(provinceObj, container);
         }
       });
-
-      // Sleek Floating Hover Tooltip: ONLY City Name! No extra "Gitmedim/Gidildi" lines!
-      layer.bindTooltip(`<span>${provinceObj.name}</span>`, {
-        sticky: true,
-        direction: 'top',
-        offset: [0, -10],
-        className: 'clean-hover-tooltip'
-      });
     }
   }).addTo(turkeyMapInstance);
 }

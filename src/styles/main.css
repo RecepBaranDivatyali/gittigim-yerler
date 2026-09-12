@@ -497,24 +497,13 @@ body {
   background: #090d16;
 }
 
-/* Ultra Clean Sleek Dark Hover Tooltip (Been App Style) */
-.leaflet-tooltip.clean-hover-tooltip {
-  background: rgba(15, 23, 42, 0.94) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 8px !important;
-  color: #ffffff !important;
-  font-family: var(--font-family) !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  padding: 6px 12px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
-}
-
-.leaflet-tooltip.clean-hover-tooltip::before {
-  border-top-color: rgba(15, 23, 42, 0.94) !important;
-  border-bottom-color: rgba(15, 23, 42, 0.94) !important;
+/* Hover/Tap Tooltips: completely disabled across all devices and zoom levels */
+.leaflet-tooltip.clean-hover-tooltip,
+.leaflet-tooltip-pane .clean-hover-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* List Side Panel */

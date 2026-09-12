@@ -96,6 +96,14 @@ const PROVINCE_LABEL_OFFSETS = {
   'TR::53': [40.90, 40.75], // Rize
   'TR::8': [41.15, 41.80],  // Artvin
   'TR::08': [41.15, 41.80],
+  // Georgia fine-tuned label offsets
+  'GE::Ajaria': [41.60, 41.85],      // Batum (Ajaria, safely on land body)
+  'GE::Tbilisi': [41.715, 44.827],   // Tiflis
+  'GE::Imereti': [42.25, 42.70],     // Kutaisi
+  'GE::Abkhazia': [43.05, 41.15],    // Sohum
+  // Central European fine-tuned offsets (perfect optical centering in polygon)
+  'AT::Wien': [48.24, 15.85],         // Centered in Vienna / Lower Austria territory
+  'SK::Bratislavský': [48.32, 17.18], // Centered in Bratislava region territory
 };
 
 function getProvinceOffset(item) {
@@ -116,7 +124,7 @@ function getProvinceOffset(item) {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const REGION_ZOOM = 5.2;
-const SUBREGION_ZOOM = 7.5;
+const SUBREGION_ZOOM = 6.8;
 
 function getFlagHtml(code) {
   if (!code) return '🌍';
@@ -153,6 +161,97 @@ let subregionLayers = {};
 let subregionCache = {};
 const inFlightRegions = {};
 const inFlightSubregions = {};
+
+const KNOWN_SUBREGION_PARENTS = {
+  'DE::Freiburg': 'Baden-Württemberg',
+  'DE::Karlsruhe': 'Baden-Württemberg',
+  'DE::Stuttgart': 'Baden-Württemberg',
+  'DE::Tübingen': 'Baden-Württemberg',
+  'DE::Nürnberg Bölgesi': 'Bayern',
+  'DE::Landshut Bölgesi': 'Bayern',
+  'DE::Münih Bölgesi': 'Bayern',
+  'DE::Bayreuth Bölgesi': 'Bayern',
+  'DE::Regensburg Bölgesi': 'Bayern',
+  'DE::Augsburg Bölgesi': 'Bayern',
+  'DE::Würzburg Bölgesi': 'Bayern',
+  'DE::Berlin': 'Berlin',
+  'DE::Brandenburg': 'Brandenburg',
+  'DE::Bremen': 'Bremen',
+  'DE::Hamburg': 'Hamburg',
+  'DE::Frankfurt/Darmstadt': 'Hessen',
+  'DE::Gießen': 'Hessen',
+  'DE::Kassel': 'Hessen',
+  'DE::Mecklenburg-Vorpommern': 'Mecklenburg-Vorpommern',
+  'DE::Braunschweig': 'Niedersachsen',
+  'DE::Hannover': 'Niedersachsen',
+  'DE::Luneburg': 'Niedersachsen',
+  'DE::Oldenburg': 'Niedersachsen',
+  'DE::Dortmund/Arnsberg': 'Nordrhein-Westfalen',
+  'DE::Bielefeld/Detmold': 'Nordrhein-Westfalen',
+  'DE::Düsseldorf': 'Nordrhein-Westfalen',
+  'DE::Köln': 'Nordrhein-Westfalen',
+  'DE::Munster': 'Nordrhein-Westfalen',
+  'DE::Koblenz': 'Rheinland-Pfalz',
+  'DE::Mainz/Pfalz': 'Rheinland-Pfalz',
+  'DE::Trier': 'Rheinland-Pfalz',
+  'DE::Saarland': 'Saarland',
+  'DE::Dessau': 'Sachsen-Anhalt',
+  'DE::Halle': 'Sachsen-Anhalt',
+  'DE::Magdeburg': 'Sachsen-Anhalt',
+  'DE::Chemnitz': 'Sachsen',
+  'DE::Dresden': 'Sachsen',
+  'DE::Leipzig': 'Sachsen',
+  'DE::Schleswig-Holstein': 'Schleswig-Holstein',
+  'DE::Thüringen': 'Thüringen'
+};
+
+const dynamicSubregionParents = new Map();
+
+function registerSubregionRelations(countryCode, data) {
+  if (!countryCode || !data?.features) return;
+  data.features.forEach(f => {
+    const sName = f.properties?.name;
+    const pName = f.properties?.parent_region;
+    if (sName && pName) {
+      dynamicSubregionParents.set(`${countryCode}::${sName}`, pName);
+    }
+  });
+}
+
+function getSubregionParentRegion(countryCode, subregionRawName) {
+  if (!countryCode || !subregionRawName) return null;
+  const key = `${countryCode}::${subregionRawName}`;
+  return dynamicSubregionParents.get(key) || KNOWN_SUBREGION_PARENTS[key] || null;
+}
+
+function getSubregionsForParentRegion(countryCode, parentRegionName) {
+  if (!countryCode || !parentRegionName) return [];
+  const results = new Set();
+  const prefix = `${countryCode}::`;
+
+  Object.entries(KNOWN_SUBREGION_PARENTS).forEach(([k, pName]) => {
+    if (k.startsWith(prefix) && pName === parentRegionName) {
+      results.add(k.slice(prefix.length));
+    }
+  });
+
+  dynamicSubregionParents.forEach((pName, k) => {
+    if (k.startsWith(prefix) && pName === parentRegionName) {
+      results.add(k.slice(prefix.length));
+    }
+  });
+
+  const cached = subregionCache[countryCode];
+  if (cached?.features) {
+    cached.features.forEach(f => {
+      if (f.properties?.parent_region === parentRegionName && f.properties?.name) {
+        results.add(f.properties.name);
+      }
+    });
+  }
+
+  return Array.from(results);
+}
 let selectedCountryCode = null;
 let activeStatusPopup = null;
 let activePopupOutsideListener = null;
@@ -285,7 +384,16 @@ function closeActivePopup() {
     try { map.closePopup(activeStatusPopup); } catch {}
     activeStatusPopup = null;
   }
+  if (map) {
+    try { map.closeTooltip(); } catch {}
+    try {
+      map.eachLayer(l => {
+        if (l.closeTooltip) l.closeTooltip();
+      });
+    } catch {}
+  }
 }
+
 
 function buildStatsCountriesHtml(worldCount, trVisited, visitedColor) {
   return `
@@ -545,11 +653,12 @@ export function renderWorldMapView(container, options = {}) {
       ...WORLD_REGIONS_INDEX.map(r => {
         const c = countryByCode.get(r.countryCode);
         const countryName = c ? getCountryDisplayName(c) : r.countryCode;
+        const localizedName = getLocalizedName(r.name, r.countryCode);
         return {
           type: 'region',
           id: `${r.countryCode}::${r.name}`,
-          name: r.name,
-          altName: '',
+          name: localizedName,
+          altName: r.name !== localizedName ? r.name : '',
           sub: `${countryName} (Bölge/Eyalet)`,
           flag: getFlagHtml(r.countryCode),
           coords: (r.lat && r.lng) ? [r.lat, r.lng] : (COUNTRY_CENTROIDS[r.countryCode] || null),
@@ -1178,6 +1287,18 @@ function initMap(container) {
       activePopupOutsideListener = null;
     }
     activeStatusPopup = null;
+    if (map) {
+      try { map.closeTooltip(); } catch {}
+    }
+  });
+
+  map.on('tooltipopen', (e) => {
+    if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
+      try {
+        if (e.tooltip) map.closeTooltip(e.tooltip);
+        if (e.tooltip?._source) e.tooltip._source.closeTooltip();
+      } catch {}
+    }
   });
 
   map.on('click', () => {
@@ -1265,9 +1386,12 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
+            if (map) {
+              try { map.closeTooltip(); } catch {}
+            }
             L.DomEvent.stopPropagation(e);
             return;
           }
@@ -1340,14 +1464,9 @@ function initMap(container) {
       pane: 'statesPane',
       style: f => provinceStyle(f.properties?.number),
       onEachFeature: (f, layer) => {
-        const id = f.properties?.number;
-        const prov = TURKEY_PROVINCES.find(p => p.id === id) || { id, name: f.properties?.name || 'İl' };
-        layer.bindTooltip(`<span>🇹🇷 ${prov.name}</span>`, {
-          direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-          sticky: true, permanent: false
-        });
+        // Province name is rendered cleanly on map via provinceLabelsLayer
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
             L.DomEvent.stopPropagation(e);
@@ -1799,7 +1918,18 @@ const COUNTRY_CAPITALS = {
   'XK': { name: 'Priştine', match: ['pristina', 'priştine'] },
   'BG': { name: 'Sofya', match: ['sofia', 'sofya', 'grad sofiya'] },
   'RO': { name: 'Bükreş', match: ['bucharest', 'bucuresti', 'bükreş'] },
-  'TR': { name: 'Ankara', match: ['ankara'] }
+  'TR': { name: 'Ankara', match: ['ankara'] },
+  'GE': { name: 'Tiflis', match: ['tbilisi', 'tiflis'] },
+  'AZ': { name: 'Bakü', match: ['baku', 'baki', 'bakü', 'xizi', 'xızı', 'abşeron', 'absheron'] },
+  'AM': { name: 'Erivan', match: ['yerevan', 'erivan', 'erevan'] },
+  'RU': { name: 'Moskova', match: ['moscow', 'moskova', 'moskva'] },
+  'UZ': { name: 'Taşkent', match: ['tashkent', 'taşkent'] },
+  'KZ': { name: 'Astana', match: ['astana', 'nur-sultan'] },
+  'AE': { name: 'Abu Dabi', match: ['abu dhabi', 'abu dabi'] },
+  'EG': { name: 'Kahire', match: ['cairo', 'al qahirah', 'kahire'] },
+  'SA': { name: 'Riyad', match: ['riyadh', 'ar riyad', 'riyad'] },
+  'TH': { name: 'Bangkok', match: ['bangkok', 'bangkok metropolis'] },
+  'ID': { name: 'Cakarta', match: ['jakarta', 'jakarta raya', 'cakarta'] }
 };
 
 const CAPITAL_KEYWORDS = [
@@ -1811,7 +1941,8 @@ const CAPITAL_KEYWORDS = [
   'pristina', 'priştine', 'warsaw', 'warszawa', 'varşova', 'kyiv', 'kiev', 'moscow', 'moskova',
   'lisbon', 'lisboa', 'lizbon', 'stockholm', 'oslo', 'helsinki', 'copenhagen', 'kopenhag',
   'dublin', 'bern', 'baku', 'bakü', 'tbilisi', 'tiflis', 'yerevan', 'erivan', 'cairo', 'kahire',
-  'washington', 'tokyo', 'seoul', 'seul', 'beijing', 'pekin'
+  'washington', 'tokyo', 'seoul', 'seul', 'beijing', 'pekin', 'astana', 'taşkent', 'tashkent',
+  'abu dhabi', 'abu dabi', 'riyad', 'riyadh', 'bangkok', 'jakarta', 'cakarta'
 ];
 
 function matchesWord(str, target) {
@@ -1837,6 +1968,70 @@ function isCapitalItem(item) {
     if (cap.match.some(m => matchesWord(rawLower, m) || matchesWord(displayLower, m))) return true;
   }
   return CAPITAL_KEYWORDS.some(k => matchesWord(rawLower, k) || matchesWord(displayLower, k));
+}
+
+const FAMOUS_CITIES = new Set([
+  // İtalya, İspanya, Fransa, Almanya, Hollanda, Portekiz
+  'Milano', 'Venedik', 'Floransa', 'Napoli', 'Torino', 'Bolonya', 'Bologna', 'Cenova', 'Palermo', 'Bari', 'Trieste',
+  'Barselona', 'Sevilla', 'Bilbao', 'Valensiya', 'Valencia', 'Granada', 'Málaga', 'Zaragoza', 'İbiza', 'Mallorca',
+  'Lyon', 'Marseille', 'Marsilya', 'Nice', 'Bordeaux', 'Toulouse', 'Lille', 'Strazburg', 'Rennes', 'Cannes',
+  'Münih', 'Frankfurt', 'Köln', 'Hamburg', 'Stuttgart', 'Dresden', 'Hannover', 'Nürnberg', 'Düsseldorf', 'Dortmund',
+  'Rotterdam', 'Lahey', 'Eindhoven', 'Krakov', 'Kraków', 'Gdansk', 'Gdańsk', 'Wrocław', 'Poznań', 'Katowice',
+  'Selanik', 'Porto', 'Lozan', 'Zermatt', 'St. Moritz', 'Cenevre', 'Zürih', 'Luzern', 'Basel',
+  'Salzburg', 'Innsbruck', 'Graz', 'Linz',
+  // Kafkaslar & Karadeniz (Batum, Tiflis, Bakü vb.)
+  'Batum', 'Batumi', 'Kutaisi', 'Sohum', 'Zugdidi', 'Tiflis', 'Bakü', 'Gence', 'Sumqayıt', 'Erivan', 'Gümrü',
+  'Köstence', 'Cluj-Napoca', 'Braşov', 'Timișoara', 'Sibiu', 'Yaş',
+  'Varna', 'Burgaz', 'Burgas', 'Plovdiv', 'Filibe', 'Rusçuk',
+  // Balkanlar (Mostar, Kotor, Budva, Dubrovnik, Ohri vb.)
+  'Mostar', 'Banja Luka', 'Tuzla', 'Zenica', 'Kotor', 'Budva', 'Herceg Novi', 'Tivat',
+  'Dubrovnik', 'Split', 'Zadar', 'Pula', 'Rovinj', 'Rijeka',
+  'Ohri', 'Ohrid', 'Kalkandelen', 'Manastır', 'Bitola', 'Struga',
+  'Tiran', 'Dıraç', 'Avlonya', 'İşkodra', 'Berat', 'Novi Sad', 'Niş',
+  // Doğu Avrupa & Orta Asya
+  'Lviv', 'Odessa', 'Harkov', 'Dnipro', 'Kırım',
+  'Semerkant', 'Buhara', 'Hive', 'Almatı', 'Astana', 'Çimkent',
+  // Orta Doğu & Kuzey Afrika
+  'Dubai', 'Abu Dabi', 'Şarika', 'Kahire', 'İskenderiye', 'Şarm El-Şeyh', 'Hurgada', 'Luksor', 'Gize',
+  'Kazablanka', 'Marakeş', 'Fes', 'Tanca', 'Agadir', 'Mekke', 'Medine', 'Cidde', 'Riyad',
+  // Asya & Egzotik Rotalar
+  'Phuket', 'Pattaya', 'Chiang Mai', 'Koh Samui', 'Bali', 'Cakarta', 'Yogyakarta', 'Surabaya', 'Bandung'
+]);
+
+function resolveItemDisplay(item) {
+  let displayName = item.name;
+  const rawLower = (item.rawName || '').toLowerCase().trim();
+  const displayLower = (item.name || '').toLowerCase().trim();
+  const cap = COUNTRY_CAPITALS[item.countryCode];
+  let isFamous = false;
+
+  if (item.isCapital && cap && cap.match.some(m => matchesWord(rawLower, m) || matchesWord(displayLower, m))) {
+    displayName = cap.name;
+  } else {
+    const parenMatch = displayName.match(/\(([^)]+)\)/);
+    if (parenMatch) {
+      const cityPart = parenMatch[1].split('/')[0].split(',')[0].trim();
+      const basePart = displayName.replace(/\s*\([^)]+\)/g, '').replace(/\s+Bölgesi$/i, '').trim();
+      if (FAMOUS_CITIES.has(cityPart)) {
+        displayName = cityPart;
+        isFamous = true;
+      } else {
+        displayName = basePart;
+      }
+    } else {
+      displayName = displayName.replace(/\s+Bölgesi$/i, '').replace(/\s+Region$/i, '').trim();
+      if (displayName.includes('/')) {
+        displayName = displayName.split('/')[0].trim();
+      }
+      if (FAMOUS_CITIES.has(displayName) || FAMOUS_CITIES.has(item.rawName)) {
+        isFamous = true;
+      }
+    }
+  }
+  if (item.isCapital) {
+    displayName = displayName.replace(/\s*\([^)]*başkent[^)]*\)/gi, '').trim();
+  }
+  return { displayName, isFamous };
 }
 
 function updateProvinceLabels() {
@@ -1869,6 +2064,16 @@ function updateProvinceLabels() {
   // 2. World Region Layers (Level 2)
   Object.entries(regionLayers).forEach(([code, rLayer]) => {
     if (rLayer && map.hasLayer(rLayer)) {
+      // When zoomed into Level 3 subregions (districts/iller), skip Level 2 region labels
+      // for countries that have active or cached subregion layers (e.g. Bavaria state label disappears)
+      if (zoom >= SUBREGION_ZOOM && (
+        code === 'DE' ||
+        (subregionLayers[code] && map.hasLayer(subregionLayers[code])) ||
+        inFlightSubregions[code] ||
+        (subregionCache[code] && subregionCache[code] !== null)
+      )) {
+        return;
+      }
       rLayer.eachLayer(l => {
         if (l.getBounds && !mapBounds.intersects(l.getBounds())) return;
         const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
@@ -1915,21 +2120,24 @@ function updateProvinceLabels() {
       const screenArea = pixelWidth * pixelHeight;
 
       const isCapital = isCapitalItem(item);
+      const { displayName, isFamous } = resolveItemDisplay({ ...item, isCapital });
 
-      // Centroid: use exact capital coordinates if available, otherwise tuned visual center / mainland centroid
+      // Centroid: fine-tuned province offset takes priority, otherwise exact capital coordinates, otherwise tuned visual center / mainland centroid
+      const offset = getProvinceOffset(item);
       let visualCenter;
-      if (isCapital && CAPITAL_COORDINATES[item.countryCode]) {
+      if (offset) {
+        visualCenter = L.latLng(offset);
+      } else if (isCapital && CAPITAL_COORDINATES[item.countryCode]) {
         visualCenter = L.latLng(CAPITAL_COORDINATES[item.countryCode]);
       } else {
-        const offset = getProvinceOffset(item);
-        visualCenter = offset
-          ? L.latLng(offset)
-          : L.latLng(mainland.cy, mainland.cx);
+        visualCenter = L.latLng(mainland.cy, mainland.cx);
       }
 
       prepared.push({
         ...item,
         isCapital,
+        isFamous,
+        displayName,
         center: visualCenter,
         pixelWidth,
         pixelHeight,
@@ -1938,58 +2146,31 @@ function updateProvinceLabels() {
     } catch (e) {}
   });
 
-  // Sort: Capitals first per user request ("başkentlerin adları da muhakkak yazsın"), then descending by screenArea
+  // Sort: Priority places (Capitals and Famous Cities like Batum, Kotor, Dubrovnik) first, then descending by screenArea
   prepared.sort((a, b) => {
-    if (a.isCapital && !b.isCapital) return -1;
-    if (!a.isCapital && b.isCapital) return 1;
+    const aPriority = a.isCapital || a.isFamous;
+    const bPriority = b.isCapital || b.isFamous;
+    if (aPriority && !bPriority) return -1;
+    if (!aPriority && bPriority) return 1;
     return b.screenArea - a.screenArea;
   });
 
   prepared.forEach(item => {
-    // 1. Strict minimum pixel dimensions: region must be large enough on screen
-    // Capitals are exempt from strict minimum dimensions so they are never suppressed
-    if (!item.isCapital && (item.pixelWidth < 50 || item.pixelHeight < 22)) return;
+    const isPriority = item.isCapital || item.isFamous;
 
-    // 2. Measure text width & Determine clean display name
-    let displayName = item.name;
-    const rawLower = (item.rawName || '').toLowerCase().trim();
-    const displayLower = (item.name || '').toLowerCase().trim();
-    const cap = COUNTRY_CAPITALS[item.countryCode];
+    // 1. Strict minimum pixel dimensions:
+    // Priority places (Capitals and Famous Cities like Batum, Kotor, Dubrovnik) are exempt from 50x22 minimum!
+    if (!isPriority && (item.pixelWidth < 50 || item.pixelHeight < 22)) return;
+    if (isPriority && (item.pixelWidth < 16 || item.pixelHeight < 10)) return;
 
-    if (item.isCapital && cap && cap.match.some(m => matchesWord(rawLower, m) || matchesWord(displayLower, m))) {
-      displayName = cap.name;
-    } else {
-      // Check if parentheses contain a famous city (e.g. "Lombardiya (Milano)" -> "Milano")
-      const parenMatch = displayName.match(/\(([^)]+)\)/);
-      if (parenMatch) {
-        const cityPart = parenMatch[1].split('/')[0].split(',')[0].trim();
-        const basePart = displayName.replace(/\s*\([^)]+\)/g, '').replace(/\s+Bölgesi$/i, '').trim();
-        const FAMOUS_CITIES = new Set([
-          'Milano', 'Venedik', 'Floransa', 'Napoli', 'Torino', 'Bolonya', 'Bologna', 'Cenova', 'Palermo', 'Bari', 'Trieste',
-          'Barselona', 'Sevilla', 'Bilbao', 'Valensiya', 'Valencia', 'Granada', 'Málaga', 'Zaragoza',
-          'Lyon', 'Marseille', 'Marsilya', 'Nice', 'Bordeaux', 'Toulouse', 'Lille', 'Strazburg', 'Rennes',
-          'Münih', 'Frankfurt', 'Köln', 'Hamburg', 'Stuttgart', 'Dresden', 'Hannover', 'Nürnberg',
-          'Rotterdam', 'Lahey', 'Eindhoven', 'Krakov', 'Gdansk', 'Selanik', 'Porto'
-        ]);
-        if (FAMOUS_CITIES.has(cityPart)) {
-          displayName = cityPart;
-        } else {
-          displayName = basePart;
-        }
-      } else {
-        displayName = displayName.replace(/\s+Bölgesi$/i, '').replace(/\s+Region$/i, '').trim();
-      }
-    }
-    if (item.isCapital) {
-      displayName = displayName.replace(/\s*\([^)]*başkent[^)]*\)/gi, '').trim();
-    }
+    // 2. Measure text width
+    let displayName = item.displayName;
     const fontSize = item.isCapital ? 12 : 11;
     const textWidth = measureTextWidth(displayName, fontSize);
 
     // 3. User rule: "onlarda da ülkelerdeki aynı kuralı uygulayalım. adı sığanlar gözüksün"
-    // Text must fit comfortably within 70% of polygon width and 65% of polygon height
-    // Capitals are exempt from strict polygon clipping filter
-    if (!item.isCapital) {
+    // Capitals & Famous Cities are exempt from strict polygon clipping filter so they always display
+    if (!isPriority) {
       if (textWidth > item.pixelWidth * 0.70 || (fontSize + 6) > item.pixelHeight * 0.65) {
         return;
       }
@@ -2275,16 +2456,9 @@ function attachRegionLayer(code, data) {
     pane: 'statesPane',
     style: f => regionStyle(f.properties?.name || f.properties?.NAME_1, code),
     onEachFeature: (f, l) => {
-      const raw = f.properties?.name || f.properties?.NAME_1 || 'Bölge';
-      const display = getLocalizedName(raw, code);
-
-      l.bindTooltip(`<span>${flag} ${display}</span>`, {
-        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-        sticky: true, permanent: false
-      });
-
+      // Region name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
@@ -2387,6 +2561,7 @@ async function loadSubregionData(code) {
 }
 
 function attachSubregionLayer(code, data) {
+  registerSubregionRelations(code, data);
   if (subregionLayers[code] || !map) return;
   const c = countryByCode.get(code);
   const flag = c ? c.flag : '';
@@ -2406,15 +2581,9 @@ function attachSubregionLayer(code, data) {
     pane: 'citiesPane',
     style: f => subregionStyle(f.properties?.name, code),
     onEachFeature: (f, l) => {
-      const raw = f.properties?.name || 'Şehir';
-      const display = getLocalizedName(raw, code);
-
-      l.bindTooltip(`<span>${flag} ${display}</span>`, {
-        direction: 'top', offset: [0, -10], className: 'clean-hover-tooltip',
-        sticky: true, permanent: false
-      });
+      // City name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 600)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 800)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
@@ -2671,26 +2840,123 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
             });
           }
         }
-      } else if (type === 'region' || type === 'subregion') {
+      } else if (type === 'subregion') {
         saveWorldVisit(id, val);
 
-        // ── Symmetrical Two-Way Sync for World Regions / Subregions (visited, planned, wishlist) ──
+        const subregionRaw = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+        const parentRegion = feature?.properties?.parent_region || getSubregionParentRegion(countryCode, subregionRaw);
+        const parentRegionKey = parentRegion ? `${countryCode}::${parentRegion}` : null;
+
+        // ── 1. Symmetrical Two-Way Sync: Subregion (İl) -> Parent Region (Eyalet) ──
+        if (parentRegionKey && parentRegion) {
+          if (val === 'visited') {
+            saveWorldVisit(parentRegionKey, 'visited');
+          } else if (val === 'planned') {
+            const data = getStorageData();
+            if (data.worldVisits[parentRegionKey]?.status !== 'visited') {
+              saveWorldVisit(parentRegionKey, 'planned');
+            }
+          } else if (val === 'wishlist') {
+            const data = getStorageData();
+            const pStatus = data.worldVisits[parentRegionKey]?.status;
+            if (!pStatus || pStatus === 'unvisited') {
+              saveWorldVisit(parentRegionKey, 'wishlist');
+            }
+          } else if (val === 'unvisited') {
+            // Recalculate parent region status based on all remaining sibling subregions
+            const data = getStorageData();
+            const siblingNames = getSubregionsForParentRegion(countryCode, parentRegion);
+            const siblingStatuses = siblingNames.map(s => data.worldVisits[`${countryCode}::${s}`]?.status).filter(Boolean);
+
+            if (siblingStatuses.includes('visited')) {
+              saveWorldVisit(parentRegionKey, 'visited');
+            } else if (siblingStatuses.includes('planned')) {
+              saveWorldVisit(parentRegionKey, 'planned');
+            } else if (siblingStatuses.includes('wishlist')) {
+              saveWorldVisit(parentRegionKey, 'wishlist');
+            } else {
+              saveWorldVisit(parentRegionKey, 'unvisited');
+            }
+          }
+        }
+
+        // ── 2. Symmetrical Two-Way Sync: Subregion / Region -> Parent Country (Ülke) ──
         if (countryCode) {
           if (val === 'visited') {
             saveWorldVisit(countryCode, 'visited');
           } else if (val === 'planned') {
             const data = getStorageData();
-            if (data.worldVisits[countryCode]?.status !== 'visited') saveWorldVisit(countryCode, 'planned');
+            if (data.worldVisits[countryCode]?.status !== 'visited') {
+              saveWorldVisit(countryCode, 'planned');
+            }
           } else if (val === 'wishlist') {
             const data = getStorageData();
-            if (!['visited', 'planned'].includes(data.worldVisits[countryCode]?.status)) saveWorldVisit(countryCode, 'wishlist');
+            const cStatus = data.worldVisits[countryCode]?.status;
+            if (!cStatus || cStatus === 'unvisited') {
+              saveWorldVisit(countryCode, 'wishlist');
+            }
           } else if (val === 'unvisited') {
             const data = getStorageData();
             const prefix = `${countryCode}::`;
-            const subs = Object.entries(data.worldVisits).filter(([k]) => k.startsWith(prefix)).map(([, v]) => v.status);
-            if (subs.includes('visited')) saveWorldVisit(countryCode, 'visited');
-            else if (subs.includes('planned')) saveWorldVisit(countryCode, 'planned');
-            else if (subs.includes('wishlist')) saveWorldVisit(countryCode, 'wishlist');
+            const allSubs = Object.entries(data.worldVisits)
+              .filter(([k]) => k.startsWith(prefix))
+              .map(([, v]) => v.status);
+
+            if (allSubs.includes('visited')) {
+              saveWorldVisit(countryCode, 'visited');
+            } else if (allSubs.includes('planned')) {
+              saveWorldVisit(countryCode, 'planned');
+            } else if (allSubs.includes('wishlist')) {
+              saveWorldVisit(countryCode, 'wishlist');
+            } else {
+              saveWorldVisit(countryCode, 'unvisited');
+            }
+          }
+        }
+      } else if (type === 'region') {
+        saveWorldVisit(id, val);
+
+        const regionRaw = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+        const childSubregions = getSubregionsForParentRegion(countryCode, regionRaw);
+
+        // ── 1. Downward Sync: Region (Eyalet) -> Child Subregions (İller) ──
+        if (childSubregions.length > 0) {
+          childSubregions.forEach(sName => {
+            saveWorldVisit(`${countryCode}::${sName}`, val);
+          });
+        }
+
+        // ── 2. Upward Sync: Region (Eyalet) -> Parent Country (Ülke) ──
+        if (countryCode) {
+          if (val === 'visited') {
+            saveWorldVisit(countryCode, 'visited');
+          } else if (val === 'planned') {
+            const data = getStorageData();
+            if (data.worldVisits[countryCode]?.status !== 'visited') {
+              saveWorldVisit(countryCode, 'planned');
+            }
+          } else if (val === 'wishlist') {
+            const data = getStorageData();
+            const cStatus = data.worldVisits[countryCode]?.status;
+            if (!cStatus || cStatus === 'unvisited') {
+              saveWorldVisit(countryCode, 'wishlist');
+            }
+          } else if (val === 'unvisited') {
+            const data = getStorageData();
+            const prefix = `${countryCode}::`;
+            const allSubs = Object.entries(data.worldVisits)
+              .filter(([k]) => k.startsWith(prefix))
+              .map(([, v]) => v.status);
+
+            if (allSubs.includes('visited')) {
+              saveWorldVisit(countryCode, 'visited');
+            } else if (allSubs.includes('planned')) {
+              saveWorldVisit(countryCode, 'planned');
+            } else if (allSubs.includes('wishlist')) {
+              saveWorldVisit(countryCode, 'wishlist');
+            } else {
+              saveWorldVisit(countryCode, 'unvisited');
+            }
           }
         }
       } else if (type === 'city') {
@@ -2737,6 +3003,9 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     activeGeoFeature = countryFeaturesByCode[countryCode];
   }
   closeActivePopup();
+  if (map) {
+    try { map.closeTooltip(); } catch {}
+  }
   showPopupBackdrop(activeGeoFeature, currentStatus, cleanTitle, latlng, id, type, countryCode);
 
   activeStatusPopup = L.popup({
@@ -2757,6 +3026,9 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     _popupClosedOnPointerDown = true;
     lastPopupClosedAt = Date.now();
     closeActivePopup();
+    if (map) {
+      try { map.closeTooltip(); } catch {}
+    }
   };
 
   setTimeout(() => {
