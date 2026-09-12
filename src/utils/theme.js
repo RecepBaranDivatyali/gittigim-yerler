@@ -190,8 +190,9 @@ export function applyTheme(themeId) {
   root.style.setProperty('--theme-card-border', cfg.id === 'light' ? 'rgba(203, 213, 225, 0.85)' : 'rgba(148, 163, 184, 0.12)');
 
   const uiSize = getUiSize();
-  const uiScale = UI_SCALES[uiSize] || '1.05';
+  const uiScale = UI_SCALES[uiSize] || '1.0';
   root.style.setProperty('--ui-font-scale', uiScale);
+  document.documentElement.setAttribute('data-ui-size', uiSize);
   document.body.setAttribute('data-ui-size', uiSize);
   document.body.setAttribute('data-theme', cfg.id);
 }
@@ -200,8 +201,8 @@ export function applyTheme(themeId) {
 const UI_SIZE_STORAGE_KEY = 'gv_ui_size';
 export const UI_SCALES = {
   small: '0.88',
-  medium: '1.05',
-  large: '1.24'
+  medium: '1.0',
+  large: '1.20'
 };
 
 export function getUiSize() {

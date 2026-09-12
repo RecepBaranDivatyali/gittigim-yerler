@@ -3,6 +3,7 @@ import { renderWorldMapView } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange } from './utils/storage.js';
+import { applyTheme, getTheme } from './utils/theme.js';
 
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -10,6 +11,9 @@ function syncAppHeight() {
 }
 
 function initApp() {
+  // Apply saved theme and UI font scale immediately on startup
+  applyTheme(getTheme());
+
   const appContainer = document.getElementById('app');
   if (!appContainer) return;
 

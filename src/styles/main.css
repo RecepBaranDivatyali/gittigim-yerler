@@ -3,6 +3,7 @@
 @import 'leaflet/dist/leaflet.css';
 
 :root {
+  --ui-font-scale: 1;
   --bg-dark: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.7);
   --bg-card-hover: rgba(51, 65, 85, 0.8);
@@ -19,6 +20,11 @@
   --radius-sm: 8px;
   --shadow-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+}
+
+html {
+  font-size: calc(16px * var(--ui-font-scale, 1));
+  -webkit-text-size-adjust: 100%;
 }
 
 * {
@@ -3095,10 +3101,6 @@ body[data-theme="light"] .theme-select-btn.active {
 
 
 /* ─── UI Sizing & Scalable Font Rules ───────────────────────── */
-:root {
-  --ui-font-scale: 1.05;
-}
-
 #stats-overlay {
   position: absolute;
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
@@ -3107,7 +3109,7 @@ body[data-theme="light"] .theme-select-btn.active {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 0.5rem;
   pointer-events: none;
   max-width: calc(100vw - 80px);
 }
@@ -3115,26 +3117,26 @@ body[data-theme="light"] .theme-select-btn.active {
 .stats-chip {
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: calc(16px * var(--ui-font-scale, 1.05));
-  padding: calc(12px * var(--ui-font-scale, 1.05)) calc(16px * var(--ui-font-scale, 1.05));
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  gap: calc(8px * var(--ui-font-scale, 1.05));
+  gap: 0.5rem;
   pointer-events: all;
-  min-width: calc(160px * var(--ui-font-scale, 1.05));
+  min-width: 10rem;
 }
 
 .stats-number {
-  font-size: calc(1.6rem * var(--ui-font-scale, 1.05));
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .stats-label {
-  font-size: calc(0.82rem * var(--ui-font-scale, 1.05));
+  font-size: 0.82rem;
   color: var(--theme-text-muted, #94a3b8);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -3149,7 +3151,7 @@ body[data-theme="light"] .theme-select-btn.active {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .floating-profile-btn {
@@ -3160,22 +3162,22 @@ body[data-theme="light"] .theme-select-btn.active {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: calc(10px * var(--ui-font-scale, 1.05));
-  padding: calc(10px * var(--ui-font-scale, 1.05)) calc(18px * var(--ui-font-scale, 1.05));
+  gap: 0.625rem;
+  padding: 0.625rem 1.125rem;
   font-family: inherit;
-  font-size: calc(0.95rem * var(--ui-font-scale, 1.05));
+  font-size: 0.95rem;
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .floating-profile-avatar {
-  font-size: calc(1.35rem * var(--ui-font-scale, 1.05));
+  font-size: 1.35rem;
   line-height: 1;
 }
 
 .floating-profile-name {
-  font-size: calc(0.92rem * var(--ui-font-scale, 1.05));
+  font-size: 0.92rem;
   font-weight: 700;
 }
 
@@ -3186,30 +3188,30 @@ body[data-theme="light"] .theme-select-btn.active {
   z-index: 2200;
   background: rgba(15, 23, 42, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: calc(16px * var(--ui-font-scale, 1.05));
-  padding: calc(10px * var(--ui-font-scale, 1.05)) calc(16px * var(--ui-font-scale, 1.05));
+  border-radius: 1rem;
+  padding: 0.625rem 1rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .legend-items-list {
   display: flex;
   flex-direction: column;
-  gap: calc(6px * var(--ui-font-scale, 1.05));
+  gap: 0.375rem;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: calc(8px * var(--ui-font-scale, 1.05));
-  font-size: calc(0.85rem * var(--ui-font-scale, 1.05));
+  gap: 0.5rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #f1f5f9;
   white-space: nowrap;
 }
 
 .legend-dot {
-  width: calc(10px * var(--ui-font-scale, 1.05));
-  height: calc(10px * var(--ui-font-scale, 1.05));
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -3229,10 +3231,10 @@ body[data-theme="light"] .theme-select-btn.active {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: calc(8px * var(--ui-font-scale, 1.05));
-  padding: calc(10px * var(--ui-font-scale, 1.05)) calc(18px * var(--ui-font-scale, 1.05));
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
   font-family: inherit;
-  font-size: calc(0.9rem * var(--ui-font-scale, 1.05));
+  font-size: 0.9rem;
   font-weight: 700;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
