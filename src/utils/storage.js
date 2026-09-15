@@ -538,6 +538,7 @@ export function saveUserFeedback(item) {
       contact: item.contact || '',
       username: item.username || 'Gezgin',
       status: item.status || 'pending', // pending, considering, in_progress, resolved, declined
+      synced: item.synced === true, // true if sent to server, false if offline/pending
       devResponse: item.devResponse || '',
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -550,6 +551,59 @@ export function saveUserFeedback(item) {
   } catch (e) {
     console.error('Error saving user feedback', e);
     return item;
+  }
+}
+
+export async function syncPendingFeedbacks() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return false;
+  }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    if (!raw) return true;
+    let feedbacks = JSON.parse(raw);
+    if (!Array.isArray(feedbacks) || feedbacks.length === 0) return true;
+
+    const pending = feedbacks.filter(fb => fb.synced === false);
+    if (pending.length === 0) return true;
+
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const apiUrl = isLocal && !(typeof window !== 'undefined' && window.Capacitor)
+      ? 'https://gittigim-yerler.vercel.app/api/feedback'
+      : '/api/feedback';
+
+    let updated = false;
+    for (const fb of pending) {
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: fb.id,
+            type: fb.type,
+            message: fb.message,
+            contact: fb.contact,
+            username: fb.username
+          })
+        });
+        if (res.ok) {
+          fb.synced = true;
+          fb.syncedAt = new Date().toISOString();
+          updated = true;
+        }
+      } catch (err) {
+        console.warn('Sync pending feedback deferred for item:', fb.id, err);
+      }
+    }
+
+    if (updated) {
+      safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+      notifyStateChange();
+    }
+    return true;
+  } catch (e) {
+    console.error('Error syncing pending feedbacks', e);
+    return false;
   }
 }
 

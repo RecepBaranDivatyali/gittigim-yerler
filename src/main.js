@@ -2,12 +2,20 @@ import './styles/main.css';
 import { renderWorldMapView } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
-import { onStateChange } from './utils/storage.js';
+import { onStateChange, syncPendingFeedbacks } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.documentElement.style.setProperty('--app-height', `${h}px`);
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.height = `${h}px`;
+    app.style.maxHeight = `${h}px`;
+  }
+  if (window.__leafletMapInstance) {
+    window.__leafletMapInstance.invalidateSize();
+  }
 }
 
 function initApp() {
@@ -27,7 +35,13 @@ function initApp() {
     setTimeout(syncAppHeight, 150);
   });
 
-  appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
+  // Auto-sync any offline feedbacks whenever app boots or device regains internet connection
+  syncPendingFeedbacks();
+  window.addEventListener('online', () => {
+    syncPendingFeedbacks();
+  });
+
+  appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
 
   // Dedicated permanent Map container - Never wiped or reloaded between profile views
   const mapContainer = document.createElement('div');

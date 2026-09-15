@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks } from '../utils/storage.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -1007,7 +1007,10 @@ export function renderWorldMapView(container, options = {}) {
                 ${isAdminActive ? `<span style="font-size:0.72rem;color:#38bdf8;font-weight:700;">👤 ${escapeHtml(fb.username || 'Gezgin')}</span>` : ''}
                 ${(isAdminActive && fb.contact) ? `<span style="font-size:0.72rem;color:#94a3b8;">📱 ${escapeHtml(fb.contact)}</span>` : ''}
               </div>
-              <span class="feedback-status-badge ${st.class}">${st.label}</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                ${fb.synced === false ? `<span class="feedback-status-badge status-pending" title="İnternet bağlantısı kurulduğunda iletilecektir" style="background:rgba(234,179,8,0.18);color:#fbbf24;border-color:rgba(234,179,8,0.35);">⏳ İletilmeyi Bekliyor</span>` : ''}
+                <span class="feedback-status-badge ${st.class}">${st.label}</span>
+              </div>
             </div>
             <div class="fb-card-msg">${escapeHtml(fb.message)}</div>
             ${fb.devResponse ? `
@@ -1125,6 +1128,12 @@ export function renderWorldMapView(container, options = {}) {
       if (feedbackModal) {
         feedbackModal.style.display = 'flex';
         updateBadgeCount();
+        syncPendingFeedbacks().then(() => {
+          updateBadgeCount();
+          if (tabList && tabList.classList.contains('active')) {
+            renderFeedbackList();
+          }
+        });
         if (tabList && tabList.classList.contains('active')) {
           renderFeedbackList();
         }
@@ -1212,6 +1221,7 @@ export function renderWorldMapView(container, options = {}) {
 
         const feedbackId = 'fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
+        let isSent = false;
         // 1. Send via secure Vercel serverless API endpoint
         try {
           const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -1231,11 +1241,13 @@ export function renderWorldMapView(container, options = {}) {
             })
           });
 
-          if (!res.ok) {
+          if (res.ok) {
+            isSent = true;
+          } else {
             console.warn('Feedback serverless endpoint returned status:', res.status);
           }
         } catch (err) {
-          console.warn('Feedback send notification notice:', err);
+          console.warn('Feedback offline, saved locally for auto-sync:', err);
         }
 
         // 2. Save to user feedbacks storage
@@ -1244,7 +1256,8 @@ export function renderWorldMapView(container, options = {}) {
           type: activeFeedbackType,
           message: msg,
           contact,
-          username: userName
+          username: userName,
+          synced: isSent
         });
 
         submitFeedbackBtn.disabled = false;
