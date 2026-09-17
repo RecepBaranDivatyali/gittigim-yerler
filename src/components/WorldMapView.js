@@ -4153,6 +4153,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         Object.values(allDrawers).forEach(d => { if (d) d.style.display = 'none'; });
         hubBtns.forEach(b => b.classList.remove('active'));
       }
+
+      if (activeStatusPopup) {
+        activeStatusPopup.update();
+      }
+      requestAnimationFrame(ensurePopupInView);
+      setTimeout(ensurePopupInView, 60);
+      setTimeout(ensurePopupInView, 160);
     });
   });
   let activeGeoFeature = feature;
