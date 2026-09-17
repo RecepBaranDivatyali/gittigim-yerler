@@ -1030,7 +1030,7 @@ export function renderWorldMapView(container, options = {}) {
       } else {
         if (visaBanner) visaBanner.style.display = 'none';
         if (visaToggleBtn) visaToggleBtn.classList.remove('active');
-        if (legendEl) legendEl.style.display = 'block';
+        if (legendEl) legendEl.style.display = '';
       }
 
       if (worldLayer) {

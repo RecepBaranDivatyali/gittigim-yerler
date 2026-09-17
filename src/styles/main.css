@@ -1070,19 +1070,19 @@ html, body, #app {
 
 /* ─── Map Legend (top-right) ────────────────────────────────── */
 #map-legend {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1000;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 0 12px;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  max-width: 480px;
+  gap: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .legend-item {
@@ -1180,29 +1180,34 @@ svg, g, path {
   white-space: nowrap;
 }
 
-/* ─── Map Legend (Top-Right, Vertical Column) ─────────────────── */
+/* ─── Map Legend (Inside Top-Right Group) ─────────────────── */
 #map-legend.floating-legend {
-  position: absolute;
-  top: max(14px, env(safe-area-inset-top));
-  right: max(14px, env(safe-area-inset-right));
-  z-index: 2200;
-  background: rgba(15, 23, 42, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 10px 14px;
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 0 12px;
+  height: 40px;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
-  min-width: 125px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin: 0;
 }
 
 .legend-items-list {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .legend-item {
@@ -1896,13 +1901,12 @@ svg, g, path {
     max-width: 90px;
   }
 
-  /* Legend at top-right (vertical column) */
+  /* Legend at top-right inside group */
   #map-legend.floating-legend {
-    top: max(12px, env(safe-area-inset-top));
-    right: max(12px, env(safe-area-inset-right));
-    padding: 8px 10px;
+    padding: 0 8px;
     gap: 6px;
-    min-width: 105px;
+    height: 32px;
+    min-width: auto;
   }
 
   .legend-items-list {
@@ -3218,15 +3222,15 @@ body[data-theme="light"] .theme-select-btn.active {
 }
 
 .floating-legend {
-  position: absolute;
-  top: max(16px, env(safe-area-inset-top, 16px));
-  right: max(16px, env(safe-area-inset-right, 16px));
-  z-index: 2200;
-  background: rgba(15, 23, 42, 0.96);
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 1rem;
-  padding: 0.625rem 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 0 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .legend-items-list {
@@ -4666,12 +4670,33 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     display: none;
   }
 
-  /* Floating Top-Right Legend: Compact 4-dot pill on mobile, expandable on tap */
-  #map-legend.floating-legend {
-    z-index: 2200;
+  /* Floating Top-Right Group & Controls on Mobile */
+  .floating-top-right-group {
     top: max(10px, env(safe-area-inset-top, 10px));
     right: max(10px, env(safe-area-inset-right, 10px));
-    padding: 5px 10px;
+    gap: 6px;
+    z-index: 2200;
+    align-items: center;
+  }
+
+  .floating-visa-mode-btn {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+    border-radius: 99px;
+    gap: 4px;
+  }
+
+  /* Floating Top-Right Legend: Compact 4-dot pill on mobile, expandable on tap */
+  #map-legend.floating-legend {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    z-index: 1;
+    padding: 0 10px;
     border-radius: 99px;
     min-width: auto;
     height: 32px;
@@ -4699,29 +4724,42 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     margin: 0;
   }
   #map-legend .legend-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
-  /* When expanded on tap */
+  /* When expanded on tap: dropdown directly under top-right group */
   #map-legend.floating-legend.expanded {
-    z-index: 2500;
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 2500 !important;
     height: auto;
+    min-width: 135px;
     border-radius: 14px;
-    padding: 8px 12px;
+    padding: 10px 14px;
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
+    background: rgba(15, 23, 42, 0.96) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
   }
   #map-legend.floating-legend.expanded .legend-items-list {
     flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
+    gap: 6px;
   }
   #map-legend.floating-legend.expanded .legend-item {
-    gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.76rem;
   }
   #map-legend.floating-legend.expanded .legend-text {
     display: inline-block;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
+    color: #f1f5f9;
   }
 
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
@@ -4893,43 +4931,61 @@ body[data-theme="light"] .aviation-subtab-btn.active {
 
 /* ── Mobile Phones (<= 480px) ── */
 @media (max-width: 480px) {
-  /* Floating Top-Right Legend: Tap to expand on mobile */
+  /* Compact circular visa button on phones matching poster button */
+  .floating-visa-mode-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.95rem;
+  }
+  .floating-visa-mode-btn .visa-btn-lbl {
+    display: none;
+  }
+
+  /* Legend pill on mobile stays relative inside flex group */
   #map-legend.floating-legend {
-    z-index: 2200;
-    top: max(10px, env(safe-area-inset-top));
-    right: max(10px, env(safe-area-inset-right));
-    padding: 5px 10px;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    padding: 0 8px;
     border-radius: 99px;
     height: 32px;
     min-width: auto;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   #map-legend .legend-items-list {
     flex-direction: row;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
     margin: 0 !important;
   }
   #map-legend .legend-text {
     display: none;
   }
-  #map-legend.expanded {
-    z-index: 2500;
+  #map-legend.floating-legend.expanded {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 2500 !important;
     height: auto;
-    border-radius: 16px;
+    min-width: 135px;
+    border-radius: 14px;
     padding: 10px 14px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   }
-  #map-legend.expanded .legend-items-list {
+  #map-legend.floating-legend.expanded .legend-items-list {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
-  #map-legend.expanded .legend-text {
+  #map-legend.floating-legend.expanded .legend-text {
     display: inline;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
   }
 
   /* Profile Header wrapping */
@@ -8038,10 +8094,19 @@ body[data-theme="pure_oled"] .leaflet-container {
   position: absolute;
   top: 16px;
   right: 16px;
-  z-index: 1100;
+  z-index: 2200;
   display: flex;
   align-items: center;
   gap: 8px;
+  pointer-events: auto;
+}
+.floating-top-right-group #map-legend.floating-legend {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
 }
 .floating-visa-mode-btn {
   height: 40px;
@@ -8061,6 +8126,7 @@ body[data-theme="pure_oled"] .leaflet-container {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
   font-family: inherit;
+  white-space: nowrap;
 }
 .floating-visa-mode-btn:hover {
   background: rgba(30, 41, 59, 0.95);
@@ -8072,6 +8138,16 @@ body[data-theme="pure_oled"] .leaflet-container {
   border-color: #fde047;
   color: #fff;
   box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+}
+body[data-theme="light"] .floating-visa-mode-btn {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+}
+body[data-theme="light"] .floating-visa-mode-btn.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #fff !important;
 }
 
 /* ── 2. Route Collections & Challenges in Medals Tab ────────────────────────── */
