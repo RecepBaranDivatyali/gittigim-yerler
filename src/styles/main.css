@@ -4827,7 +4827,7 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
   .floating-search-wrap {
     z-index: 2000;
-    top: max(50px, calc(env(safe-area-inset-top, 0px) + 48px));
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 52px));
     left: 50%;
     transform: translateX(-50%);
     width: min(440px, calc(100vw - 20px));
@@ -8258,6 +8258,36 @@ body[data-theme="light"] .floating-visa-mode-btn {
 body[data-theme="light"] .floating-visa-mode-btn.active {
   background: linear-gradient(135deg, #f59e0b, #d97706) !important;
   color: #fff !important;
+}
+
+/* Mobile Override for Visa Button & Top-Right Group (guarantees 32px round icon and 56px search top) */
+@media (max-width: 768px) {
+  .floating-top-right-group {
+    top: max(10px, env(safe-area-inset-top, 10px)) !important;
+    right: max(10px, env(safe-area-inset-right, 10px)) !important;
+    gap: 6px !important;
+    z-index: 2200;
+  }
+  .floating-visa-mode-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-size: 0.95rem !important;
+  }
+  .floating-visa-mode-btn .visa-btn-lbl {
+    display: none !important;
+  }
+  #map-legend.floating-legend {
+    height: 32px !important;
+    padding: 0 8px !important;
+    border-radius: 99px !important;
+  }
+  .floating-search-wrap {
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 52px)) !important;
+  }
 }
 
 /* ── 2. Route Collections & Challenges in Medals Tab ────────────────────────── */
