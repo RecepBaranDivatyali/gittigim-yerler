@@ -4144,28 +4144,53 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: typeof window !== 'undefined' ? Math.min(320, window.innerWidth - 20) : 320,
+    maxWidth: typeof window !== 'undefined' ? Math.min(320, window.innerWidth - 24) : 320,
     autoPan: true,
-    autoPanPaddingTopLeft: L.point(14, topBoundary),
-    autoPanPaddingBottomRight: L.point(14, 80)
+    autoPanPaddingTopLeft: L.point(20, topBoundary),
+    autoPanPaddingBottomRight: L.point(20, 80)
   })
   .setLatLng(latlng)
   .setContent(content)
   .openOn(map);
 
-  // Safety check: ensure popup boundary strictly starts below the search button
-  requestAnimationFrame(() => {
+  // Safety check: ensure popup boundaries never clip on right/left edges or under search bar
+  const ensurePopupInView = () => {
     if (!activeStatusPopup || !map) return;
     const popupEl = activeStatusPopup.getElement();
-    if (popupEl && searchWrap) {
-      const popupRect = popupEl.getBoundingClientRect();
-      const searchRect = searchWrap.getBoundingClientRect();
-      if (popupRect.top < searchRect.bottom + 12) {
-        const overlap = Math.round((searchRect.bottom + 16) - popupRect.top);
-        map.panBy([0, -overlap], { animate: true, duration: 0.25 });
-      }
+    if (!popupEl) return;
+
+    const mapContainer = map.getContainer();
+    const mapRect = mapContainer.getBoundingClientRect();
+    const popupRect = popupEl.getBoundingClientRect();
+    const searchWrap = document.getElementById('map-search-wrap');
+    const searchRect = searchWrap ? searchWrap.getBoundingClientRect() : null;
+
+    let dx = 0;
+    let dy = 0;
+
+    // 1. Right/Left horizontal overflow protection
+    const marginH = 16;
+    if (popupRect.right > mapRect.right - marginH) {
+      dx = Math.round(popupRect.right - (mapRect.right - marginH));
+    } else if (popupRect.left < mapRect.left + marginH) {
+      dx = Math.round(popupRect.left - (mapRect.left + marginH));
     }
-  });
+
+    // 2. Top/Bottom vertical overflow protection
+    const topSafe = searchRect ? Math.round(searchRect.bottom + 14) : Math.round(mapRect.top + 80);
+    if (popupRect.top < topSafe) {
+      dy = Math.round(popupRect.top - topSafe);
+    } else if (popupRect.bottom > mapRect.bottom - 75) {
+      dy = Math.round(popupRect.bottom - (mapRect.bottom - 75));
+    }
+
+    if (dx !== 0 || dy !== 0) {
+      map.panBy([dx, dy], { animate: true, duration: 0.25 });
+    }
+  };
+
+  requestAnimationFrame(ensurePopupInView);
+  setTimeout(ensurePopupInView, 80);
 
   activePopupOutsideListener = (e) => {
     const popupEl = activeStatusPopup ? activeStatusPopup.getElement() : null;
