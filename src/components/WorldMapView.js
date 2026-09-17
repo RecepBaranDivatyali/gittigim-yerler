@@ -127,7 +127,7 @@ function getProvinceOffset(item) {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const REGION_ZOOM = 5.5;
+const REGION_ZOOM = 5.0;
 const SUBREGION_ZOOM = 6.8;
 
 function getFlagHtml(code) {
@@ -1911,30 +1911,38 @@ function initMap(container) {
 
   // (updateProvinceLabels and updateCountryLabels are coordinated at module level)
 
-  let isViewUpdating = false;
-  let viewUpdatePending = false;
-
-  async function requestViewUpdate() {
+  function handleViewChange() {
     updateLayerHud();
-    if (isViewUpdating) {
-      viewUpdatePending = true;
-      return;
-    }
-    isViewUpdating = true;
-    viewUpdatePending = false;
-
-    try {
-      await onViewChange();
-      scheduleLabelUpdate();
-    } catch {} finally {
-      isViewUpdating = false;
-      if (viewUpdatePending) {
-        requestAnimationFrame(requestViewUpdate);
-      }
-    }
+    onViewChange();
+    scheduleLabelUpdate();
   }
 
-  map.on('moveend zoomend', requestViewUpdate);
+  map.on('moveend zoomend', handleViewChange);
+
+  map.on('zoom', () => {
+    updateLayerHud();
+    // Immediate visual unmount during zoom-out animation below REGION_ZOOM
+    if (map && map.getZoom() < REGION_ZOOM) {
+      Object.entries(regionLayers).forEach(([code, layer]) => {
+        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+      });
+      Object.entries(subregionLayers).forEach(([code, layer]) => {
+        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+      });
+      Object.entries(stateBordersLayers).forEach(([code, layer]) => {
+        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+      });
+      if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+        map.removeLayer(turkeyLayer);
+      }
+      if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+        map.removeLayer(countryBordersLayer);
+      }
+      if (provinceLabelsLayer) {
+        provinceLabelsLayer.clearLayers();
+      }
+    }
+  });
 }
 
 const IGNORED_LABEL_CODES = new Set([
@@ -2664,7 +2672,7 @@ function getVisibleCountries() {
   return visible;
 }
 
-async function onViewChange() {
+function onViewChange() {
   if (!map) return;
   const zoom = map.getZoom();
 
@@ -2689,20 +2697,14 @@ async function onViewChange() {
   }
 
   // ── Turkey Level 2 (81 Provinces) ──────────────────────────────────────────
-  if (isTurkeyInView()) {
-    if (zoom >= 5.0 && turkeyLayer && !map.hasLayer(turkeyLayer)) {
+  if (isTurkeyInView() && zoom >= REGION_ZOOM) {
+    if (turkeyLayer && !map.hasLayer(turkeyLayer)) {
       turkeyLayer.addTo(map);
-      if (countryLayersByCode['TR']) {
-        countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
-      }
-    } else if (zoom < 5.0 && turkeyLayer && map.hasLayer(turkeyLayer)) {
-      map.removeLayer(turkeyLayer);
       if (countryLayersByCode['TR']) {
         countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
     }
   } else {
-    // If Turkey is scrolled away at high zoom, unmount it to keep SVG DOM lean
     if (turkeyLayer && map.hasLayer(turkeyLayer)) {
       map.removeLayer(turkeyLayer);
       if (countryLayersByCode['TR']) {
@@ -2729,22 +2731,23 @@ async function onViewChange() {
       }
     });
 
-    const toLoad = targetCodes.filter(code => code !== 'TR' && !regionLayers[code]);
-    if (toLoad.length > 0) {
-      await Promise.all(toLoad.map(code => loadRegionData(code)));
-    }
-    if (map && map.getZoom() >= REGION_ZOOM) {
-      for (const code of targetCodes) {
-        if (code !== 'TR' && regionLayers[code] && !map.hasLayer(regionLayers[code])) {
-          regionLayers[code].addTo(map);
-          if (countryLayersByCode[code]) {
-            countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+    for (const code of targetCodes) {
+      if (code !== 'TR') {
+        if (regionLayers[code]) {
+          if (!map.hasLayer(regionLayers[code])) {
+            regionLayers[code].addTo(map);
+            if (countryLayersByCode[code]) {
+              countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+            }
           }
+        } else {
+          // Asynchronously trigger load without blocking: mounts immediately once loaded if still in view
+          loadRegionData(code);
         }
       }
     }
   } else {
-    // ZOOM OUT — remove ALL region layers from map
+    // ZOOM OUT — remove ALL region layers from map instantly
     Object.entries(regionLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
@@ -2773,25 +2776,23 @@ async function onViewChange() {
       }
     });
 
-    const toLoadSub = targetSubCodes.filter(code => code !== 'TR' && !subregionLayers[code]);
-    if (toLoadSub.length > 0) {
-      await Promise.all(toLoadSub.map(code => loadSubregionData(code)));
-    }
-    if (map && map.getZoom() >= SUBREGION_ZOOM) {
-      for (const code of targetSubCodes) {
-        if (code !== 'TR') {
-          if (subregionLayers[code] && !map.hasLayer(subregionLayers[code])) {
+    for (const code of targetSubCodes) {
+      if (code !== 'TR') {
+        if (subregionLayers[code]) {
+          if (!map.hasLayer(subregionLayers[code])) {
             subregionLayers[code].addTo(map);
             refreshRegionLayer(code);
           }
           if (stateBordersLayers[code] && !map.hasLayer(stateBordersLayers[code])) {
             stateBordersLayers[code].addTo(map);
           }
+        } else {
+          loadSubregionData(code);
         }
       }
     }
   } else {
-    // ZOOM OUT — remove ALL subregion layers from map
+    // ZOOM OUT — remove ALL subregion layers from map instantly
     Object.entries(subregionLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
@@ -2816,34 +2817,42 @@ function isTurkeyInView() {
 
 // ─── Load World Region Data ───────────────────────────────────────────────────
 async function loadRegionData(code) {
-  if (regionCache[code] === null) return;
+  if (!code || code === 'TR') return null;
+  if (regionCache[code] === null) return null;
+  if (regionLayers[code]) return regionLayers[code];
   if (regionCache[code]) {
     attachRegionLayer(code, regionCache[code]);
-    return;
+    return regionLayers[code];
   }
   if (inFlightRegions[code]) {
     await inFlightRegions[code];
-    return;
+    return regionLayers[code];
   }
 
   inFlightRegions[code] = (async () => {
     try {
       const baseUrl = import.meta.env.BASE_URL || './';
       const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-      const r = await fetch(`${cleanBase}data/regions/${code}.json`);
-      if (!r.ok) { regionCache[code] = null; return; }
-      const data = await r.json();
+      const url = `${cleanBase}data/regions/${code}.json`;
+      const data = await fetchGeoDataWithCache(url, `region_${code}`);
+      if (!data || !data.features || data.features.length === 0) {
+        regionCache[code] = null;
+        return null;
+      }
       regionCache[code] = data;
       attachRegionLayer(code, data);
+      return regionLayers[code];
     } catch (err) {
       console.warn(`[RegionLayer] Failed loading regions for ${code}:`, err);
       regionCache[code] = null;
+      return null;
     } finally {
       delete inFlightRegions[code];
     }
   })();
 
   await inFlightRegions[code];
+  return regionLayers[code];
 }
 
 function attachRegionLayer(code, data) {
@@ -2906,17 +2915,19 @@ function attachRegionLayer(code, data) {
   });
   stateBordersLayers[code] = stateBorder;
 
-  if (map.getZoom() >= REGION_ZOOM) {
-    layer.addTo(map);
-    if (map.getZoom() >= SUBREGION_ZOOM) {
-      stateBorder.addTo(map);
+  // Validate state before mounting: user must still be at zoom >= REGION_ZOOM and country must still be visible!
+  if (map && map.getZoom() >= REGION_ZOOM) {
+    const visibleNow = new Set(getVisibleCountries().slice(0, 8));
+    if (visibleNow.has(code)) {
+      layer.addTo(map);
+      if (map.getZoom() >= SUBREGION_ZOOM) {
+        stateBorder.addTo(map);
+      }
+      if (countryLayersByCode[code]) {
+        countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+      }
+      scheduleLabelUpdate();
     }
-    if (countriesLayer) {
-      countriesLayer.eachLayer(l => {
-        if (findCountry(l.feature)?.code === code) l.setStyle(countryStyle(findCountry(l.feature)));
-      });
-    }
-    scheduleLabelUpdate();
   }
 }
 
@@ -2942,34 +2953,42 @@ function refreshRegionLayer(code) {
 
 // ─── Load World Subregion Data ────────────────────────────────────────────────
 async function loadSubregionData(code) {
-  if (subregionCache[code] === null) return;
+  if (!code || code === 'TR') return null;
+  if (subregionCache[code] === null) return null;
+  if (subregionLayers[code]) return subregionLayers[code];
   if (subregionCache[code]) {
     attachSubregionLayer(code, subregionCache[code]);
-    return;
+    return subregionLayers[code];
   }
   if (inFlightSubregions[code]) {
     await inFlightSubregions[code];
-    return;
+    return subregionLayers[code];
   }
 
   inFlightSubregions[code] = (async () => {
     try {
       const baseUrl = import.meta.env.BASE_URL || './';
       const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-      const r = await fetch(`${cleanBase}data/subregions/${code}.json`);
-      if (!r.ok) { subregionCache[code] = null; return; }
-      const data = await r.json();
+      const url = `${cleanBase}data/subregions/${code}.json`;
+      const data = await fetchGeoDataWithCache(url, `subregion_${code}`);
+      if (!data || !data.features || data.features.length === 0) {
+        subregionCache[code] = null;
+        return null;
+      }
       subregionCache[code] = data;
       attachSubregionLayer(code, data);
+      return subregionLayers[code];
     } catch (err) {
       console.warn(`[SubregionLayer] Failed loading subregions for ${code}:`, err);
       subregionCache[code] = null;
+      return null;
     } finally {
       delete inFlightSubregions[code];
     }
   })();
 
   await inFlightSubregions[code];
+  return subregionLayers[code];
 }
 
 function attachSubregionLayer(code, data) {
@@ -3016,10 +3035,16 @@ function attachSubregionLayer(code, data) {
   });
 
   subregionLayers[code] = layer;
-  if (map.getZoom() >= SUBREGION_ZOOM) {
-    layer.addTo(map);
-    refreshRegionLayer(code);
-    scheduleLabelUpdate();
+  if (map && map.getZoom() >= SUBREGION_ZOOM) {
+    const visibleSubNow = new Set(getVisibleCountries().slice(0, 4));
+    if (visibleSubNow.has(code)) {
+      layer.addTo(map);
+      refreshRegionLayer(code);
+      if (stateBordersLayers[code] && !map.hasLayer(stateBordersLayers[code])) {
+        stateBordersLayers[code].addTo(map);
+      }
+      scheduleLabelUpdate();
+    }
   }
 }
 

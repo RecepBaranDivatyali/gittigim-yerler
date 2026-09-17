@@ -31,13 +31,22 @@ function getCacheDB() {
 
 export async function getCachedGeoData(key) {
   try {
+    const entry = await getCachedEntry(key);
+    return entry ? entry.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getCachedEntry(key) {
+  try {
     const db = await getCacheDB();
     if (!db) return null;
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
-      req.onsuccess = () => resolve(req.result ? req.result.data : null);
+      req.onsuccess = () => resolve(req.result || null);
       req.onerror = () => resolve(null);
     });
   } catch {
@@ -57,23 +66,25 @@ export async function setCachedGeoData(key, data) {
 
 /**
  * Loads GeoJSON dataset instantly from IndexedDB cache if available.
- * Silently updates cache in the background.
+ * Revalidates in the background only when cache is older than revalidateAfterMs (default: 7 days).
  */
-export async function fetchGeoDataWithCache(url, cacheKey) {
+export async function fetchGeoDataWithCache(url, cacheKey, revalidateAfterMs = 7 * 86400 * 1000) {
   // 1. Try to load from IndexedDB cache immediately (typically 5-15ms)
   try {
-    const cached = await getCachedGeoData(cacheKey);
-    if (cached && cached.features && cached.features.length > 0) {
-      // In background, refresh from network so updates propagate smoothly
-      fetch(url)
-        .then(r => (r.ok ? r.json() : null))
-        .then(fresh => {
-          if (fresh && fresh.features && fresh.features.length > 0) {
-            setCachedGeoData(cacheKey, fresh);
-          }
-        })
-        .catch(() => {});
-      return cached;
+    const entry = await getCachedEntry(cacheKey);
+    if (entry && entry.data && entry.data.features && entry.data.features.length > 0) {
+      const isStale = revalidateAfterMs > 0 && (!entry.timestamp || (Date.now() - entry.timestamp > revalidateAfterMs));
+      if (isStale) {
+        fetch(url)
+          .then(r => (r.ok ? r.json() : null))
+          .then(fresh => {
+            if (fresh && fresh.features && fresh.features.length > 0) {
+              setCachedGeoData(cacheKey, fresh);
+            }
+          })
+          .catch(() => {});
+      }
+      return entry.data;
     }
   } catch {}
 
