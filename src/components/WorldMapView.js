@@ -845,10 +845,49 @@ export function renderWorldMapView(container, options = {}) {
 
     if (searchInput && searchResults) {
       let searchTimeout = null;
+      let selectedResultIndex = -1;
+
+      const updateSelectedResult = () => {
+        const items = searchResults.querySelectorAll('.search-item');
+        items.forEach((item, i) => {
+          if (i === selectedResultIndex) {
+            item.classList.add('selected');
+            item.scrollIntoView({ block: 'nearest' });
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+      };
+
+      searchInput.addEventListener('keydown', (e) => {
+        const items = searchResults.querySelectorAll('.search-item:not(.empty)');
+        if (!items || items.length === 0 || searchResults.style.display === 'none') return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedResultIndex = (selectedResultIndex + 1) % items.length;
+          updateSelectedResult();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedResultIndex = (selectedResultIndex - 1 + items.length) % items.length;
+          updateSelectedResult();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedResultIndex >= 0 && items[selectedResultIndex]) {
+            items[selectedResultIndex].click();
+          } else if (items[0]) {
+            items[0].click();
+          }
+        } else if (e.key === 'Escape') {
+          searchResults.style.display = 'none';
+        }
+      });
+
       searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
           const query = searchInput.value.trim().toLowerCase();
+          selectedResultIndex = -1;
           if (query.length === 0) {
             searchResults.style.display = 'none';
             if (searchClear) searchClear.style.display = 'none';
@@ -865,21 +904,38 @@ export function renderWorldMapView(container, options = {}) {
             .replace(/ç/g, 'c');
           const qNorm = norm(query);
 
-          // Search matches with prioritization: Exact start on name > altName > includes
-          const matches = [];
+          // Search matches with prioritization scoring: exact match > startsWith > includes
+          const scoredMatches = [];
           for (let i = 0; i < searchDatabase.length; i++) {
             const item = searchDatabase[i];
             const nameNorm = norm(item.name);
             const altNorm = norm(item.altName);
             const subNorm = norm(item.sub);
 
-            if (nameNorm.startsWith(qNorm) || altNorm.startsWith(qNorm)) {
-              matches.push(item);
-            } else if (nameNorm.includes(qNorm) || altNorm.includes(qNorm) || subNorm.includes(qNorm)) {
-              matches.push(item);
+            let score = 0;
+            if (nameNorm === qNorm) {
+              score = 100;
+            } else if (nameNorm.startsWith(qNorm)) {
+              score = 80;
+            } else if (altNorm.startsWith(qNorm)) {
+              score = 60;
+            } else if (nameNorm.includes(qNorm)) {
+              score = 40;
+            } else if (altNorm.includes(qNorm)) {
+              score = 20;
+            } else if (subNorm.includes(qNorm)) {
+              score = 10;
             }
-            if (matches.length >= 12) break;
+
+            if (score > 0) {
+              if (item.type === 'country') score += 5;
+              else if (item.type === 'province') score += 3;
+              scoredMatches.push({ item, score });
+            }
           }
+
+          scoredMatches.sort((a, b) => b.score - a.score);
+          const matches = scoredMatches.slice(0, 12).map(s => s.item);
 
           if (matches.length === 0) {
             searchResults.innerHTML = `<div class="search-item empty">${t('searchNoResults')}</div>`;
@@ -1508,19 +1564,29 @@ export function renderWorldMapView(container, options = {}) {
   refreshStats();
 
   const cleanup = () => {
+    closeActivePopup();
     clearDocListeners();
     if (typeof unsubLang === 'function') unsubLang();
     if (typeof unsubTheme === 'function') unsubTheme();
     if (_labelUpdateTimer) { clearTimeout(_labelUpdateTimer); _labelUpdateTimer = null; }
     if (window.__leafletMapInstance === map) window.__leafletMapInstance = null;
+    if (promotedLabelMarker && promotedLabelMarker._icon && promotedLabelParent) {
+      try { promotedLabelParent.appendChild(promotedLabelMarker._icon); } catch {}
+    }
+    promotedLabelMarker = null;
+    promotedLabelParent = null;
     if (map) { map.remove(); map = null; }
     regionLayers = {};
     subregionLayers = {};
     countriesLayer = null;
+    countryBordersLayer = null;
+    stateBordersLayers = {};
     turkeyLayer = null;
     countryLabelsLayer = null;
     provinceLabelsLayer = null;
     activeStatusPopup = null;
+    activeFeatureLayer = null;
+    activeLabelLayer = null;
     activeLabelPlacedBoxes = [];
     invalidateStorageCache();
   };
@@ -1573,6 +1639,7 @@ function initMap(container) {
     zoomControl: false,
     attributionControl: false,
     doubleClickZoom: true,
+    tap: false,
     worldCopyJump: false,
     maxBounds: [[-85, -180], [85, 180]],
     maxBoundsViscosity: 1.0,
@@ -3671,18 +3738,21 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       return;
     }
 
-    placesListEl.innerHTML = currentPlaces.map((pl, idx) => `
+    placesListEl.innerHTML = currentPlaces.map((pl, idx) => {
+      const starCount = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+      return `
       <div class="place-card-item">
         <div class="place-card-left">
           <span class="place-card-cat">${catIcons[pl.category] || '📍'}</span>
           <div class="place-card-meta">
-            <div class="place-card-name">${escapeHtml(pl.name)} <span class="place-card-stars">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span></div>
+            <div class="place-card-name">${escapeHtml(pl.name)} <span class="place-card-stars">${starCount > 0 ? '⭐'.repeat(starCount) : ''}</span></div>
             ${pl.note ? `<div class="place-card-note">${escapeHtml(pl.note)}</div>` : ''}
           </div>
         </div>
         <button type="button" class="del-place-btn" data-idx="${idx}" title="Mekanı Sil">&times;</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     placesListEl.querySelectorAll('.del-place-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -3954,7 +4024,24 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
         if (matchedRegionRaw) {
           const regionKey = `${countryCode}::${matchedRegionRaw}`;
-          saveWorldVisit(regionKey, val);
+          if (val === 'unvisited') {
+            const data = getStorageData();
+            const subregionsInParent = getSubregionsForParentRegion(countryCode, matchedRegionRaw);
+            const otherSubVisited = subregionsInParent.some(sName => {
+              const sKey = `${countryCode}::${sName}`;
+              return sKey !== id && data.worldVisits[sKey]?.status === 'visited';
+            });
+            const otherCitiesVisitedInRegion = (data.worldCities || []).some(c => {
+              if (c.countryCode !== countryCode || c.cityName.toLowerCase() === cleanCityName.toLowerCase()) return false;
+              const r = findRegionRawForPoint(countryCode, null, c.cityName);
+              return r && r === matchedRegionRaw;
+            });
+            if (!otherSubVisited && !otherCitiesVisitedInRegion) {
+              saveWorldVisit(regionKey, 'unvisited');
+            }
+          } else {
+            saveWorldVisit(regionKey, val);
+          }
 
           if (!activeFeatureLayer && regionLayers[countryCode]) {
             regionLayers[countryCode].eachLayer(l => {
@@ -4041,7 +4128,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: 320
+    maxWidth: typeof window !== 'undefined' ? Math.min(320, window.innerWidth - 20) : 320
   })
   .setLatLng(latlng)
   .setContent(content)

@@ -192,6 +192,35 @@ export async function deletePhoto(photoId) {
 }
 
 /**
+ * Deletes all photos associated with a specific target destination.
+ */
+export async function deletePhotosByTarget(targetId) {
+  try {
+    const db = await getDB();
+    if (!db) return false;
+
+    const photos = await getPhotosByTarget(targetId);
+    if (!photos || photos.length === 0) return true;
+
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      photos.forEach(p => {
+        if (p && p.id) store.delete(p.id);
+      });
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = (e) => {
+        console.error('Error in batch photo delete tx:', e);
+        resolve(false);
+      };
+    });
+  } catch (err) {
+    console.error('Error deleting photos by target:', err);
+    return false;
+  }
+}
+
+/**
  * Retrieves all photos stored in the database.
  */
 export async function getAllPhotos(limit = 100) {

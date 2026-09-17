@@ -1,4 +1,5 @@
 // i18n.js - Turkish & English Internationalization
+import { escapeHtml } from './security.js';
 
 const STORAGE_KEY = 'gv_language';
 
@@ -323,14 +324,15 @@ export function getLocalizedName(rawName, countryCode) {
 }
 
 export function getCountryFlagHtml(countryCode, fallbackEmoji = '🇹🇷', options = {}) {
-  const code = (countryCode || 'TR').toUpperCase();
-  const width = options.width || 24;
-  const height = options.height || 16;
-  const className = options.className || 'country-flag-icon';
-  const style = options.style || '';
+  const code = (countryCode || 'TR').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'TR';
+  const width = parseInt(options.width, 10) || 24;
+  const height = parseInt(options.height, 10) || 16;
+  const safeClassName = escapeHtml(options.className || 'country-flag-icon');
+  const safeStyle = (options.style || '').replace(/[<>"']/g, '');
+  const safeFallback = escapeHtml(fallbackEmoji || '🏳️');
 
   if (code === 'TR') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 -30000 90000 60000" class="${className}" style="width:${width}px;height:${height}px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.35);vertical-align:middle;display:inline-block;flex-shrink:0;${style}" aria-label="Türkiye">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 -30000 90000 60000" class="${safeClassName}" style="width:${width}px;height:${height}px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.35);vertical-align:middle;display:inline-block;flex-shrink:0;${safeStyle}" aria-label="Türkiye">
       <title>Türkiye</title>
       <path fill="#e30a17" d="m0-30000h90000v60000H0z"/>
       <path fill="#fff" d="m41750 0 13568-4408-8386 11541V-7133l8386 11541zm925 8021a15000 15000 0 1 1 0-16042 12000 12000 0 1 0 0 16042z"/>
@@ -338,7 +340,7 @@ export function getCountryFlagHtml(countryCode, fallbackEmoji = '🇹🇷', opti
   }
 
   const lower = code.toLowerCase();
-  return `<span class="${className}" style="display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0;${style}">
+  return `<span class="${safeClassName}" style="display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0;${safeStyle}">
     <img src="https://flagcdn.com/w40/${lower}.png" 
          srcset="https://flagcdn.com/w80/${lower}.png 2x" 
          width="${width}" 
@@ -346,7 +348,7 @@ export function getCountryFlagHtml(countryCode, fallbackEmoji = '🇹🇷', opti
          alt="${code}" 
          style="width:${width}px;height:${height}px;border-radius:3px;object-fit:cover;box-shadow:0 1px 3px rgba(0,0,0,0.35);display:inline-block;" 
          onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-block';" />
-    <span style="display:none;font-size:${height}px;line-height:1;">${fallbackEmoji || '🏳️'}</span>
+    <span style="display:none;font-size:${height}px;line-height:1;">${safeFallback}</span>
   </span>`;
 }
 

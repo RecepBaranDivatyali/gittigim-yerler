@@ -26,8 +26,17 @@ const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖�
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
+  let activeCountdownTimerId = null;
+
+  function clearActiveTimers() {
+    if (activeCountdownTimerId) {
+      clearInterval(activeCountdownTimerId);
+      activeCountdownTimerId = null;
+    }
+  }
 
   function render() {
+    clearActiveTimers();
     const currentLang = getLanguage();
     const currentTheme = getTheme();
     const currentUiSize = getUiSize();
@@ -52,7 +61,10 @@ export function renderProfileView(container, onBack) {
       </div>
     `;
 
-    document.getElementById('profile-back').addEventListener('click', onBack);
+    document.getElementById('profile-back').addEventListener('click', () => {
+      clearActiveTimers();
+      onBack();
+    });
 
     const logoutBtn = document.getElementById('profile-logout');
     if (logoutBtn) {
@@ -303,13 +315,9 @@ export function renderProfileView(container, onBack) {
 
     // Render and manage Upcoming Trip Countdown
     const countdownContainer = document.getElementById('trip-countdown-container');
-    let countdownTimerId = null;
 
     function renderTripCountdown() {
-      if (countdownTimerId) {
-        clearInterval(countdownTimerId);
-        countdownTimerId = null;
-      }
+      clearActiveTimers();
       if (!countdownContainer) return;
 
       const upcomingTrip = getUpcomingTrip();
@@ -413,7 +421,7 @@ export function renderProfileView(container, onBack) {
       }
 
       updateClock();
-      countdownTimerId = setInterval(updateClock, 1000);
+      activeCountdownTimerId = setInterval(updateClock, 1000);
     }
 
     renderTripCountdown();
@@ -421,7 +429,12 @@ export function renderProfileView(container, onBack) {
     function openTripModal(existingTrip = null) {
       const modal = document.createElement('div');
       modal.className = 'trip-modal-overlay';
-      const defaultDate = existingTrip ? existingTrip.date : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+      const getLocalDatetimeStr = (dateObj) => {
+        const d = dateObj || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+      };
+      const defaultDate = existingTrip ? (existingTrip.date ? getLocalDatetimeStr(new Date(existingTrip.date)) : getLocalDatetimeStr()) : getLocalDatetimeStr();
       let selectedTrans = existingTrip ? existingTrip.transport : 'flight';
 
       modal.innerHTML = `
@@ -500,10 +513,22 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
       const input = document.getElementById('profile-share-code');
-      input.select();
-      document.execCommand('copy');
-      e.target.textContent = t('copied');
-      setTimeout(() => e.target.textContent = t('copy'), 2000);
+      const textToCopy = input ? input.value : '';
+      const updateBtn = () => {
+        e.target.textContent = t('copied');
+        setTimeout(() => e.target.textContent = t('copy'), 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(updateBtn).catch(() => {
+          input?.select();
+          document.execCommand('copy');
+          updateBtn();
+        });
+      } else {
+        input?.select();
+        document.execCommand('copy');
+        updateBtn();
+      }
     });
   }
 
@@ -987,6 +1012,7 @@ export function renderProfileView(container, onBack) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (event) => {
+        try { e.target.value = ''; } catch {}
         const content = event.target?.result;
         if (content) {
           const success = importBackup(content);
@@ -1002,6 +1028,7 @@ export function renderProfileView(container, onBack) {
         }
       };
       reader.onerror = () => {
+        try { e.target.value = ''; } catch {}
         alert(t('backupError'));
       };
       reader.readAsText(file);
@@ -1646,12 +1673,13 @@ export function renderProfileView(container, onBack) {
     document.body.appendChild(modal);
 
     // Highlight visited countries on the poster SVG map
-    const svgEl = modal.querySelector('.poster-world-svg');
+    const svgEl = modal.querySelector('.poster-world-svg') || modal.querySelector('.poster-svg-wrapper svg') || modal.querySelector('svg');
     if (svgEl) {
       visitedCodes.forEach(cCode => {
-        const paths = svgEl.querySelectorAll(`path[data-code="${cCode}"]`);
+        const paths = svgEl.querySelectorAll(`path[data-code="${cCode}"], [id="${cCode}"]`);
         paths.forEach(p => {
           p.classList.add('visited');
+          p.style.fill = visitedColor;
         });
       });
     }
@@ -2449,34 +2477,48 @@ export function renderProfileView(container, onBack) {
 
       // ── Calculate World Cities Comparison ──
       const extractCities = (worldVisitsObj, worldCitiesArr) => {
-        const set = new Map();
+        const map = new Map();
         if (Array.isArray(worldCitiesArr)) {
           worldCitiesArr.forEach(item => {
+            let cName = '';
+            let cCountry = '';
             if (typeof item === 'string' && item.trim()) {
-              set.set(item.trim().toLowerCase(), item.trim());
-            } else if (item && typeof item === 'object' && item.name) {
-              set.set(item.name.trim().toLowerCase(), item.name.trim());
+              cName = item.trim();
+            } else if (item && typeof item === 'object') {
+              cName = (item.cityName || item.name || '').trim();
+              cCountry = (item.countryCode || '').trim();
+            }
+            if (cName) {
+              const normKey = (cCountry ? `${cCountry}::` : '') + cName.toLowerCase();
+              const displayName = cCountry ? `${cName} (${cCountry})` : cName;
+              if (!map.has(normKey)) {
+                map.set(normKey, { displayName, normKey, cName: cName.toLowerCase() });
+              }
             }
           });
         }
         Object.keys(worldVisitsObj || {}).forEach(k => {
           if (k.includes('::') && worldVisitsObj[k]?.status === 'visited') {
             const parts = k.split('::');
+            const cCountry = parts[0]?.trim() || '';
             const cityName = parts[1]?.trim();
             if (cityName) {
-              set.set(cityName.toLowerCase(), `${cityName} (${parts[0]})`);
+              const normKey = (cCountry ? `${cCountry}::` : '') + cityName.toLowerCase();
+              const displayName = `${cityName} (${cCountry})`;
+              map.set(normKey, { displayName, normKey, cName: cityName.toLowerCase() });
             }
           }
         });
-        return Array.from(set.values());
+        return Array.from(map.values());
       };
 
       const myCitiesList = extractCities(myStorage.worldVisits, myStorage.worldCities);
       const otherCitiesList = extractCities(safeWorldVisits, safeCities);
 
-      const commonCities = myCitiesList.filter(c => otherCitiesList.some(oc => oc.toLowerCase() === c.toLowerCase()));
-      const onlyMyCities = myCitiesList.filter(c => !otherCitiesList.some(oc => oc.toLowerCase() === c.toLowerCase()));
-      const onlyOtherCities = otherCitiesList.filter(oc => !myCitiesList.some(mc => mc.toLowerCase() === oc.toLowerCase()));
+      const isCityMatch = (c1, c2) => (c1.normKey === c2.normKey) || (c1.cName === c2.cName);
+      const commonCities = myCitiesList.filter(c => otherCitiesList.some(oc => isCityMatch(c, oc))).map(c => c.displayName);
+      const onlyMyCities = myCitiesList.filter(c => !otherCitiesList.some(oc => isCityMatch(c, oc))).map(c => c.displayName);
+      const onlyOtherCities = otherCitiesList.filter(oc => !myCitiesList.some(mc => isCityMatch(mc, oc))).map(oc => oc.displayName);
 
       const resultsArea = document.getElementById('compare-results-area');
       resultsArea.style.display = 'block';
@@ -2660,15 +2702,18 @@ export function renderProfileView(container, onBack) {
                       extract(myStorage.turkeyVisits);
                       if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz kaydedilmiş mekan yok.' : 'No saved places yet.'}</span>`;
                       const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
-                      return places.map(pl => `
+                      return places.map(pl => {
+                        const r = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+                        return `
                         <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                           <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                             <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
-                            <span style="color:#f59e0b;font-size:0.75rem;">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : ''}</span>
                           </div>
                           ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
                         </div>
-                      `).join('');
+                      `;
+                      }).join('');
                     })()}
                   </div>
                 </div>
@@ -2690,15 +2735,18 @@ export function renderProfileView(container, onBack) {
                       extract(safeTurkeyVisits);
                       if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının kayıtlı mekanı yok.' : 'Friend has no saved places.'}</span>`;
                       const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
-                      return places.map(pl => `
+                      return places.map(pl => {
+                        const r = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+                        return `
                         <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                           <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                             <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
-                            <span style="color:#f59e0b;font-size:0.75rem;">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : ''}</span>
                           </div>
                           ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
                         </div>
-                      `).join('');
+                      `;
+                      }).join('');
                     })()}
                   </div>
                 </div>

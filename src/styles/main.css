@@ -1000,7 +1000,7 @@ html, body, #app {
   position: absolute;
   bottom: 76px;
   left: 20px;
-  z-index: 1000;
+  z-index: 1050;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1249,7 +1249,7 @@ svg, g, path {
   position: absolute;
   bottom: max(32px, calc(env(safe-area-inset-bottom) + 24px));
   left: max(14px, env(safe-area-inset-left));
-  z-index: 1500;
+  z-index: 1050;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1472,7 +1472,7 @@ svg, g, path {
   position: fixed;
   inset: 0;
   background: #0f172a;
-  z-index: 9999;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2079,7 +2079,7 @@ svg, g, path {
   top: max(16px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 12000;
+  z-index: 20000;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2509,6 +2509,8 @@ body[data-theme="emerald"] {
 }
 
 body[data-theme="vintage"] {
+  --theme-card-bg: rgba(241, 245, 249, 0.94);
+  --theme-card-border: rgba(100, 116, 139, 0.3);
   background-color: #cbd5e1;
   background-image: 
     radial-gradient(at 0% 0%, rgba(203, 213, 225, 0.5) 0px, transparent 50%),
@@ -2983,7 +2985,7 @@ body[data-theme="light"] .theme-select-btn.active {
   background: rgba(15, 23, 42, 0.75);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  z-index: 100000;
+  z-index: 13500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3732,14 +3734,15 @@ body[data-theme="light"] .theme-select-btn.active {
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--theme-text-main, #f8fafc);
   border-radius: 6px;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 .bucket-move-btn:hover:not(:disabled) {
   background: rgba(59, 130, 246, 0.25);
@@ -3933,10 +3936,16 @@ body[data-theme="light"] .theme-select-btn.active {
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   cursor: pointer;
-  padding: 0 2px;
+  padding: 4px 6px;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-left: 2px;
+  touch-action: manipulation;
 }
 .sf-del-btn:hover {
   color: #ef4444;
@@ -4035,7 +4044,7 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   background: rgba(0, 0, 0, 0.85);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  z-index: 10000;
+  z-index: 12500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6946,7 +6955,7 @@ body > .floating-sim-switch-pill {
   background: rgba(10, 15, 29, 0.88);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  z-index: 10000;
+  z-index: 12500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7120,6 +7129,13 @@ body > .floating-sim-switch-pill {
   display: flex;
   gap: 20px;
   align-items: flex-start;
+}
+@media (max-width: 480px) {
+  .passport-id-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 }
 .passport-photo-frame {
   width: 100px;
@@ -7423,6 +7439,8 @@ body[data-theme="midnight_gold"] {
   --theme-ui-border: rgba(212, 175, 55, 0.35);
   --theme-text-main: #fef3c7;
   --theme-text-muted: #d4af37;
+  --theme-card-bg: rgba(20, 23, 36, 0.92);
+  --theme-card-border: rgba(212, 175, 55, 0.25);
 }
 body[data-theme="midnight_gold"] .leaflet-container {
   background: #090a10 !important;
@@ -7437,6 +7455,8 @@ body[data-theme="natgeo_atlas"] {
   --theme-ui-border: rgba(140, 112, 82, 0.35);
   --theme-text-main: #2b2118;
   --theme-text-muted: #664d33;
+  --theme-card-bg: rgba(247, 238, 225, 0.95);
+  --theme-card-border: rgba(140, 112, 82, 0.25);
 }
 body[data-theme="natgeo_atlas"] .leaflet-container {
   background: #cbe4ee !important;
@@ -7456,6 +7476,8 @@ body[data-theme="cyberpunk"] {
   --theme-ui-border: rgba(0, 240, 255, 0.4);
   --theme-text-main: #00f0ff;
   --theme-text-muted: #ff007f;
+  --theme-card-bg: rgba(21, 12, 46, 0.92);
+  --theme-card-border: rgba(0, 240, 255, 0.3);
 }
 body[data-theme="cyberpunk"] .leaflet-container {
   background: #070514 !important;
@@ -7470,6 +7492,8 @@ body[data-theme="pure_oled"] {
   --theme-ui-border: rgba(255, 255, 255, 0.15);
   --theme-text-main: #ffffff;
   --theme-text-muted: #888888;
+  --theme-card-bg: #050505;
+  --theme-card-border: rgba(255, 255, 255, 0.12);
 }
 body[data-theme="pure_oled"] .leaflet-container {
   background: #000000 !important;
@@ -7765,7 +7789,7 @@ body[data-theme="pure_oled"] .leaflet-container {
   background: rgba(10, 15, 29, 0.85);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  z-index: 10500;
+  z-index: 12500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8237,7 +8261,7 @@ body[data-theme="pure_oled"] .leaflet-container {
   background: rgba(7, 10, 19, 0.90);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 10000;
+  z-index: 12500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8777,19 +8801,26 @@ body[data-theme="pure_oled"] .leaflet-container {
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 99px;
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: #f87171;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
   line-height: 1;
+  touch-action: manipulation;
+  z-index: 2;
+}
+.journal-photo-thumb .del-photo-btn::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 .journal-photo-loading, .journal-no-photos {
   grid-column: 1 / -1;
@@ -8993,11 +9024,17 @@ body[data-theme="pure_oled"] .leaflet-container {
   background: transparent;
   border: none;
   color: #f87171;
-  font-size: 1rem;
+  font-size: 1.15rem;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 6px 8px;
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
-  opacity: 0.75;
+  opacity: 0.85;
+  touch-action: manipulation;
 }
 .del-place-btn:hover {
   opacity: 1;
@@ -9008,7 +9045,7 @@ body[data-theme="pure_oled"] .leaflet-container {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.92);
-  z-index: 100000;
+  z-index: 13500;
   display: flex;
   align-items: center;
   justify-content: center;

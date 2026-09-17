@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
 import { calculateDemographicImpact } from '../data/worldDemographics.js';
+import { deletePhotosByTarget } from './photoStorage.js';
 
 export const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
@@ -24,6 +25,15 @@ function safeSetItem(key, value) {
     localStorage.setItem(key, value);
   } catch (e) {
     console.warn('LocalStorage save error for key:', key, e);
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014 || e.number === -2147024882)) {
+      if (typeof window !== 'undefined' && !window.__lastQuotaAlert) {
+        window.__lastQuotaAlert = true;
+        setTimeout(() => { window.__lastQuotaAlert = false; }, 30000);
+        if (typeof alert !== 'undefined') {
+          alert('Tarayıcı depolama alanı dolmak üzere veya doldu. Lütfen Ayarlar sekmesinden yedek alıp gereksiz verileri temizleyiniz.');
+        }
+      }
+    }
   }
 }
 
@@ -36,13 +46,22 @@ export function getStorageData() {
 
   try {
     const rawTurkey = localStorage.getItem(STORAGE_KEYS.TURKEY_VISITS);
-    if (rawTurkey) turkeyVisits = JSON.parse(rawTurkey);
+    if (rawTurkey) {
+      const p = JSON.parse(rawTurkey);
+      if (p && typeof p === 'object' && !Array.isArray(p)) turkeyVisits = p;
+    }
 
     const rawWorld = localStorage.getItem(STORAGE_KEYS.WORLD_VISITS);
-    if (rawWorld) worldVisits = JSON.parse(rawWorld);
+    if (rawWorld) {
+      const p = JSON.parse(rawWorld);
+      if (p && typeof p === 'object' && !Array.isArray(p)) worldVisits = p;
+    }
 
     const rawCities = localStorage.getItem(STORAGE_KEYS.WORLD_CITIES);
-    if (rawCities) worldCities = JSON.parse(rawCities);
+    if (rawCities) {
+      const p = JSON.parse(rawCities);
+      if (Array.isArray(p)) worldCities = p;
+    }
 
     const rawProfile = localStorage.getItem('gv_profile') || localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
     if (rawProfile) {
@@ -60,6 +79,8 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
   const { turkeyVisits } = getStorageData();
   if (status === 'unvisited' || !status) {
     delete turkeyVisits[provinceId];
+    deletePhotosByTarget('TR::' + provinceId).catch(() => {});
+    deletePhotosByTarget(String(provinceId)).catch(() => {});
   } else {
     const existing = turkeyVisits[provinceId] || {};
     turkeyVisits[provinceId] = {
@@ -130,6 +151,7 @@ export function saveWorldVisit(countryCode, status, details = {}) {
   const { worldVisits } = getStorageData();
   if (status === 'unvisited' || !status) {
     delete worldVisits[countryCode];
+    deletePhotosByTarget(String(countryCode)).catch(() => {});
   } else {
     const existing = worldVisits[countryCode] || {};
     worldVisits[countryCode] = {
@@ -384,7 +406,8 @@ function notifyStateChange() {
 export function getBucketRanks() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BUCKET_RANKS);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -403,7 +426,8 @@ export function saveBucketRanks(ranks) {
 export function getUserAirlines() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRLINES);
-    const data = raw ? JSON.parse(raw) : {};
+    const parsed = raw ? JSON.parse(raw) : null;
+    const data = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
     let changed = false;
     for (const airline of ALL_AIRLINES) {
       if (airline.code && data[airline.id]) {
@@ -462,7 +486,8 @@ export function toggleUserAirline(airlineId, flightsCount = 1) {
 export function getSavedFriends() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SAVED_FRIENDS);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -500,7 +525,8 @@ export function deleteFriend(friendId) {
 export function getUserAircraft() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AIRCRAFT);
-    return raw ? JSON.parse(raw) : {};
+    const parsed = raw ? JSON.parse(raw) : null;
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
   } catch {
     return {};
   }

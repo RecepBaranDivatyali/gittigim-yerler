@@ -12,9 +12,17 @@ export const ACHIEVEMENT_CATEGORIES = {
 };
 
 function getContinentCount(s, continentKey) {
-  const counts = s.continentCounts || {};
-  const key = continentKey.toLowerCase();
-  return counts[key] !== undefined ? counts[key] : (counts[continentKey] || 0);
+  const counts = s?.continentCounts || {};
+  const key = (continentKey || '').toLowerCase();
+  const matchedKey = Object.keys(counts).find(k => k.toLowerCase() === key);
+  return matchedKey ? (counts[matchedKey] || 0) : 0;
+}
+
+function getRegionCount(s, regionKey) {
+  const counts = s?.regionCounts || {};
+  const key = (regionKey || '').toLowerCase();
+  const matchedKey = Object.keys(counts).find(k => k.toLowerCase() === key);
+  return matchedKey ? (counts[matchedKey] || 0) : 0;
 }
 
 function getVisitedCodes(s) {
@@ -80,13 +88,13 @@ export const ACHIEVEMENTS = [
   
   // Türkiye Bölgeleri
   { id: 'all_7_regions', title: '7 Bölge Gezgini', desc: 'Türkiye\'nin 7 coğrafi bölgesinden de en az 1\'er il gez', icon: '🌈', category: 'turkey', check: s => Object.values(s.regionCounts || {}).filter(v => v > 0).length >= 7 },
-  { id: 'region_marmara', title: 'Marmara Efendisi', desc: 'Marmara Bölgesi\'nin tüm 11 ilini tamamla', icon: '🌊', category: 'turkey', check: s => (s.regionCounts?.marmara || 0) >= 11 },
-  { id: 'region_ege', title: 'Ege Âşıkları', desc: 'Ege Bölgesi\'nin tüm 8 ilini tamamla', icon: '🏖️', category: 'turkey', check: s => (s.regionCounts?.ege || 0) >= 8 },
-  { id: 'region_akdeniz', title: 'Akdeniz Güneşi', desc: 'Akdeniz Bölgesi\'nin tüm 8 ilini tamamla', icon: '☀️', category: 'turkey', check: s => (s.regionCounts?.akdeniz || 0) >= 8 },
-  { id: 'region_karadeniz', title: 'Karadeniz Ruhu', desc: 'Karadeniz Bölgesi\'nin tüm 18 ilini tamamla', icon: '🌲', category: 'turkey', check: s => (s.regionCounts?.karadeniz || 0) >= 18 },
-  { id: 'region_ic_anadolu', title: 'Bozkırın Kalbi', desc: 'İç Anadolu Bölgesi\'nin tüm 13 ilini tamamla', icon: '🌾', category: 'turkey', check: s => (s.regionCounts?.ic_anadolu || 0) >= 13 },
-  { id: 'region_dogu_anadolu', title: 'Doğu Zirveleri', desc: 'Doğu Anadolu Bölgesi\'nin tüm 14 ilini tamamla', icon: '⛰️', category: 'turkey', check: s => (s.regionCounts?.dogu_anadolu || 0) >= 14 },
-  { id: 'region_guneydogu', title: 'Güneydoğu Masalı', desc: 'Güneydoğu Anadolu\'nun tüm 9 ilini tamamla', icon: '🏰', category: 'turkey', check: s => (s.regionCounts?.guneydogu_anadolu || 0) >= 9 },
+  { id: 'region_marmara', title: 'Marmara Efendisi', desc: 'Marmara Bölgesi\'nin tüm 11 ilini tamamla', icon: '🌊', category: 'turkey', check: s => getRegionCount(s, 'marmara') >= 11 },
+  { id: 'region_ege', title: 'Ege Âşıkları', desc: 'Ege Bölgesi\'nin tüm 8 ilini tamamla', icon: '🏖️', category: 'turkey', check: s => getRegionCount(s, 'ege') >= 8 },
+  { id: 'region_akdeniz', title: 'Akdeniz Güneşi', desc: 'Akdeniz Bölgesi\'nin tüm 8 ilini tamamla', icon: '☀️', category: 'turkey', check: s => getRegionCount(s, 'akdeniz') >= 8 },
+  { id: 'region_karadeniz', title: 'Karadeniz Ruhu', desc: 'Karadeniz Bölgesi\'nin tüm 18 ilini tamamla', icon: '🌲', category: 'turkey', check: s => getRegionCount(s, 'karadeniz') >= 18 },
+  { id: 'region_ic_anadolu', title: 'Bozkırın Kalbi', desc: 'İç Anadolu Bölgesi\'nin tüm 13 ilini tamamla', icon: '🌾', category: 'turkey', check: s => getRegionCount(s, 'ic_anadolu') >= 13 },
+  { id: 'region_dogu_anadolu', title: 'Doğu Zirveleri', desc: 'Doğu Anadolu Bölgesi\'nin tüm 14 ilini tamamla', icon: '⛰️', category: 'turkey', check: s => getRegionCount(s, 'dogu_anadolu') >= 14 },
+  { id: 'region_guneydogu', title: 'Güneydoğu Masalı', desc: 'Güneydoğu Anadolu\'nun tüm 9 ilini tamamla', icon: '🏰', category: 'turkey', check: s => getRegionCount(s, 'guneydogu_anadolu') >= 9 },
 
   // ─── ŞEHİR & EYALET AVCISI ─────────────────────────────────────
   { id: 'city_first', title: 'İlk Şehir', desc: 'Herhangi bir ülkede 1 şehir/bölge işaretle', icon: '🏙️', category: 'city', check: s => s.worldCityCount >= 1 },
