@@ -661,30 +661,6 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
-        <!-- 3B. Screen & View Mode (Desktop Fullscreen vs Mobile Phone Frame) -->
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <h3 class="settings-card-title">📱 ${currentLang === 'tr' ? 'Ekran & Görünüm Modu' : 'Display & View Mode'}</h3>
-          </div>
-          <p class="settings-card-desc">${currentLang === 'tr' ? 'Masaüstü bilgisayarlarda telefon çerçevesi veya tam ekran harita modu arasında geçiş yapın:' : 'Switch between mobile phone simulator or fullscreen map mode on desktop:'}</p>
-          <div class="settings-mode-stack">
-            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') !== 'fullscreen' ? 'active' : ''}" id="btn-set-mode-phone">
-              <span class="settings-mode-icon">📱</span>
-              <div class="settings-mode-text">
-                <span class="settings-mode-title">${currentLang === 'tr' ? 'Mobil Telefon Çerçevesi' : 'Mobile Phone Frame'}</span>
-                <span class="settings-mode-sub">390 × 844 px</span>
-              </div>
-            </button>
-            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') === 'fullscreen' ? 'active' : ''}" id="btn-set-mode-fullscreen">
-              <span class="settings-mode-icon">🖥️</span>
-              <div class="settings-mode-text">
-                <span class="settings-mode-title">${currentLang === 'tr' ? 'Masaüstü Tam Ekran' : 'Desktop Fullscreen'}</span>
-                <span class="settings-mode-sub">${currentLang === 'tr' ? 'Geniş harita görünümü' : 'Wide map view'}</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
         <!-- 4. Language & Region -->
         <div class="settings-card">
           <div class="settings-card-header">
@@ -704,19 +680,41 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <!-- 5. Home Country (Ana Ülke) -->
-        <div class="settings-card">
+        <div class="settings-card settings-card-country-picker">
           <div class="settings-card-header">
             <h3 class="settings-card-title">📍 ${t('homeCountry')}</h3>
           </div>
           <p class="settings-card-desc">${t('homeCountryDesc')}</p>
-          <div class="home-country-picker-box">
-            <select id="settings-home-country-select" class="home-country-select-styled">
-              ${sortedCountries.map(c => `
-                <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
-                  ${c.flag || '🌍'} ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)}
-                </option>
-              `).join('')}
-            </select>
+          <div class="country-picker-container" id="country-picker-container">
+            <button type="button" class="country-picker-trigger" id="country-picker-trigger" aria-expanded="false" aria-haspopup="listbox">
+              <div class="country-picker-trigger-content">
+                <span class="country-picker-trigger-flag">${homeCountryFlagHtml}</span>
+                <span class="country-picker-trigger-name">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
+              </div>
+              <span class="country-picker-trigger-chevron">▾</span>
+            </button>
+            <div class="country-picker-dropdown" id="country-picker-dropdown" style="display:none;" role="listbox">
+              <div class="country-picker-search-box">
+                <span class="country-picker-search-icon">🔍</span>
+                <input type="text" id="country-picker-search-input" class="country-picker-search-input" placeholder="${currentLang === 'tr' ? 'Ülke ara...' : 'Search country...'}" autocomplete="off" />
+              </div>
+              <div class="country-picker-options-list" id="country-picker-options-list">
+                ${sortedCountries.map(c => {
+                  const flagHtml = getCountryFlagHtml(c.code, c.flag, { width: 24, height: 16 });
+                  const cName = currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name);
+                  const isSelected = c.code === currentHomeCountry;
+                  return `
+                    <div class="country-picker-option ${isSelected ? 'selected' : ''}" data-code="${c.code}" data-name="${escapeHtml(cName.toLowerCase())}" role="option" aria-selected="${isSelected}">
+                      <div class="country-picker-option-left">
+                        <span class="country-picker-option-flag">${flagHtml}</span>
+                        <span class="country-picker-option-name">${escapeHtml(cName)}</span>
+                      </div>
+                      ${isSelected ? '<span class="country-picker-option-check">✓</span>' : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -940,16 +938,6 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    // 3B. Display View Mode Selection
-    contentArea.querySelector('#btn-set-mode-phone')?.addEventListener('click', () => {
-      localStorage.removeItem('gv_simulator_mode');
-      window.location.reload();
-    });
-    contentArea.querySelector('#btn-set-mode-fullscreen')?.addEventListener('click', () => {
-      localStorage.setItem('gv_simulator_mode', 'fullscreen');
-      window.location.reload();
-    });
-
     // 4. Language Selection
     contentArea.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -958,14 +946,69 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    // 5. Home Country Selection
-    document.getElementById('settings-home-country-select')?.addEventListener('change', (e) => {
-      setHomeCountry(e.target.value);
-      if (window.__refreshMapStats) {
-        window.__refreshMapStats();
+    // 5. Custom Searchable Country Picker Selection
+    const countryTrigger = contentArea.querySelector('#country-picker-trigger');
+    const countryDropdown = contentArea.querySelector('#country-picker-dropdown');
+    const countrySearchInput = contentArea.querySelector('#country-picker-search-input');
+    const countryOptions = contentArea.querySelectorAll('.country-picker-option');
+
+    if (countryTrigger && countryDropdown) {
+      countryTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = countryDropdown.style.display !== 'none';
+        if (isOpen) {
+          countryDropdown.style.display = 'none';
+          countryTrigger.setAttribute('aria-expanded', 'false');
+        } else {
+          countryDropdown.style.display = 'block';
+          countryTrigger.setAttribute('aria-expanded', 'true');
+          if (countrySearchInput) {
+            countrySearchInput.value = '';
+            countrySearchInput.focus();
+            countryOptions.forEach(opt => { opt.style.display = 'flex'; });
+          }
+          const selectedOpt = countryDropdown.querySelector('.country-picker-option.selected');
+          if (selectedOpt) {
+            selectedOpt.scrollIntoView({ block: 'nearest' });
+          }
+        }
+      });
+
+      if (countrySearchInput) {
+        countrySearchInput.addEventListener('input', (e) => {
+          const q = e.target.value.trim().toLowerCase();
+          countryOptions.forEach(opt => {
+            const name = opt.getAttribute('data-name') || '';
+            const code = (opt.getAttribute('data-code') || '').toLowerCase();
+            const match = !q || name.includes(q) || code.includes(q);
+            opt.style.display = match ? 'flex' : 'none';
+          });
+        });
+        countrySearchInput.addEventListener('click', (e) => e.stopPropagation());
       }
-      render();
-    });
+
+      countryOptions.forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newCode = opt.getAttribute('data-code');
+          if (newCode) {
+            setHomeCountry(newCode);
+            if (window.__refreshMapStats) {
+              window.__refreshMapStats();
+            }
+            render();
+          }
+        });
+      });
+
+      const handleOutsideCountryClick = (e) => {
+        if (!contentArea.querySelector('#country-picker-container')?.contains(e.target)) {
+          if (countryDropdown) countryDropdown.style.display = 'none';
+          if (countryTrigger) countryTrigger.setAttribute('aria-expanded', 'false');
+        }
+      };
+      document.addEventListener('click', handleOutsideCountryClick);
+    }
 
     // 5B. Passport Type Selection
     contentArea.querySelectorAll('.passport-type-btn').forEach(btn => {

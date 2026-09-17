@@ -41,65 +41,25 @@ export function setSimulatorScaleMode(scaleMode) {
   localStorage.setItem('gv_simulator_scale', scaleMode);
 }
 
-// Floating button displayed on desktop when in fullscreen mode
+// Floating button displayed on desktop when in fullscreen mode (disabled per user request)
 export function renderSimulatorSwitcherButton() {
-  if (!isDesktopWeb()) return;
-  if (window.location.search.includes('simulated=1')) return;
-  if (getSimulatorMode() !== 'fullscreen') return;
-
-  let btn = document.getElementById('floating-sim-switch-pill');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'floating-sim-switch-pill';
-    btn.className = 'floating-sim-switch-pill';
-    btn.type = 'button';
-    btn.innerHTML = `
-      <span class="sim-pill-icon">📱</span>
-      <span class="sim-pill-label">Mobil Görünüm</span>
-    `;
-    btn.title = 'Mobil Telefon Çerçevesine Geç (390×844)';
-    btn.addEventListener('click', () => {
-      setSimulatorMode('phone');
-      window.location.reload();
-    });
-  }
-
-  const topGroup = document.querySelector('.floating-top-right-group');
-  if (topGroup) {
-    if (btn.parentNode !== topGroup) {
-      topGroup.insertBefore(btn, topGroup.firstChild);
-    }
-  } else if (!btn.parentNode) {
-    document.body.appendChild(btn);
-  }
+  const existingBtn = document.getElementById('floating-sim-switch-pill');
+  if (existingBtn) existingBtn.remove();
 }
 
 /**
  * Initializes the Phone Simulator if conditions are met.
- * Returns true if simulator is activated (halting normal map boot on parent),
- * or false if normal app flow should proceed.
+ * Disabled: Website runs directly in responsive desktop mode.
  */
 export function initPhoneSimulator() {
-  // If running inside simulated iframe or on mobile phone, do NOT run simulator
-  if (window.location.search.includes('simulated=1')) {
-    document.body.classList.add('is-simulated-screen');
-    return false;
+  const existingStudio = document.getElementById('phone-simulator-studio');
+  if (existingStudio) existingStudio.remove();
+  document.body.classList.remove('sim-studio-active', 'is-simulated-screen');
+  const appRoot = document.getElementById('app');
+  if (appRoot) {
+    appRoot.style.display = '';
   }
-
-  if (!isDesktopWeb()) {
-    return false;
-  }
-
-  // If user explicitly chose fullscreen mode on desktop
-  const mode = getSimulatorMode();
-  if (mode === 'fullscreen') {
-    renderSimulatorSwitcherButton();
-    return false;
-  }
-
-  // Otherwise, activate Clean Phone Simulator!
-  renderPhoneSimulatorStudio();
-  return true;
+  return false;
 }
 
 function renderPhoneSimulatorStudio() {

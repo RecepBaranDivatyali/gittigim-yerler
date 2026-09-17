@@ -11,7 +11,6 @@ import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlag
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
-import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -1003,9 +1002,6 @@ export function renderWorldMapView(container, options = {}) {
         }
       });
     }
-
-    // Mount Desktop Simulator Switcher if running in fullscreen mode
-    renderSimulatorSwitcherButton();
 
     // Visa Mode Toggle Handling
     const visaToggleBtn = container.querySelector('#btn-toggle-visa-mode');
@@ -4128,15 +4124,42 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   }
   showPopupBackdrop(activeGeoFeature, currentStatus, cleanTitle, latlng, id, type, countryCode);
 
+  const searchWrap = document.getElementById('map-search-wrap');
+  let topBoundary = 115;
+  if (searchWrap && map) {
+    const searchRect = searchWrap.getBoundingClientRect();
+    const mapRect = map.getContainer().getBoundingClientRect();
+    topBoundary = Math.max(110, Math.round((searchRect.bottom - mapRect.top) + 16));
+  } else if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+    topBoundary = 120;
+  }
+
   activeStatusPopup = L.popup({
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: typeof window !== 'undefined' ? Math.min(320, window.innerWidth - 20) : 320
+    maxWidth: typeof window !== 'undefined' ? Math.min(320, window.innerWidth - 20) : 320,
+    autoPan: true,
+    autoPanPaddingTopLeft: L.point(14, topBoundary),
+    autoPanPaddingBottomRight: L.point(14, 80)
   })
   .setLatLng(latlng)
   .setContent(content)
   .openOn(map);
+
+  // Safety check: ensure popup boundary strictly starts below the search button
+  requestAnimationFrame(() => {
+    if (!activeStatusPopup || !map) return;
+    const popupEl = activeStatusPopup.getElement();
+    if (popupEl && searchWrap) {
+      const popupRect = popupEl.getBoundingClientRect();
+      const searchRect = searchWrap.getBoundingClientRect();
+      if (popupRect.top < searchRect.bottom + 12) {
+        const overlap = Math.round((searchRect.bottom + 16) - popupRect.top);
+        map.panBy([0, -overlap], { animate: true, duration: 0.25 });
+      }
+    }
+  });
 
   activePopupOutsideListener = (e) => {
     const popupEl = activeStatusPopup ? activeStatusPopup.getElement() : null;
