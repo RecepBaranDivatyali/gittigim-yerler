@@ -4,6 +4,7 @@ import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
+import { initPhoneSimulator } from './components/PhoneSimulator.js';
 
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -19,6 +20,11 @@ function syncAppHeight() {
 }
 
 function initApp() {
+  // If desktop web, launch interactive phone simulator studio unless user switched to fullscreen or inside iframe
+  if (initPhoneSimulator()) {
+    return;
+  }
+
   // Apply saved theme and UI font scale immediately on startup
   applyTheme(getTheme());
 
