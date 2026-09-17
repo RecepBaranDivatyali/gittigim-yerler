@@ -8497,6 +8497,175 @@ body[data-theme="pure_oled"] .leaflet-container {
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
+.visa-mode-chip.evisa {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+/* ─── Popup Visa Selector ─── */
+.popup-visa-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.popup-visa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.70rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+.popup-visa-passport-tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+.popup-visa-reset-btn {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.popup-visa-reset-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.popup-visa-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  width: 100%;
+}
+
+.popup-visa-opt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 3px;
+  border-radius: 8px;
+  font-size: 0.70rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  transition: all 0.18s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.popup-visa-opt-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.popup-visa-opt-btn.active.vizesiz {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+  font-weight: 700;
+}
+
+.popup-visa-opt-btn.active.vize {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #ef4444;
+  color: #f87171;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+  font-weight: 700;
+}
+
+.popup-visa-opt-btn.active.kapida_vize {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+  font-weight: 700;
+}
+
+.popup-visa-opt-btn.active.e_vize {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #8b5cf6;
+  color: #c084fc;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
+  font-weight: 700;
+}
+
+.popup-visa-note-bar {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-align: center;
+  padding-top: 2px;
+  line-height: 1.3;
+}
+
+/* Light Theme support */
+body[data-theme="light"] .popup-visa-container {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+body[data-theme="light"] .popup-visa-header {
+  color: #64748b;
+}
+body[data-theme="light"] .popup-visa-opt-btn {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+body[data-theme="light"] .popup-visa-opt-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+body[data-theme="light"] .popup-visa-opt-btn.active.vizesiz {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+body[data-theme="light"] .popup-visa-opt-btn.active.vize {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+body[data-theme="light"] .popup-visa-opt-btn.active.kapida_vize {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+body[data-theme="light"] .popup-visa-opt-btn.active.e_vize {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+  color: #5b21b6;
+}
+body[data-theme="light"] .popup-visa-note-bar {
+  color: #64748b;
+}
 .btn-exit-visa-mode {
   background: rgba(239, 68, 68, 0.18);
   border: 1px solid rgba(239, 68, 68, 0.4);

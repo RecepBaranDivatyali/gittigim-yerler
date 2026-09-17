@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, getUserVisaOverride, setUserVisaOverride } from '../utils/storage.js';
 import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
@@ -597,8 +597,9 @@ export function renderWorldMapView(container, options = {}) {
               <span class="visa-banner-title" id="visa-banner-title">Vize Muafiyet Haritası</span>
               <div class="visa-mode-chips">
                 <span class="visa-mode-chip free">🟢 Vizesiz</span>
-                <span class="visa-mode-chip voa">🟡 Kapıda / e-Vize</span>
-                <span class="visa-mode-chip req">🔴 Vize Gerekli</span>
+                <span class="visa-mode-chip req">🔴 Vize</span>
+                <span class="visa-mode-chip voa">🟡 Kapıda Vize</span>
+                <span class="visa-mode-chip evisa">🟣 e-Vize</span>
               </div>
             </div>
             <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode">✖️ Seyahat Haritama Dön</button>
@@ -3238,7 +3239,9 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const countryFlag = cObj ? cObj.flag : (countryCode === 'TR' ? '🇹🇷' : '🌍');
 
   const passportType = getPassportType();
-  const visaBadge = countryCode ? getVisaBadgeInfo(countryCode, passportType) : null;
+  const homeCountry = getHomeCountry() || 'TR';
+  const isHomeCountry = countryCode === homeCountry;
+  const visaBadge = (countryCode && !isHomeCountry) ? getVisaBadgeInfo(countryCode, passportType) : null;
   const guide = countryCode ? getCountryGuide(countryCode) : null;
 
   const transportIcons = {
@@ -3250,13 +3253,38 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   };
 
   content.innerHTML = `
-    <div class="map-status-popup-header" style="justify-content:center;flex-direction:column;align-items:center;margin-bottom:10px;gap:6px;">
+    <div class="map-status-popup-header" style="justify-content:center;flex-direction:column;align-items:center;margin-bottom:8px;gap:4px;">
       <div class="map-status-popup-title" style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">
         ${flagBadgeHtml} <span>${escapeHtml(cleanTitle)}</span>
       </div>
       ${visaBadge ? `
-        <div class="popup-visa-pill" style="background:${visaBadge.bg};border:1px solid ${visaBadge.border};color:${visaBadge.color};font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;">
-          <span>${visaBadge.icon}</span> <span>${escapeHtml(visaBadge.label)}</span> <span style="opacity:0.8;font-size:0.68rem;font-weight:600;">(${escapeHtml(visaBadge.days)})</span>
+        <div class="popup-visa-container" id="popup-visa-container">
+          <div class="popup-visa-header">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="popup-visa-header-title">🛂 Vize</span>
+              <span class="popup-visa-passport-tag">${passportType === 'yesil' ? '🇹🇷 Yeşil' : '🇹🇷 Bordo'}</span>
+            </div>
+            ${visaBadge.isCustom ? `<button type="button" class="popup-visa-reset-btn" id="btn-reset-visa" title="Resmi vize durumuna geri dön">↺ Sıfırla</button>` : ''}
+          </div>
+          <div class="popup-visa-options-grid">
+            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'vizesiz' ? 'active vizesiz' : ''}" data-visa="vizesiz">
+              <span>🟢</span> <span>Vizesiz</span>
+            </button>
+            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'vize' ? 'active vize' : ''}" data-visa="vize">
+              <span>🔴</span> <span>Vize</span>
+            </button>
+            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'kapida_vize' ? 'active kapida_vize' : ''}" data-visa="kapida_vize">
+              <span>🟡</span> <span>Kapıda Vize</span>
+            </button>
+            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'e_vize' ? 'active e_vize' : ''}" data-visa="e_vize">
+              <span>🟣</span> <span>e-Vize</span>
+            </button>
+          </div>
+          ${visaBadge.days ? `
+            <div class="popup-visa-note-bar">
+              <span>ℹ️ ${escapeHtml(visaBadge.days)}</span>
+            </div>
+          ` : ''}
         </div>
       ` : ''}
     </div>
@@ -4162,6 +4190,67 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       setTimeout(ensurePopupInView, 160);
     });
   });
+
+  // 🛂 Visa Options Click Handling
+  const visaContainer = content.querySelector('#popup-visa-container');
+  if (visaContainer && countryCode) {
+    const visaOptBtns = visaContainer.querySelectorAll('.popup-visa-opt-btn');
+
+    const updateVisaUi = (newInfo) => {
+      if (!newInfo) return;
+      visaOptBtns.forEach(btn => {
+        const vVal = btn.getAttribute('data-visa');
+        btn.className = `popup-visa-opt-btn ${vVal === newInfo.status ? `active ${vVal}` : ''}`;
+      });
+      const noteBar = visaContainer.querySelector('.popup-visa-note-bar span');
+      if (noteBar && newInfo.days) {
+        noteBar.textContent = `ℹ️ ${newInfo.days}`;
+      }
+      let rBtn = visaContainer.querySelector('#btn-reset-visa');
+      if (newInfo.isCustom) {
+        if (!rBtn) {
+          rBtn = document.createElement('button');
+          rBtn.type = 'button';
+          rBtn.id = 'btn-reset-visa';
+          rBtn.className = 'popup-visa-reset-btn';
+          rBtn.title = 'Resmi vize durumuna geri dön';
+          rBtn.textContent = '↺ Sıfırla';
+          rBtn.addEventListener('click', onResetVisa);
+          visaContainer.querySelector('.popup-visa-header')?.appendChild(rBtn);
+        }
+      } else if (rBtn) {
+        rBtn.remove();
+      }
+
+      // Update map style if visa mode is active
+      if (isVisaModeActive && worldLayer) {
+        worldLayer.setStyle(countryStyle);
+      }
+      if (activeStatusPopup) {
+        activeStatusPopup.update();
+      }
+    };
+
+    function onResetVisa(e) {
+      e.stopPropagation();
+      setUserVisaOverride(countryCode, null);
+      const updated = getVisaBadgeInfo(countryCode, passportType, null);
+      updateVisaUi(updated);
+    }
+
+    visaContainer.querySelector('#btn-reset-visa')?.addEventListener('click', onResetVisa);
+
+    visaOptBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const selectedVisa = btn.getAttribute('data-visa');
+        setUserVisaOverride(countryCode, selectedVisa);
+        const updated = getVisaBadgeInfo(countryCode, passportType, selectedVisa);
+        updateVisaUi(updated);
+      });
+    });
+  }
+
   let activeGeoFeature = feature;
   if (!activeGeoFeature && countryCode && countryFeaturesByCode[countryCode]) {
     activeGeoFeature = countryFeaturesByCode[countryCode];
@@ -4334,9 +4423,10 @@ function countryStyle(c) {
     const visaInfo = getVisaBadgeInfo(code, pType);
     let visaFill = '#1e293b';
     if (visaInfo) {
-      if (visaInfo.status === 'free') visaFill = '#10b981';
-      else if (visaInfo.status === 'voa_evisa') visaFill = '#f59e0b';
-      else if (visaInfo.status === 'required') visaFill = '#ef4444';
+      if (visaInfo.status === 'vizesiz' || visaInfo.status === 'free') visaFill = '#10b981';
+      else if (visaInfo.status === 'kapida_vize' || visaInfo.status === 'voa') visaFill = '#f59e0b';
+      else if (visaInfo.status === 'e_vize' || visaInfo.status === 'evisa') visaFill = '#8b5cf6';
+      else if (visaInfo.status === 'vize' || visaInfo.status === 'required') visaFill = '#ef4444';
     }
     return {
       fillColor: visaFill,

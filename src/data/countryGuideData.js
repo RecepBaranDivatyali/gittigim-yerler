@@ -832,62 +832,41 @@ export const COUNTRY_GUIDE_DATA = {
   }
 };
 
+import { getCountryVisaInfo, getOfficialVisaData } from './worldVisaData.js';
+import { getUserVisaOverride } from '../utils/storage.js';
+
 export function getCountryGuide(countryCode) {
   if (!countryCode) return null;
   const code = countryCode.toUpperCase();
+  const officialVisa = getOfficialVisaData(code);
+
   if (COUNTRY_GUIDE_DATA[code]) {
-    return COUNTRY_GUIDE_DATA[code];
+    const data = COUNTRY_GUIDE_DATA[code];
+    return {
+      ...data,
+      vb: officialVisa?.vb || data.vb,
+      vy: officialVisa?.vy || data.vy,
+      vd: officialVisa?.vd || data.vd
+    };
   }
 
-  // Default fallback for any unlisted territory
+  // Default fallback for any unlisted territory with real visa info
   return {
     plug: 'Type C / G',
     cur: 'Yerel Para Birimi',
     em: '112 / 911',
-    vb: 'required',
-    vy: 'free',
-    vd: 'Vize Bilgisi İçin Elçilik Kontrol Edilmeli',
+    vb: officialVisa ? officialVisa.vb : 'vize',
+    vy: officialVisa ? officialVisa.vy : 'vizesiz',
+    vd: officialVisa ? officialVisa.vd : 'Vize Gerekli',
     foods: ['Geleneksel Mutfak', 'Sokak Lezzetleri', 'Yöresel İçecekler'],
     spots: ['Tarihi Şehir Merkezi', 'Milli Parklar & Doğal Alanlar', 'Kültür & Sanat Müzesi']
   };
 }
 
-export function getVisaBadgeInfo(countryCode, passportType = 'bordo') {
-  const guide = getCountryGuide(countryCode);
-  if (!guide) return null;
-
-  const isBordo = passportType === 'bordo';
-  const status = isBordo ? guide.vb : guide.vy;
-
-  if (status === 'free') {
-    return {
-      status: 'free',
-      color: '#10b981',
-      bg: 'rgba(16, 185, 129, 0.15)',
-      border: 'rgba(16, 185, 129, 0.35)',
-      icon: '🟢',
-      label: isBordo ? 'Bordo Pasaporta Vizesiz' : 'Yeşil Pasaporta Vizesiz',
-      days: guide.vd
-    };
-  } else if (status === 'voa_evisa') {
-    return {
-      status: 'voa_evisa',
-      color: '#f59e0b',
-      bg: 'rgba(245, 158, 11, 0.15)',
-      border: 'rgba(245, 158, 11, 0.35)',
-      icon: '🟡',
-      label: 'Kapıda Vize / Kolay e-Vize',
-      days: guide.vd
-    };
-  } else {
-    return {
-      status: 'required',
-      color: '#ef4444',
-      bg: 'rgba(239, 68, 68, 0.15)',
-      border: 'rgba(239, 68, 68, 0.35)',
-      icon: '🔴',
-      label: isBordo ? 'Vize Gerekli' : 'Yeşil Pasaporta Vize Gerekli',
-      days: guide.vd
-    };
-  }
+export function getVisaBadgeInfo(countryCode, passportType = 'bordo', customOverride = null) {
+  if (!countryCode) return null;
+  const code = countryCode.toUpperCase();
+  const override = customOverride !== null ? customOverride : getUserVisaOverride(code);
+  return getCountryVisaInfo(code, passportType, override);
 }
+export { getCountryVisaInfo, getOfficialVisaData };

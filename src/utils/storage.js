@@ -833,3 +833,36 @@ export function getTotalPlacesCount() {
   return getAllSavedPlaces().length;
 }
 
+// ─── User Custom Visa Overrides ─────────────────────────────────────────────
+export function getUserVisaOverrides() {
+  try {
+    const raw = localStorage.getItem('gv_visa_overrides');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getUserVisaOverride(countryCode) {
+  if (!countryCode) return null;
+  const overrides = getUserVisaOverrides();
+  return overrides[countryCode.toUpperCase()] || null;
+}
+
+export function setUserVisaOverride(countryCode, visaStatus) {
+  if (!countryCode) return;
+  try {
+    const code = countryCode.toUpperCase();
+    const overrides = getUserVisaOverrides();
+    if (!visaStatus) {
+      delete overrides[code];
+    } else {
+      overrides[code] = visaStatus; // 'vizesiz' | 'vize' | 'kapida_vize' | 'e_vize'
+    }
+    safeSetItem('gv_visa_overrides', JSON.stringify(overrides));
+  } catch (e) {
+    console.warn('Error saving visa override', e);
+  }
+  notifyStateChange();
+}
+
