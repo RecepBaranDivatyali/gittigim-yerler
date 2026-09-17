@@ -5,6 +5,7 @@ import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { initPhoneSimulator } from './components/PhoneSimulator.js';
+import { checkOnboarding } from './components/OnboardingModal.js';
 
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -75,6 +76,7 @@ function initApp() {
     if (!mapInitialized) {
       mapInitialized = true;
       renderWorldMapView(mapContainer, { onOpenProfile: showProfile });
+      setTimeout(checkOnboarding, 600);
     } else {
       if (window.__refreshMapStats) window.__refreshMapStats();
       if (window.__leafletMapInstance) {

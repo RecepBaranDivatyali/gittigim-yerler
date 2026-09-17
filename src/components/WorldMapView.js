@@ -5,7 +5,8 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType } from '../utils/storage.js';
+import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
@@ -2936,6 +2937,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   let currentStatus = 'unvisited';
   let currentRating = 0;
   let currentNotes = '';
+  let currentEntryDate = '';
+  let currentEntryTransport = type === 'province' ? 'car' : 'flight';
+  let currentExitDate = '';
+  let currentExitTransport = type === 'province' ? 'car' : 'flight';
 
   if (type === 'province') {
     const num = id.replace('TR::', '');
@@ -2943,6 +2948,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentStatus = ns(pData.status);
     currentRating = pData.rating || 0;
     currentNotes = pData.notes || '';
+    currentEntryDate = pData.entryDate || '';
+    currentEntryTransport = pData.entryTransport || 'car';
+    currentExitDate = pData.exitDate || '';
+    currentExitTransport = pData.exitTransport || 'car';
   } else if (type === 'city') {
     const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
     const wData = worldVisits[id] || {};
@@ -2955,11 +2964,19 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       : (ns(regionData.status) !== 'unvisited' ? ns(regionData.status) : (isCityInList ? 'visited' : 'unvisited'));
     currentRating = wData.rating || regionData.rating || 0;
     currentNotes = wData.notes || regionData.notes || '';
+    currentEntryDate = wData.entryDate || regionData.entryDate || '';
+    currentEntryTransport = wData.entryTransport || regionData.entryTransport || 'flight';
+    currentExitDate = wData.exitDate || regionData.exitDate || '';
+    currentExitTransport = wData.exitTransport || regionData.exitTransport || 'flight';
   } else {
     const wData = worldVisits[id] || {};
     currentStatus = ns(wData.status);
     currentRating = wData.rating || 0;
     currentNotes = wData.notes || '';
+    currentEntryDate = wData.entryDate || '';
+    currentEntryTransport = wData.entryTransport || 'flight';
+    currentExitDate = wData.exitDate || '';
+    currentExitTransport = wData.exitTransport || 'flight';
   }
 
   const content = document.createElement('div');
@@ -2970,11 +2987,28 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const cleanTitle = typeof title === 'string' ? title.replace(/<[^>]*>/g, '').trim() : '';
   const flagBadgeHtml = getFlagHtml(countryCode);
 
+  const passportType = getPassportType();
+  const visaBadge = countryCode ? getVisaBadgeInfo(countryCode, passportType) : null;
+  const guide = countryCode ? getCountryGuide(countryCode) : null;
+
+  const transportIcons = {
+    flight: '✈️ Uçak',
+    train: '🚆 Tren',
+    car: '🚗 Şahsi Araba',
+    bus: '🚌 Otobüs',
+    ship: '🚢 Gemi'
+  };
+
   content.innerHTML = `
-    <div class="map-status-popup-header" style="justify-content:center;margin-bottom:10px;">
+    <div class="map-status-popup-header" style="justify-content:center;flex-direction:column;align-items:center;margin-bottom:10px;gap:6px;">
       <div class="map-status-popup-title" style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">
         ${flagBadgeHtml} <span>${escapeHtml(cleanTitle)}</span>
       </div>
+      ${visaBadge ? `
+        <div class="popup-visa-pill" style="background:${visaBadge.bg};border:1px solid ${visaBadge.border};color:${visaBadge.color};font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;">
+          <span>${visaBadge.icon}</span> <span>${escapeHtml(visaBadge.label)}</span> <span style="opacity:0.8;font-size:0.68rem;font-weight:600;">(${escapeHtml(visaBadge.days)})</span>
+        </div>
+      ` : ''}
     </div>
 
     <div class="map-status-popup-buttons">
@@ -2990,7 +3024,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         `;
       }).join('')}
 
-      <!-- "Değerlendirme Yap" Butonu: Sadece "Gidildi" durumunda görünür, diğer butonlarla birebir aynı boyutta -->
+      <!-- "Pasaport Damgası" Butonu: Sadece "Gidildi" durumunda görünür -->
+      <button type="button" id="btn-toggle-stamp" class="map-status-btn map-stamp-trigger-btn"
+              style="--btn-color:#06b6d4; display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+        <span class="map-status-dot" style="background:#06b6d4;box-shadow:0 0 10px rgba(6,182,212,0.7);"></span>
+        <span class="map-status-text" id="stamp-trigger-text">
+          ${currentEntryDate ? '🛂 Pasaport Damgalı ✓' : '🛂 Pasaporta Damga Bas'}
+        </span>
+      </button>
+
+      <!-- "Değerlendirme Yap" Butonu: Sadece "Gidildi" durumunda görünür -->
       <button type="button" id="btn-toggle-review" class="map-status-btn map-review-trigger-btn"
               style="--btn-color:#f59e0b; display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="map-status-dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.7);"></span>
@@ -2998,7 +3041,100 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           ${currentRating > 0 ? `⭐ ${t('reviewScore')} (${currentRating}/10)` : `⭐ ${t('rateAndReview')}`}
         </span>
       </button>
+
+      <!-- "Gezgin Alet Çantası & Rehber" Butonu -->
+      ${guide ? `
+        <button type="button" id="btn-toggle-guide" class="map-status-btn map-guide-trigger-btn" style="--btn-color:#8b5cf6;">
+          <span class="map-status-dot" style="background:#8b5cf6;box-shadow:0 0 10px rgba(139,92,246,0.7);"></span>
+          <span class="map-status-text">🧳 Gezgin Rehberi & Priz/Kur</span>
+        </button>
+      ` : ''}
     </div>
+
+    <!-- 🛂 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi -->
+    <div class="map-status-stamp-drawer" id="map-status-stamp-drawer" style="display: none;">
+      <div class="stamp-drawer-header">
+        <span class="stamp-drawer-title">🛂 Giriş & Çıkış Pasaport Damgası</span>
+      </div>
+
+      <!-- Giriş Damgası Bölümü -->
+      <div class="stamp-section-box stamp-entry-box">
+        <div class="stamp-section-label">🟢 GİRİŞ DAMGASI (ENTRY)</div>
+        <div class="stamp-inputs-row">
+          <input type="date" id="popup-stamp-entry-date" class="stamp-date-field" value="${currentEntryDate}" />
+          <select id="popup-stamp-entry-transport" class="stamp-transport-select">
+            <option value="flight" ${currentEntryTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
+            <option value="train" ${currentEntryTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
+            <option value="car" ${currentEntryTransport === 'car' ? 'selected' : ''}>🚗 Şahsi Araba</option>
+            <option value="bus" ${currentEntryTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
+            <option value="ship" ${currentEntryTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Çıkış Damgası Bölümü -->
+      <div class="stamp-section-box stamp-exit-box">
+        <div class="stamp-section-label">🔴 ÇIKIŞ DAMGASI (EXIT)</div>
+        <div class="stamp-inputs-row">
+          <input type="date" id="popup-stamp-exit-date" class="stamp-date-field" value="${currentExitDate}" />
+          <select id="popup-stamp-exit-transport" class="stamp-transport-select">
+            <option value="flight" ${currentExitTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
+            <option value="train" ${currentExitTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
+            <option value="car" ${currentExitTransport === 'car' ? 'selected' : ''}>🚗 Şahsi Araba</option>
+            <option value="bus" ${currentExitTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
+            <option value="ship" ${currentExitTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Canlı Damga Mürekkep Önizlemesi -->
+      <div class="stamp-live-preview-row">
+        <div class="ink-stamp-badge ink-entry" id="ink-preview-entry">
+          <div class="ink-header">★ GİRİŞ / ENTRY ★</div>
+          <div class="ink-code">${countryCode || 'TR'}</div>
+          <div class="ink-sub" id="ink-entry-sub">${currentEntryTransport === 'flight' ? '✈️' : (currentEntryTransport === 'train' ? '🚆' : (currentEntryTransport === 'car' ? '🚗' : (currentEntryTransport === 'bus' ? '🚌' : '🚢')))} ${currentEntryDate || 'Tarih Gir'}</div>
+        </div>
+        <div class="ink-stamp-badge ink-exit" id="ink-preview-exit">
+          <div class="ink-header">★ ÇIKIŞ / EXIT ★</div>
+          <div class="ink-code">${countryCode || 'TR'}</div>
+          <div class="ink-sub" id="ink-exit-sub">${currentExitTransport === 'flight' ? '✈️' : (currentExitTransport === 'train' ? '🚆' : (currentExitTransport === 'car' ? '🚗' : (currentExitTransport === 'bus' ? '🚌' : '🚢')))} ${currentExitDate || 'Tarih Gir'}</div>
+        </div>
+      </div>
+
+      <button type="button" id="btn-save-stamp-data" class="stamp-save-btn">
+        <span>💾 Damgaları Pasaporta İşle</span>
+      </button>
+    </div>
+
+    <!-- 🧳 Gezgin Alet Çantası & Rehber Çekmecesi -->
+    ${guide ? `
+      <div class="map-status-guide-drawer" id="map-status-guide-drawer" style="display: none;">
+        <div class="guide-grid-info">
+          <div class="guide-item">
+            <span class="guide-lbl">🔌 Priz Tipi:</span>
+            <span class="guide-val">${escapeHtml(guide.plug)}</span>
+          </div>
+          <div class="guide-item">
+            <span class="guide-lbl">💵 Para Birimi:</span>
+            <span class="guide-val">${escapeHtml(guide.cur)}</span>
+          </div>
+          <div class="guide-item">
+            <span class="guide-lbl">🚨 Acil Durum:</span>
+            <span class="guide-val">${escapeHtml(guide.em)}</span>
+          </div>
+        </div>
+        <div class="guide-recommendations">
+          <div class="guide-rec-box">
+            <span class="guide-rec-title">🍽️ Meşhur 3 Lezzet:</span>
+            <span class="guide-rec-text">${escapeHtml(guide.foods.join(', '))}</span>
+          </div>
+          <div class="guide-rec-box">
+            <span class="guide-rec-title">📍 Görülmesi Gereken 3 Yer:</span>
+            <span class="guide-rec-text">${escapeHtml(guide.spots.join(', '))}</span>
+          </div>
+        </div>
+      </div>
+    ` : ''}
 
     <!-- IMDb Tarzı 10 Yıldız Değerlendirme & Seyahat Notu Çekmecesi -->
     <div class="map-status-review-drawer" id="map-status-review-drawer" style="display: none;">
@@ -3021,17 +3157,125 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   // UI Elements
   const btnToggleReview = content.querySelector('#btn-toggle-review');
   const reviewDrawer = content.querySelector('#map-status-review-drawer');
+  const btnToggleStamp = content.querySelector('#btn-toggle-stamp');
+  const stampDrawer = content.querySelector('#map-status-stamp-drawer');
+  const btnToggleGuide = content.querySelector('#btn-toggle-guide');
+  const guideDrawer = content.querySelector('#map-status-guide-drawer');
+
   const triggerText = content.querySelector('#review-trigger-text');
   const starsRow = content.querySelector('#imdb-stars-row');
   const starSpans = content.querySelectorAll('.imdb-star');
   const scoreDisplay = content.querySelector('#rating-score-display');
 
-  // Toggle review drawer on "Değerlendirme Yap" click
+  // Drawer toggles (mutually close other drawers for clean layout)
   btnToggleReview?.addEventListener('click', (e) => {
     e.stopPropagation();
     const isVisible = reviewDrawer.style.display === 'flex';
     reviewDrawer.style.display = isVisible ? 'none' : 'flex';
     btnToggleReview.classList.toggle('active', !isVisible);
+    if (!isVisible) {
+      if (stampDrawer) stampDrawer.style.display = 'none';
+      if (btnToggleStamp) btnToggleStamp.classList.remove('active');
+      if (guideDrawer) guideDrawer.style.display = 'none';
+      if (btnToggleGuide) btnToggleGuide.classList.remove('active');
+    }
+  });
+
+  btnToggleStamp?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = stampDrawer.style.display === 'flex';
+    stampDrawer.style.display = isVisible ? 'none' : 'flex';
+    btnToggleStamp.classList.toggle('active', !isVisible);
+    if (!isVisible) {
+      if (reviewDrawer) reviewDrawer.style.display = 'none';
+      if (btnToggleReview) btnToggleReview.classList.remove('active');
+      if (guideDrawer) guideDrawer.style.display = 'none';
+      if (btnToggleGuide) btnToggleGuide.classList.remove('active');
+    }
+  });
+
+  btnToggleGuide?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = guideDrawer.style.display === 'flex';
+    guideDrawer.style.display = isVisible ? 'none' : 'flex';
+    btnToggleGuide.classList.toggle('active', !isVisible);
+    if (!isVisible) {
+      if (reviewDrawer) reviewDrawer.style.display = 'none';
+      if (btnToggleReview) btnToggleReview.classList.remove('active');
+      if (stampDrawer) stampDrawer.style.display = 'none';
+      if (btnToggleStamp) btnToggleStamp.classList.remove('active');
+    }
+  });
+
+  // Stamp Live Preview updates
+  const entryDateInput = content.querySelector('#popup-stamp-entry-date');
+  const entryTransportSelect = content.querySelector('#popup-stamp-entry-transport');
+  const exitDateInput = content.querySelector('#popup-stamp-exit-date');
+  const exitTransportSelect = content.querySelector('#popup-stamp-exit-transport');
+  const inkEntrySub = content.querySelector('#ink-entry-sub');
+  const inkExitSub = content.querySelector('#ink-exit-sub');
+
+  function updateStampPreviews() {
+    const tIcons = { flight: '✈️', train: '🚆', car: '🚗', bus: '🚌', ship: '🚢' };
+    if (inkEntrySub && entryTransportSelect && entryDateInput) {
+      inkEntrySub.textContent = `${tIcons[entryTransportSelect.value] || '✈️'} ${entryDateInput.value || 'Tarih Gir'}`;
+    }
+    if (inkExitSub && exitTransportSelect && exitDateInput) {
+      inkExitSub.textContent = `${tIcons[exitTransportSelect.value] || '✈️'} ${exitDateInput.value || 'Tarih Gir'}`;
+    }
+  }
+
+  entryDateInput?.addEventListener('input', updateStampPreviews);
+  entryTransportSelect?.addEventListener('change', updateStampPreviews);
+  exitDateInput?.addEventListener('input', updateStampPreviews);
+  exitTransportSelect?.addEventListener('change', updateStampPreviews);
+
+  // Save Stamp Data Handler
+  content.querySelector('#btn-save-stamp-data')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const eDate = entryDateInput?.value || '';
+    const eTrans = entryTransportSelect?.value || 'flight';
+    const xDate = exitDateInput?.value || '';
+    const xTrans = exitTransportSelect?.value || 'flight';
+
+    const stampPayload = {
+      entryDate: eDate,
+      entryTransport: eTrans,
+      exitDate: xDate,
+      exitTransport: xTrans
+    };
+
+    if (type === 'province') {
+      const num = id.replace('TR::', '');
+      saveTurkeyVisit(num, 'visited', stampPayload);
+    } else if (type === 'city') {
+      saveWorldVisit(id, 'visited', stampPayload);
+      const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+      const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+      if (matchedRegionRaw) {
+        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', stampPayload);
+      }
+    } else {
+      saveWorldVisit(id, 'visited', stampPayload);
+    }
+
+    invalidateStorageCache();
+    refreshStats();
+    triggerConfetti();
+
+    const saveBtn = content.querySelector('#btn-save-stamp-data');
+    if (saveBtn) {
+      saveBtn.innerHTML = '<span>✅ Pasaporta Damgalandı!</span>';
+      setTimeout(() => {
+        if (saveBtn) saveBtn.innerHTML = '<span>💾 Damgaları Pasaporta İşle</span>';
+        if (stampDrawer) stampDrawer.style.display = 'none';
+        if (btnToggleStamp) {
+          btnToggleStamp.classList.remove('active');
+          const stampText = btnToggleStamp.querySelector('#stamp-trigger-text');
+          if (stampText) stampText.textContent = '🛂 Pasaport Damgalı ✓';
+        }
+      }, 1200);
+    }
   });
 
   // IMDb Stars Visual Renderer
@@ -3048,14 +3292,12 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   // IMDb Stars Interaction (Click & Hover)
   starSpans.forEach(star => {
-    // Desktop hover preview
     star.addEventListener('mouseenter', () => {
       const hoverVal = parseInt(star.dataset.score, 10);
       renderStars(hoverVal);
       if (scoreDisplay) scoreDisplay.textContent = `⭐ ${hoverVal}/10`;
     });
 
-    // Click to lock in rating
     star.addEventListener('click', (e) => {
       e.stopPropagation();
       const scoreVal = parseInt(star.dataset.score, 10);
@@ -3071,7 +3313,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           : `⭐ ${t('rateAndReview')}`;
       }
 
-      // Persist rating to storage
       if (type === 'province') {
         const num = id.replace('TR::', '');
         saveTurkeyVisit(num, 'visited', { rating: currentRating });
@@ -3090,7 +3331,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     });
   });
 
-  // Revert hover preview when mouse leaves star row
   starsRow?.addEventListener('mouseleave', () => {
     renderStars(currentRating);
     if (scoreDisplay) {
@@ -3145,7 +3385,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const num = id.replace('TR::', '');
         saveTurkeyVisit(num, val);
 
-        // ── Symmetrical Two-Way Sync for Turkey (visited, planned, wishlist) ──
         if (val === 'visited') {
           saveWorldVisit('TR', 'visited');
         } else if (val === 'planned') {
@@ -3164,7 +3403,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       } else if (type === 'country') {
         saveWorldVisit(id, val);
 
-        // ── Downward Clearing: Unvisiting country unvisits all its children ──
         if (val === 'unvisited') {
           if (id === 'TR') {
             const data = getStorageData();
@@ -3184,7 +3422,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const parentRegion = feature?.properties?.parent_region || getSubregionParentRegion(countryCode, subregionRaw);
         const parentRegionKey = parentRegion ? `${countryCode}::${parentRegion}` : null;
 
-        // ── 1. Symmetrical Two-Way Sync: Subregion (İl) -> Parent Region (Eyalet) ──
         if (parentRegionKey && parentRegion) {
           if (val === 'visited') {
             saveWorldVisit(parentRegionKey, 'visited');
@@ -3200,7 +3437,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
               saveWorldVisit(parentRegionKey, 'wishlist');
             }
           } else if (val === 'unvisited') {
-            // Recalculate parent region status based on all remaining sibling subregions
             const data = getStorageData();
             const siblingNames = getSubregionsForParentRegion(countryCode, parentRegion);
             const siblingStatuses = siblingNames.map(s => data.worldVisits[`${countryCode}::${s}`]?.status).filter(Boolean);
@@ -3217,7 +3453,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           }
         }
 
-        // ── 2. Symmetrical Two-Way Sync: Subregion / Region -> Parent Country (Ülke) ──
         if (countryCode) {
           if (val === 'visited') {
             saveWorldVisit(countryCode, 'visited');
@@ -3256,14 +3491,12 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const regionRaw = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
         const childSubregions = getSubregionsForParentRegion(countryCode, regionRaw);
 
-        // ── 1. Downward Sync: Region (Eyalet) -> Child Subregions (İller) ──
         if (childSubregions.length > 0) {
           childSubregions.forEach(sName => {
             saveWorldVisit(`${countryCode}::${sName}`, val);
           });
         }
 
-        // ── 2. Upward Sync: Region (Eyalet) -> Parent Country (Ülke) ──
         if (countryCode) {
           if (val === 'visited') {
             saveWorldVisit(countryCode, 'visited');
@@ -3299,23 +3532,19 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       } else if (type === 'city') {
         const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
 
-        // 1. World cities array (used for stats, profile, achievements, comparisons)
         if (val === 'visited') {
           toggleWorldCity(countryCode, cleanCityName, true);
         } else {
           toggleWorldCity(countryCode, cleanCityName, false);
         }
 
-        // 2. Direct city status entry (e.g. "FR::Paris")
         saveWorldVisit(id, val);
 
-        // 3. Mark the containing region polygon if found
         const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
         if (matchedRegionRaw) {
           const regionKey = `${countryCode}::${matchedRegionRaw}`;
           saveWorldVisit(regionKey, val);
 
-          // Connect activeFeatureLayer to the region polygon so it updates visually
           if (!activeFeatureLayer && regionLayers[countryCode]) {
             regionLayers[countryCode].eachLayer(l => {
               const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
@@ -3326,7 +3555,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           }
         }
 
-        // 4. Symmetrical Upward Sync to Parent Country
         if (countryCode) {
           if (val === 'visited') {
             saveWorldVisit(countryCode, 'visited');
@@ -3373,25 +3601,22 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       refreshAllStyles();
       refreshStats();
 
-      // Update button highlights
       content.querySelectorAll('.map-status-btn[data-val]').forEach(b => {
         if (b.dataset.val === val) b.classList.add('active');
         else b.classList.remove('active');
       });
 
       if (val === 'visited') {
-        // Show the review trigger button
-        if (btnToggleReview) {
-          btnToggleReview.style.display = 'flex';
-        }
+        if (btnToggleReview) btnToggleReview.style.display = 'flex';
+        if (btnToggleStamp) btnToggleStamp.style.display = 'flex';
       } else {
-        // Hide review button and drawer
         if (btnToggleReview) btnToggleReview.style.display = 'none';
         if (reviewDrawer) reviewDrawer.style.display = 'none';
+        if (btnToggleStamp) btnToggleStamp.style.display = 'none';
+        if (stampDrawer) stampDrawer.style.display = 'none';
       }
     });
   });
-
   let activeGeoFeature = feature;
   if (!activeGeoFeature && countryCode && countryFeaturesByCode[countryCode]) {
     activeGeoFeature = countryFeaturesByCode[countryCode];

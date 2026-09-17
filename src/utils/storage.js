@@ -65,7 +65,11 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       status,
       date: details.date || existing.date || new Date().toISOString().split('T')[0],
       notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
-      rating: details.rating !== undefined ? details.rating : (existing.rating || 0)
+      rating: details.rating !== undefined ? details.rating : (existing.rating || 0),
+      entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
+      entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
+      exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
+      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || '')
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -128,7 +132,11 @@ export function saveWorldVisit(countryCode, status, details = {}) {
       status,
       date: details.date || existing.date || new Date().toISOString().split('T')[0],
       notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
-      rating: details.rating !== undefined ? details.rating : (existing.rating || 0)
+      rating: details.rating !== undefined ? details.rating : (existing.rating || 0),
+      entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
+      entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
+      exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
+      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || '')
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -684,6 +692,24 @@ export function setHomeCountry(code) {
     safeSetItem(STORAGE_KEYS.HOME_COUNTRY, code || 'TR');
   } catch (e) {
     console.warn('Error saving home country', e);
+  }
+  notifyStateChange();
+}
+
+// ─── Passport Type (Bordo / Yesil) ───────────────────────────────────────────
+export function getPassportType() {
+  try {
+    return localStorage.getItem('gv_passport_type') || 'bordo';
+  } catch {
+    return 'bordo';
+  }
+}
+
+export function setPassportType(type) {
+  try {
+    safeSetItem('gv_passport_type', type === 'yesil' ? 'yesil' : 'bordo');
+  } catch (e) {
+    console.warn('Error saving passport type', e);
   }
   notifyStateChange();
 }

@@ -6,7 +6,8 @@ import {
   AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint,
   getSavedFriends, saveFriend, deleteFriend,
   getHomeCountry, setHomeCountry,
-  exportBackup, importBackup
+  exportBackup, importBackup,
+  getPassportType, setPassportType
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -177,6 +178,23 @@ export function renderProfileView(container, onBack) {
           ` : `<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!' : 'No medals earned yet. Mark places on the map to earn medals!'}</div>`}
         </div>
 
+        <!-- Virtual Passport Banner Card -->
+        <div class="passport-banner-card" id="btn-trigger-passport">
+          <div class="passport-banner-inner">
+            <div class="passport-banner-emblem">🛂</div>
+            <div class="passport-banner-info">
+              <div class="passport-banner-title">
+                <span>${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Traveler Passport'}</span>
+                <span style="font-size:0.7rem;background:rgba(255,215,0,0.2);color:#fbbf24;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,215,0,0.35);">FAZ 1</span>
+              </div>
+              <div class="passport-banner-sub">${currentLang === 'tr' ? 'Resmi damgalarını, vizelerini ve biyometrik pasaportunu görüntüle' : 'View official stamped visas, entry/exit logs & biometric passport'}</div>
+            </div>
+            <div class="passport-banner-badge">
+              <span>${currentLang === 'tr' ? 'Pasaportu İncele' : 'Open Passport'} ➔</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Share Section -->
         <div class="share-section">
           <h3>${t('shareCodeTitle')}</h3>
@@ -191,6 +209,10 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
       openPosterModal();
+    });
+
+    document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
+      openPassportModal();
     });
 
     document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
@@ -229,12 +251,18 @@ export function renderProfileView(container, onBack) {
       return nameA.localeCompare(nameB, currentLang === 'tr' ? 'tr' : 'en');
     });
 
+    const currentPassportType = getPassportType();
+
     const themeList = [
       { id: 'dark', name: currentLang === 'tr' ? 'Karanlık' : 'Dark', icon: '🌙', colors: ['#090d16', '#1e293b', '#ff5722'] },
       { id: 'light', name: currentLang === 'tr' ? 'Aydınlık' : 'Light', icon: '☀️', colors: ['#c5dff6', '#f8fafc', '#ff5722'] },
       { id: 'ocean', name: currentLang === 'tr' ? 'Okyanus' : 'Ocean', icon: '🌊', colors: ['#0c1929', '#1a3a5c', '#38bdf8'] },
       { id: 'emerald', name: currentLang === 'tr' ? 'Zümrüt' : 'Emerald', icon: '🌲', colors: ['#0a1f0a', '#1a3d1a', '#10b981'] },
-      { id: 'vintage', name: currentLang === 'tr' ? 'Nostalji' : 'Vintage', icon: '📜', colors: ['#2c1810', '#4a3828', '#d97706'] }
+      { id: 'vintage', name: currentLang === 'tr' ? 'Nostalji' : 'Vintage', icon: '📜', colors: ['#2c1810', '#4a3828', '#d97706'] },
+      { id: 'midnight_gold', name: currentLang === 'tr' ? 'Gece & Altın' : 'Midnight Gold', icon: '👑', colors: ['#0b0d13', '#161922', '#e5c07b'] },
+      { id: 'natgeo_atlas', name: currentLang === 'tr' ? 'Atlas Klasik' : 'NatGeo Atlas', icon: '🗺️', colors: ['#0f172a', '#1e293b', '#fbbf24'] },
+      { id: 'cyberpunk', name: currentLang === 'tr' ? 'Siberpunk Gece' : 'Cyberpunk', icon: '⚡', colors: ['#050510', '#120d26', '#06b6d4'] },
+      { id: 'pure_oled', name: currentLang === 'tr' ? 'Saf OLED Siyah' : 'Pure OLED', icon: '🖤', colors: ['#000000', '#0a0a0a', '#3b82f6'] }
     ];
 
     const uiScaleOptions = [
@@ -367,6 +395,30 @@ export function renderProfileView(container, onBack) {
                 </option>
               `).join('')}
             </select>
+          </div>
+        </div>
+
+        <!-- 5B. Passport Type & Visa Privilege -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">🛂 ${currentLang === 'tr' ? 'Pasaport Türü & Vize Ayrımı' : 'Passport Type & Visa Rules'}</h3>
+          </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Harita pop-up\'larında ve gezgin rehberinde doğru vize kurallarını görebilmek için pasaportunuzu seçin:' : 'Select your passport type to display accurate visa rules across the map and country popups:'}</p>
+          <div class="passport-type-switch-row">
+            <button type="button" class="passport-type-btn ${currentPassportType === 'bordo' ? 'active' : ''}" data-passport="bordo">
+              <div class="passport-type-icon">📕</div>
+              <div class="passport-type-info">
+                <span class="passport-type-title">${currentLang === 'tr' ? 'Bordo Pasaport' : 'Ordinary (Burgundy)'}</span>
+                <span class="passport-type-desc">${currentLang === 'tr' ? 'Umuma Mahsus Türk Pasaportu' : 'Standard Turkish Citizen Passport'}</span>
+              </div>
+            </button>
+            <button type="button" class="passport-type-btn ${currentPassportType === 'yesil' ? 'active' : ''}" data-passport="yesil">
+              <div class="passport-type-icon">📗</div>
+              <div class="passport-type-info">
+                <span class="passport-type-title">${currentLang === 'tr' ? 'Yeşil Pasaport' : 'Special (Green)'}</span>
+                <span class="passport-type-desc">${currentLang === 'tr' ? 'Hususi Damgalı Pasaport (Schengen vizesiz)' : 'Special Passport (Schengen Visa-Free)'}</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -577,6 +629,15 @@ export function renderProfileView(container, onBack) {
         window.__refreshMapStats();
       }
       render();
+    });
+
+    // 5B. Passport Type Selection
+    contentArea.querySelectorAll('.passport-type-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const pType = e.currentTarget.getAttribute('data-passport');
+        setPassportType(pType);
+        render();
+      });
     });
 
     // 6. Color Chips Selection
@@ -1264,6 +1325,270 @@ export function renderProfileView(container, onBack) {
           await navigator.share({
             title: `${profile.username} - Gezgin Seyahat Haritası`,
             text: `Gezdiğim yerleri incele! 🌍`,
+            files: [file]
+          });
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Share error', err);
+        }
+      }
+    });
+  }
+
+  async function openPassportModal() {
+    const currentLang = getLanguage();
+    const storageData = getStorageData();
+    const stats = calculateStats();
+    const passportType = getPassportType();
+    
+    let profile = { username: 'Gezgin', avatar: '🧭', bio: '' };
+    try {
+      const profileStr = localStorage.getItem('gv_profile');
+      if (profileStr) {
+        const parsed = JSON.parse(profileStr);
+        if (parsed && typeof parsed === 'object') profile = parsed;
+      }
+    } catch (e) {
+      console.error('Profile parse error', e);
+    }
+
+    const isYesil = passportType === 'yesil';
+    const passportTitle = isYesil 
+      ? (currentLang === 'tr' ? 'HUSUSİ PASAPORT' : 'SPECIAL PASSPORT')
+      : (currentLang === 'tr' ? 'UMUMA MAHSUS PASAPORT' : 'PASSPORT');
+    const passportSubtitle = currentLang === 'tr' ? 'TÜRKİYE CUMHURİYETİ' : 'REPUBLIC OF TURKEY';
+    const passportBadgeText = isYesil 
+      ? (currentLang === 'tr' ? 'YEŞİL (HUSUSİ)' : 'SPECIAL (GREEN)')
+      : (currentLang === 'tr' ? 'BORDO (STANDART)' : 'REGULAR (BURGUNDY)');
+
+    const userHash = Math.abs(
+      (profile.username || 'GEZGIN').split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 5381)
+    );
+    const passportNo = 'U' + String(userHash).padStart(8, '0').slice(0, 8);
+
+    const visitedCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited');
+    if (stats.turkeyCount > 0 && !visitedCodes.includes('TR')) visitedCodes.push('TR');
+
+    const transportIcons = {
+      flight: '✈️',
+      train: '🚆',
+      car: '🚗',
+      bus: '🚌',
+      ship: '🚢'
+    };
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const months = currentLang === 'tr' 
+            ? ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA']
+            : ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const mIdx = parseInt(parts[1], 10) - 1;
+          return `${parts[2]} ${months[mIdx] || parts[1]} ${parts[0]}`;
+        }
+      } catch {}
+      return dateStr;
+    };
+
+    const safeUserUpper = (profile.username || 'GEZGIN').toUpperCase().replace(/[^A-Z0-9]/g, '').padEnd(20, '<').slice(0, 20);
+    const mrzLine1 = `P<TUR${safeUserUpper}<<<<<<<<<<<<<<<<<<<<<<`;
+    const mrzLine2 = `${passportNo}4TUR9501018M3001015<<<<<<<<<<<<<<04`;
+
+    const modal = document.createElement('div');
+    modal.className = 'passport-modal-overlay';
+    modal.innerHTML = `
+      <div class="passport-modal-dialog">
+        <div class="passport-modal-top">
+          <h3>🛂 ${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Traveler Passport'}</h3>
+          <button class="passport-modal-close" id="passport-close-btn">&times;</button>
+        </div>
+
+        <div class="passport-modal-body">
+          <!-- Passport Document Canvas -->
+          <div id="traveler-passport-canvas" class="passport-book-card">
+            
+            <!-- Passport Cover -->
+            <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
+              <div class="passport-cover-country">${passportSubtitle}</div>
+              <div class="passport-cover-sub">${passportTitle}</div>
+              <div class="passport-cover-emblem">🇹🇷</div>
+              <div class="passport-cover-badge">${passportBadgeText}</div>
+            </div>
+
+            <!-- Identity Page -->
+            <div class="passport-id-page">
+              <div class="passport-id-header">
+                <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
+                <span class="id-type">TUR / P</span>
+              </div>
+
+              <div class="passport-id-content">
+                <div class="passport-photo-frame">
+                  <div class="passport-photo-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
+                  <div class="passport-photo-watermark">GEZGİN</div>
+                </div>
+
+                <div class="passport-fields-grid">
+                  <div class="passport-field-item">
+                    <span class="f-label">${currentLang === 'tr' ? 'BELGE NO / DOC NO' : 'DOC NO'}</span>
+                    <span class="f-val">${passportNo}</span>
+                  </div>
+                  <div class="passport-field-item">
+                    <span class="f-label">${currentLang === 'tr' ? 'UYRUK / NATIONALITY' : 'NATIONALITY'}</span>
+                    <span class="f-val">TUR</span>
+                  </div>
+                  <div class="passport-field-item full">
+                    <span class="f-label">${currentLang === 'tr' ? 'AD SOYAD / FULL NAME' : 'FULL NAME'}</span>
+                    <span class="f-val">${escapeHtml((profile.username || 'GEZGİN').toUpperCase())}</span>
+                  </div>
+                  <div class="passport-field-item">
+                    <span class="f-label">${currentLang === 'tr' ? 'DÜZENLEYEN / AUTHORITY' : 'AUTHORITY'}</span>
+                    <span class="f-val">GEZGİN APP</span>
+                  </div>
+                  <div class="passport-field-item">
+                    <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
+                    <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
+                  </div>
+                  <div class="passport-field-item full">
+                    <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
+                    <span class="f-val" style="font-size:0.75rem;color:#475569;">
+                      ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="passport-mrz-box">${mrzLine1}\n${mrzLine2}</div>
+            </div>
+
+            <!-- Stamped Visas Page -->
+            <div class="passport-stamps-page">
+              <div class="passport-stamps-header">
+                <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & DAMGALAR (VISAS)' : 'STAMPS & VISAS'}</span>
+                <span class="p-count">${visitedCodes.length} ${currentLang === 'tr' ? 'Damga' : 'Stamps'}</span>
+              </div>
+
+              ${visitedCodes.length > 0 ? `
+                <div class="passport-stamps-grid">
+                  ${visitedCodes.map((cCode, idx) => {
+                    const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
+                    const cName = getCountryDisplayName(country);
+                    const visit = storageData.worldVisits?.[cCode] || {};
+                    const entryDate = formatDate(visit.entryDate || visit.date || '2024-05-15');
+                    const entryTrans = transportIcons[visit.entryTransport] || '✈️';
+                    const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
+                    const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
+
+                    const rotEntry = ((idx * 7) % 7 - 3) * 1.5;
+                    const rotExit = (((idx * 11) % 7) - 3) * 1.8;
+
+                    return `
+                      <div class="passport-stamp-cell">
+                        <div class="stamp-seal-item entry" style="transform: rotate(${rotEntry}deg);">
+                          <div class="stamp-seal-top">GİRİŞ • ENTRY</div>
+                          <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
+                          <div class="stamp-seal-mid">
+                            <span>${entryTrans}</span>
+                            <span style="font-size:0.6rem;letter-spacing:1px;">PASSED</span>
+                          </div>
+                          <div class="stamp-seal-date">${entryDate}</div>
+                        </div>
+                      </div>
+                      ${exitDate ? `
+                        <div class="passport-stamp-cell">
+                          <div class="stamp-seal-item exit" style="transform: rotate(${rotExit}deg);">
+                            <div class="stamp-seal-top">ÇIKIŞ • EXIT</div>
+                            <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
+                            <div class="stamp-seal-mid">
+                              <span>${exitTrans}</span>
+                              <span style="font-size:0.6rem;letter-spacing:1px;">DEPARTED</span>
+                            </div>
+                            <div class="stamp-seal-date">${exitDate}</div>
+                          </div>
+                        </div>
+                      ` : ''}
+                    `;
+                  }).join('')}
+                </div>
+              ` : `
+                <div class="passport-empty-stamps">
+                  <div class="empty-icon">🛂</div>
+                  <p>${currentLang === 'tr' ? 'Henüz damga basılmadı. Haritadan bir ülkeye tıklayıp "Gidildi" olarak işaretle ve ulaşım aracı seç!' : 'No stamps yet. Mark countries as visited on the map and choose a transport method!'}</p>
+                </div>
+              `}
+            </div>
+
+          </div>
+        </div>
+
+        <div class="passport-actions-row">
+          <button type="button" id="btn-download-passport" class="passport-action-btn primary">
+            <span>📥</span> <span>${currentLang === 'tr' ? 'Pasaportumu İndir (PNG)' : 'Download Passport (PNG)'}</span>
+          </button>
+          ${navigator.share ? `
+            <button type="button" id="btn-share-passport" class="passport-action-btn secondary">
+              <span>📲</span> <span>${t('sharePoster')}</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+      document.removeEventListener('keydown', handleEsc);
+      modal.remove();
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    modal.querySelector('#passport-close-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Download PNG using html-to-image
+    modal.querySelector('#btn-download-passport')?.addEventListener('click', async () => {
+      const node = document.getElementById('traveler-passport-canvas');
+      if (!node) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const link = document.createElement('a');
+        const cleanName = (profile.username || 'Gezgin').replace(/[^a-zA-Z0-9_\-\u00C0-\u017F]/g, '_');
+        link.download = `Gezgin-Pasaportum-${cleanName}.png`;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error('Passport generation error', err);
+        alert(currentLang === 'tr' ? 'Pasaport görseli oluşturulurken bir hata oluştu.' : 'Error generating passport image.');
+      }
+    });
+
+    // Share API
+    modal.querySelector('#btn-share-passport')?.addEventListener('click', async () => {
+      const node = document.getElementById('traveler-passport-canvas');
+      if (!node || !navigator.share) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'gezgin-pasaportum.png', { type: 'image/png' });
+        if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `${profile.username} - Sanal Gezgin Pasaportu`,
+            text: `Damgalarımı ve gezdiğim ülkeleri incele! 🛂✈️`,
+            url: window.location.href
+          });
+        } else {
+          await navigator.share({
+            title: `${profile.username} - Sanal Gezgin Pasaportu`,
+            text: `Damgalarımı ve gezdiğim ülkeleri incele! 🛂✈️`,
             files: [file]
           });
         }
