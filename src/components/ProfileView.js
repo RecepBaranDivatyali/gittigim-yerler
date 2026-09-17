@@ -567,9 +567,9 @@ export function renderProfileView(container, onBack) {
     ];
 
     const uiScaleOptions = [
-      { id: 'small', label: t('uiSizeSmall'), icon: '🔍' },
-      { id: 'medium', label: t('uiSizeMedium'), icon: '⚖️' },
-      { id: 'large', label: t('uiSizeLarge'), icon: '🔎' }
+      { id: 'small', name: currentLang === 'tr' ? 'Kompakt' : 'Compact', pct: currentLang === 'tr' ? '%88' : '88%', icon: '🔍' },
+      { id: 'medium', name: currentLang === 'tr' ? 'Standart' : 'Standard', pct: currentLang === 'tr' ? '%100' : '100%', icon: '⚖️' },
+      { id: 'large', name: currentLang === 'tr' ? 'Büyük' : 'Large', pct: currentLang === 'tr' ? '%120' : '120%', icon: '🔎' }
     ];
 
     contentArea.innerHTML = `
@@ -650,11 +650,12 @@ export function renderProfileView(container, onBack) {
             <h3 class="settings-card-title">📐 ${t('uiScaleTitle')}</h3>
           </div>
           <p class="settings-card-desc">${t('uiScaleDesc')}</p>
-          <div class="settings-scale-row">
+          <div class="settings-scale-grid">
             ${uiScaleOptions.map(opt => `
-              <button type="button" class="scale-btn ${currentUiSize === opt.id ? 'active' : ''}" data-size="${opt.id}">
-                <span>${opt.icon}</span>
-                <span>${opt.label}</span>
+              <button type="button" class="scale-card-btn scale-btn ${currentUiSize === opt.id ? 'active' : ''}" data-size="${opt.id}">
+                <span class="scale-card-icon">${opt.icon}</span>
+                <span class="scale-card-name">${opt.name}</span>
+                <span class="scale-card-pct">${opt.pct}</span>
               </button>
             `).join('')}
           </div>
@@ -666,14 +667,20 @@ export function renderProfileView(container, onBack) {
             <h3 class="settings-card-title">📱 ${currentLang === 'tr' ? 'Ekran & Görünüm Modu' : 'Display & View Mode'}</h3>
           </div>
           <p class="settings-card-desc">${currentLang === 'tr' ? 'Masaüstü bilgisayarlarda telefon çerçevesi veya tam ekran harita modu arasında geçiş yapın:' : 'Switch between mobile phone simulator or fullscreen map mode on desktop:'}</p>
-          <div class="settings-scale-row">
-            <button type="button" class="scale-btn ${localStorage.getItem('gv_simulator_mode') !== 'fullscreen' ? 'active' : ''}" id="btn-set-mode-phone">
-              <span>📱</span>
-              <span>${currentLang === 'tr' ? 'Mobil Çerçeve (390×844)' : 'Phone Frame (390×844)'}</span>
+          <div class="settings-mode-stack">
+            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') !== 'fullscreen' ? 'active' : ''}" id="btn-set-mode-phone">
+              <span class="settings-mode-icon">📱</span>
+              <div class="settings-mode-text">
+                <span class="settings-mode-title">${currentLang === 'tr' ? 'Mobil Telefon Çerçevesi' : 'Mobile Phone Frame'}</span>
+                <span class="settings-mode-sub">390 × 844 px</span>
+              </div>
             </button>
-            <button type="button" class="scale-btn ${localStorage.getItem('gv_simulator_mode') === 'fullscreen' ? 'active' : ''}" id="btn-set-mode-fullscreen">
-              <span>🖥️</span>
-              <span>${currentLang === 'tr' ? 'Masaüstü Tam Ekran' : 'Desktop Fullscreen'}</span>
+            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') === 'fullscreen' ? 'active' : ''}" id="btn-set-mode-fullscreen">
+              <span class="settings-mode-icon">🖥️</span>
+              <div class="settings-mode-text">
+                <span class="settings-mode-title">${currentLang === 'tr' ? 'Masaüstü Tam Ekran' : 'Desktop Fullscreen'}</span>
+                <span class="settings-mode-sub">${currentLang === 'tr' ? 'Geniş harita görünümü' : 'Wide map view'}</span>
+              </div>
             </button>
           </div>
         </div>
