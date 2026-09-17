@@ -5,6 +5,7 @@ import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
+import { initPhoneSimulator } from './components/PhoneSimulator.js';
 
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -20,6 +21,10 @@ function syncAppHeight() {
 }
 
 function initApp() {
+  // If user selected mobile phone simulator mode on desktop, run simulator
+  if (initPhoneSimulator()) {
+    return;
+  }
 
   // Apply saved theme and UI font scale immediately on startup
   applyTheme(getTheme());

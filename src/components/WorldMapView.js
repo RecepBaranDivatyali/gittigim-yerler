@@ -11,6 +11,7 @@ import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlag
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
+import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -1002,6 +1003,9 @@ export function renderWorldMapView(container, options = {}) {
         }
       });
     }
+
+    // Mount Desktop Simulator Switcher if running in fullscreen mode
+    renderSimulatorSwitcherButton();
 
     // Visa Mode Toggle Handling
     const visaToggleBtn = container.querySelector('#btn-toggle-visa-mode');

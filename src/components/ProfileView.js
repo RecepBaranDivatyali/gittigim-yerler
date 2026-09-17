@@ -661,6 +661,30 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
+        <!-- 3B. Screen & View Mode (Desktop Fullscreen vs Mobile Phone Frame) -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">📱 ${currentLang === 'tr' ? 'Ekran Görünüm Modu' : 'Display View Mode'}</h3>
+          </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Masaüstü bilgisayarlarda telefon çerçevesi veya tam ekran harita arasında geçiş yapın:' : 'Switch between mobile phone simulator or fullscreen map on desktop:'}</p>
+          <div class="settings-mode-stack">
+            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') === 'phone' ? 'active' : ''}" id="btn-set-mode-phone">
+              <span class="settings-mode-icon">📱</span>
+              <div class="settings-mode-text">
+                <span class="settings-mode-title">${currentLang === 'tr' ? 'Mobil Telefon Çerçevesi' : 'Mobile Phone Frame'}</span>
+                <span class="settings-mode-sub">390 × 844 px</span>
+              </div>
+            </button>
+            <button type="button" class="settings-mode-btn ${localStorage.getItem('gv_simulator_mode') !== 'phone' ? 'active' : ''}" id="btn-set-mode-fullscreen">
+              <span class="settings-mode-icon">🖥️</span>
+              <div class="settings-mode-text">
+                <span class="settings-mode-title">${currentLang === 'tr' ? 'Masaüstü Tam Ekran' : 'Desktop Fullscreen'}</span>
+                <span class="settings-mode-sub">${currentLang === 'tr' ? 'Geniş harita görünümü' : 'Wide map view'}</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- 4. Language & Region -->
         <div class="settings-card">
           <div class="settings-card-header">
@@ -936,6 +960,16 @@ export function renderProfileView(container, onBack) {
           render();
         }
       });
+    });
+
+    // 3B. Display View Mode Selection
+    contentArea.querySelector('#btn-set-mode-phone')?.addEventListener('click', () => {
+      localStorage.setItem('gv_simulator_mode', 'phone');
+      window.location.reload();
+    });
+    contentArea.querySelector('#btn-set-mode-fullscreen')?.addEventListener('click', () => {
+      localStorage.setItem('gv_simulator_mode', 'fullscreen');
+      window.location.reload();
     });
 
     // 4. Language Selection

@@ -26,7 +26,7 @@ export function isDesktopWeb() {
 }
 
 export function getSimulatorMode() {
-  return localStorage.getItem('gv_simulator_mode') || 'phone';
+  return localStorage.getItem('gv_simulator_mode') || 'fullscreen';
 }
 
 export function setSimulatorMode(mode) {
@@ -41,24 +41,62 @@ export function setSimulatorScaleMode(scaleMode) {
   localStorage.setItem('gv_simulator_scale', scaleMode);
 }
 
-// Floating button displayed on desktop when in fullscreen mode (disabled per user request)
+// Floating button displayed on desktop when in fullscreen mode
 export function renderSimulatorSwitcherButton() {
-  const existingBtn = document.getElementById('floating-sim-switch-pill');
-  if (existingBtn) existingBtn.remove();
+  if (!isDesktopWeb()) return;
+  if (window.location.search.includes('simulated=1')) return;
+
+  let btn = document.getElementById('floating-sim-switch-pill');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'floating-sim-switch-pill';
+    btn.className = 'floating-sim-switch-pill';
+    btn.type = 'button';
+    btn.innerHTML = `
+      <span class="sim-pill-icon">📱</span>
+      <span class="sim-pill-label">Mobil Görünüm</span>
+    `;
+    btn.title = 'Mobil Telefon Çerçevesine Geç (390×844)';
+    btn.addEventListener('click', () => {
+      setSimulatorMode('phone');
+      window.location.reload();
+    });
+  }
+
+  const topGroup = document.querySelector('.floating-top-right-group');
+  if (topGroup) {
+    if (btn.parentNode !== topGroup) {
+      topGroup.insertBefore(btn, topGroup.firstChild);
+    }
+  } else if (!btn.parentNode) {
+    document.body.appendChild(btn);
+  }
 }
 
 /**
  * Initializes the Phone Simulator if conditions are met.
- * Disabled: Website runs directly in responsive desktop mode.
+ * If user selected 'phone' mode on desktop, runs the Phone Simulator studio.
+ * Otherwise runs standard fullscreen map with a switcher button available.
  */
 export function initPhoneSimulator() {
-  const existingStudio = document.getElementById('phone-simulator-studio');
-  if (existingStudio) existingStudio.remove();
-  document.body.classList.remove('sim-studio-active', 'is-simulated-screen');
-  const appRoot = document.getElementById('app');
-  if (appRoot) {
-    appRoot.style.display = '';
+  // If running inside simulated iframe or on mobile phone, do NOT run simulator
+  if (window.location.search.includes('simulated=1')) {
+    document.body.classList.add('is-simulated-screen');
+    return false;
   }
+
+  if (!isDesktopWeb()) {
+    return false;
+  }
+
+  const mode = getSimulatorMode();
+  if (mode === 'phone') {
+    renderPhoneSimulatorStudio();
+    return true;
+  }
+
+  // Running in desktop fullscreen: mount switcher button
+  renderSimulatorSwitcherButton();
   return false;
 }
 
