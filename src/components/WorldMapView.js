@@ -1027,10 +1027,14 @@ export function renderWorldMapView(container, options = {}) {
         }
         if (visaToggleBtn) visaToggleBtn.classList.add('active');
         if (legendEl) legendEl.style.display = 'none';
+        const searchWrap = container.querySelector('#map-search-wrap');
+        if (searchWrap) searchWrap.style.display = 'none';
       } else {
         if (visaBanner) visaBanner.style.display = 'none';
         if (visaToggleBtn) visaToggleBtn.classList.remove('active');
         if (legendEl) legendEl.style.display = '';
+        const searchWrap = container.querySelector('#map-search-wrap');
+        if (searchWrap) searchWrap.style.display = '';
       }
 
       if (worldLayer) {
