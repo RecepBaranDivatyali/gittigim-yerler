@@ -166,19 +166,16 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card">
           <div class="profile-header">
             <div class="profile-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <div class="profile-user-info">
+              <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
                 <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="profile-header-actions">
               <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
                 <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
-              </button>
-              <button id="btn-trigger-wrapped" class="profile-poster-trigger-btn profile-wrapped-trigger-btn" title="${currentLang === 'tr' ? 'Gezgin Wrapped 2026 (Yıl Sonu Seyahat Karnesi)' : 'Traveler Wrapped 2026'}">
-                <span>🎁</span> <span class="poster-btn-txt">Wrapped</span>
               </button>
             </div>
           </div>
@@ -194,8 +191,8 @@ export function renderProfileView(container, onBack) {
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#f59e0b">${totalPlacesCount}</span><span class="pstat-lbl">🍽️ ${currentLang === 'tr' ? 'Mekanlar' : 'Places'}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#ec4899" id="profile-stat-photos">0</span><span class="pstat-lbl">📸 ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:#06b6d4">%${baseStats.landAreaPercent || 0}</span><span class="pstat-lbl">🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span></div>
-            <div class="pstat"><span class="pstat-num" style="color:#a855f7">%${baseStats.populationPercent || 0}</span><span class="pstat-lbl">👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#06b6d4">${currentLang === 'tr' ? '%' + (baseStats.landAreaPercent || 0) : (baseStats.landAreaPercent || 0) + '%'}</span><span class="pstat-lbl">🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#a855f7">${currentLang === 'tr' ? '%' + (baseStats.populationPercent || 0) : (baseStats.populationPercent || 0) + '%'}</span><span class="pstat-lbl">👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}</span></div>
           </div>
           ${earnedMedals.length > 0 ? `
             <div class="profile-badges-header" style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);font-weight:600;margin-bottom:8px;">${currentLang === 'tr' ? 'Kazanılan Rozetler' : 'Earned Badges'} (${earnedMedals.length})</div>
@@ -257,10 +254,6 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
       openPosterModal();
-    });
-
-    document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
-      openWrappedModal();
     });
 
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
@@ -2371,8 +2364,8 @@ export function renderProfileView(container, onBack) {
       <div class="profile-card">
         <div class="profile-header">
           <div class="profile-avatar">${escapeHtml(myProfile.avatar || '🧭')}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+          <div class="profile-user-info">
+            <div class="profile-user-title-row">
               <span class="profile-username">${escapeHtml(myProfile.username || 'Sen')}</span>
               <span class="profile-card-label" style="background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.3);color:#3b82f6;">${currentLang === 'tr' ? 'SENİN PROFİLİN' : 'YOUR PROFILE'}</span>
             </div>
@@ -2413,14 +2406,18 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card">
           <div class="profile-header">
             <div class="profile-avatar">${escapeHtml(safeProfile.avatar || '✈️')}</div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <div class="profile-user-info">
+              <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
                 <span class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</span>
               </div>
               <div class="profile-bio">${escapeHtml(safeProfile.bio || '')}</div>
             </div>
-            ${rawCode && !isAlreadySaved ? `<button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>` : ''}
+            ${rawCode && !isAlreadySaved ? `
+              <div class="profile-header-actions">
+                <button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>
+              </div>
+            ` : ''}
           </div>
           <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>

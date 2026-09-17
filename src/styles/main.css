@@ -1563,10 +1563,44 @@ svg, g, path {
   position: relative;
 }
 
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.profile-avatar {
+  font-size: 3.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profile-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-user-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-username {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
 .profile-card-label {
   display: inline-flex;
   align-items: center;
-  position: static;
   background: rgba(255, 87, 34, 0.2);
   border: 1px solid rgba(255, 87, 34, 0.3);
   border-radius: 8px;
@@ -1578,28 +1612,17 @@ svg, g, path {
   white-space: nowrap;
 }
 
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.profile-avatar {
-  font-size: 3.2rem;
-  line-height: 1;
-}
-
-.profile-username {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #f8fafc;
-}
-
 .profile-bio {
   color: #94a3b8;
   font-size: 0.88rem;
-  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.profile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .profile-stats {
@@ -1964,14 +1987,22 @@ svg, g, path {
   .profile-tabs {
     order: 3;
     width: 100%;
-    justify-content: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .ptab {
-    flex: 1;
-    padding: 7px 8px;
+    flex: 1 0 auto;
+    padding: 7px 10px;
     font-size: 0.8rem;
     text-align: center;
+    white-space: nowrap;
   }
 
   .profile-back-btn {
@@ -4988,14 +5019,59 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     font-size: 0.74rem;
   }
 
-  /* Profile Header wrapping */
+  /* Profile Header on Mobile & Phone Simulator */
   .profile-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  .profile-avatar {
+    font-size: 2.6rem;
+  }
+  .profile-user-info {
+    flex: 1;
+    min-width: 140px;
+  }
+  .profile-username {
+    font-size: 1.25rem;
+  }
+  .profile-header-actions {
+    width: 100%;
+    display: flex;
+    margin-top: 4px;
+  }
+  .profile-poster-trigger-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  /* Profile Top Tabs on Mobile */
+  .profile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ptab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Passport Banner on Mobile */
+  .passport-banner-inner {
     flex-wrap: wrap;
     gap: 10px;
   }
-  .profile-poster-trigger-btn {
-    padding: 6px 10px;
-    font-size: 0.78rem;
+  .passport-banner-badge {
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
   }
 
   /* Leaflet Status Popup: Clean and thumb-friendly */
