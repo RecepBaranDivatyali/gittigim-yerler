@@ -255,6 +255,7 @@ function getSubregionsForParentRegion(countryCode, parentRegionName) {
 }
 let selectedCountryCode = null;
 let activeStatusPopup = null;
+let isVisaModeActive = false;
 let activePopupOutsideListener = null;
 let popupBackdropEl = null;
 let provinceLabelsLayer = null;
@@ -585,6 +586,22 @@ export function renderWorldMapView(container, options = {}) {
       <div id="map-root" style="width:100%;height:100%;position:relative;background:${themeCfg.oceanBg};">
         <div id="leaflet-map" style="width:100%;height:100%;background:${themeCfg.oceanBg};"></div>
 
+        <!-- Visa Mode Banner (Visible only in Visa Mode) -->
+        <div id="visa-mode-banner" class="visa-mode-banner" style="display:none;">
+          <div class="visa-mode-inner">
+            <div class="visa-mode-info">
+              <span class="visa-banner-icon">🛂</span>
+              <span class="visa-banner-title" id="visa-banner-title">Vize Muafiyet Haritası</span>
+              <div class="visa-mode-chips">
+                <span class="visa-mode-chip free">🟢 Vizesiz</span>
+                <span class="visa-mode-chip voa">🟡 Kapıda / e-Vize</span>
+                <span class="visa-mode-chip req">🔴 Vize Gerekli</span>
+              </div>
+            </div>
+            <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode">✖️ Seyahat Haritama Dön</button>
+          </div>
+        </div>
+
         <!-- Floating Profile & Poster Buttons (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
@@ -606,13 +623,18 @@ export function renderWorldMapView(container, options = {}) {
           <div id="map-search-results" class="map-search-results" style="display:none;"></div>
         </div>
 
-        <!-- Floating Top-Right Legend (Clean: Only Status indicators) -->
-        <div id="map-legend" class="floating-legend" title="${t('legend') || 'Lejant'}">
+        <!-- Floating Top-Right: Visa Mode Button & Travel Legend -->
+        <div class="floating-top-right-group">
+          <button type="button" id="btn-toggle-visa-mode" class="floating-visa-mode-btn" title="Vize Haritası Modu">
+            <span>🛂</span> <span class="visa-btn-lbl">Vize Modu</span>
+          </button>
+          <div id="map-legend" class="floating-legend" title="${t('legend') || 'Lejant'}">
           <div class="legend-items-list">
             ${Object.entries(STATUS).filter(([k]) => k !== 'unvisited').map(([, v]) =>
               `<span class="legend-item"><span class="legend-dot" style="background:${v.color};box-shadow:0 0 6px ${v.color}88;"></span><span class="legend-text">${v.label.replace(/^.+? /, '')}</span></span>`
             ).join('')}
             <span class="legend-item"><span class="legend-dot" style="background:transparent;border:2px solid ${themeCfg.landBorder};"></span><span class="legend-text">${t('unvisited')}</span></span>
+          </div>
           </div>
         </div>
 
@@ -884,6 +906,42 @@ export function renderWorldMapView(container, options = {}) {
         }
       });
     }
+
+    // Visa Mode Toggle Handling
+    const visaToggleBtn = container.querySelector('#btn-toggle-visa-mode');
+    const visaExitBtn = container.querySelector('#btn-exit-visa-mode');
+    const visaBanner = container.querySelector('#visa-mode-banner');
+    const legendEl = container.querySelector('#map-legend');
+
+    function toggleVisaMode() {
+      isVisaModeActive = !isVisaModeActive;
+      const pType = getPassportType();
+
+      if (isVisaModeActive) {
+        if (visaBanner) {
+          visaBanner.style.display = 'block';
+          const titleEl = container.querySelector('#visa-banner-title');
+          if (titleEl) {
+            titleEl.textContent = pType === 'yesil' ? 'Yeşil (Hususi) Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';
+          }
+        }
+        if (visaToggleBtn) visaToggleBtn.classList.add('active');
+        if (legendEl) legendEl.style.display = 'none';
+      } else {
+        if (visaBanner) visaBanner.style.display = 'none';
+        if (visaToggleBtn) visaToggleBtn.classList.remove('active');
+        if (legendEl) legendEl.style.display = 'block';
+      }
+
+      if (worldLayer) {
+        worldLayer.setStyle(countryStyle);
+      }
+    }
+
+    visaToggleBtn?.addEventListener('click', toggleVisaMode);
+    visaExitBtn?.addEventListener('click', () => {
+      if (isVisaModeActive) toggleVisaMode();
+    });
 
     // Poster button handler
     const posterBtn = container.querySelector('#btn-open-poster-map');
@@ -2941,6 +2999,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   let currentEntryTransport = type === 'province' ? 'car' : 'flight';
   let currentExitDate = '';
   let currentExitTransport = type === 'province' ? 'car' : 'flight';
+  let currentBuddies = [];
 
   if (type === 'province') {
     const num = id.replace('TR::', '');
@@ -2952,6 +3011,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentEntryTransport = pData.entryTransport || 'car';
     currentExitDate = pData.exitDate || '';
     currentExitTransport = pData.exitTransport || 'car';
+    currentBuddies = Array.isArray(pData.buddies) ? [...pData.buddies] : [];
   } else if (type === 'city') {
     const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
     const wData = worldVisits[id] || {};
@@ -2968,11 +3028,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentEntryTransport = wData.entryTransport || regionData.entryTransport || 'flight';
     currentExitDate = wData.exitDate || regionData.exitDate || '';
     currentExitTransport = wData.exitTransport || regionData.exitTransport || 'flight';
+    currentBuddies = Array.isArray(wData.buddies) ? [...wData.buddies] : (Array.isArray(regionData.buddies) ? [...regionData.buddies] : []);
   } else {
     const wData = worldVisits[id] || {};
     currentStatus = ns(wData.status);
     currentRating = wData.rating || 0;
     currentNotes = wData.notes || '';
+    currentBuddies = Array.isArray(wData.buddies) ? [...wData.buddies] : [];
     currentEntryDate = wData.entryDate || '';
     currentEntryTransport = wData.entryTransport || 'flight';
     currentExitDate = wData.exitDate || '';
@@ -3101,8 +3163,20 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         </div>
       </div>
 
+      <!-- Yol Arkadaşları / Travel Buddies Bölümü -->
+      <div class="stamp-section-box stamp-buddies-box">
+        <div class="stamp-section-label">👥 YOL ARKADAŞLARI (TRAVEL BUDDIES)</div>
+        <div class="stamp-buddies-input-row">
+          <input type="text" id="popup-buddy-input" class="stamp-buddy-input" placeholder="Yol arkadaşı ekle (Örn: @ali, Ece)..." maxlength="25" />
+          <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn">+ Ekle</button>
+        </div>
+        <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
+          ${currentBuddies.map(b => `<span class="buddy-chip">${escapeHtml(b)} <button type="button" class="del-buddy" data-name="${escapeHtml(b)}">&times;</button></span>`).join('')}
+        </div>
+      </div>
+
       <button type="button" id="btn-save-stamp-data" class="stamp-save-btn">
-        <span>💾 Damgaları Pasaporta İşle</span>
+        <span>💾 Damgaları & Yol Arkadaşlarını Kaydet</span>
       </button>
     </div>
 
@@ -3228,7 +3302,42 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   entryDateInput?.addEventListener('input', updateStampPreviews);
   entryTransportSelect?.addEventListener('change', updateStampPreviews);
   exitDateInput?.addEventListener('input', updateStampPreviews);
-  exitTransportSelect?.addEventListener('change', updateStampPreviews);
+  // Travel Buddies interactivity
+  const buddiesChipsEl = content.querySelector('#popup-buddies-chips');
+  const buddyInput = content.querySelector('#popup-buddy-input');
+  const buddyAddBtn = content.querySelector('#popup-buddy-add-btn');
+
+  function renderBuddyChips() {
+    if (!buddiesChipsEl) return;
+    buddiesChipsEl.innerHTML = currentBuddies.map(b => `
+      <span class="buddy-chip">${escapeHtml(b)} <button type="button" class="del-buddy" data-name="${escapeHtml(b)}">&times;</button></span>
+    `).join('');
+    buddiesChipsEl.querySelectorAll('.del-buddy').forEach(db => {
+      db.addEventListener('click', (e) => {
+        const name = e.currentTarget.dataset.name;
+        currentBuddies = currentBuddies.filter(x => x !== name);
+        renderBuddyChips();
+      });
+    });
+  }
+
+  renderBuddyChips();
+
+  buddyAddBtn?.addEventListener('click', () => {
+    const val = (buddyInput?.value || '').trim();
+    if (val && !currentBuddies.includes(val)) {
+      currentBuddies.push(val);
+      buddyInput.value = '';
+      renderBuddyChips();
+    }
+  });
+
+  buddyInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      buddyAddBtn?.click();
+    }
+  });
 
   // Save Stamp Data Handler
   content.querySelector('#btn-save-stamp-data')?.addEventListener('click', (e) => {
@@ -3242,7 +3351,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       entryDate: eDate,
       entryTransport: eTrans,
       exitDate: xDate,
-      exitTransport: xTrans
+      exitTransport: xTrans,
+      buddies: currentBuddies
     };
 
     if (type === 'province') {
@@ -3727,13 +3837,33 @@ function countryBorderStyle() {
 
 function countryStyle(c) {
   const code = c?.code;
-  const status = ns(getEffectiveCountryStatus(code));
   const zoom = map?.getZoom() || 3;
-  const STATUS = getStatusConfig();
-  const cfg = STATUS[status];
   const themeCfg = getThemeConfig();
   const isDark = getTheme() !== 'light';
   const zoomed = zoom >= REGION_ZOOM;
+
+  if (isVisaModeActive) {
+    const pType = getPassportType();
+    const visaInfo = getVisaBadgeInfo(code, pType);
+    let visaFill = '#1e293b';
+    if (visaInfo) {
+      if (visaInfo.status === 'free') visaFill = '#10b981';
+      else if (visaInfo.status === 'voa_evisa') visaFill = '#f59e0b';
+      else if (visaInfo.status === 'required') visaFill = '#ef4444';
+    }
+    return {
+      fillColor: visaFill,
+      fillOpacity: 0.85,
+      color: isDark ? 'rgba(255, 255, 255, 0.70)' : 'rgba(15, 23, 42, 0.65)',
+      weight: zoomed ? 2.0 : 1.5,
+      opacity: 1.0,
+      interactive: true
+    };
+  }
+
+  const status = ns(getEffectiveCountryStatus(code));
+  const STATUS = getStatusConfig();
+  const cfg = STATUS[status];
 
   let isInteractive = true;
   let hasRegions = false;

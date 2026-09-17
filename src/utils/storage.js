@@ -70,7 +70,8 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
       entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
-      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || '')
+      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
+      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || [])
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -137,7 +138,8 @@ export function saveWorldVisit(countryCode, status, details = {}) {
       entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
       entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
-      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || '')
+      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
+      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || [])
     };
     if (status === 'visited') {
       triggerConfetti();

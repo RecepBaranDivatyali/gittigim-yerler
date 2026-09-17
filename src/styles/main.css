@@ -7914,3 +7914,703 @@ body[data-theme="pure_oled"] .leaflet-container {
 .duo-map-frame {
   box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.7);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GEZGIN 2.0 - VISA MODE, CHALLENGES, WRAPPED & TRAVEL BUDDIES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Visa Mode Map Banner & Button ────────────────────────────────────────── */
+.visa-mode-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1500;
+  width: min(680px, 94vw);
+  pointer-events: auto;
+  animation: slideDownBanner 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDownBanner {
+  from { opacity: 0; transform: translate(-50%, -16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.visa-mode-inner {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 16px;
+  padding: 10px 18px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 158, 11, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.visa-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.visa-banner-icon {
+  font-size: 1.4rem;
+}
+.visa-banner-title {
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: #f8fafc;
+}
+.visa-mode-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.visa-mode-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.visa-mode-chip.free {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.visa-mode-chip.voa {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.visa-mode-chip.req {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.btn-exit-visa-mode {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-exit-visa-mode:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.floating-top-right-group {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.floating-visa-mode-btn {
+  height: 40px;
+  padding: 0 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.floating-visa-mode-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(251, 191, 36, 0.5);
+  transform: translateY(-1px);
+}
+.floating-visa-mode-btn.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: #fde047;
+  color: #fff;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+}
+
+/* ── 2. Route Collections & Challenges in Medals Tab ────────────────────────── */
+.challenges-section {
+  margin: 24px 0 32px 0;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+.challenges-header {
+  margin-bottom: 18px;
+}
+.challenges-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.challenges-main-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.challenges-badge-count {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.challenges-desc {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 6px 0 0 0;
+}
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.challenge-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.challenge-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.challenge-card.completed {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(245, 158, 11, 0.12));
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.16);
+}
+.challenge-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.challenge-icon-wrap {
+  font-size: 1.8rem;
+  line-height: 1;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.challenge-title-info {
+  flex: 1;
+  min-width: 0;
+}
+.challenge-card-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 3px;
+}
+.challenge-badge-tag {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.challenge-badge-tag.earned {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.challenge-badge-tag.locked {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.challenge-card-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+.challenge-progress-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.challenge-progress-bar-bg {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+}
+.challenge-progress-bar-fill {
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+.challenge-card.completed .challenge-progress-bar-fill {
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+}
+.challenge-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+.ch-percent {
+  font-weight: 700;
+  color: #f8fafc;
+}
+.challenge-flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.challenge-flag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  cursor: default;
+  transition: all 0.2s;
+}
+.challenge-flag-chip.visited {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.challenge-flag-chip.missing {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+.flag-check-dot {
+  font-size: 0.65rem;
+  color: #34d399;
+  font-weight: 800;
+}
+
+/* ── 3. Gezgin Wrapped: 9:16 Instagram Story Modal ────────────────────────── */
+.profile-wrapped-trigger-btn {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6) !important;
+  color: #fff !important;
+  border: none !important;
+}
+.profile-wrapped-trigger-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+}
+.wrapped-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 10, 19, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+.wrapped-modal-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 440px;
+  width: 100%;
+}
+.wrapped-modal-top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #f8fafc;
+  font-size: 1.1rem;
+}
+.wrapped-modal-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.wrapped-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.wrapped-preview-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.travel-wrapped-card {
+  width: 360px;
+  max-width: 92vw;
+  aspect-ratio: 9 / 16;
+  background: linear-gradient(165deg, #090d16 0%, #17122b 50%, #1f0d26 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(139, 92, 246, 0.2);
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+}
+.wrapped-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(55px);
+  pointer-events: none;
+  opacity: 0.35;
+}
+.wrapped-glow-orb.orb-1 {
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  background: #ec4899;
+}
+.wrapped-glow-orb.orb-2 {
+  bottom: 80px;
+  left: -40px;
+  width: 200px;
+  height: 200px;
+  background: #8b5cf6;
+}
+.wrapped-glow-orb.orb-3 {
+  top: 40%;
+  right: 10%;
+  width: 120px;
+  height: 120px;
+  background: #3b82f6;
+  opacity: 0.25;
+}
+.wrapped-card-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.wrapped-brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wrapped-brand-logo {
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 1.5px;
+  color: #c084fc;
+}
+.wrapped-year-pill {
+  background: rgba(236, 72, 153, 0.22);
+  border: 1px solid rgba(236, 72, 153, 0.45);
+  color: #f472b6;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 99px;
+  letter-spacing: 0.8px;
+}
+.wrapped-traveler-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+.wrapped-avatar-circle {
+  font-size: 2.3rem;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+.wrapped-user-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+.wrapped-archetype-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-top: 3px;
+}
+.wrapped-hero-message {
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: #e2e8f0;
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+.wrapped-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0;
+}
+.wrapped-metric-tile {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.wm-val {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #38bdf8;
+  line-height: 1;
+}
+.wm-lbl {
+  display: block;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.wrapped-highlight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 3px 0;
+}
+.wh-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.wh-info {
+  flex: 1;
+  min-width: 0;
+}
+.wh-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.wh-val {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.wh-score {
+  color: #fbbf24;
+  font-size: 0.74rem;
+}
+.wh-sub {
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wh-buddies-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.wb-pill {
+  background: rgba(139, 92, 246, 0.22);
+  border: 1px solid rgba(139, 92, 246, 0.38);
+  color: #c084fc;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.wb-pill.more {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.wrapped-footer {
+  text-align: center;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.wf-quote {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+.wf-domain {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #ec4899;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.wrapped-actions-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+.wrapped-action-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.wrapped-action-btn.primary {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.3);
+}
+.wrapped-action-btn.primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.wrapped-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+.wrapped-action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── 4. Travel Buddies in Status Popup & Poster Demographics ─────────────────── */
+.stamp-buddies-box {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 8px;
+}
+.stamp-buddies-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.stamp-buddy-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  outline: none;
+  font-family: inherit;
+}
+.stamp-buddy-input:focus {
+  border-color: #3b82f6;
+}
+.stamp-buddy-add-btn {
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.stamp-buddies-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.buddy-chip {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.buddy-chip .del-buddy {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+}
+.poster-demographics-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0 12px 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+

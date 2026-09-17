@@ -12,6 +12,7 @@ import {
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
+import { TRAVEL_CHALLENGES, calculateChallengesProgress } from '../data/challengesData.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
@@ -157,9 +158,14 @@ export function renderProfileView(container, onBack) {
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
-            <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
-              <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
-            </button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
+                <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
+              </button>
+              <button id="btn-trigger-wrapped" class="profile-poster-trigger-btn profile-wrapped-trigger-btn" title="${currentLang === 'tr' ? 'Gezgin Wrapped 2026 (Yıl Sonu Seyahat Karnesi)' : 'Traveler Wrapped 2026'}">
+                <span>🎁</span> <span class="poster-btn-txt">Wrapped</span>
+              </button>
+            </div>
           </div>
           <div class="profile-stats">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
@@ -216,6 +222,10 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
       openPosterModal();
+    });
+
+    document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
+      openWrappedModal();
     });
 
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
@@ -913,17 +923,23 @@ export function renderProfileView(container, onBack) {
     let earnedIds = [];
     const achievements = ACHIEVEMENTS || [];
     const catEntries = ACHIEVEMENT_CATEGORIES ? Object.entries(ACHIEVEMENT_CATEGORIES) : [];
+    let challengesList = [];
 
     try {
       const _sd = getStorageData();
       const _bs = calculateStats();
       const earned = getEarnedAchievements(_sd, _bs);
       earnedIds = earned.map(e => e.id);
+
+      const visitedCodes = Object.keys(_sd.worldVisits || {}).filter(k => !k.includes('::') && _sd.worldVisits[k]?.status === 'visited');
+      if ((_bs.turkeyCount || 0) > 0 && !visitedCodes.includes('TR')) visitedCodes.push('TR');
+      challengesList = calculateChallengesProgress(visitedCodes);
     } catch(e) { console.error(e); }
 
     const total = achievements.length;
     const earnedCount = earnedIds.length;
     const percent = total > 0 ? Math.round((earnedCount / total) * 100) : 0;
+    const completedChallengesCount = challengesList.filter(c => c.isCompleted).length;
 
     let html = `
       <div class="achievements-view">
@@ -931,6 +947,63 @@ export function renderProfileView(container, onBack) {
           <div class="ach-progress-text">${t('medalsEarned', { count: earnedCount, total, percent })}</div>
           <div class="ach-progress-bar-wrap">
             <div class="ach-progress-bar" style="width: ${percent}%"></div>
+          </div>
+        </div>
+
+        <!-- 🗺️ Rota Koleksiyonları & Seyahat Challenge'ları -->
+        <div class="challenges-section">
+          <div class="challenges-header">
+            <div class="challenges-title-row">
+              <span class="challenges-main-title">🗺️ ${currentLang === 'tr' ? "Gezgin Challenge'ları & Rota Koleksiyonları" : 'Route Collections & Challenges'}</span>
+              <span class="challenges-badge-count">${completedChallengesCount} / ${challengesList.length} ${currentLang === 'tr' ? 'Tamamlandı' : 'Completed'}</span>
+            </div>
+            <p class="challenges-desc">${currentLang === 'tr' ? 'Dünyanın en ikonik rotalarını tamamla, özel unvan ve koleksiyon rozetlerini kazan!' : 'Complete the world\'s most iconic routes and unlock exclusive title badges!'}</p>
+          </div>
+
+          <div class="challenges-grid">
+            ${challengesList.map(ch => {
+              const title = currentLang === 'en' ? (ch.titleEn || ch.title) : ch.title;
+              const desc = currentLang === 'en' ? (ch.descEn || ch.desc) : ch.desc;
+              return `
+                <div class="challenge-card ${ch.isCompleted ? 'completed' : ''}">
+                  <div class="challenge-card-top">
+                    <div class="challenge-icon-wrap">${ch.icon}</div>
+                    <div class="challenge-title-info">
+                      <div class="challenge-card-title">${escapeHtml(title)}</div>
+                      <div class="challenge-badge-tag ${ch.isCompleted ? 'earned' : 'locked'}">
+                        ${ch.isCompleted ? `<span>🎉 ${escapeHtml(ch.badge)}</span>` : `<span>🔒 ${escapeHtml(ch.badge)}</span>`}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="challenge-card-desc">${escapeHtml(desc)}</div>
+                  
+                  <div class="challenge-progress-box">
+                    <div class="challenge-progress-bar-bg">
+                      <div class="challenge-progress-bar-fill" style="width: ${ch.percentage}%"></div>
+                    </div>
+                    <div class="challenge-progress-labels">
+                      <span class="ch-count">${ch.count} / ${ch.total} ${currentLang === 'tr' ? 'Ülke' : 'Countries'}</span>
+                      <span class="ch-percent">%${ch.percentage}</span>
+                    </div>
+                  </div>
+
+                  <div class="challenge-flags-row">
+                    ${ch.countries.map(code => {
+                      const isVis = ch.visitedCodes.includes(code);
+                      const cObj = WORLD_COUNTRIES.find(x => x.code === code);
+                      const cName = cObj ? getCountryDisplayName(cObj) : code;
+                      const flag = cObj?.flag || '🌍';
+                      return `
+                        <span class="challenge-flag-chip ${isVis ? 'visited' : 'missing'}" title="${escapeHtml(cName)}: ${isVis ? (currentLang === 'tr' ? 'Ziyaret Edildi ✓' : 'Visited ✓') : (currentLang === 'tr' ? 'Henüz Gidilmedi' : 'Not Visited')}">
+                          <span class="flag-icon">${flag}</span>
+                          ${isVis ? '<span class="flag-check-dot">✓</span>' : ''}
+                        </span>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
     `;
@@ -1426,6 +1499,12 @@ export function renderProfileView(container, onBack) {
               </div>
             </div>
 
+            <!-- Demographics Highlight Row -->
+            <div class="poster-demographics-row">
+              <span>🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}: <strong>%${stats.landAreaPercent || 0}</strong></span>
+              <span>👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}: <strong>%${stats.populationPercent || 0}</strong></span>
+            </div>
+
             <!-- Visited Countries Badges Preview (top 16) -->
             ${visitedCodes.length > 0 ? `
               <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'}</div>
@@ -1659,7 +1738,7 @@ export function renderProfileView(container, onBack) {
                   <div class="passport-field-item full">
                     <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
                     <span class="f-val" style="font-size:0.75rem;color:#475569;">
-                      ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'}
+                      ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal Alan' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
                     </span>
                   </div>
                 </div>
@@ -1800,6 +1879,288 @@ export function renderProfileView(container, onBack) {
         if (err.name !== 'AbortError') {
           console.error('Share error', err);
         }
+      }
+    });
+  }
+
+  // ─── 🎁 Gezgin Wrapped (Yıl Sonu Seyahat Karnesi) ──────────────────────────
+  async function openWrappedModal() {
+    const currentLang = getLanguage();
+    const storageData = getStorageData();
+    const stats = calculateStats();
+    let profile = { username: 'Gezgin', avatar: '🧭', bio: '' };
+    try {
+      const profileStr = localStorage.getItem('gv_profile');
+      if (profileStr) {
+        const parsed = JSON.parse(profileStr);
+        if (parsed && typeof parsed === 'object') profile = parsed;
+      }
+    } catch (e) {
+      console.error('Profile parse error', e);
+    }
+
+    const visitedCountryCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited');
+    if (stats.turkeyCount > 0 && !visitedCountryCodes.includes('TR')) visitedCountryCodes.push('TR');
+
+    // Transport breakdown across all visits
+    const transportCounts = { flight: 0, train: 0, car: 0, bus: 0, ship: 0 };
+    const allVisits = [
+      ...Object.values(storageData.worldVisits || {}),
+      ...Object.values(storageData.turkeyVisits || {})
+    ];
+    allVisits.forEach(v => {
+      if (v?.entryTransport && transportCounts[v.entryTransport] !== undefined) transportCounts[v.entryTransport]++;
+      if (v?.exitTransport && transportCounts[v.exitTransport] !== undefined) transportCounts[v.exitTransport]++;
+    });
+
+    let topTransport = 'flight';
+    let maxTransCount = -1;
+    Object.entries(transportCounts).forEach(([k, cnt]) => {
+      if (cnt > maxTransCount) {
+        maxTransCount = cnt;
+        topTransport = k;
+      }
+    });
+
+    const transportNames = {
+      flight: { tr: '✈️ Gökyüzü Fatihi (Uçak)', en: '✈️ Sky Conqueror (Flight)' },
+      train: { tr: '🚆 Demiryolu Romantiği (Tren)', en: '🚆 Railway Romantic (Train)' },
+      car: { tr: '🚗 Karayolu Kaşifi (Araba)', en: '🚗 Roadtrip Explorer (Car)' },
+      bus: { tr: '🚌 Seyyah Yolcu (Otobüs)', en: '🚌 Cross-country Voyager (Bus)' },
+      ship: { tr: '🚢 Deniz Kurdu (Gemi)', en: '🚢 Sea Voyager (Cruise/Ship)' }
+    };
+    const favoriteTransLabel = maxTransCount > 0 
+      ? (currentLang === 'tr' ? transportNames[topTransport]?.tr : transportNames[topTransport]?.en)
+      : (currentLang === 'tr' ? '🧭 Serbest Gezgin' : '🧭 Free Explorer');
+
+    // Archetype Title
+    let archetype = currentLang === 'tr' ? 'Meraklı Kaşif' : 'Curious Explorer';
+    if (stats.worldCountryCount >= 20) archetype = currentLang === 'tr' ? 'Dünya Vatandaşı' : 'Global Citizen';
+    else if (stats.worldCountryCount >= 10) archetype = currentLang === 'tr' ? 'Kıta Gezgini' : 'Continental Explorer';
+    else if (stats.turkeyCount >= 30) archetype = currentLang === 'tr' ? 'Anadolu Fatihi' : 'Anatolia Master';
+    else if (stats.worldCountryCount >= 5) archetype = currentLang === 'tr' ? 'Sınır Aşan Seyyah' : 'Border Crosser';
+
+    // Top rated places
+    const ratedPlaces = [];
+    Object.entries(storageData.worldVisits || {}).forEach(([k, v]) => {
+      if (!k.includes('::') && v?.status === 'visited' && v?.rating) {
+        const c = WORLD_COUNTRIES.find(x => x.code === k);
+        ratedPlaces.push({
+          name: c ? getCountryDisplayName(c) : k,
+          flag: c?.flag || '🌍',
+          rating: Number(v.rating) || 0,
+          notes: v.notes || ''
+        });
+      }
+    });
+    Object.entries(storageData.turkeyVisits || {}).forEach(([pid, v]) => {
+      if (v?.status === 'visited' && v?.rating) {
+        const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
+        ratedPlaces.push({
+          name: p?.name || `İl ${pid}`,
+          flag: '🇹🇷',
+          rating: Number(v.rating) || 0,
+          notes: v.notes || ''
+        });
+      }
+    });
+    ratedPlaces.sort((a, b) => b.rating - a.rating);
+    const topRated = ratedPlaces[0] || null;
+
+    // Collect all buddies
+    const allBuddiesSet = new Set();
+    allVisits.forEach(v => {
+      if (Array.isArray(v?.buddies)) {
+        v.buddies.forEach(b => { if (b) allBuddiesSet.add(b); });
+      }
+    });
+    const uniqueBuddies = Array.from(allBuddiesSet);
+
+    // Challenges progress
+    const chProgress = calculateChallengesProgress(visitedCountryCodes);
+    const completedCh = chProgress.filter(c => c.isCompleted);
+
+    const modal = document.createElement('div');
+    modal.className = 'wrapped-modal-overlay';
+    modal.innerHTML = `
+      <div class="wrapped-modal-dialog">
+        <div class="wrapped-modal-top">
+          <h3>🎁 ${currentLang === 'tr' ? 'Gezgin Wrapped 2026' : 'Traveler Wrapped 2026'}</h3>
+          <button class="wrapped-modal-close" id="wrapped-close-btn">&times;</button>
+        </div>
+
+        <div class="wrapped-preview-container">
+          <!-- 9:16 Instagram Story Canvas -->
+          <div id="travel-wrapped-canvas" class="travel-wrapped-card">
+            <div class="wrapped-glow-orb orb-1"></div>
+            <div class="wrapped-glow-orb orb-2"></div>
+            <div class="wrapped-glow-orb orb-3"></div>
+
+            <div class="wrapped-card-inner">
+              <!-- Top Branding -->
+              <div class="wrapped-brand-header">
+                <div class="wrapped-brand-logo">🧭 GEZGİN 2.0</div>
+                <div class="wrapped-year-pill">WRAPPED 2026</div>
+              </div>
+
+              <!-- Traveler Profile Box -->
+              <div class="wrapped-traveler-box">
+                <div class="wrapped-avatar-circle">${escapeHtml(profile.avatar || '🧭')}</div>
+                <div class="wrapped-traveler-names">
+                  <div class="wrapped-user-name">${escapeHtml(profile.username || 'Gezgin')}</div>
+                  <div class="wrapped-archetype-tag">✨ ${archetype}</div>
+                </div>
+              </div>
+
+              <!-- Story Headline -->
+              <div class="wrapped-hero-message">
+                ${currentLang === 'tr' 
+                  ? `Bu yıl dünyanın <strong>%${stats.landAreaPercent || 0}</strong>'sini ve <strong>${stats.worldCountryCount}</strong> ülkesini keşfettin!` 
+                  : `This year you explored <strong>${stats.landAreaPercent || 0}%</strong> of the world land across <strong>${stats.worldCountryCount}</strong> countries!`}
+              </div>
+
+              <!-- 4 Big Metric Tiles -->
+              <div class="wrapped-metrics-grid">
+                <div class="wrapped-metric-tile">
+                  <span class="wm-val">${stats.worldCountryCount}</span>
+                  <span class="wm-lbl">${currentLang === 'tr' ? 'Ülke Gezildi' : 'Countries'}</span>
+                </div>
+                <div class="wrapped-metric-tile">
+                  <span class="wm-val">${stats.turkeyCount + stats.worldCityCount}</span>
+                  <span class="wm-lbl">${currentLang === 'tr' ? 'İl & Şehir' : 'Cities & Provs'}</span>
+                </div>
+                <div class="wrapped-metric-tile">
+                  <span class="wm-val">%${stats.populationPercent || 0}</span>
+                  <span class="wm-lbl">${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Pop'}</span>
+                </div>
+                <div class="wrapped-metric-tile">
+                  <span class="wm-val">%${stats.landAreaPercent || 0}</span>
+                  <span class="wm-lbl">${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span>
+                </div>
+              </div>
+
+              <!-- Favorite Transport Mode -->
+              <div class="wrapped-highlight-row">
+                <div class="wh-icon">🚀</div>
+                <div class="wh-info">
+                  <div class="wh-label">${currentLang === 'tr' ? 'Favori Seyahat Tarzı' : 'Favorite Travel Mode'}</div>
+                  <div class="wh-val">${favoriteTransLabel}</div>
+                </div>
+              </div>
+
+              <!-- Top Rated Place -->
+              ${topRated ? `
+                <div class="wrapped-highlight-row">
+                  <div class="wh-icon">⭐</div>
+                  <div class="wh-info">
+                    <div class="wh-label">${currentLang === 'tr' ? 'Zirve Destinasyon' : 'Top Destination'}</div>
+                    <div class="wh-val">${escapeHtml(topRated.flag)} ${escapeHtml(topRated.name)} <span class="wh-score">(${topRated.rating}/10)</span></div>
+                    ${topRated.notes ? `<div class="wh-sub">"${escapeHtml(topRated.notes.slice(0, 45))}"</div>` : ''}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Travel Buddies or Route Collections -->
+              ${uniqueBuddies.length > 0 ? `
+                <div class="wrapped-highlight-row">
+                  <div class="wh-icon">👥</div>
+                  <div class="wh-info">
+                    <div class="wh-label">${currentLang === 'tr' ? 'Yol Arkadaşların' : 'Travel Buddies'}</div>
+                    <div class="wh-buddies-pills">
+                      ${uniqueBuddies.slice(0, 5).map(b => `<span class="wb-pill">${escapeHtml(b)}</span>`).join('')}
+                      ${uniqueBuddies.length > 5 ? `<span class="wb-pill more">+${uniqueBuddies.length - 5}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+              ` : (completedCh.length > 0 ? `
+                <div class="wrapped-highlight-row">
+                  <div class="wh-icon">🎖️</div>
+                  <div class="wh-info">
+                    <div class="wh-label">${currentLang === 'tr' ? 'Kazanılan Challenge' : 'Challenges Completed'}</div>
+                    <div class="wh-val">${completedCh.map(c => c.badge).join(', ')}</div>
+                  </div>
+                </div>
+              ` : '')}
+
+              <!-- Bottom Watermark & QR/Domain -->
+              <div class="wrapped-footer">
+                <div class="wf-quote">${currentLang === 'tr' ? 'Dünyayı keşfetmek senin süper gücün 🌍' : 'Exploring the world is your superpower 🌍'}</div>
+                <div class="wf-domain">gittigimyerler.app</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wrapped-actions-row">
+          <button type="button" id="btn-download-wrapped" class="wrapped-action-btn primary">
+            <span>📥</span> <span>${currentLang === 'tr' ? 'Hikaye Olarak İndir (PNG)' : 'Download Story (PNG)'}</span>
+          </button>
+          ${navigator.share ? `
+            <button type="button" id="btn-share-wrapped" class="wrapped-action-btn secondary">
+              <span>📲</span> <span>${t('sharePoster')}</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+      document.removeEventListener('keydown', handleEsc);
+      modal.remove();
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    modal.querySelector('#wrapped-close-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Download PNG
+    modal.querySelector('#btn-download-wrapped')?.addEventListener('click', async () => {
+      const node = document.getElementById('travel-wrapped-canvas');
+      if (!node) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const link = document.createElement('a');
+        const cleanName = (profile.username || 'Gezgin').replace(/[^a-zA-Z0-9_\-\u00C0-\u017F]/g, '_');
+        link.download = `Gezgin-Wrapped-2026-${cleanName}.png`;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error('Wrapped download error', err);
+        alert(currentLang === 'tr' ? 'Karneniz oluşturulurken hata oluştu.' : 'Error generating wrapped image.');
+      }
+    });
+
+    // Native Share
+    modal.querySelector('#btn-share-wrapped')?.addEventListener('click', async () => {
+      const node = document.getElementById('travel-wrapped-canvas');
+      if (!node || !navigator.share) return;
+      try {
+        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'gezgin-wrapped-2026.png', { type: 'image/png' });
+        if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `${profile.username} - Gezgin Wrapped 2026`,
+            text: `2026 Seyahat Karnem! Dünyanın %${stats.landAreaPercent}%'sini gezdim 🌍✨`,
+            url: window.location.href
+          });
+        } else {
+          await navigator.share({
+            title: `${profile.username} - Gezgin Wrapped 2026`,
+            text: `2026 Seyahat Karnem! Dünyanın %${stats.landAreaPercent}%'sini gezdim 🌍✨`,
+            files: [file]
+          });
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Share error', err);
       }
     });
   }
