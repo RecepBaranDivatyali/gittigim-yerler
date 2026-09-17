@@ -12,10 +12,9 @@
     <meta name="author" content="Gezgin" />
     <meta name="robots" content="index, follow" />
 
-    <!-- Cache Control: Force instant updates -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <!-- Preload critical GeoJSON datasets for instant map rendering -->
+    <link rel="preload" href="./data/world-countries.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="./data/turkey-provinces.json" as="fetch" crossorigin="anonymous" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />

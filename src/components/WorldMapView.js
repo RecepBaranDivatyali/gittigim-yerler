@@ -12,6 +12,7 @@ import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, bl
 import { escapeHtml } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
+import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -1737,13 +1738,10 @@ function initMap(container) {
   const baseUrl = import.meta.env.BASE_URL || './';
   const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
 
-  // Load World Countries
+  // Load World Countries (Instant from IndexedDB / HTTP Cache)
   const loadWorldPromise = cachedWorldCountriesData
     ? Promise.resolve(cachedWorldCountriesData)
-    : fetch(`${cleanBase}data/world-countries.json`).then(r => {
-        if (!r.ok) throw new Error('Network ' + r.status);
-        return r.json();
-      }).then(d => {
+    : fetchGeoDataWithCache(`${cleanBase}data/world-countries.json`, 'world-countries').then(d => {
         cachedWorldCountriesData = d;
         return d;
       });
@@ -1798,52 +1796,56 @@ function initMap(container) {
       }
     }).addTo(map);
 
-    // Pre-sort country layers once by polygon area descending (no sorting per frame!)
-    sortedCountryLayers = [...(data.features || [])].map(f => {
-      const c = findCountry(f);
-      const layer = c && c.code ? countryLayersByCode[c.code] : null;
-      return { feature: f, country: c, layer };
-    }).filter(item => item.country && item.layer);
-
-    sortedCountryLayers.sort((a, b) => {
-      try {
-        const ba = a.layer.getBounds();
-        const bb = b.layer.getBounds();
-        const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
-        const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
-        return areaB - areaA;
-      } catch { return 0; }
-    });
-
-    // Prominent outer country borders: only active above regions (Zoom >= REGION_ZOOM)
-    countryBordersLayer = L.geoJSON(data, {
-      renderer: countryBordersRenderer,
-      pane: 'countryBordersPane',
-      style: () => countryBorderStyle(),
-      interactive: false
-    });
-    if (map && map.getZoom() >= REGION_ZOOM) {
-      countryBordersLayer.addTo(map);
+    // Hide loading indicator IMMEDIATELY as soon as countries layer is on screen!
+    const loadingEl = document.getElementById('map-loading');
+    if (loadingEl) {
+      loadingEl.style.transition = 'opacity 0.2s ease';
+      loadingEl.style.opacity = '0';
+      setTimeout(() => {
+        if (loadingEl) loadingEl.style.display = 'none';
+      }, 200);
     }
 
-    scheduleLabelUpdate();
-    
-    // Hide loading indicator
-    const loadingEl = document.getElementById('map-loading');
-    if (loadingEl) loadingEl.style.display = 'none';
+    // Secondary processing deferred so first paint happens with zero delay!
+    setTimeout(() => {
+      sortedCountryLayers = [...(data.features || [])].map(f => {
+        const c = findCountry(f);
+        const layer = c && c.code ? countryLayersByCode[c.code] : null;
+        return { feature: f, country: c, layer };
+      }).filter(item => item.country && item.layer);
+
+      sortedCountryLayers.sort((a, b) => {
+        try {
+          const ba = a.layer.getBounds();
+          const bb = b.layer.getBounds();
+          const areaA = (ba.getEast() - ba.getWest()) * (ba.getNorth() - ba.getSouth());
+          const areaB = (bb.getEast() - bb.getWest()) * (bb.getNorth() - bb.getSouth());
+          return areaB - areaA;
+        } catch { return 0; }
+      });
+
+      countryBordersLayer = L.geoJSON(data, {
+        renderer: countryBordersRenderer,
+        pane: 'countryBordersPane',
+        style: () => countryBorderStyle(),
+        interactive: false
+      });
+      if (map && map.getZoom() >= REGION_ZOOM) {
+        countryBordersLayer.addTo(map);
+      }
+
+      scheduleLabelUpdate();
+    }, 10);
   }).catch(err => {
     console.error('World countries load error:', err);
     const loadingEl = document.getElementById('map-loading');
     if (loadingEl) loadingEl.innerHTML = `<div style="text-align:center;color:#ef4444;font-size:0.9rem;">${t('loadError')}</div>`;
   });
 
-  // Load Turkey Provinces
+  // Load Turkey Provinces (Instant from IndexedDB / HTTP Cache)
   const loadTurkeyPromise = cachedTurkeyProvincesData
     ? Promise.resolve(cachedTurkeyProvincesData)
-    : fetch(`${cleanBase}data/turkey-provinces.json`).then(r => {
-        if (!r.ok) throw new Error('Network ' + r.status);
-        return r.json();
-      }).then(d => {
+    : fetchGeoDataWithCache(`${cleanBase}data/turkey-provinces.json`, 'turkey-provinces').then(d => {
         cachedTurkeyProvincesData = d;
         return d;
       });
