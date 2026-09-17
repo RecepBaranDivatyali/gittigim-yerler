@@ -65,11 +65,19 @@ export const REGION_TR_NAMES = {
   'North Dakota': 'Kuzey Dakota', 'Alaska': 'Alaska (Anchorage)', 'Vermont': 'Vermont',
   'Wyoming': 'Wyoming', 'District of Columbia': 'Washington D.C. (Başkent)',
 
-  // ─── BİRLEŞİK KRALLIK (İNGİLTERE VE DİĞERLERİ) ────────────
+  // ─── İNGİLTERE & BİRLEŞİK KRALLIK ───────────────────────────
   'England': 'İngiltere (Londra, Manchester)', 'Scotland': 'İskoçya (Edinburgh, Glasgow)',
   'Wales': 'Galler (Cardiff)', 'Northern Ireland': 'Kuzey İrlanda (Belfast)',
   'Greater London': 'Büyük Londra', 'Greater Manchester': 'Büyük Manchester',
   'West Midlands': 'Batı Midlands (Birmingham)', 'West Yorkshire': 'Batı Yorkshire (Leeds)',
+  'East of England': 'Doğu İngiltere (Cambridge, Norwich)',
+  'South East': 'Güneydoğu İngiltere (Oxford, Brighton)',
+  'South West': 'Güneybatı İngiltere (Bristol, Bath)',
+  'North West': 'Kuzeybatı İngiltere (Manchester, Liverpool)',
+  'North East': 'Kuzeydoğu İngiltere (Newcastle)',
+  'East Midlands': 'Doğu Midlands (Nottingham, Leicester)',
+  'Yorkshire and the Humber': 'Yorkshire (Leeds, York)',
+  'Highlands': 'İskoç Dağlık Bölgesi (Highlands)',
 
   // ─── HOLLANDA ─────────────────────────────────────────────
   'Noord-Holland': 'Kuzey Hollanda (Amsterdam)', 'Zuid-Holland': 'Güney Hollanda (Rotterdam, Lahey)',
@@ -278,7 +286,7 @@ export const REGION_TR_NAMES = {
 
 export const COUNTRY_TR_NAMES = {
   'Turkey': 'Türkiye', 'Germany': 'Almanya', 'France': 'Fransa', 'Italy': 'İtalya',
-  'Spain': 'İspanya', 'United Kingdom': 'Birleşik Krallık', 'United States of America': 'Amerika Birleşik Devletleri',
+  'Spain': 'İspanya', 'United Kingdom': 'İngiltere', 'United States of America': 'Amerika Birleşik Devletleri',
   'United States': 'Amerika Birleşik Devletleri', 'Netherlands': 'Hollanda', 'Greece': 'Yunanistan',
   'Austria': 'Avusturya', 'Switzerland': 'İsviçre', 'Japan': 'Japonya', 'United Arab Emirates': 'Birleşik Arap Emirlikleri',
   'Russia': 'Rusya', 'Portugal': 'Portekiz', 'Belgium': 'Belçika', 'Sweden': 'İsveç',

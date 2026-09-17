@@ -758,16 +758,55 @@ export function renderWorldMapView(container, options = {}) {
         countryCode: 'TR'
       })),
       // 2. World Countries (All 241 countries with accurate centroids)
-      ...WORLD_COUNTRIES.map(c => ({
-        type: 'country',
-        id: c.code,
-        name: getCountryDisplayName(c),
-        altName: c.nameEn || c.name,
-        sub: currentLang === 'tr' ? (c.nameEn || c.name) : c.name,
-        flag: getFlagHtml(c.code),
-        coords: COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code] || null,
-        countryCode: c.code
-      })),
+      ...WORLD_COUNTRIES.map(c => {
+        let altName = c.nameEn || c.name;
+        if (c.code === 'GB') {
+          altName = 'Birleşik Krallık / United Kingdom / UK / England / Great Britain / Büyük Britanya / Londra / London';
+        } else if (c.code === 'IE') {
+          altName = 'Ireland / Republic of Ireland / İrlanda Cumhuriyeti / Dublin';
+        }
+        return {
+          type: 'country',
+          id: c.code,
+          name: getCountryDisplayName(c),
+          altName: altName,
+          sub: currentLang === 'tr' ? (c.code === 'GB' ? 'Birleşik Krallık / UK' : (c.nameEn || c.name)) : (c.code === 'GB' ? 'İngiltere / United Kingdom' : c.name),
+          flag: getFlagHtml(c.code),
+          coords: COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code] || null,
+          countryCode: c.code
+        };
+      }),
+      // 2B. Direct Fast-Search for UK Constituent Nations
+      {
+        type: 'region',
+        id: 'GB::Scotland',
+        name: 'İskoçya',
+        altName: 'Scotland / Edinburgh / Glasgow / Highlands / UK',
+        sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
+        flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+        coords: [56.4907, -4.2026],
+        countryCode: 'GB'
+      },
+      {
+        type: 'region',
+        id: 'GB::Wales',
+        name: 'Galler',
+        altName: 'Wales / Cymru / Cardiff / UK',
+        sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
+        flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+        coords: [52.1307, -3.7837],
+        countryCode: 'GB'
+      },
+      {
+        type: 'region',
+        id: 'GB::Northern Ireland',
+        name: 'Kuzey İrlanda',
+        altName: 'Northern Ireland / Belfast / Ulster / UK',
+        sub: 'İngiltere & Birleşik Krallık (Bölge)',
+        flag: '🇬🇧',
+        coords: [54.7877, -6.4923],
+        countryCode: 'GB'
+      },
       // 3. World Capitals & Major Global Cities (Over 240 global hubs with TR/EN names)
       ...WORLD_CITIES_INDEX.map(city => {
         const c = countryByCode.get(city.countryCode);

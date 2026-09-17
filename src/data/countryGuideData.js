@@ -360,6 +360,26 @@ export const COUNTRY_GUIDE_DATA = {
       "Stonehenge Gizemli Taşları"
     ]
   },
+  "IE": {
+    "plug": "Type G (3 Ayaklı)",
+    "cur": "EUR (€)",
+    "em": "112 / 999",
+    "vb": "required",
+    "vy": "required",
+    "vd": "İrlanda Vizesi Gerekli (Schengen Alanı Dışındadır)",
+    "foods": [
+      "Irish Stew (Geleneksel Kuzu Güveç)",
+      "Soda Bread (İrlanda Ekmeği)",
+      "Shepherd's Pie (Çoban Turtası)",
+      "Guinness Beef Stew & Boxty"
+    ],
+    "spots": [
+      "Cliffs of Moher (Moher Falezleri)",
+      "Trinity College & Book of Kells (Dublin)",
+      "Temple Bar & Grafton Street",
+      "Ring of Kerry Manzara Rotası"
+    ]
+  },
   "PT": {
     "plug": "Type C / F",
     "cur": "EUR (€)",

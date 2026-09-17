@@ -552,7 +552,7 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "GB",
-    "name": "Birleşik Krallık",
+    "name": "İngiltere",
     "nameEn": "United Kingdom",
     "continent": "europe",
     "flag": "🇬🇧"
