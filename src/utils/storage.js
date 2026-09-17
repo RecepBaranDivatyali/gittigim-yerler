@@ -3,6 +3,7 @@ export { AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, ge
 import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
+import { calculateDemographicImpact } from '../data/worldDemographics.js';
 
 export const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
@@ -227,6 +228,9 @@ export function calculateStats() {
   const markedRegionCount = Object.keys(worldVisits).filter(code => code.includes('::') && worldVisits[code]?.status === 'visited').length;
   const worldCityCount = Math.max(worldCities.length, markedRegionCount) + turkeyCount;
 
+  // Global Demographic & Land Impact
+  const demographicStats = calculateDemographicImpact(worldVisitedCodes);
+
   return {
     turkeyCount,
     turkeyTargetCount: turkeyTargetIds.length,
@@ -237,7 +241,11 @@ export function calculateStats() {
     worldPercentage,
     continentCounts,
     worldCityCount,
-    totalPlacesMarked: turkeyCount + worldCountryCount
+    totalPlacesMarked: turkeyCount + worldCountryCount,
+    landAreaKm2: demographicStats.totalAreaKm2,
+    landAreaPercent: demographicStats.landAreaPercent,
+    populationCount: demographicStats.totalPopCount,
+    populationPercent: demographicStats.populationPercent
   };
 }
 
@@ -710,6 +718,44 @@ export function setPassportType(type) {
     safeSetItem('gv_passport_type', type === 'yesil' ? 'yesil' : 'bordo');
   } catch (e) {
     console.warn('Error saving passport type', e);
+  }
+  notifyStateChange();
+}
+
+// ─── Upcoming Trip Countdown ────────────────────────────────────────────────
+export function getUpcomingTrip() {
+  try {
+    const raw = localStorage.getItem('gv_upcoming_trip');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.destination && parsed.date) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Error reading upcoming trip', e);
+  }
+  return null;
+}
+
+export function saveUpcomingTrip(tripData) {
+  try {
+    if (!tripData) {
+      localStorage.removeItem('gv_upcoming_trip');
+    } else {
+      safeSetItem('gv_upcoming_trip', JSON.stringify(tripData));
+    }
+  } catch (e) {
+    console.warn('Error saving upcoming trip', e);
+  }
+  notifyStateChange();
+}
+
+export function deleteUpcomingTrip() {
+  try {
+    localStorage.removeItem('gv_upcoming_trip');
+  } catch (e) {
+    console.warn('Error removing upcoming trip', e);
   }
   notifyStateChange();
 }

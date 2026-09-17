@@ -1,3 +1,4 @@
+import L from 'leaflet';
 import { 
   getStorageData, calculateStats, resetTravelData, 
   getBucketRanks, saveBucketRanks, 
@@ -7,7 +8,8 @@ import {
   getSavedFriends, saveFriend, deleteFriend,
   getHomeCountry, setHomeCountry,
   exportBackup, importBackup,
-  getPassportType, setPassportType
+  getPassportType, setPassportType,
+  getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip
 } from '../utils/storage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -169,6 +171,8 @@ export function renderProfileView(container, onBack) {
             `}
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${baseStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#06b6d4">%${baseStats.landAreaPercent || 0}</span><span class="pstat-lbl">🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#a855f7">%${baseStats.populationPercent || 0}</span><span class="pstat-lbl">👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}</span></div>
           </div>
           ${earnedMedals.length > 0 ? `
             <div class="profile-badges-header" style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);font-weight:600;margin-bottom:8px;">${currentLang === 'tr' ? 'Kazanılan Rozetler' : 'Earned Badges'} (${earnedMedals.length})</div>
@@ -177,6 +181,9 @@ export function renderProfileView(container, onBack) {
             </div>
           ` : `<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!' : 'No medals earned yet. Mark places on the map to earn medals!'}</div>`}
         </div>
+
+        <!-- Upcoming Trip Countdown Card -->
+        <div id="trip-countdown-container"></div>
 
         <!-- Virtual Passport Banner Card -->
         <div class="passport-banner-card" id="btn-trigger-passport">
@@ -214,6 +221,203 @@ export function renderProfileView(container, onBack) {
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
     });
+
+    // Render and manage Upcoming Trip Countdown
+    const countdownContainer = document.getElementById('trip-countdown-container');
+    let countdownTimerId = null;
+
+    function renderTripCountdown() {
+      if (countdownTimerId) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
+      if (!countdownContainer) return;
+
+      const upcomingTrip = getUpcomingTrip();
+      const transportIcons = { flight: '✈️', train: '🚆', car: '🚗', bus: '🚌', ship: '🚢' };
+
+      if (!upcomingTrip) {
+        countdownContainer.innerHTML = `
+          <div class="trip-countdown-card empty" id="btn-create-trip">
+            <div class="trip-empty-inner">
+              <div class="trip-empty-icon">⏳</div>
+              <div class="trip-empty-info">
+                <div class="trip-empty-title">${currentLang === 'tr' ? 'Yaklaşan Seyahat Geri Sayımı Ekle' : 'Add Upcoming Trip Countdown'}</div>
+                <div class="trip-empty-sub">${currentLang === 'tr' ? 'Bir sonraki rotanı belirle, gün ve saniyeleri canlı geri say!' : 'Set your next destination and count down the days & seconds!'}</div>
+              </div>
+              <button type="button" class="trip-add-btn">+ ${currentLang === 'tr' ? 'Seyahat Planla' : 'Plan Trip'}</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('btn-create-trip')?.addEventListener('click', () => openTripModal());
+        return;
+      }
+
+      const transIcon = transportIcons[upcomingTrip.transport] || '✈️';
+
+      countdownContainer.innerHTML = `
+        <div class="trip-countdown-card active">
+          <div class="trip-countdown-header">
+            <div class="trip-countdown-badge">⏳ ${currentLang === 'tr' ? 'YAKLAŞAN SEYAHAT GERİ SAYIMI' : 'UPCOMING TRIP COUNTDOWN'}</div>
+            <div class="trip-countdown-actions">
+              <button type="button" class="trip-action-icon-btn" id="btn-edit-trip" title="${currentLang === 'tr' ? 'Düzenle' : 'Edit'}">✏️</button>
+              <button type="button" class="trip-action-icon-btn del" id="btn-del-trip" title="${currentLang === 'tr' ? 'Sil' : 'Delete'}">🗑️</button>
+            </div>
+          </div>
+          <div class="trip-target-info">
+            <span class="trip-trans-icon">${transIcon}</span>
+            <div style="flex:1;min-width:0;">
+              <div class="trip-dest-name">${escapeHtml(upcomingTrip.destination || 'Yeni Rota')}</div>
+              <div class="trip-target-meta">📅 ${new Date(upcomingTrip.date).toLocaleString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}${upcomingTrip.notes ? ` • <i>"${escapeHtml(upcomingTrip.notes)}"</i>` : ''}</div>
+            </div>
+          </div>
+          <div class="countdown-timer-grid">
+            <div class="timer-unit-box">
+              <span class="timer-val" id="cd-days">00</span>
+              <span class="timer-lbl">${currentLang === 'tr' ? 'GÜN' : 'DAYS'}</span>
+            </div>
+            <div class="timer-sep">:</div>
+            <div class="timer-unit-box">
+              <span class="timer-val" id="cd-hours">00</span>
+              <span class="timer-lbl">${currentLang === 'tr' ? 'SAAT' : 'HOURS'}</span>
+            </div>
+            <div class="timer-sep">:</div>
+            <div class="timer-unit-box">
+              <span class="timer-val" id="cd-mins">00</span>
+              <span class="timer-lbl">${currentLang === 'tr' ? 'DAKİKA' : 'MINUTES'}</span>
+            </div>
+            <div class="timer-sep">:</div>
+            <div class="timer-unit-box">
+              <span class="timer-val" id="cd-secs">00</span>
+              <span class="timer-lbl">${currentLang === 'tr' ? 'SANİYE' : 'SECONDS'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btn-edit-trip')?.addEventListener('click', () => openTripModal(upcomingTrip));
+      document.getElementById('btn-del-trip')?.addEventListener('click', () => {
+        if (confirm(currentLang === 'tr' ? 'Bu seyahat geri sayımını kaldırmak istediğine emin misin?' : 'Delete this upcoming trip countdown?')) {
+          deleteUpcomingTrip();
+          renderTripCountdown();
+        }
+      });
+
+      function updateClock() {
+        const targetMs = new Date(upcomingTrip.date).getTime();
+        const nowMs = Date.now();
+        const diff = targetMs - nowMs;
+
+        if (diff <= 0) {
+          const elDays = document.getElementById('cd-days');
+          if (elDays) {
+            elDays.textContent = '00';
+            document.getElementById('cd-hours').textContent = '00';
+            document.getElementById('cd-mins').textContent = '00';
+            document.getElementById('cd-secs').textContent = '00';
+          }
+          return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+        const elDays = document.getElementById('cd-days');
+        if (elDays) {
+          elDays.textContent = String(d).padStart(2, '0');
+          document.getElementById('cd-hours').textContent = String(h).padStart(2, '0');
+          document.getElementById('cd-mins').textContent = String(m).padStart(2, '0');
+          document.getElementById('cd-secs').textContent = String(s).padStart(2, '0');
+        }
+      }
+
+      updateClock();
+      countdownTimerId = setInterval(updateClock, 1000);
+    }
+
+    renderTripCountdown();
+
+    function openTripModal(existingTrip = null) {
+      const modal = document.createElement('div');
+      modal.className = 'trip-modal-overlay';
+      const defaultDate = existingTrip ? existingTrip.date : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+      let selectedTrans = existingTrip ? existingTrip.transport : 'flight';
+
+      modal.innerHTML = `
+        <div class="trip-modal-dialog">
+          <div class="trip-modal-top">
+            <h3>⏳ ${existingTrip ? (currentLang === 'tr' ? 'Seyahati Düzenle' : 'Edit Trip') : (currentLang === 'tr' ? 'Yeni Seyahat Planla' : 'Plan New Trip')}</h3>
+            <button class="trip-modal-close" id="trip-modal-close-btn">&times;</button>
+          </div>
+          <div class="trip-modal-body">
+            <div class="trip-form-group">
+              <label>${currentLang === 'tr' ? 'Hedef Ülke veya Şehir' : 'Destination Country / City'}</label>
+              <input type="text" id="trip-in-dest" class="trip-form-input" placeholder="${currentLang === 'tr' ? 'Örn: Roma, İtalya veya Tokyo, Japonya' : 'e.g. Rome, Italy or Tokyo, Japan'}" value="${existingTrip ? escapeHtml(existingTrip.destination) : ''}" maxlength="40">
+            </div>
+            <div class="trip-form-group">
+              <label>${currentLang === 'tr' ? 'Seyahat Tarihi & Saati' : 'Date & Time'}</label>
+              <input type="datetime-local" id="trip-in-date" class="trip-form-input" value="${defaultDate}">
+            </div>
+            <div class="trip-form-group">
+              <label>${currentLang === 'tr' ? 'Ulaşım Aracı' : 'Mode of Transport'}</label>
+              <div class="trip-trans-row">
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'flight' ? 'active' : ''}" data-trans="flight">✈️ <span>Uçak</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'train' ? 'active' : ''}" data-trans="train">🚆 <span>Tren</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'car' ? 'active' : ''}" data-trans="car">🚗 <span>Araba</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'bus' ? 'active' : ''}" data-trans="bus">🚌 <span>Otobüs</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'ship' ? 'active' : ''}" data-trans="ship">🚢 <span>Gemi</span></button>
+              </div>
+            </div>
+            <div class="trip-form-group">
+              <label>${currentLang === 'tr' ? 'Kısa Not / Heyecan Notu (İsteğe bağlı)' : 'Short Note (Optional)'}</label>
+              <input type="text" id="trip-in-notes" class="trip-form-input" placeholder="${currentLang === 'tr' ? 'Örn: Biletler hazır, otel rezervasyonu tamam!' : 'e.g. Tickets booked, hotel confirmed!'}" value="${existingTrip ? escapeHtml(existingTrip.notes || '') : ''}" maxlength="60">
+            </div>
+            <button type="button" class="trip-submit-btn" id="trip-save-btn">💾 ${currentLang === 'tr' ? 'Geri Sayımı Başlat' : 'Start Countdown'}</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll('.trip-trans-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          modal.querySelectorAll('.trip-trans-btn').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          selectedTrans = b.dataset.trans;
+        });
+      });
+
+      const close = () => modal.remove();
+      modal.querySelector('#trip-modal-close-btn').addEventListener('click', close);
+      modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+      modal.querySelector('#trip-save-btn').addEventListener('click', () => {
+        const dest = sanitizeText(modal.querySelector('#trip-in-dest')?.value || '', 40);
+        const dt = modal.querySelector('#trip-in-date')?.value;
+        const notes = sanitizeText(modal.querySelector('#trip-in-notes')?.value || '', 60);
+
+        if (!dest) {
+          alert(currentLang === 'tr' ? 'Lütfen bir seyahat hedefi girin.' : 'Please enter a destination.');
+          return;
+        }
+        if (!dt) {
+          alert(currentLang === 'tr' ? 'Lütfen seyahat tarihini seçin.' : 'Please select travel date.');
+          return;
+        }
+
+        saveUpcomingTrip({
+          destination: dest,
+          date: dt,
+          transport: selectedTrans,
+          notes
+        });
+
+        close();
+        renderTripCountdown();
+      });
+    }
 
     document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
       const input = document.getElementById('profile-share-code');
@@ -1766,15 +1970,48 @@ export function renderProfileView(container, onBack) {
         return p ? p.name : `İl ${pid}`;
       };
 
+      // ── Calculate World Cities Comparison ──
+      const extractCities = (worldVisitsObj, worldCitiesArr) => {
+        const set = new Map();
+        if (Array.isArray(worldCitiesArr)) {
+          worldCitiesArr.forEach(item => {
+            if (typeof item === 'string' && item.trim()) {
+              set.set(item.trim().toLowerCase(), item.trim());
+            } else if (item && typeof item === 'object' && item.name) {
+              set.set(item.name.trim().toLowerCase(), item.name.trim());
+            }
+          });
+        }
+        Object.keys(worldVisitsObj || {}).forEach(k => {
+          if (k.includes('::') && worldVisitsObj[k]?.status === 'visited') {
+            const parts = k.split('::');
+            const cityName = parts[1]?.trim();
+            if (cityName) {
+              set.set(cityName.toLowerCase(), `${cityName} (${parts[0]})`);
+            }
+          }
+        });
+        return Array.from(set.values());
+      };
+
+      const myCitiesList = extractCities(myStorage.worldVisits, myStorage.worldCities);
+      const otherCitiesList = extractCities(safeWorldVisits, safeCities);
+
+      const commonCities = myCitiesList.filter(c => otherCitiesList.some(oc => oc.toLowerCase() === c.toLowerCase()));
+      const onlyMyCities = myCitiesList.filter(c => !otherCitiesList.some(oc => oc.toLowerCase() === c.toLowerCase()));
+      const onlyOtherCities = otherCitiesList.filter(oc => !myCitiesList.some(mc => mc.toLowerCase() === oc.toLowerCase()));
+
       const resultsArea = document.getElementById('compare-results-area');
       resultsArea.style.display = 'block';
       resultsArea.innerHTML = `
         <div class="share-section" style="margin-top:0;">
-          <!-- Category Tabs: Countries / Turkey 81 Provinces / Reviews & Scores -->
+          <!-- Category Tabs: Countries / World Cities / Turkey 81 Provinces / Reviews / Duo Map -->
           <div class="compare-subtabs-row">
             <button type="button" class="compare-subtab active" data-sub="countries">🌍 ${currentLang === 'tr' ? 'Ülkeler' : 'Countries'}</button>
+            <button type="button" class="compare-subtab" data-sub="cities">🏙️ ${currentLang === 'tr' ? 'Dünya Şehirleri' : 'World Cities'}</button>
             <button type="button" class="compare-subtab" data-sub="provinces">🇹🇷 ${currentLang === 'tr' ? 'Türkiye (81 İl)' : 'Turkey (81 Provinces)'}</button>
-            <button type="button" class="compare-subtab" data-sub="reviews">📝 ${currentLang === 'tr' ? 'Yorumlar & Puanlar (1-10)' : 'Reviews & Scores (1-10)'}</button>
+            <button type="button" class="compare-subtab" data-sub="reviews">📝 ${currentLang === 'tr' ? 'Yorumlar & Puanlar' : 'Reviews & Scores'}</button>
+            <button type="button" class="compare-subtab" data-sub="duomap">🗺️ ${currentLang === 'tr' ? 'Karşılaştırma Haritası' : 'Duo Map'}</button>
           </div>
 
           <!-- Section 1: Countries -->
@@ -1798,6 +2035,32 @@ export function renderProfileView(container, onBack) {
                 <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gittiği Ülkeler` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherCountries.length})</div>
                 <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
                   ${onlyOtherCountries.length > 0 ? onlyOtherCountries.map(c => `• ${escapeHtml(getCName(c))}`).join('<br>') : (currentLang === 'tr' ? 'Farklı ülke yok.' : 'No unique countries.')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1B: World Cities -->
+          <div id="compare-pane-cities" class="compare-pane" style="display:none;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;">
+              <div class="comp-card-box">
+                <div style="font-weight:700;color:#10b981;margin-bottom:8px;">🤝 ${currentLang === 'tr' ? 'Ortak Gezilen Dünya Şehirleri' : 'Common World Cities'} (${commonCities.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${commonCities.length > 0 ? commonCities.map(c => `• ${escapeHtml(c)}`).join('<br>') : (currentLang === 'tr' ? 'Ortak şehir bulunamadı.' : 'No common cities.')}
+                </div>
+              </div>
+
+              <div class="comp-card-box">
+                <div style="font-weight:700;color:#3b82f6;margin-bottom:8px;">⭐ ${currentLang === 'tr' ? 'Sadece Senin Gezdiğin Şehirler' : 'Only You Visited'} (${onlyMyCities.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyMyCities.length > 0 ? onlyMyCities.map(c => `• ${escapeHtml(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı şehir yok.' : 'No unique cities.')}
+                </div>
+              </div>
+
+              <div class="comp-card-box">
+                <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}'in Gezdiği Şehirler` : `Only ${escapeHtml(safeProfile.username)}`} (${onlyOtherCities.length})</div>
+                <div style="font-size:0.85rem;color:var(--theme-text-main, #cbd5e1);line-height:1.6;max-height:220px;overflow-y:auto;">
+                  ${onlyOtherCities.length > 0 ? onlyOtherCities.map(c => `• ${escapeHtml(c)}`).join('<br>') : (currentLang === 'tr' ? 'Farklı şehir yok.' : 'No unique cities.')}
                 </div>
               </div>
             </div>
@@ -1897,21 +2160,127 @@ export function renderProfileView(container, onBack) {
               </div>
             </div>
           </div>
+
+          <!-- Section 4: Duo Comparison Map -->
+          <div id="compare-pane-duomap" class="compare-pane" style="display:none;">
+            <div class="duo-map-legend-row">
+              <span class="duo-legend-chip common">🟡 ${currentLang === 'tr' ? 'İkiniz de Gezdiniz' : 'Both Visited'} (${commonCountries.length})</span>
+              <span class="duo-legend-chip mine">🟢 ${currentLang === 'tr' ? 'Sadece Sen' : 'Only You'} (${onlyMyCountries.length})</span>
+              <span class="duo-legend-chip other">🔵 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)}` : 'Only Friend'} (${onlyOtherCountries.length})</span>
+            </div>
+            <div id="duo-map-container" class="duo-map-frame" style="width:100%;height:440px;border-radius:16px;overflow:hidden;background:#090d16;position:relative;border:1px solid rgba(255,255,255,0.1);"></div>
+          </div>
         </div>
       `;
 
-      // Subtab switching
+      // Subtab switching & Duo Map initialization
+      let duoMapInstance = null;
+
+      function initDuoMap() {
+        if (duoMapInstance) {
+          duoMapInstance.invalidateSize();
+          return;
+        }
+
+        const mapEl = document.getElementById('duo-map-container');
+        if (!mapEl) return;
+
+        duoMapInstance = L.map(mapEl, {
+          center: [25, 10],
+          zoom: 2,
+          minZoom: 1.5,
+          maxZoom: 6,
+          zoomControl: true,
+          attributionControl: false
+        });
+
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+        
+        fetch(`${cleanBase}data/world-countries.json`)
+          .then(r => r.json())
+          .then(geoData => {
+            if (!geoData || !geoData.features) return;
+
+            const duoGeoLayer = L.geoJSON(geoData, {
+              style: (feature) => {
+                const code = feature.id || feature.properties?.ISO_A2 || feature.properties?.wb_a2 || feature.properties?.postal;
+                const isCommon = commonCountries.includes(code);
+                const isMine = onlyMyCountries.includes(code);
+                const isOther = onlyOtherCountries.includes(code);
+
+                if (isCommon) {
+                  return { fillColor: '#f59e0b', fillOpacity: 0.85, color: '#d97706', weight: 1.5 };
+                } else if (isMine) {
+                  return { fillColor: '#10b981', fillOpacity: 0.85, color: '#059669', weight: 1.5 };
+                } else if (isOther) {
+                  return { fillColor: '#3b82f6', fillOpacity: 0.85, color: '#2563eb', weight: 1.5 };
+                } else {
+                  return { fillColor: '#1e293b', fillOpacity: 0.5, color: '#334155', weight: 0.7 };
+                }
+              },
+              onEachFeature: (feature, layer) => {
+                const code = feature.id || feature.properties?.ISO_A2 || feature.properties?.wb_a2 || feature.properties?.postal;
+                const cObj = WORLD_COUNTRIES.find(x => x.code === code);
+                const cName = cObj ? getCountryDisplayName(cObj) : (feature.properties?.name || code);
+
+                const isCommon = commonCountries.includes(code);
+                const isMine = onlyMyCountries.includes(code);
+                const isOther = onlyOtherCountries.includes(code);
+
+                let statusBadge = `<span style="color:#94a3b8;">${currentLang === 'tr' ? 'Henüz ikiniz de gitmediniz' : 'Neither visited yet'}</span>`;
+                if (isCommon) {
+                  statusBadge = `<span style="color:#f59e0b;font-weight:700;">🤝 ${currentLang === 'tr' ? 'İkiniz de gezdiniz!' : 'Both of you visited!'}</span>`;
+                } else if (isMine) {
+                  statusBadge = `<span style="color:#10b981;font-weight:700;">⭐ ${currentLang === 'tr' ? 'Sadece Sen gezdin!' : 'Only you visited!'}</span>`;
+                } else if (isOther) {
+                  statusBadge = `<span style="color:#3b82f6;font-weight:700;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)} gezdi!` : 'Only friend visited!'}</span>`;
+                }
+
+                layer.bindPopup(`
+                  <div style="font-family:inherit;padding:6px 8px;text-align:center;min-width:140px;">
+                    <div style="font-size:1.3rem;margin-bottom:2px;">${cObj?.flag || '🌍'}</div>
+                    <div style="font-weight:800;color:#0f172a;font-size:0.95rem;">${escapeHtml(cName)}</div>
+                    <div style="margin-top:6px;font-size:0.8rem;">${statusBadge}</div>
+                  </div>
+                `);
+
+                layer.on('mouseover', function () {
+                  if (isCommon || isMine || isOther) {
+                    this.setStyle({ weight: 2.5, fillOpacity: 1 });
+                  }
+                });
+                layer.on('mouseout', function () {
+                  duoGeoLayer.resetStyle(this);
+                });
+              }
+            }).addTo(duoMapInstance);
+
+            setTimeout(() => duoMapInstance && duoMapInstance.invalidateSize(), 150);
+          })
+          .catch(err => console.error('Duo Map load error', err));
+      }
+
       resultsArea.querySelectorAll('.compare-subtab').forEach(btn => {
         btn.addEventListener('click', () => {
           resultsArea.querySelectorAll('.compare-subtab').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           const sub = btn.dataset.sub;
           const pCountries = document.getElementById('compare-pane-countries');
+          const pCities = document.getElementById('compare-pane-cities');
           const pProvinces = document.getElementById('compare-pane-provinces');
           const pReviews = document.getElementById('compare-pane-reviews');
+          const pDuoMap = document.getElementById('compare-pane-duomap');
+
           if (pCountries) pCountries.style.display = sub === 'countries' ? 'block' : 'none';
+          if (pCities) pCities.style.display = sub === 'cities' ? 'block' : 'none';
           if (pProvinces) pProvinces.style.display = sub === 'provinces' ? 'block' : 'none';
           if (pReviews) pReviews.style.display = sub === 'reviews' ? 'block' : 'none';
+          if (pDuoMap) pDuoMap.style.display = sub === 'duomap' ? 'block' : 'none';
+
+          if (sub === 'duomap') {
+            setTimeout(initDuoMap, 50);
+          }
         });
       });
     }
