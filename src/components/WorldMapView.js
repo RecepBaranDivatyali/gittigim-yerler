@@ -3234,6 +3234,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   const cleanTitle = typeof title === 'string' ? title.replace(/<[^>]*>/g, '').trim() : '';
   const flagBadgeHtml = getFlagHtml(countryCode);
+  const cObj = WORLD_COUNTRIES.find(c => c.code === countryCode);
+  const countryFlag = cObj ? cObj.flag : (countryCode === 'TR' ? '🇹🇷' : '🌍');
 
   const passportType = getPassportType();
   const visaBadge = countryCode ? getVisaBadgeInfo(countryCode, passportType) : null;
@@ -3339,22 +3341,22 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <!-- Canlı Damga Mürekkep Önizlemesi -->
       <div class="stamp-live-preview-row">
         <div class="ink-stamp-badge ink-entry" id="ink-preview-entry">
-          <div class="ink-header">★ GİRİŞ / ENTRY ★</div>
-          <div class="ink-code">${countryCode || 'TR'}</div>
-          <div class="ink-sub" id="ink-entry-sub">${currentEntryTransport === 'flight' ? '✈️' : (currentEntryTransport === 'train' ? '🚆' : (currentEntryTransport === 'car' ? '🚗' : (currentEntryTransport === 'bus' ? '🚌' : '🚢')))} ${currentEntryDate || 'Tarih Gir'}</div>
+          <div class="ink-header">★ ENTRY / GİRİŞ ★</div>
+          <div class="ink-code">${countryFlag} ${countryCode || 'TR'}</div>
+          <div class="ink-sub" id="ink-entry-sub">${transportIcons[currentEntryTransport]?.split(' ')[0] || '✈️'} ${currentEntryDate || 'Tarih Seç'}</div>
         </div>
         <div class="ink-stamp-badge ink-exit" id="ink-preview-exit">
-          <div class="ink-header">★ ÇIKIŞ / EXIT ★</div>
-          <div class="ink-code">${countryCode || 'TR'}</div>
-          <div class="ink-sub" id="ink-exit-sub">${currentExitTransport === 'flight' ? '✈️' : (currentExitTransport === 'train' ? '🚆' : (currentExitTransport === 'car' ? '🚗' : (currentExitTransport === 'bus' ? '🚌' : '🚢')))} ${currentExitDate || 'Tarih Gir'}</div>
+          <div class="ink-header">★ EXIT / ÇIKIŞ ★</div>
+          <div class="ink-code">${countryFlag} ${countryCode || 'TR'}</div>
+          <div class="ink-sub" id="ink-exit-sub">${transportIcons[currentExitTransport]?.split(' ')[0] || '✈️'} ${currentExitDate || 'Tarih Seç'}</div>
         </div>
       </div>
 
       <!-- Yol Arkadaşları / Travel Buddies Bölümü -->
       <div class="stamp-section-box stamp-buddies-box">
-        <div class="stamp-section-label">👥 YOL ARKADAŞLARI (TRAVEL BUDDIES)</div>
+        <div class="stamp-section-label">👥 YOL ARKADAŞLARI</div>
         <div class="stamp-buddies-input-row">
-          <input type="text" id="popup-buddy-input" class="stamp-buddy-input" placeholder="Yol arkadaşı ekle (Örn: @ali, Ece)..." maxlength="25" />
+          <input type="text" id="popup-buddy-input" class="stamp-buddy-input" placeholder="Arkadaş ekle (Örn: Ece, @ali)..." maxlength="25" />
           <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn">+ Ekle</button>
         </div>
         <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
@@ -3363,7 +3365,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       </div>
 
       <button type="button" id="btn-save-stamp-data" class="stamp-save-btn">
-        <span>💾 Damgaları & Yol Arkadaşlarını Kaydet</span>
+        <span>💾 Damgaları & Bilgileri Kaydet</span>
       </button>
     </div>
 
@@ -3545,6 +3547,14 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           loadAndRenderPhotos();
         }
       }
+
+      // Re-anchor popup and dynamically pan map to maintain top safe boundary below search bar
+      if (activeStatusPopup) {
+        activeStatusPopup.update();
+      }
+      requestAnimationFrame(ensurePopupInView);
+      setTimeout(ensurePopupInView, 60);
+      setTimeout(ensurePopupInView, 160);
     });
   });
 
@@ -3559,10 +3569,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   function updateStampPreviews() {
     const tIcons = { flight: '✈️', train: '🚆', car: '🚗', bus: '🚌', ship: '🚢' };
     if (inkEntrySub && entryTransportSelect && entryDateInput) {
-      inkEntrySub.textContent = `${tIcons[entryTransportSelect.value] || '✈️'} ${entryDateInput.value || 'Tarih Gir'}`;
+      inkEntrySub.textContent = `${tIcons[entryTransportSelect.value] || '✈️'} ${entryDateInput.value || 'Tarih Seç'}`;
     }
     if (inkExitSub && exitTransportSelect && exitDateInput) {
-      inkExitSub.textContent = `${tIcons[exitTransportSelect.value] || '✈️'} ${exitDateInput.value || 'Tarih Gir'}`;
+      inkExitSub.textContent = `${tIcons[exitTransportSelect.value] || '✈️'} ${exitDateInput.value || 'Tarih Seç'}`;
     }
   }
 
@@ -4179,7 +4189,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   .openOn(map);
 
   // Safety check: ensure popup boundaries never clip on right/left edges or under search bar
-  const ensurePopupInView = () => {
+  function ensurePopupInView() {
     if (!activeStatusPopup || !map) return;
     const popupEl = activeStatusPopup.getElement();
     if (!popupEl) return;
@@ -4212,7 +4222,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if (dx !== 0 || dy !== 0) {
       map.panBy([dx, dy], { animate: true, duration: 0.25 });
     }
-  };
+  }
 
   requestAnimationFrame(ensurePopupInView);
   setTimeout(ensurePopupInView, 80);

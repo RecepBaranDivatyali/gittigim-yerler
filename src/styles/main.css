@@ -911,6 +911,16 @@ body {
   padding: 0 !important;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
+  max-height: min(500px, calc(100vh - 150px)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+.leaflet-popup.clean-status-popup .leaflet-popup-content-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+.leaflet-popup.clean-status-popup .leaflet-popup-content-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 .leaflet-popup.clean-status-popup .leaflet-popup-tip-container {
   display: none !important;
@@ -9559,6 +9569,294 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
 }
 .del-place-btn:hover {
   opacity: 1;
+}
+
+/* ─── 🛂 Passport Stamp Drawer & Live Ink Seals ───────────────────────────── */
+.map-status-stamp-drawer {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: popupSlideDown 0.25s ease-out;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-sizing: border-box;
+  width: 100%;
+}
+.stamp-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+.stamp-drawer-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.2px;
+}
+.stamp-section-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.stamp-entry-box {
+  border-left: 3px solid #10b981;
+}
+.stamp-exit-box {
+  border-left: 3px solid #ef4444;
+}
+.stamp-section-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.stamp-entry-box .stamp-section-label {
+  color: #34d399;
+}
+.stamp-exit-box .stamp-section-label {
+  color: #f87171;
+}
+.stamp-inputs-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.stamp-date-field {
+  flex: 1.25;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 0.74rem;
+  padding: 5px 7px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+}
+.stamp-date-field:focus {
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.1);
+}
+.stamp-transport-select {
+  flex: 1;
+  min-width: 0;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 0.74rem;
+  padding: 5px 6px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.stamp-transport-select:focus {
+  border-color: #3b82f6;
+}
+.stamp-transport-select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+/* Realistic Ink Passport Stamp Badges */
+.stamp-live-preview-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ink-stamp-badge {
+  flex: 1;
+  max-width: 132px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  user-select: none;
+  transition: transform 0.2s;
+}
+.ink-stamp-badge.ink-entry {
+  border: 2px dashed rgba(16, 185, 129, 0.85);
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  transform: rotate(-2deg);
+  box-shadow: inset 0 0 5px rgba(16, 185, 129, 0.12), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.ink-stamp-badge.ink-exit {
+  border: 2px dashed rgba(239, 68, 68, 0.85);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  transform: rotate(2deg);
+  box-shadow: inset 0 0 5px rgba(239, 68, 68, 0.12), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.ink-stamp-badge .ink-header {
+  font-size: 0.54rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+.ink-stamp-badge .ink-code {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  margin: 1px 0;
+  line-height: 1.1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.ink-stamp-badge .ink-sub {
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  opacity: 0.88;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.stamp-save-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+.stamp-save-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ─── 🧳 Pocket Guide Drawer ────────────────────────────────────────────── */
+.map-status-guide-drawer {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: popupSlideDown 0.25s ease-out;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-sizing: border-box;
+  width: 100%;
+}
+.guide-grid-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.guide-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.guide-lbl {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.guide-val {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.guide-recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.guide-rec-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.guide-rec-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+.guide-rec-text {
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Light theme support */
+body[data-theme="light"] .map-status-stamp-drawer,
+body[data-theme="light"] .map-status-guide-drawer {
+  background: rgba(248, 250, 252, 0.96);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+body[data-theme="light"] .stamp-drawer-title,
+body[data-theme="light"] .guide-val {
+  color: #0f172a;
+}
+body[data-theme="light"] .stamp-section-box,
+body[data-theme="light"] .guide-rec-box {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+body[data-theme="light"] .stamp-date-field,
+body[data-theme="light"] .stamp-transport-select {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* ─── 🖼️ Photo Lightbox Modal Overlay ──────────────────────────────────── */
