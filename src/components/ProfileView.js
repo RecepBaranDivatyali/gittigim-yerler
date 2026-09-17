@@ -710,22 +710,19 @@ export function renderProfileView(container, onBack) {
           </div>
           <p class="settings-card-desc">${t('homeCountryDesc')}</p>
           <div class="home-country-picker-box">
-            <div class="home-country-current-pill">
-              <span id="settings-home-country-flag">${homeCountryFlagHtml}</span>
-              <span class="home-country-current-name">${currentLang === 'tr' ? (homeCountryObj?.name || homeCountryObj?.nameEn) : (homeCountryObj?.nameEn || homeCountryObj?.name)}</span>
-            </div>
             <select id="settings-home-country-select" class="home-country-select-styled">
               ${sortedCountries.map(c => `
                 <option value="${c.code}" ${c.code === currentHomeCountry ? 'selected' : ''}>
-                  ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)} (${c.code})
+                  ${c.flag || '🌍'} ${currentLang === 'tr' ? (c.name || c.nameEn) : (c.nameEn || c.name)}
                 </option>
               `).join('')}
             </select>
           </div>
         </div>
 
-        <!-- 5B. Passport Type & Visa Privilege -->
-        <div class="settings-card">
+        <!-- 5B. Passport Type & Visa Privilege (Sadece Türkiye için geçerli) -->
+        ${currentHomeCountry === 'TR' ? `
+        <div class="settings-card" id="settings-passport-card">
           <div class="settings-card-header">
             <h3 class="settings-card-title">🛂 ${currentLang === 'tr' ? 'Pasaport Türü & Vize Ayrımı' : 'Passport Type & Visa Rules'}</h3>
           </div>
@@ -747,6 +744,7 @@ export function renderProfileView(container, onBack) {
             </button>
           </div>
         </div>
+        ` : ''}
 
         <!-- 6. Custom Map Status Colors -->
         <div class="settings-card">

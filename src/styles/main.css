@@ -6217,44 +6217,33 @@ body[data-theme="light"] .fb-card-date {
 .home-country-picker-box {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .home-country-current-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.home-country-current-name {
-  font-weight: 700;
-  font-size: 0.98rem;
-  color: var(--text-main, #f8fafc);
+  display: none;
 }
 
 .home-country-select-styled {
-  flex: 1;
-  min-width: 240px;
-  max-width: 420px;
+  width: 100%;
+  max-width: 100%;
   padding: 12px 16px;
   border-radius: 14px;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--text-main, #f8fafc);
   outline: none;
   cursor: pointer;
   font-family: inherit;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .home-country-select-styled:focus {
   border-color: #ff5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
 }
 
 /* Custom Status Colors Row */
