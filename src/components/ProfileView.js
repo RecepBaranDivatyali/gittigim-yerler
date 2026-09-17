@@ -642,6 +642,24 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
+        <!-- 3B. Screen & View Mode (Desktop Fullscreen vs Mobile Phone Frame) -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">📱 ${currentLang === 'tr' ? 'Ekran & Görünüm Modu' : 'Display & View Mode'}</h3>
+          </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Masaüstü bilgisayarlarda telefon çerçevesi veya tam ekran harita modu arasında geçiş yapın:' : 'Switch between mobile phone simulator or fullscreen map mode on desktop:'}</p>
+          <div class="settings-scale-row">
+            <button type="button" class="scale-btn ${localStorage.getItem('gv_simulator_mode') !== 'fullscreen' ? 'active' : ''}" id="btn-set-mode-phone">
+              <span>📱</span>
+              <span>${currentLang === 'tr' ? 'Mobil Çerçeve (390×844)' : 'Phone Frame (390×844)'}</span>
+            </button>
+            <button type="button" class="scale-btn ${localStorage.getItem('gv_simulator_mode') === 'fullscreen' ? 'active' : ''}" id="btn-set-mode-fullscreen">
+              <span>🖥️</span>
+              <span>${currentLang === 'tr' ? 'Masaüstü Tam Ekran' : 'Desktop Fullscreen'}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- 4. Language & Region -->
         <div class="settings-card">
           <div class="settings-card-header">
@@ -889,12 +907,24 @@ export function renderProfileView(container, onBack) {
     });
 
     // 3. UI Scale Selection
-    contentArea.querySelectorAll('.scale-btn').forEach(btn => {
+    contentArea.querySelectorAll('.scale-btn[data-size]').forEach(btn => {
       btn.addEventListener('click', () => {
         const sizeKey = btn.getAttribute('data-size');
-        setUiSize(sizeKey);
-        render();
+        if (sizeKey) {
+          setUiSize(sizeKey);
+          render();
+        }
       });
+    });
+
+    // 3B. Display View Mode Selection
+    contentArea.querySelector('#btn-set-mode-phone')?.addEventListener('click', () => {
+      localStorage.removeItem('gv_simulator_mode');
+      window.location.reload();
+    });
+    contentArea.querySelector('#btn-set-mode-fullscreen')?.addEventListener('click', () => {
+      localStorage.setItem('gv_simulator_mode', 'fullscreen');
+      window.location.reload();
     });
 
     // 4. Language Selection

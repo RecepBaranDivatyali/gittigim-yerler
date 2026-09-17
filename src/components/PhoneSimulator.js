@@ -45,21 +45,33 @@ export function setSimulatorScaleMode(scaleMode) {
 export function renderSimulatorSwitcherButton() {
   if (!isDesktopWeb()) return;
   if (window.location.search.includes('simulated=1')) return;
-  if (document.getElementById('floating-sim-switch-pill')) return;
+  if (getSimulatorMode() !== 'fullscreen') return;
 
-  const btn = document.createElement('button');
-  btn.id = 'floating-sim-switch-pill';
-  btn.className = 'floating-sim-switch-pill';
-  btn.innerHTML = `
-    <span class="sim-pill-icon">📱</span>
-    <span class="sim-pill-label">Mobil Görünüm</span>
-  `;
-  btn.title = 'Mobil Telefon Çerçevesine Geç (390×844)';
-  btn.addEventListener('click', () => {
-    setSimulatorMode('phone');
-    window.location.reload();
-  });
-  document.body.appendChild(btn);
+  let btn = document.getElementById('floating-sim-switch-pill');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'floating-sim-switch-pill';
+    btn.className = 'floating-sim-switch-pill';
+    btn.type = 'button';
+    btn.innerHTML = `
+      <span class="sim-pill-icon">📱</span>
+      <span class="sim-pill-label">Mobil Görünüm</span>
+    `;
+    btn.title = 'Mobil Telefon Çerçevesine Geç (390×844)';
+    btn.addEventListener('click', () => {
+      setSimulatorMode('phone');
+      window.location.reload();
+    });
+  }
+
+  const topGroup = document.querySelector('.floating-top-right-group');
+  if (topGroup) {
+    if (btn.parentNode !== topGroup) {
+      topGroup.insertBefore(btn, topGroup.firstChild);
+    }
+  } else if (!btn.parentNode) {
+    document.body.appendChild(btn);
+  }
 }
 
 /**

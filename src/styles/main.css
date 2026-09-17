@@ -6491,33 +6491,38 @@ body.sim-studio-active {
 
 /* Floating Switcher Pill on Fullscreen Desktop */
 .floating-sim-switch-pill {
-  position: fixed;
-  top: 14px;
-  right: 120px;
-  z-index: 2200;
+  height: 40px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 87, 34, 0.4);
+  border: 1px solid rgba(255, 87, 34, 0.5);
   color: #ff5722;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 99px;
+  border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
+  white-space: nowrap;
 }
 
 .floating-sim-switch-pill:hover {
   background: #ff5722;
   color: #ffffff;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(255, 87, 34, 0.45);
+}
+
+body > .floating-sim-switch-pill {
+  position: fixed;
+  top: 16px;
+  right: 280px;
+  z-index: 9999;
 }
 
 /* Light Theme overrides for Simulator Studio */
