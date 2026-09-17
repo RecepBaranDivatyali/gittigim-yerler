@@ -10,6 +10,7 @@ import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
 import { escapeHtml } from '../utils/security.js';
+import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -2985,6 +2986,42 @@ function findRegionRawForPoint(countryCode, latlng, cityName) {
   return null;
 }
 
+// ─── Photo Lightbox Modal Helper ───────────────────────────────────────────
+function openPhotoLightbox(imgSrc, title = '', caption = '') {
+  const existing = document.getElementById('photo-lightbox-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'photo-lightbox-modal';
+  modal.className = 'photo-lightbox-overlay';
+  modal.innerHTML = `
+    <div class="photo-lightbox-content">
+      <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
+      <img src="${imgSrc}" class="photo-lightbox-img" alt="Memory Photo" />
+      ${title || caption ? `
+        <div class="photo-lightbox-footer">
+          ${title ? `<div class="photo-lightbox-title">${escapeHtml(title)}</div>` : ''}
+          ${caption ? `<div class="photo-lightbox-caption">${escapeHtml(caption)}</div>` : ''}
+        </div>
+      ` : ''}
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeModal = () => modal.remove();
+  modal.querySelector('#btn-close-lightbox')?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  const handleKey = (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      window.removeEventListener('keydown', handleKey);
+    }
+  };
+  window.addEventListener('keydown', handleKey);
+}
+
 // ─── Status Popup & Two-Way Sync Logic ─────────────────────────────────────────
 // ─── Status Popup & Two-Way Sync Logic (Clean Centered Popup with Glow Buttons) ───
 function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
@@ -3000,6 +3037,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   let currentExitDate = '';
   let currentExitTransport = type === 'province' ? 'car' : 'flight';
   let currentBuddies = [];
+  let currentPlaces = [];
+  let currentJournal = null;
 
   if (type === 'province') {
     const num = id.replace('TR::', '');
@@ -3012,6 +3051,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentExitDate = pData.exitDate || '';
     currentExitTransport = pData.exitTransport || 'car';
     currentBuddies = Array.isArray(pData.buddies) ? [...pData.buddies] : [];
+    currentPlaces = Array.isArray(pData.places) ? [...pData.places] : [];
+    currentJournal = pData.journal || null;
   } else if (type === 'city') {
     const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
     const wData = worldVisits[id] || {};
@@ -3029,6 +3070,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentExitDate = wData.exitDate || regionData.exitDate || '';
     currentExitTransport = wData.exitTransport || regionData.exitTransport || 'flight';
     currentBuddies = Array.isArray(wData.buddies) ? [...wData.buddies] : (Array.isArray(regionData.buddies) ? [...regionData.buddies] : []);
+    currentPlaces = Array.isArray(wData.places) ? [...wData.places] : (Array.isArray(regionData.places) ? [...regionData.places] : []);
+    currentJournal = wData.journal || regionData.journal || null;
   } else {
     const wData = worldVisits[id] || {};
     currentStatus = ns(wData.status);
@@ -3039,6 +3082,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentEntryTransport = wData.entryTransport || 'flight';
     currentExitDate = wData.exitDate || '';
     currentExitTransport = wData.exitTransport || 'flight';
+    currentPlaces = Array.isArray(wData.places) ? [...wData.places] : [];
+    currentJournal = wData.journal || null;
   }
 
   const content = document.createElement('div');
@@ -3086,29 +3131,30 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         `;
       }).join('')}
 
-      <!-- "Pasaport Damgası" Butonu: Sadece "Gidildi" durumunda görünür -->
-      <button type="button" id="btn-toggle-stamp" class="map-status-btn map-stamp-trigger-btn"
-              style="--btn-color:#06b6d4; display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-        <span class="map-status-dot" style="background:#06b6d4;box-shadow:0 0 10px rgba(6,182,212,0.7);"></span>
-        <span class="map-status-text" id="stamp-trigger-text">
-          ${currentEntryDate ? '🛂 Pasaport Damgalı ✓' : '🛂 Pasaporta Damga Bas'}
-        </span>
-      </button>
+    </div>
 
-      <!-- "Değerlendirme Yap" Butonu: Sadece "Gidildi" durumunda görünür -->
-      <button type="button" id="btn-toggle-review" class="map-status-btn map-review-trigger-btn"
-              style="--btn-color:#f59e0b; display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-        <span class="map-status-dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.7);"></span>
-        <span class="map-status-text" id="review-trigger-text">
-          ${currentRating > 0 ? `⭐ ${t('reviewScore')} (${currentRating}/10)` : `⭐ ${t('rateAndReview')}`}
-        </span>
+    <!-- 🎛️ Segmented Action Hub Tabs (Only visible when status === 'visited') -->
+    <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn" data-drawer="stamp" title="Pasaport Damgaları">
+        <span class="hub-btn-icon">🛂</span>
+        <span class="hub-btn-label">Damga</span>
       </button>
-
-      <!-- "Gezgin Alet Çantası & Rehber" Butonu -->
+      <button type="button" class="popup-hub-btn" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar">
+        <span class="hub-btn-icon">📸</span>
+        <span class="hub-btn-label">Günlük</span>
+      </button>
+      <button type="button" class="popup-hub-btn" data-drawer="places" title="Mekanlar & Restoranlar">
+        <span class="hub-btn-icon">🍽️</span>
+        <span class="hub-btn-label">Mekanlar</span>
+      </button>
+      <button type="button" class="popup-hub-btn" data-drawer="review" title="Puan & Not">
+        <span class="hub-btn-icon">⭐</span>
+        <span class="hub-btn-label">Puan</span>
+      </button>
       ${guide ? `
-        <button type="button" id="btn-toggle-guide" class="map-status-btn map-guide-trigger-btn" style="--btn-color:#8b5cf6;">
-          <span class="map-status-dot" style="background:#8b5cf6;box-shadow:0 0 10px rgba(139,92,246,0.7);"></span>
-          <span class="map-status-text">🧳 Gezgin Rehberi & Priz/Kur</span>
+        <button type="button" class="popup-hub-btn" data-drawer="guide" title="Rehber & Bilgi">
+          <span class="hub-btn-icon">🧳</span>
+          <span class="hub-btn-label">Rehber</span>
         </button>
       ` : ''}
     </div>
@@ -3180,6 +3226,86 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       </button>
     </div>
 
+    <!-- 📸 Seyahat Günlüğü & Fotoğraflar Çekmecesi -->
+    <div class="map-status-journal-drawer" id="map-status-journal-drawer" style="display: none;">
+      <div class="journal-drawer-header">
+        <span class="journal-drawer-title">📸 Seyahat Anıları & Günlük</span>
+      </div>
+
+      <!-- Mood Seçimi -->
+      <div class="journal-mood-section">
+        <div class="journal-section-label">HİS & SEYAHAT MODU:</div>
+        <div class="journal-moods-row" id="journal-moods-row">
+          ${['😍 Harika', '🎉 Eğlenceli', '☕ Huzurlu', '🥾 Maceralı', '🏖️ Dinlendirici', '🍷 Keyifli'].map(m => {
+            const moodVal = m.split(' ')[0];
+            const isSel = (currentJournal?.mood || '') === moodVal;
+            return `<button type="button" class="journal-mood-btn ${isSel ? 'active' : ''}" data-mood="${moodVal}">${m}</button>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Fotoğraflar Galerisi -->
+      <div class="journal-photos-section">
+        <div class="journal-photos-top-row">
+          <span class="journal-section-label">FOTOĞRAFLAR (<span id="journal-photo-count">0</span>):</span>
+          <label class="journal-upload-trigger" for="journal-file-input">
+            <span>➕ Fotoğraf Yükle</span>
+          </label>
+          <input type="file" id="journal-file-input" accept="image/*" style="display:none;" />
+        </div>
+        <div class="journal-photos-grid" id="journal-photos-grid">
+          <div class="journal-photo-loading">Fotoğraflar yükleniyor...</div>
+        </div>
+      </div>
+
+      <!-- Günlük Notu / Anı Yazısı -->
+      <div class="journal-text-section">
+        <div class="journal-section-label">GÜNLÜK NOTUNUZ:</div>
+        <textarea id="journal-text-input" class="journal-textarea" placeholder="Bu seyahatten unutulmaz bir anı, his veya tavsiye yazın..." rows="3">${escapeHtml(currentJournal?.text || '')}</textarea>
+        <button type="button" id="btn-save-journal" class="journal-save-btn">
+          <span>💾 Günlüğü Kaydet</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 🍽️ Mekan / Kafe / Restoran Çekmecesi -->
+    <div class="map-status-places-drawer" id="map-status-places-drawer" style="display: none;">
+      <div class="places-drawer-header">
+        <span class="places-drawer-title">🍽️ Keşfedilen Mekanlar & Rota Durakları</span>
+      </div>
+
+      <!-- Yeni Mekan Ekleme Formu -->
+      <div class="places-add-form">
+        <div class="place-categories-row" id="place-categories-row">
+          <button type="button" class="place-cat-btn active" data-cat="restaurant">🍽️ Restoran</button>
+          <button type="button" class="place-cat-btn" data-cat="cafe">☕ Kafe</button>
+          <button type="button" class="place-cat-btn" data-cat="museum">🏛️ Müze</button>
+          <button type="button" class="place-cat-btn" data-cat="nature">🏖️ Doğa/Plaj</button>
+          <button type="button" class="place-cat-btn" data-cat="shopping">🛍️ Alışveriş</button>
+          <button type="button" class="place-cat-btn" data-cat="hotel">🏨 Otel</button>
+        </div>
+
+        <div class="place-inputs-row">
+          <input type="text" id="place-name-input" class="place-input" placeholder="Mekan adı (Örn: Café de Flore)..." maxlength="50" />
+          <select id="place-rating-select" class="place-select">
+            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+            <option value="4">⭐⭐⭐⭐ (4/5)</option>
+            <option value="3">⭐⭐⭐ (3/5)</option>
+            <option value="2">⭐⭐ (2/5)</option>
+            <option value="1">⭐ (1/5)</option>
+          </select>
+        </div>
+
+        <div class="place-notes-row">
+          <input type="text" id="place-note-input" class="place-input" placeholder="Gurme/ziyaret notu (Örn: Kruvasanı ve kahvesi şahane!)..." maxlength="100" />
+          <button type="button" id="btn-add-place" class="place-add-btn">+ Ekle</button>
+        </div>
+      </div>
+
+      <!-- Kayıtlı Mekanlar Listesi -->
+      <div class="places-saved-list" id="places-saved-list"></div>
+    </div>
+
     <!-- 🧳 Gezgin Alet Çantası & Rehber Çekmecesi -->
     ${guide ? `
       <div class="map-status-guide-drawer" id="map-status-guide-drawer" style="display: none;">
@@ -3228,57 +3354,57 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     </div>
   `;
 
-  // UI Elements
-  const btnToggleReview = content.querySelector('#btn-toggle-review');
-  const reviewDrawer = content.querySelector('#map-status-review-drawer');
-  const btnToggleStamp = content.querySelector('#btn-toggle-stamp');
-  const stampDrawer = content.querySelector('#map-status-stamp-drawer');
-  const btnToggleGuide = content.querySelector('#btn-toggle-guide');
-  const guideDrawer = content.querySelector('#map-status-guide-drawer');
-
-  const triggerText = content.querySelector('#review-trigger-text');
-  const starsRow = content.querySelector('#imdb-stars-row');
-  const starSpans = content.querySelectorAll('.imdb-star');
-  const scoreDisplay = content.querySelector('#rating-score-display');
-
-  // Drawer toggles (mutually close other drawers for clean layout)
-  btnToggleReview?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isVisible = reviewDrawer.style.display === 'flex';
-    reviewDrawer.style.display = isVisible ? 'none' : 'flex';
-    btnToggleReview.classList.toggle('active', !isVisible);
-    if (!isVisible) {
-      if (stampDrawer) stampDrawer.style.display = 'none';
-      if (btnToggleStamp) btnToggleStamp.classList.remove('active');
-      if (guideDrawer) guideDrawer.style.display = 'none';
-      if (btnToggleGuide) btnToggleGuide.classList.remove('active');
+  // Helper to persist visit details cleanly across types
+  function persistVisitDetails(patch) {
+    if (type === 'province') {
+      const num = id.replace('TR::', '');
+      saveTurkeyVisit(num, 'visited', patch);
+    } else if (type === 'city') {
+      saveWorldVisit(id, 'visited', patch);
+      const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
+      const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
+      if (matchedRegionRaw) {
+        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', patch);
+      }
+    } else {
+      saveWorldVisit(id, 'visited', patch);
     }
-  });
+    invalidateStorageCache();
+    refreshStats();
+  }
 
-  btnToggleStamp?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isVisible = stampDrawer.style.display === 'flex';
-    stampDrawer.style.display = isVisible ? 'none' : 'flex';
-    btnToggleStamp.classList.toggle('active', !isVisible);
-    if (!isVisible) {
-      if (reviewDrawer) reviewDrawer.style.display = 'none';
-      if (btnToggleReview) btnToggleReview.classList.remove('active');
-      if (guideDrawer) guideDrawer.style.display = 'none';
-      if (btnToggleGuide) btnToggleGuide.classList.remove('active');
-    }
-  });
+  // Action Hub Drawers and Buttons
+  const hubBtns = content.querySelectorAll('.popup-hub-btn');
+  const allDrawers = {
+    stamp: content.querySelector('#map-status-stamp-drawer'),
+    journal: content.querySelector('#map-status-journal-drawer'),
+    places: content.querySelector('#map-status-places-drawer'),
+    review: content.querySelector('#map-status-review-drawer'),
+    guide: content.querySelector('#map-status-guide-drawer')
+  };
 
-  btnToggleGuide?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isVisible = guideDrawer.style.display === 'flex';
-    guideDrawer.style.display = isVisible ? 'none' : 'flex';
-    btnToggleGuide.classList.toggle('active', !isVisible);
-    if (!isVisible) {
-      if (reviewDrawer) reviewDrawer.style.display = 'none';
-      if (btnToggleReview) btnToggleReview.classList.remove('active');
-      if (stampDrawer) stampDrawer.style.display = 'none';
-      if (btnToggleStamp) btnToggleStamp.classList.remove('active');
-    }
+  hubBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const targetDrawerKey = btn.dataset.drawer;
+      const targetDrawer = allDrawers[targetDrawerKey];
+      if (!targetDrawer) return;
+
+      const isCurrentlyOpen = targetDrawer.style.display === 'flex' || targetDrawer.style.display === 'block';
+
+      // Close all drawers and deactivate all hub buttons
+      Object.values(allDrawers).forEach(d => { if (d) d.style.display = 'none'; });
+      hubBtns.forEach(b => b.classList.remove('active'));
+
+      if (!isCurrentlyOpen) {
+        targetDrawer.style.display = 'flex';
+        btn.classList.add('active');
+
+        if (targetDrawerKey === 'journal') {
+          loadAndRenderPhotos();
+        }
+      }
+    });
   });
 
   // Stamp Live Preview updates
@@ -3302,6 +3428,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   entryDateInput?.addEventListener('input', updateStampPreviews);
   entryTransportSelect?.addEventListener('change', updateStampPreviews);
   exitDateInput?.addEventListener('input', updateStampPreviews);
+  exitTransportSelect?.addEventListener('change', updateStampPreviews);
+
   // Travel Buddies interactivity
   const buddiesChipsEl = content.querySelector('#popup-buddies-chips');
   const buddyInput = content.querySelector('#popup-buddy-input');
@@ -3355,40 +3483,204 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       buddies: currentBuddies
     };
 
-    if (type === 'province') {
-      const num = id.replace('TR::', '');
-      saveTurkeyVisit(num, 'visited', stampPayload);
-    } else if (type === 'city') {
-      saveWorldVisit(id, 'visited', stampPayload);
-      const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
-      const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
-      if (matchedRegionRaw) {
-        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', stampPayload);
-      }
-    } else {
-      saveWorldVisit(id, 'visited', stampPayload);
-    }
-
-    invalidateStorageCache();
-    refreshStats();
+    persistVisitDetails(stampPayload);
     triggerConfetti();
 
     const saveBtn = content.querySelector('#btn-save-stamp-data');
     if (saveBtn) {
       saveBtn.innerHTML = '<span>✅ Pasaporta Damgalandı!</span>';
       setTimeout(() => {
-        if (saveBtn) saveBtn.innerHTML = '<span>💾 Damgaları Pasaporta İşle</span>';
-        if (stampDrawer) stampDrawer.style.display = 'none';
-        if (btnToggleStamp) {
-          btnToggleStamp.classList.remove('active');
-          const stampText = btnToggleStamp.querySelector('#stamp-trigger-text');
-          if (stampText) stampText.textContent = '🛂 Pasaport Damgalı ✓';
-        }
+        if (saveBtn) saveBtn.innerHTML = '<span>💾 Damgaları & Yol Arkadaşlarını Kaydet</span>';
+        if (allDrawers.stamp) allDrawers.stamp.style.display = 'none';
+        hubBtns.forEach(b => { if (b.dataset.drawer === 'stamp') b.classList.remove('active'); });
       }, 1200);
     }
   });
 
-  // IMDb Stars Visual Renderer
+  // ─── 📸 Photo Storage & Gallery Logic ───
+  const photosGrid = content.querySelector('#journal-photos-grid');
+  const photoCountSpan = content.querySelector('#journal-photo-count');
+  const fileInput = content.querySelector('#journal-file-input');
+
+  async function loadAndRenderPhotos() {
+    if (!photosGrid) return;
+    photosGrid.innerHTML = '<div class="journal-photo-loading">Fotoğraflar yükleniyor...</div>';
+    const photos = await getPhotosByTarget(id);
+    if (photoCountSpan) photoCountSpan.textContent = photos.length;
+
+    if (photos.length === 0) {
+      photosGrid.innerHTML = '<div class="journal-no-photos">Henüz fotoğraf eklenmemiş. Yukarıdaki <b>➕ Fotoğraf Yükle</b> butonuyla anılarınızı ekleyin!</div>';
+      return;
+    }
+
+    photosGrid.innerHTML = photos.map(p => `
+      <div class="journal-photo-thumb" data-id="${p.id}">
+        <img src="${p.dataUrl}" alt="Photo" />
+        <button type="button" class="del-photo-btn" data-id="${p.id}" title="Fotoğrafı Sil">&times;</button>
+      </div>
+    `).join('');
+
+    photosGrid.querySelectorAll('.journal-photo-thumb img').forEach(img => {
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const photoThumb = img.closest('.journal-photo-thumb');
+        const photoId = photoThumb?.dataset.id;
+        const photoObj = photos.find(p => p.id === photoId);
+        openPhotoLightbox(img.src, cleanTitle, photoObj?.caption || '');
+      });
+    });
+
+    photosGrid.querySelectorAll('.del-photo-btn').forEach(delBtn => {
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const photoId = delBtn.dataset.id;
+        await deletePhoto(photoId);
+        await loadAndRenderPhotos();
+      });
+    });
+  }
+
+  fileInput?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const saved = await savePhoto(id, file);
+      if (saved) {
+        triggerConfetti();
+        await loadAndRenderPhotos();
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+    }
+    fileInput.value = '';
+  });
+
+  // ─── 📝 Journal Mood & Notes Logic ───
+  let selectedMood = currentJournal?.mood || '';
+  const moodBtns = content.querySelectorAll('.journal-mood-btn');
+  moodBtns.forEach(mb => {
+    mb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      moodBtns.forEach(b => b.classList.remove('active'));
+      const mood = mb.dataset.mood;
+      if (selectedMood === mood) {
+        selectedMood = '';
+      } else {
+        selectedMood = mood;
+        mb.classList.add('active');
+      }
+    });
+  });
+
+  const saveJournalBtn = content.querySelector('#btn-save-journal');
+  const journalTextInput = content.querySelector('#journal-text-input');
+  saveJournalBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const jText = journalTextInput?.value.trim() || '';
+    const journalData = {
+      text: jText,
+      mood: selectedMood,
+      updatedAt: new Date().toISOString()
+    };
+    currentJournal = journalData;
+
+    persistVisitDetails({ journal: journalData });
+
+    if (saveJournalBtn) {
+      saveJournalBtn.innerHTML = '<span>✅ Günlük Kaydedildi!</span>';
+      setTimeout(() => {
+        if (saveJournalBtn) saveJournalBtn.innerHTML = '<span>💾 Günlüğü Kaydet</span>';
+      }, 1500);
+    }
+  });
+
+  // ─── 🍽️ Favorite Places Tracker Logic ───
+  let selectedCategory = 'restaurant';
+  const catBtns = content.querySelectorAll('.place-cat-btn');
+  catBtns.forEach(cb => {
+    cb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      catBtns.forEach(b => b.classList.remove('active'));
+      cb.classList.add('active');
+      selectedCategory = cb.dataset.cat;
+    });
+  });
+
+  const placesListEl = content.querySelector('#places-saved-list');
+  const placeNameInput = content.querySelector('#place-name-input');
+  const placeRatingSelect = content.querySelector('#place-rating-select');
+  const placeNoteInput = content.querySelector('#place-note-input');
+  const addPlaceBtn = content.querySelector('#btn-add-place');
+
+  const catIcons = {
+    restaurant: '🍽️',
+    cafe: '☕',
+    museum: '🏛️',
+    nature: '🏖️',
+    shopping: '🛍️',
+    hotel: '🏨'
+  };
+
+  function renderPlacesList() {
+    if (!placesListEl) return;
+    if (!currentPlaces || currentPlaces.length === 0) {
+      placesListEl.innerHTML = '<div class="places-empty-note">Henüz kayıtlı mekan yok. Yukarıdaki formdan favori restoran, kafe veya duraklarınızı ekleyin!</div>';
+      return;
+    }
+
+    placesListEl.innerHTML = currentPlaces.map((pl, idx) => `
+      <div class="place-card-item">
+        <div class="place-card-left">
+          <span class="place-card-cat">${catIcons[pl.category] || '📍'}</span>
+          <div class="place-card-meta">
+            <div class="place-card-name">${escapeHtml(pl.name)} <span class="place-card-stars">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span></div>
+            ${pl.note ? `<div class="place-card-note">${escapeHtml(pl.note)}</div>` : ''}
+          </div>
+        </div>
+        <button type="button" class="del-place-btn" data-idx="${idx}" title="Mekanı Sil">&times;</button>
+      </div>
+    `).join('');
+
+    placesListEl.querySelectorAll('.del-place-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        currentPlaces.splice(idx, 1);
+        persistVisitDetails({ places: currentPlaces });
+        renderPlacesList();
+      });
+    });
+  }
+
+  renderPlacesList();
+
+  addPlaceBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const name = (placeNameInput?.value || '').trim();
+    if (!name) return;
+
+    const newPlace = {
+      id: 'place_' + Date.now(),
+      name,
+      category: selectedCategory,
+      rating: parseInt(placeRatingSelect?.value || '5', 10),
+      note: (placeNoteInput?.value || '').trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    currentPlaces.push(newPlace);
+    persistVisitDetails({ places: currentPlaces });
+    if (placeNameInput) placeNameInput.value = '';
+    if (placeNoteInput) placeNoteInput.value = '';
+    renderPlacesList();
+    triggerConfetti();
+  });
+
+  // IMDb Stars Interaction (Click & Hover)
+  const starSpans = content.querySelectorAll('.imdb-star');
+  const scoreDisplay = content.querySelector('#rating-score-display');
+  const starsRow = content.querySelector('#imdb-stars-row');
+
   function renderStars(val) {
     starSpans.forEach(s => {
       const sVal = parseInt(s.dataset.score, 10);
@@ -3400,7 +3692,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     });
   }
 
-  // IMDb Stars Interaction (Click & Hover)
   starSpans.forEach(star => {
     star.addEventListener('mouseenter', () => {
       const hoverVal = parseInt(star.dataset.score, 10);
@@ -3417,27 +3708,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       if (scoreDisplay) {
         scoreDisplay.textContent = currentRating > 0 ? `⭐ ${currentRating}/10` : '-';
       }
-      if (triggerText) {
-        triggerText.textContent = currentRating > 0
-          ? `⭐ ${t('reviewScore')} (${currentRating}/10)`
-          : `⭐ ${t('rateAndReview')}`;
-      }
 
-      if (type === 'province') {
-        const num = id.replace('TR::', '');
-        saveTurkeyVisit(num, 'visited', { rating: currentRating });
-      } else if (type === 'city') {
-        saveWorldVisit(id, 'visited', { rating: currentRating });
-        const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
-        const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
-        if (matchedRegionRaw) {
-          saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', { rating: currentRating });
-        }
-      } else {
-        saveWorldVisit(id, 'visited', { rating: currentRating });
-      }
-      invalidateStorageCache();
-      refreshStats();
+      persistVisitDetails({ rating: currentRating });
     });
   });
 
@@ -3451,21 +3723,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   // Note save handler
   const saveNote = () => {
     const noteVal = content.querySelector('#popup-note-input')?.value.trim() || '';
-    if (type === 'province') {
-      const num = id.replace('TR::', '');
-      saveTurkeyVisit(num, 'visited', { notes: noteVal });
-    } else if (type === 'city') {
-      saveWorldVisit(id, 'visited', { notes: noteVal });
-      const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
-      const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
-      if (matchedRegionRaw) {
-        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', { notes: noteVal });
-      }
-    } else {
-      saveWorldVisit(id, 'visited', { notes: noteVal });
-    }
-    invalidateStorageCache();
-    refreshStats();
+    persistVisitDetails({ notes: noteVal });
     const saveBtn = content.querySelector('#popup-note-save-btn');
     if (saveBtn) {
       saveBtn.textContent = '✓';
@@ -3716,14 +3974,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         else b.classList.remove('active');
       });
 
+      const hubTabsEl = content.querySelector('#popup-action-hub-tabs');
       if (val === 'visited') {
-        if (btnToggleReview) btnToggleReview.style.display = 'flex';
-        if (btnToggleStamp) btnToggleStamp.style.display = 'flex';
+        if (hubTabsEl) hubTabsEl.style.display = 'flex';
       } else {
-        if (btnToggleReview) btnToggleReview.style.display = 'none';
-        if (reviewDrawer) reviewDrawer.style.display = 'none';
-        if (btnToggleStamp) btnToggleStamp.style.display = 'none';
-        if (stampDrawer) stampDrawer.style.display = 'none';
+        if (hubTabsEl) hubTabsEl.style.display = 'none';
+        Object.values(allDrawers).forEach(d => { if (d) d.style.display = 'none'; });
+        hubBtns.forEach(b => b.classList.remove('active'));
       }
     });
   });
@@ -3741,7 +3998,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     closeButton: false,
     className: 'clean-status-popup',
     offset: [0, -10],
-    maxWidth: 290
+    maxWidth: 320
   })
   .setLatLng(latlng)
   .setContent(content)

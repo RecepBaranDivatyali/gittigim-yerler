@@ -9,8 +9,10 @@ import {
   getHomeCountry, setHomeCountry,
   exportBackup, importBackup,
   getPassportType, setPassportType,
-  getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip
+  getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
+  getAllSavedPlaces, getTotalPlacesCount
 } from '../utils/storage.js';
+import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { TRAVEL_CHALLENGES, calculateChallengesProgress } from '../data/challengesData.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -108,6 +110,7 @@ export function renderProfileView(container, onBack) {
       earnedMedals = getEarnedAchievements(storageData, baseStats);
     } catch(e) { console.error('Error fetching stats', e); }
 
+    const totalPlacesCount = getTotalPlacesCount();
     const currentHomeCountry = getHomeCountry();
     const homeCountryObj = WORLD_COUNTRIES.find(c => c.code === currentHomeCountry) || { code: 'TR', flag: '🇹🇷', name: 'Türkiye' };
     const homeFlagHtml = getCountryFlagHtml(homeCountryObj.code, homeCountryObj.flag, { width: 20, height: 14 });
@@ -177,6 +180,8 @@ export function renderProfileView(container, onBack) {
             `}
             <div class="pstat"><span class="pstat-num" style="color:#3b82f6">${baseStats.worldCityCount || 0}</span><span class="pstat-lbl">${t('citiesVisited')}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#10b981">${earnedMedals.length}/${ACHIEVEMENTS.length}</span><span class="pstat-lbl">${t('tabMedals')}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#f59e0b">${totalPlacesCount}</span><span class="pstat-lbl">🍽️ ${currentLang === 'tr' ? 'Mekanlar' : 'Places'}</span></div>
+            <div class="pstat"><span class="pstat-num" style="color:#ec4899" id="profile-stat-photos">0</span><span class="pstat-lbl">📸 ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#06b6d4">%${baseStats.landAreaPercent || 0}</span><span class="pstat-lbl">🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#a855f7">%${baseStats.populationPercent || 0}</span><span class="pstat-lbl">👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}</span></div>
           </div>
@@ -186,6 +191,24 @@ export function renderProfileView(container, onBack) {
               ${earnedMedals.map(m => `<span class="badge-icon" title="${m.title} - ${m.desc}">${m.icon}</span>`).join('')}
             </div>
           ` : `<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!' : 'No medals earned yet. Mark places on the map to earn medals!'}</div>`}
+        </div>
+
+        <!-- 📸 Seyahat Albümü & Fotoğraf Vitrini Card -->
+        <div class="profile-photo-showcase-card" id="profile-photo-showcase">
+          <div class="photo-showcase-header">
+            <div class="photo-showcase-title">
+              <span>📸 ${currentLang === 'tr' ? 'Seyahat Albümü & Hatıralar' : 'Travel Photo Album'}</span>
+              <span class="photo-showcase-badge" id="photo-showcase-count">0 ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}</span>
+            </div>
+            <span style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);">${currentLang === 'tr' ? 'Haritada yerlere eklediğiniz anı fotoğrafları' : 'Memories added to places on map'}</span>
+          </div>
+          <div class="photo-showcase-grid" id="photo-showcase-grid">
+            <div class="photo-showcase-empty">
+              <span style="font-size:2rem;display:block;margin-bottom:6px;">📸</span>
+              <div>${currentLang === 'tr' ? 'Henüz fotoğraf eklenmemiş.' : 'No photos added yet.'}</div>
+              <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">${currentLang === 'tr' ? 'Haritada gezdiğin yerlere tıklayıp "📸 Günlük" çekmecesinden anılarını ekleyebilirsin!' : 'Click any visited place on the map and add photos from the "📸 Journal" tab!'}</div>
+            </div>
+          </div>
         </div>
 
         <!-- Upcoming Trip Countdown Card -->
@@ -231,6 +254,52 @@ export function renderProfileView(container, onBack) {
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
     });
+
+    // Fetch photos for profile showcase & counter
+    getAllPhotos(24).then(photos => {
+      const pCountEl = document.getElementById('profile-stat-photos');
+      const sCountEl = document.getElementById('photo-showcase-count');
+      const gridEl = document.getElementById('photo-showcase-grid');
+      if (pCountEl) pCountEl.textContent = photos.length;
+      if (sCountEl) sCountEl.textContent = `${photos.length} ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}`;
+
+      if (gridEl && photos.length > 0) {
+        gridEl.innerHTML = photos.map(p => `
+          <div class="photo-showcase-item" data-id="${p.id}" title="${escapeHtml(p.caption || p.targetId || '')}">
+            <img src="${p.dataUrl}" alt="Memory" loading="lazy" />
+            <div class="photo-showcase-tag">${escapeHtml(p.targetId ? (p.targetId.includes('::') ? p.targetId.split('::')[1] : p.targetId) : '')}</div>
+          </div>
+        `).join('');
+
+        gridEl.querySelectorAll('.photo-showcase-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const photoId = item.dataset.id;
+            const photoObj = photos.find(p => p.id === photoId);
+            if (photoObj) {
+              const placeTitle = photoObj.targetId ? (photoObj.targetId.includes('::') ? photoObj.targetId.split('::')[1] : photoObj.targetId) : 'Seyahat Hatırası';
+              const existing = document.getElementById('photo-lightbox-modal');
+              if (existing) existing.remove();
+              const modal = document.createElement('div');
+              modal.id = 'photo-lightbox-modal';
+              modal.className = 'photo-lightbox-overlay';
+              modal.innerHTML = `
+                <div class="photo-lightbox-content">
+                  <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
+                  <img src="${photoObj.dataUrl}" class="photo-lightbox-img" alt="Memory Photo" />
+                  <div class="photo-lightbox-footer">
+                    <div class="photo-lightbox-title">${escapeHtml(placeTitle)}</div>
+                    ${photoObj.caption ? `<div class="photo-lightbox-caption">${escapeHtml(photoObj.caption)}</div>` : ''}
+                  </div>
+                </div>
+              `;
+              document.body.appendChild(modal);
+              modal.querySelector('#btn-close-lightbox')?.addEventListener('click', () => modal.remove());
+              modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            }
+          });
+        });
+      }
+    }).catch(err => console.warn('Could not load profile photos', err));
 
     // Render and manage Upcoming Trip Countdown
     const countdownContainer = document.getElementById('trip-countdown-container');
@@ -1980,6 +2049,12 @@ export function renderProfileView(container, onBack) {
     const chProgress = calculateChallengesProgress(visitedCountryCodes);
     const completedCh = chProgress.filter(c => c.isCompleted);
 
+    const totalPlaces = getTotalPlacesCount();
+    let totalPhotos = 0;
+    try {
+      totalPhotos = await getTotalPhotoCount();
+    } catch { totalPhotos = 0; }
+
     const modal = document.createElement('div');
     modal.className = 'wrapped-modal-overlay';
     modal.innerHTML = `
@@ -2047,6 +2122,17 @@ export function renderProfileView(container, onBack) {
                   <div class="wh-val">${favoriteTransLabel}</div>
                 </div>
               </div>
+
+              <!-- Memories & Gourmet Spots -->
+              ${totalPlaces > 0 || totalPhotos > 0 ? `
+                <div class="wrapped-highlight-row">
+                  <div class="wh-icon">📸</div>
+                  <div class="wh-info">
+                    <div class="wh-label">${currentLang === 'tr' ? 'Anı Defteri & Lezzet Durakları' : 'Memories & Gourmet Spots'}</div>
+                    <div class="wh-val">📸 ${totalPhotos} Fotoğraf • 🍽️ ${totalPlaces} Mekan</div>
+                  </div>
+                </div>
+              ` : ''}
 
               <!-- Top Rated Place -->
               ${topRated ? `
@@ -2517,6 +2603,74 @@ export function renderProfileView(container, onBack) {
                       </div>
                     `).join('');
                   })()}
+                </div>
+              </div>
+            </div>
+
+            <!-- Favorite Places & Eats Comparison -->
+            <div style="margin-top:20px;">
+              <div style="font-weight:700;color:var(--theme-text-main, #f8fafc);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <span>🍽️</span> <span>${currentLang === 'tr' ? 'Keşfedilen Mekanlar & Lezzet Durakları' : 'Favorite Places & Gourmet Spots'}</span>
+              </div>
+              <div class="compare-reviews-grid" style="gap:16px;">
+                <!-- My Places -->
+                <div class="comp-card-box">
+                  <div style="font-weight:700;color:#3b82f6;margin-bottom:12px;">🍽️ ${currentLang === 'tr' ? 'Senin Kaydettiğin Mekanlar' : 'Your Saved Places'}</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;">
+                    ${(() => {
+                      const places = [];
+                      const extract = (vObj) => {
+                        Object.entries(vObj || {}).forEach(([k, v]) => {
+                          if (Array.isArray(v?.places) && v.places.length > 0) {
+                            v.places.forEach(p => places.push({ ...p, location: k }));
+                          }
+                        });
+                      };
+                      extract(myStorage.worldVisits);
+                      extract(myStorage.turkeyVisits);
+                      if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz kaydedilmiş mekan yok.' : 'No saved places yet.'}</span>`;
+                      const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
+                      return places.map(pl => `
+                        <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                          <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
+                            <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span>
+                          </div>
+                          ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
+                        </div>
+                      `).join('');
+                    })()}
+                  </div>
+                </div>
+
+                <!-- Friend's Places -->
+                <div class="comp-card-box">
+                  <div style="font-weight:700;color:#10b981;margin-bottom:12px;">🍽️ ${currentLang === 'tr' ? `${escapeHtml(safeProfile.username)} Mekanları` : `${escapeHtml(safeProfile.username)} Places`}</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;">
+                    ${(() => {
+                      const places = [];
+                      const extract = (vObj) => {
+                        Object.entries(vObj || {}).forEach(([k, v]) => {
+                          if (Array.isArray(v?.places) && v.places.length > 0) {
+                            v.places.forEach(p => places.push({ ...p, location: k }));
+                          }
+                        });
+                      };
+                      extract(safeWorldVisits);
+                      extract(safeTurkeyVisits);
+                      if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının kayıtlı mekanı yok.' : 'Friend has no saved places.'}</span>`;
+                      const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
+                      return places.map(pl => `
+                        <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
+                          <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
+                            <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${'⭐'.repeat(parseInt(pl.rating) || 5)}</span>
+                          </div>
+                          ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
+                        </div>
+                      `).join('');
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>

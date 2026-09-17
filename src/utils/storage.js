@@ -71,7 +71,9 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
       exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
-      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || [])
+      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
+      places: details.places !== undefined ? details.places : (existing.places || []),
+      journal: details.journal !== undefined ? details.journal : (existing.journal || null)
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -139,7 +141,9 @@ export function saveWorldVisit(countryCode, status, details = {}) {
       entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
       exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
-      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || [])
+      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
+      places: details.places !== undefined ? details.places : (existing.places || []),
+      journal: details.journal !== undefined ? details.journal : (existing.journal || null)
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -761,3 +765,45 @@ export function deleteUpcomingTrip() {
   }
   notifyStateChange();
 }
+
+// ─── Favorite Places / Restaurants / Cafes Tracker ──────────────────────────
+export function getAllSavedPlaces() {
+  try {
+    const { turkeyVisits, worldVisits } = getStorageData();
+    const all = [];
+
+    Object.entries(turkeyVisits || {}).forEach(([pid, v]) => {
+      if (Array.isArray(v?.places) && v.places.length > 0) {
+        v.places.forEach(p => {
+          all.push({
+            ...p,
+            targetId: `TR::${pid}`,
+            countryCode: 'TR'
+          });
+        });
+      }
+    });
+
+    Object.entries(worldVisits || {}).forEach(([code, v]) => {
+      if (Array.isArray(v?.places) && v.places.length > 0) {
+        const countryCode = code.includes('::') ? code.split('::')[0] : code;
+        v.places.forEach(p => {
+          all.push({
+            ...p,
+            targetId: code,
+            countryCode
+          });
+        });
+      }
+    });
+
+    return all;
+  } catch {
+    return [];
+  }
+}
+
+export function getTotalPlacesCount() {
+  return getAllSavedPlaces().length;
+}
+
