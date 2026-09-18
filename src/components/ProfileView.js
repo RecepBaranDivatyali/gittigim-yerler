@@ -25,6 +25,7 @@ import {
   searchTravelersByUsername, getTravelerByUsername, 
   registerOrUpdateCurrentUser, getAllCommunityTravelers 
 } from '../utils/userDatabase.js';
+import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 
 const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
@@ -1537,13 +1538,18 @@ export function renderProfileView(container, onBack) {
                       <div class="alliance-count-badge" style="color:${alliance.color};background:${alliance.color}18;border-color:${alliance.color}44;">
                         ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
                       </div>
-                      <span class="alliance-chevron" style="color:${alliance.color};font-size:1.1rem;margin-left:8px;">${isExpanded ? '▴' : '▾'}</span>
                     </div>
                   </div>
 
                   <!-- Hot Wheels Style Progress Bar -->
                   <div class="alliance-progress-bar-bg">
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${alliance.color};"></div>
+                  </div>
+
+                  <!-- Alliance Card Bottom-Right Expand Indicator (User Request 4) -->
+                  <div class="alliance-card-bottom-row alliance-toggle-trigger" data-alliance="${alliance.id}">
+                    <span class="alliance-expand-text">${isExpanded ? (currentLang === 'tr' ? 'Havayollarını Gizle' : 'Hide Airlines') : (currentLang === 'tr' ? 'Havayollarını Göster' : 'Show Airlines')}</span>
+                    <span class="alliance-chevron-bottom" style="color:${alliance.color};">${isExpanded ? '▲' : '▼'}</span>
                   </div>
 
                   <!-- Grid of Airlines in this Alliance (Collapsible) -->
@@ -1599,7 +1605,6 @@ export function renderProfileView(container, onBack) {
                       <div class="alliance-count-badge" style="color:${family.color};background:${family.color}18;border-color:${family.color}44;">
                         ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
                       </div>
-                      <span class="alliance-chevron" style="color:${family.color};font-size:1.1rem;margin-left:8px;">${isFamilyExpanded ? '▴' : '▾'}</span>
                     </div>
                   </div>
 
@@ -1608,29 +1613,43 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${family.color};"></div>
                   </div>
 
+                  <!-- Family Card Bottom-Right Expand Indicator (User Request 4) -->
+                  <div class="alliance-card-bottom-row family-toggle-trigger" data-family="${family.id}">
+                    <span class="alliance-expand-text">${isFamilyExpanded ? (currentLang === 'tr' ? 'Modelleri Gizle' : 'Hide Models') : (currentLang === 'tr' ? 'Uçak Modellerini Göster' : 'Show Aircraft Models')}</span>
+                    <span class="alliance-chevron-bottom" style="color:${family.color};">${isFamilyExpanded ? '▲' : '▼'}</span>
+                  </div>
+
                   <!-- Collapsible Models List (Single-line Compact Rows) -->
                   <div class="aircraft-models-list" style="margin-top: 14px; display: ${isFamilyExpanded ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
                     ${familyModels.map(model => {
                       const isFlown = !!userAircraft[model.id]?.flown;
                       const isDetailOpen = expandedAircraftDetails.has(model.id);
-                      const blueprintSvg = getAircraftBlueprint(model.id);
+                      const shortType = model.type
+                        ? model.type.replace(' Yolcu Uçağı', '').replace('Çift Motorlu ', '').replace('Dört Motorlu ', '')
+                        : '';
 
                       return `
-                        <div class="aircraft-row-wrapper" style="display:flex;flex-direction:column;gap:6px;">
+                        <div class="aircraft-row-wrapper">
                           <div class="aircraft-row-item ${isFlown ? 'active' : ''}" data-model="${model.id}" style="--aircraft-accent:${model.color};">
-                            <div class="aircraft-row-left" data-action="toggle-detail" data-model="${model.id}" style="cursor:pointer;display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-                              <span class="aircraft-row-icon">${model.icon}</span>
-                              <div class="aircraft-row-names" style="min-width:0;">
-                                <div class="aircraft-row-title" style="font-weight:700;color:var(--theme-text-main,#f8fafc);font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(model.name)}</div>
-                                <div class="aircraft-row-sub" style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);">${model.type} • ${model.builder}</div>
+                            <div class="aircraft-row-left" data-action="toggle-detail" data-model="${model.id}">
+                              <div class="aircraft-badge-icon" style="background:${model.color}1c;border-color:${model.color}44;color:${model.color};">
+                                ${model.icon}
+                              </div>
+                              <div class="aircraft-row-names">
+                                <div class="aircraft-row-title">${escapeHtml(model.name)}</div>
+                                <div class="aircraft-row-sub-line">
+                                  <span class="aircraft-type-chip">${escapeHtml(shortType)}</span>
+                                  <span class="aircraft-row-sub">💺 ${model.seats}</span>
+                                </div>
                               </div>
                             </div>
-                            <div class="aircraft-row-actions" style="display:flex;align-items:center;gap:8px;">
-                              <button type="button" class="aircraft-row-toggle-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}">
-                                ${isFlown ? '✓ ' + (currentLang === 'tr' ? 'Binildi' : 'Flown') : '+ ' + (currentLang === 'tr' ? 'Bindim' : 'Add')}
+                            <div class="aircraft-row-actions">
+                              <button type="button" class="aircraft-bindim-pill-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}" title="${isFlown ? 'Binildi' : 'Bindim'}">
+                                <span>${isFlown ? '✓' : '+'}</span>
+                                <span>${isFlown ? (currentLang === 'tr' ? 'Binildi' : 'Flown') : (currentLang === 'tr' ? 'Bindim' : 'Add')}</span>
                               </button>
-                              <button type="button" class="aircraft-row-detail-btn" data-action="toggle-detail" data-model="${model.id}">
-                                ${isDetailOpen ? '▴ ' + (currentLang === 'tr' ? 'Gizle' : 'Hide') : '▾ ' + (currentLang === 'tr' ? 'Detay' : 'Detail')}
+                              <button type="button" class="aircraft-detail-toggle-btn ${isDetailOpen ? 'open' : ''}" data-action="toggle-detail" data-model="${model.id}" aria-label="Detay">
+                                <span>${isDetailOpen ? '▲' : '▼'}</span>
                               </button>
                             </div>
                           </div>
@@ -2009,6 +2028,9 @@ export function renderProfileView(container, onBack) {
     const mrzLine1 = `P<TUR${safeUserUpper}<<<<<<<<<<<<<<<<<<<<<<`;
     const mrzLine2 = `${passportNo}4TUR9501018M3001015<<<<<<<<<<<<<<04`;
 
+    const stampPagesCount = Math.max(1, Math.ceil(visitedCodes.length / 4));
+    const totalPages = 1 + stampPagesCount;
+
     const modal = document.createElement('div');
     modal.className = 'passport-modal-overlay';
     modal.innerHTML = `
@@ -2019,139 +2041,171 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <div class="passport-modal-body">
-          <!-- Page Switcher Bar -->
-          <div class="passport-page-switcher" style="display:flex;justify-content:center;gap:10px;margin-bottom:14px;">
-            <button type="button" class="passport-tab-btn active" id="btn-passport-tab-id">👤 ${currentLang === 'tr' ? 'Kimlik Sayfası' : 'Identity Page'}</button>
-            <button type="button" class="passport-tab-btn" id="btn-passport-tab-stamps">🛂 ${currentLang === 'tr' ? 'Mühürler & Damgalar' : 'Stamps & Visas'} (${visitedCodes.length})</button>
+          <!-- Passport Booklet Navigation Bar (User Request 3) -->
+          <div class="passport-booklet-nav">
+            <button type="button" class="booklet-nav-btn prev" id="btn-passport-prev" aria-label="Önceki Sayfa" disabled>◀</button>
+            <div class="booklet-page-indicator">
+              <span class="booklet-page-badge"><span id="passport-cur-page-num">1</span> / <span>${totalPages}</span></span>
+              <span class="booklet-page-label" id="passport-page-label">${currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID'}</span>
+            </div>
+            <button type="button" class="booklet-nav-btn next" id="btn-passport-next" aria-label="Sonraki Sayfa" ${totalPages <= 1 ? 'disabled' : ''}>▶</button>
           </div>
 
-          <!-- Passport Document Canvas -->
+          <!-- Page Dot Switchers -->
+          <div class="passport-dots-row" id="passport-dots-row">
+            ${Array.from({ length: totalPages }).map((_, i) => `
+              <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" title="${i === 0 ? (currentLang === 'tr' ? 'Kimlik Sayfası' : 'ID Page') : (currentLang === 'tr' ? `Damgalar Sayfa ${i}` : `Stamps Page ${i}`)}"></button>
+            `).join('')}
+          </div>
+
+          <!-- Passport Document Booklet Canvas (Swipeable/Slideable Carousel) -->
           <div id="traveler-passport-canvas" class="passport-book-card">
-            
-            <!-- Passport Cover -->
-            <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
-              <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
-              <div class="passport-cover-emblem">🇹🇷</div>
-              <div class="passport-cover-sub">PASAPORT</div>
-            </div>
+            <div class="passport-carousel-viewport" id="passport-viewport">
+              <div class="passport-carousel-track" id="passport-track">
 
-            <!-- Identity Page Pane -->
-            <div id="passport-id-view" class="passport-view-pane">
-              <div class="passport-id-page">
-                <div class="passport-id-header">
-                  <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
-                  <span class="id-type">TUR / P</span>
-                </div>
-
-                <div class="passport-id-content">
-                  <div class="passport-photo-frame">
-                    <div class="passport-photo-avatar">
-                      ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
-                    </div>
-                    <div class="passport-photo-watermark">GEZGİN</div>
+                <!-- SAYFA 1: Kapak ve Biyometrik Kimlik Sayfası -->
+                <div class="passport-page-sheet" data-page-index="0">
+                  <!-- Passport Cover Header -->
+                  <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
+                    <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
+                    <div class="passport-cover-emblem">🇹🇷</div>
+                    <div class="passport-cover-sub">PASAPORT</div>
+                    <div class="passport-cover-badge">${isYesil ? 'HUSUSİ DAMGALI (YEŞİL)' : 'UMUMA MAHSUS (BORDO)'}</div>
                   </div>
 
-                  <div class="passport-fields-grid">
-                    <div class="passport-field-item">
-                      <span class="f-label">${currentLang === 'tr' ? 'BELGE NO / DOC NO' : 'DOC NO'}</span>
-                      <span class="f-val">${passportNo}</span>
+                  <!-- Identity Page Pane -->
+                  <div class="passport-id-page">
+                    <div class="passport-id-header">
+                      <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
+                      <span class="id-type">TUR / P</span>
                     </div>
-                    <div class="passport-field-item">
-                      <span class="f-label">${currentLang === 'tr' ? 'UYRUK / NATIONALITY' : 'NATIONALITY'}</span>
-                      <span class="f-val">TUR</span>
-                    </div>
-                    <div class="passport-field-item full">
-                      <span class="f-label">${currentLang === 'tr' ? 'AD SOYAD / FULL NAME' : 'FULL NAME'}</span>
-                      <span class="f-val">${escapeHtml((profile.username || 'GEZGİN').toUpperCase())}</span>
-                    </div>
-                    <div class="passport-field-item">
-                      <span class="f-label">${currentLang === 'tr' ? 'DÜZENLEYEN / AUTHORITY' : 'AUTHORITY'}</span>
-                      <span class="f-val">GEZGİN APP</span>
-                    </div>
-                    <div class="passport-field-item">
-                      <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
-                      <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
-                    </div>
-                    <div class="passport-field-item full">
-                      <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
-                      <span class="f-val" style="font-size:0.75rem;color:#475569;">
-                        ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal Alan' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div class="passport-mrz-box">${escapeHtml(mrzLine1)}\n${escapeHtml(mrzLine2)}</div>
-              </div>
-            </div>
-
-            <!-- Stamped Visas Page Pane -->
-            <div id="passport-stamps-view" class="passport-view-pane" style="display:none;">
-              <div class="passport-stamps-page">
-                <div class="passport-stamps-header">
-                  <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & RESMİ DAMGALAR (VISAS)' : 'STAMPS & VISAS'}</span>
-                  <span class="p-count">${visitedCodes.length} ${currentLang === 'tr' ? 'Damga' : 'Stamps'}</span>
-                </div>
-
-                ${visitedCodes.length > 0 ? `
-                  <div class="passport-stamps-grid">
-                    ${visitedCodes.map((cCode, idx) => {
-                      const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
-                      const cName = getCountryDisplayName(country);
-                      const visit = storageData.worldVisits?.[cCode] || {};
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      const entryDate = formatDate(visit.entryDate || visit.date || todayStr);
-                      const defaultTrans = cCode === 'TR' ? 'car' : 'flight';
-                      const entryTrans = transportIcons[visit.entryTransport || defaultTrans] || '✈️';
-                      const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
-                      const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
-
-                      const rotEntry = ((idx * 7) % 7 - 3) * 1.5;
-                      const rotExit = (((idx * 11) % 7) - 3) * 1.8;
-
-                      return `
-                        <div class="passport-stamp-cell">
-                          <div class="stamp-seal-item entry" style="transform: rotate(${rotEntry}deg);">
-                            <div class="stamp-seal-top">GİRİŞ • ENTRY</div>
-                            <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
-                            <div class="stamp-seal-mid">
-                              <span>${entryTrans}</span>
-                              <span style="font-size:0.6rem;letter-spacing:1px;">PASSED</span>
-                            </div>
-                            <div class="stamp-seal-date">${entryDate}</div>
-                          </div>
+                    <div class="passport-id-content">
+                      <div class="passport-photo-frame">
+                        <div class="passport-photo-avatar">
+                          ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
                         </div>
-                        ${exitDate ? `
-                          <div class="passport-stamp-cell">
-                            <div class="stamp-seal-item exit" style="transform: rotate(${rotExit}deg);">
-                              <div class="stamp-seal-top">ÇIKIŞ • EXIT</div>
-                              <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
-                              <div class="stamp-seal-mid">
-                                <span>${exitTrans}</span>
-                                <span style="font-size:0.6rem;letter-spacing:1px;">DEPARTED</span>
+                        <div class="passport-photo-watermark">GEZGİN</div>
+                      </div>
+
+                      <div class="passport-fields-grid">
+                        <div class="passport-field-item">
+                          <span class="f-label">${currentLang === 'tr' ? 'BELGE NO / DOC NO' : 'DOC NO'}</span>
+                          <span class="f-val">${passportNo}</span>
+                        </div>
+                        <div class="passport-field-item">
+                          <span class="f-label">${currentLang === 'tr' ? 'UYRUK / NATIONALITY' : 'NATIONALITY'}</span>
+                          <span class="f-val">TUR</span>
+                        </div>
+                        <div class="passport-field-item full">
+                          <span class="f-label">${currentLang === 'tr' ? 'AD SOYAD / FULL NAME' : 'FULL NAME'}</span>
+                          <span class="f-val">${escapeHtml((profile.username || 'GEZGİN').toUpperCase())}</span>
+                        </div>
+                        <div class="passport-field-item">
+                          <span class="f-label">${currentLang === 'tr' ? 'DÜZENLEYEN / AUTHORITY' : 'AUTHORITY'}</span>
+                          <span class="f-val">GEZGİN APP</span>
+                        </div>
+                        <div class="passport-field-item">
+                          <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
+                          <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
+                        </div>
+                        <div class="passport-field-item full">
+                          <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
+                          <span class="f-val" style="font-size:0.75rem;color:#475569;">
+                            ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="passport-mrz-box">${escapeHtml(mrzLine1)}\n${escapeHtml(mrzLine2)}</div>
+                  </div>
+                </div>
+
+                <!-- SAYFA 2..N: Airbnb Tarzı Ülkeye Özel Mühürler & Damgalar -->
+                ${Array.from({ length: stampPagesCount }).map((_, pageIdx) => {
+                  const sliceStart = pageIdx * 4;
+                  const pageCodes = visitedCodes.slice(sliceStart, sliceStart + 4);
+                  const pageNum = pageIdx + 2;
+
+                  return `
+                    <div class="passport-page-sheet passport-stamp-page-sheet" data-page-index="${pageIdx + 1}">
+                      <div class="passport-stamps-header">
+                        <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & RESMİ DAMGALAR (VISAS)' : 'STAMPS & VISAS'}</span>
+                        <span class="p-count">${currentLang === 'tr' ? 'Sayfa' : 'Page'} ${pageNum} / ${totalPages}</span>
+                      </div>
+
+                      ${pageCodes.length > 0 ? `
+                        <div class="passport-stamps-grid-2x2">
+                          ${pageCodes.map((cCode, sIdx) => {
+                            const globalIdx = sliceStart + sIdx;
+                            const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
+                            const cName = getCountryDisplayName(country);
+                            const visit = storageData.worldVisits?.[cCode] || {};
+                            const todayStr = new Date().toISOString().split('T')[0];
+                            const entryDate = formatDate(visit.entryDate || visit.date || todayStr);
+                            const defaultTrans = cCode === 'TR' ? 'car' : 'flight';
+                            const entryTrans = transportIcons[visit.entryTransport || defaultTrans] || '✈️';
+                            const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
+                            const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
+
+                            const stampStyle = getCountryStampStyle(cCode, globalIdx);
+
+                            return `
+                              <div class="passport-stamp-cell">
+                                <div class="stamp-seal-item ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation}deg);">
+                                  <div class="stamp-seal-top-bar">
+                                    <span class="stamp-seal-emblem">${stampStyle.shape === 'turkey_shield' ? '☪' : (stampStyle.shape === 'japan_oval' ? '🌸' : (stampStyle.shape === 'uk_round' ? '👑' : (stampStyle.shape === 'arab_octagon' ? '✦' : '★')))}</span>
+                                    <span class="stamp-seal-action">ENTRY • GİRİŞ</span>
+                                    <span class="stamp-seal-emblem">${stampStyle.shape === 'turkey_shield' ? '★' : ''}</span>
+                                  </div>
+                                  <div class="stamp-seal-country-name">${escapeHtml(stampStyle.label || cName.slice(0, 14))}</div>
+                                  <div class="stamp-seal-port">${escapeHtml(stampStyle.port)}</div>
+                                  <div class="stamp-seal-center-row">
+                                    <span class="stamp-transport-icon">${entryTrans}</span>
+                                    <span class="stamp-seal-auth">PASSED</span>
+                                  </div>
+                                  <div class="stamp-seal-date-box">${entryDate}</div>
+                                </div>
+
+                                ${exitDate ? `
+                                  <div class="stamp-seal-item exit-mini ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation * -0.8}deg);margin-top:6px;">
+                                    <div class="stamp-seal-top-bar">
+                                      <span class="stamp-seal-action">EXIT • ÇIKIŞ</span>
+                                    </div>
+                                    <div class="stamp-seal-center-row">
+                                      <span class="stamp-transport-icon">${exitTrans}</span>
+                                      <span class="stamp-seal-date-box">${exitDate}</span>
+                                    </div>
+                                  </div>
+                                ` : ''}
                               </div>
-                              <div class="stamp-seal-date">${exitDate}</div>
-                            </div>
-                          </div>
-                        ` : ''}
-                      `;
-                    }).join('')}
-                  </div>
-                ` : `
-                  <div class="passport-empty-stamps">
-                    <div class="empty-icon">🛂</div>
-                    <p>${currentLang === 'tr' ? 'Henüz damga basılmadı. Haritada bir ülkeye tıklayıp "Gittim" olarak işaretlediğinde resmi giriş damgan buraya otomatik mühürlenecek!' : 'No stamps yet. Mark a country as visited on the map and your entry stamp will automatically appear here!'}</p>
-                  </div>
-                `}
+                            `;
+                          }).join('')}
+                        </div>
+                      ` : `
+                        <div class="passport-empty-stamps">
+                          <div class="empty-icon">🛂</div>
+                          <p>${currentLang === 'tr' ? 'Henüz damga basılmadı. Haritada bir ülkeye tıklayıp "Gittim" olarak işaretlediğinde o ülkeye özel Airbnb tarzı resmi sınır kapısı damgası bu sayfaya otomatik mühürlenecek!' : 'No stamps yet. Mark a country as visited on the map and its custom passport seal will be automatically stamped here!'}</p>
+                        </div>
+                      `}
+
+                      <div class="passport-page-sheet-footer">
+                        <span>TÜRKİYE CUMHURİYETİ PASAPORTU</span>
+                        <span>${pageNum}</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+
               </div>
             </div>
-
           </div>
         </div>
 
         <div class="passport-actions-row">
           <button type="button" id="btn-download-passport" class="passport-action-btn primary">
-            <span>📥</span> <span>${currentLang === 'tr' ? 'Pasaportumu İndir (PNG)' : 'Download Passport (PNG)'}</span>
+            <span>📥</span> <span>${currentLang === 'tr' ? 'Bu Sayfayı İndir (PNG)' : 'Download Page (PNG)'}</span>
           </button>
           ${navigator.share ? `
             <button type="button" id="btn-share-passport" class="passport-action-btn secondary">
@@ -2164,28 +2218,79 @@ export function renderProfileView(container, onBack) {
 
     document.body.appendChild(modal);
 
-    // Switcher handlers
-    const tabIdBtn = modal.querySelector('#btn-passport-tab-id');
-    const tabStampsBtn = modal.querySelector('#btn-passport-tab-stamps');
-    const idPane = modal.querySelector('#passport-id-view');
-    const stampsPane = modal.querySelector('#passport-stamps-view');
+    // Carousel Navigation Logic
+    let currentPage = 0;
+    const track = modal.querySelector('#passport-track');
+    const curNumEl = modal.querySelector('#passport-cur-page-num');
+    const pageLabelEl = modal.querySelector('#passport-page-label');
+    const prevBtn = modal.querySelector('#btn-passport-prev');
+    const nextBtn = modal.querySelector('#btn-passport-next');
+    const dotBtns = modal.querySelectorAll('.passport-dot-btn');
 
-    tabIdBtn?.addEventListener('click', () => {
-      tabIdBtn.classList.add('active');
-      tabStampsBtn?.classList.remove('active');
-      if (idPane) idPane.style.display = 'block';
-      if (stampsPane) stampsPane.style.display = 'none';
+    function updatePageUI(index) {
+      currentPage = Math.max(0, Math.min(totalPages - 1, index));
+      if (track) {
+        track.style.transform = `translateX(-${currentPage * 100}%)`;
+      }
+      if (curNumEl) curNumEl.textContent = currentPage + 1;
+      if (pageLabelEl) {
+        if (currentPage === 0) {
+          pageLabelEl.textContent = currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID';
+        } else {
+          pageLabelEl.textContent = `${currentLang === 'tr' ? 'Damgalar' : 'Stamps'} (Sayfa ${currentPage + 1})`;
+        }
+      }
+      if (prevBtn) prevBtn.disabled = currentPage === 0;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+      dotBtns.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentPage);
+      });
+    }
+
+    prevBtn?.addEventListener('click', () => {
+      if (currentPage > 0) updatePageUI(currentPage - 1);
     });
 
-    tabStampsBtn?.addEventListener('click', () => {
-      tabStampsBtn.classList.add('active');
-      tabIdBtn?.classList.remove('active');
-      if (idPane) idPane.style.display = 'none';
-      if (stampsPane) stampsPane.style.display = 'block';
+    nextBtn?.addEventListener('click', () => {
+      if (currentPage < totalPages - 1) updatePageUI(currentPage + 1);
     });
+
+    dotBtns.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const p = parseInt(dot.dataset.page, 10);
+        if (!isNaN(p)) updatePageUI(p);
+      });
+    });
+
+    // Touch swipe gestures
+    let touchStartX = 0;
+    const viewport = modal.querySelector('#passport-viewport');
+    viewport?.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    viewport?.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].screenX;
+      const diff = touchEndX - touchStartX;
+      if (diff > 45 && currentPage > 0) {
+        updatePageUI(currentPage - 1);
+      } else if (diff < -45 && currentPage < totalPages - 1) {
+        updatePageUI(currentPage + 1);
+      }
+    }, { passive: true });
+
+    const handleKeyNav = (e) => {
+      if (e.key === 'ArrowLeft' && currentPage > 0) {
+        updatePageUI(currentPage - 1);
+      } else if (e.key === 'ArrowRight' && currentPage < totalPages - 1) {
+        updatePageUI(currentPage + 1);
+      }
+    };
+    document.addEventListener('keydown', handleKeyNav);
 
     const closeModal = () => {
       document.removeEventListener('keydown', handleEsc);
+      document.removeEventListener('keydown', handleKeyNav);
       modal.remove();
     };
 
@@ -2199,15 +2304,15 @@ export function renderProfileView(container, onBack) {
       if (e.target === modal) closeModal();
     });
 
-    // Download PNG using html-to-image
+    // Download PNG using html-to-image on the active page sheet
     modal.querySelector('#btn-download-passport')?.addEventListener('click', async () => {
-      const node = document.getElementById('traveler-passport-canvas');
-      if (!node) return;
+      const activeSheet = track?.children[currentPage] || document.getElementById('traveler-passport-canvas');
+      if (!activeSheet) return;
       try {
-        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const dataUrl = await toPng(activeSheet, { quality: 0.95, pixelRatio: 2 });
         const link = document.createElement('a');
         const cleanName = (profile.username || 'Gezgin').replace(/[^a-zA-Z0-9_\-\u00C0-\u017F]/g, '_');
-        link.download = `Gezgin-Pasaportum-${cleanName}.png`;
+        link.download = `Gezgin-Pasaportum-${cleanName}-Sayfa${currentPage + 1}.png`;
         link.href = dataUrl;
         link.click();
       } catch (err) {
@@ -2218,10 +2323,10 @@ export function renderProfileView(container, onBack) {
 
     // Share API
     modal.querySelector('#btn-share-passport')?.addEventListener('click', async () => {
-      const node = document.getElementById('traveler-passport-canvas');
-      if (!node || !navigator.share) return;
+      const activeSheet = track?.children[currentPage] || document.getElementById('traveler-passport-canvas');
+      if (!activeSheet || !navigator.share) return;
       try {
-        const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
+        const dataUrl = await toPng(activeSheet, { quality: 0.95, pixelRatio: 2 });
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'gezgin-pasaportum.png', { type: 'image/png' });
         if (navigator.canShare && !navigator.canShare({ files: [file] })) {

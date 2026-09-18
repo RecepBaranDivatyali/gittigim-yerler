@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, getUserVisaOverride, setUserVisaOverride } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, setPassportType, getUserVisaOverride, setUserVisaOverride } from '../utils/storage.js';
 import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
@@ -592,17 +592,23 @@ export function renderWorldMapView(container, options = {}) {
         <!-- Visa Mode Banner (Visible only in Visa Mode) -->
         <div id="visa-mode-banner" class="visa-mode-banner" style="display:none;">
           <div class="visa-mode-inner">
-            <div class="visa-mode-info">
-              <span class="visa-banner-icon">🛂</span>
-              <span class="visa-banner-title" id="visa-banner-title">Vize Muafiyet Haritası</span>
-              <div class="visa-mode-chips">
-                <span class="visa-mode-chip free">🟢 Vizesiz</span>
-                <span class="visa-mode-chip req">🔴 Vize</span>
-                <span class="visa-mode-chip voa">🟡 Kapıda Vize</span>
-                <span class="visa-mode-chip evisa">🟣 e-Vize</span>
+            <div class="visa-banner-top-row">
+              <div class="visa-banner-left">
+                <span class="visa-banner-icon">🛂</span>
+                <span class="visa-banner-title" id="visa-banner-title">Bordo Pasaport Vize Haritası</span>
+                <div class="visa-passport-switcher" id="visa-passport-switcher">
+                  <button type="button" class="visa-ptype-btn active" data-ptype="bordo">📕 Bordo</button>
+                  <button type="button" class="visa-ptype-btn" data-ptype="yesil">📗 Yeşil</button>
+                </div>
               </div>
+              <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode">✕ Haritama Dön</button>
             </div>
-            <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode">✖️ Seyahat Haritama Dön</button>
+            <div class="visa-banner-chips-row">
+              <span class="visa-mode-chip free">🟢 Vizesiz</span>
+              <span class="visa-mode-chip req">🔴 Vize</span>
+              <span class="visa-mode-chip voa">🟡 Kapıda Vize</span>
+              <span class="visa-mode-chip evisa">🟣 e-Vize</span>
+            </div>
           </div>
         </div>
 
@@ -1015,6 +1021,18 @@ export function renderWorldMapView(container, options = {}) {
     const visaBanner = container.querySelector('#visa-mode-banner');
     const legendEl = container.querySelector('#map-legend');
 
+    const profileWrap = container.querySelector('#profile-btn-wrap');
+
+    function updateVisaBannerUi(pType) {
+      const titleEl = container.querySelector('#visa-banner-title');
+      if (titleEl) {
+        titleEl.textContent = pType === 'yesil' ? 'Yeşil Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';
+      }
+      container.querySelectorAll('.visa-ptype-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-ptype') === pType);
+      });
+    }
+
     function toggleVisaMode() {
       isVisaModeActive = !isVisaModeActive;
       const pType = getPassportType();
@@ -1022,19 +1040,18 @@ export function renderWorldMapView(container, options = {}) {
       if (isVisaModeActive) {
         if (visaBanner) {
           visaBanner.style.display = 'block';
-          const titleEl = container.querySelector('#visa-banner-title');
-          if (titleEl) {
-            titleEl.textContent = pType === 'yesil' ? 'Yeşil (Hususi) Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';
-          }
+          updateVisaBannerUi(pType);
         }
         if (visaToggleBtn) visaToggleBtn.classList.add('active');
         if (legendEl) legendEl.style.display = 'none';
+        if (profileWrap) profileWrap.style.display = 'none';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = 'none';
       } else {
         if (visaBanner) visaBanner.style.display = 'none';
         if (visaToggleBtn) visaToggleBtn.classList.remove('active');
         if (legendEl) legendEl.style.display = '';
+        if (profileWrap) profileWrap.style.display = '';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = '';
       }
@@ -1042,7 +1059,26 @@ export function renderWorldMapView(container, options = {}) {
       if (worldLayer) {
         worldLayer.setStyle(countryStyle);
       }
+      if (countriesLayer) {
+        countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+      }
     }
+
+    // Visa passport switcher click handlers (Bordo / Yeşil)
+    container.querySelectorAll('.visa-ptype-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const selectedType = btn.getAttribute('data-ptype') || 'bordo';
+        setPassportType(selectedType);
+        updateVisaBannerUi(selectedType);
+        if (worldLayer) {
+          worldLayer.setStyle(countryStyle);
+        }
+        if (countriesLayer) {
+          countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+        }
+      });
+    });
 
     visaToggleBtn?.addEventListener('click', toggleVisaMode);
     visaExitBtn?.addEventListener('click', () => {
@@ -3258,30 +3294,19 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         ${flagBadgeHtml} <span>${escapeHtml(cleanTitle)}</span>
       </div>
       ${visaBadge ? `
-        <div class="popup-visa-container" id="popup-visa-container">
-          <div class="popup-visa-header">
-            <div style="display:flex;align-items:center;gap:5px;">
-              <span class="popup-visa-header-title">🛂 Vize</span>
-              <span class="popup-visa-passport-tag">${passportType === 'yesil' ? '🇹🇷 Yeşil' : '🇹🇷 Bordo'}</span>
+        <div class="popup-visa-status-card" id="popup-visa-card">
+          <div class="popup-visa-status-main">
+            <div class="popup-visa-status-pill ${visaBadge.status}">
+              <span class="visa-pill-icon">${visaBadge.icon}</span>
+              <span class="visa-pill-label">${escapeHtml(visaBadge.label)}</span>
             </div>
-            ${visaBadge.isCustom ? `<button type="button" class="popup-visa-reset-btn" id="btn-reset-visa" title="Resmi vize durumuna geri dön">↺ Sıfırla</button>` : ''}
-          </div>
-          <div class="popup-visa-options-grid">
-            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'vizesiz' ? 'active vizesiz' : ''}" data-visa="vizesiz">
-              <span>🟢</span> <span>Vizesiz</span>
-            </button>
-            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'vize' ? 'active vize' : ''}" data-visa="vize">
-              <span>🔴</span> <span>Vize</span>
-            </button>
-            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'kapida_vize' ? 'active kapida_vize' : ''}" data-visa="kapida_vize">
-              <span>🟡</span> <span>Kapıda Vize</span>
-            </button>
-            <button type="button" class="popup-visa-opt-btn ${visaBadge.status === 'e_vize' ? 'active e_vize' : ''}" data-visa="e_vize">
-              <span>🟣</span> <span>e-Vize</span>
+            <button type="button" class="popup-visa-passport-toggle-btn" id="btn-toggle-popup-passport" title="Pasaportu Değiştir (Bordo / Yeşil)">
+              <span class="p-flag-name">${passportType === 'yesil' ? '📗 Yeşil Pasaport' : '📕 Bordo Pasaport'}</span>
+              <span class="p-swap-icon">⇄</span>
             </button>
           </div>
           ${visaBadge.days ? `
-            <div class="popup-visa-note-bar">
+            <div class="popup-visa-status-detail">
               <span>ℹ️ ${escapeHtml(visaBadge.days)}</span>
             </div>
           ` : ''}
@@ -4202,63 +4227,52 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     });
   });
 
-  // 🛂 Visa Options Click Handling
-  const visaContainer = content.querySelector('#popup-visa-container');
-  if (visaContainer && countryCode) {
-    const visaOptBtns = visaContainer.querySelectorAll('.popup-visa-opt-btn');
+  // 🛂 Informative Visa Card & Passport Switcher
+  const visaCard = content.querySelector('#popup-visa-card');
+  if (visaCard && countryCode) {
+    const pToggleBtn = visaCard.querySelector('#btn-toggle-popup-passport');
+    pToggleBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentPType = getPassportType();
+      const nextPType = currentPType === 'yesil' ? 'bordo' : 'yesil';
+      setPassportType(nextPType);
 
-    const updateVisaUi = (newInfo) => {
-      if (!newInfo) return;
-      visaOptBtns.forEach(btn => {
-        const vVal = btn.getAttribute('data-visa');
-        btn.className = `popup-visa-opt-btn ${vVal === newInfo.status ? `active ${vVal}` : ''}`;
-      });
-      const noteBar = visaContainer.querySelector('.popup-visa-note-bar span');
-      if (noteBar && newInfo.days) {
-        noteBar.textContent = `ℹ️ ${newInfo.days}`;
-      }
-      let rBtn = visaContainer.querySelector('#btn-reset-visa');
-      if (newInfo.isCustom) {
-        if (!rBtn) {
-          rBtn = document.createElement('button');
-          rBtn.type = 'button';
-          rBtn.id = 'btn-reset-visa';
-          rBtn.className = 'popup-visa-reset-btn';
-          rBtn.title = 'Resmi vize durumuna geri dön';
-          rBtn.textContent = '↺ Sıfırla';
-          rBtn.addEventListener('click', onResetVisa);
-          visaContainer.querySelector('.popup-visa-header')?.appendChild(rBtn);
+      // Re-fetch badge info with next passport type
+      const newBadge = getVisaBadgeInfo(countryCode, nextPType);
+      if (newBadge) {
+        const pill = visaCard.querySelector('.popup-visa-status-pill');
+        if (pill) {
+          pill.className = `popup-visa-status-pill ${newBadge.status}`;
+          const iconEl = pill.querySelector('.visa-pill-icon');
+          if (iconEl) iconEl.textContent = newBadge.icon;
+          const labelEl = pill.querySelector('.visa-pill-label');
+          if (labelEl) labelEl.textContent = newBadge.label;
         }
-      } else if (rBtn) {
-        rBtn.remove();
+        const desc = visaCard.querySelector('.popup-visa-status-detail span');
+        if (desc && newBadge.days) {
+          desc.textContent = `ℹ️ ${newBadge.days}`;
+        }
+        const flagNameEl = pToggleBtn.querySelector('.p-flag-name');
+        if (flagNameEl) {
+          flagNameEl.textContent = nextPType === 'yesil' ? '📗 Yeşil Pasaport' : '📕 Bordo Pasaport';
+        }
       }
 
-      // Update map style if visa mode is active
-      if (isVisaModeActive && worldLayer) {
-        worldLayer.setStyle(countryStyle);
+      // Re-style map layers if in visa mode
+      if (isVisaModeActive) {
+        if (worldLayer) worldLayer.setStyle(countryStyle);
+        if (countriesLayer) countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+        const bannerTitle = document.getElementById('visa-banner-title');
+        if (bannerTitle) {
+          bannerTitle.textContent = nextPType === 'yesil' ? 'Yeşil Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';
+        }
+        document.querySelectorAll('.visa-ptype-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-ptype') === nextPType);
+        });
       }
       if (activeStatusPopup) {
         activeStatusPopup.update();
       }
-    };
-
-    function onResetVisa(e) {
-      e.stopPropagation();
-      setUserVisaOverride(countryCode, null);
-      const updated = getVisaBadgeInfo(countryCode, passportType, null);
-      updateVisaUi(updated);
-    }
-
-    visaContainer.querySelector('#btn-reset-visa')?.addEventListener('click', onResetVisa);
-
-    visaOptBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const selectedVisa = btn.getAttribute('data-visa');
-        setUserVisaOverride(countryCode, selectedVisa);
-        const updated = getVisaBadgeInfo(countryCode, passportType, selectedVisa);
-        updateVisaUi(updated);
-      });
     });
   }
 
