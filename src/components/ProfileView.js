@@ -2041,21 +2041,21 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <div class="passport-modal-body">
-          <!-- Passport Booklet Navigation Bar (User Request 3) -->
+          <!-- Passport Booklet Modern Swipe & Indicator Bar (User Request) -->
           <div class="passport-booklet-nav">
-            <button type="button" class="booklet-nav-btn prev" id="btn-passport-prev" aria-label="Önceki Sayfa" disabled>◀</button>
-            <div class="booklet-page-indicator">
-              <span class="booklet-page-badge"><span id="passport-cur-page-num">1</span> / <span>${totalPages}</span></span>
-              <span class="booklet-page-label" id="passport-page-label">${currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID'}</span>
+            <div class="booklet-page-pill">
+              <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
+              <span class="booklet-pill-sep">•</span>
+              <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID'}</span>
             </div>
-            <button type="button" class="booklet-nav-btn next" id="btn-passport-next" aria-label="Sonraki Sayfa" ${totalPages <= 1 ? 'disabled' : ''}>▶</button>
-          </div>
-
-          <!-- Page Dot Switchers -->
-          <div class="passport-dots-row" id="passport-dots-row">
-            ${Array.from({ length: totalPages }).map((_, i) => `
-              <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" title="${i === 0 ? (currentLang === 'tr' ? 'Kimlik Sayfası' : 'ID Page') : (currentLang === 'tr' ? `Damgalar Sayfa ${i}` : `Stamps Page ${i}`)}"></button>
-            `).join('')}
+            <div class="passport-dots-row" id="passport-dots-row">
+              ${Array.from({ length: totalPages }).map((_, i) => `
+                <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
+              `).join('')}
+            </div>
+            <div class="passport-swipe-hint">
+              <span>👈</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için sürükleyin' : 'Swipe to turn pages'}</span> <span>👉</span>
+            </div>
           </div>
 
           <!-- Passport Document Booklet Canvas (Swipeable/Slideable Carousel) -->
@@ -2109,12 +2109,13 @@ export function renderProfileView(container, onBack) {
                           <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
                           <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
                         </div>
-                        <div class="passport-field-item full">
-                          <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
-                          <span class="f-val" style="font-size:0.75rem;color:#475569;">
-                            ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
-                          </span>
-                        </div>
+                      </div>
+                    </div>
+
+                    <div class="passport-stats-bar">
+                      <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
+                      <div class="f-val-stats">
+                        ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
                       </div>
                     </div>
 
@@ -2218,66 +2219,128 @@ export function renderProfileView(container, onBack) {
 
     document.body.appendChild(modal);
 
-    // Carousel Navigation Logic
+    // Carousel Navigation & Drag Engine
     let currentPage = 0;
     const track = modal.querySelector('#passport-track');
     const curNumEl = modal.querySelector('#passport-cur-page-num');
     const pageLabelEl = modal.querySelector('#passport-page-label');
-    const prevBtn = modal.querySelector('#btn-passport-prev');
-    const nextBtn = modal.querySelector('#btn-passport-next');
     const dotBtns = modal.querySelectorAll('.passport-dot-btn');
+    const viewport = modal.querySelector('#passport-viewport');
 
-    function updatePageUI(index) {
+    function updatePageUI(index, animate = true) {
       currentPage = Math.max(0, Math.min(totalPages - 1, index));
       if (track) {
+        track.style.transition = animate ? 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)' : 'none';
         track.style.transform = `translateX(-${currentPage * 100}%)`;
       }
-      if (curNumEl) curNumEl.textContent = currentPage + 1;
+      if (curNumEl) curNumEl.textContent = `${currentPage + 1} / ${totalPages}`;
       if (pageLabelEl) {
         if (currentPage === 0) {
           pageLabelEl.textContent = currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID';
         } else {
-          pageLabelEl.textContent = `${currentLang === 'tr' ? 'Damgalar' : 'Stamps'} (Sayfa ${currentPage + 1})`;
+          pageLabelEl.textContent = `${currentLang === 'tr' ? 'Damgalar' : 'Stamps'} (${currentLang === 'tr' ? 'Sayfa' : 'Page'} ${currentPage + 1})`;
         }
       }
-      if (prevBtn) prevBtn.disabled = currentPage === 0;
-      if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
       dotBtns.forEach((dot, i) => {
         dot.classList.toggle('active', i === currentPage);
       });
     }
 
-    prevBtn?.addEventListener('click', () => {
-      if (currentPage > 0) updatePageUI(currentPage - 1);
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      if (currentPage < totalPages - 1) updatePageUI(currentPage + 1);
-    });
-
     dotBtns.forEach(dot => {
-      dot.addEventListener('click', () => {
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
         const p = parseInt(dot.dataset.page, 10);
         if (!isNaN(p)) updatePageUI(p);
       });
     });
 
-    // Touch swipe gestures
-    let touchStartX = 0;
-    const viewport = modal.querySelector('#passport-viewport');
-    viewport?.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
+    // Unified Pointer Events (Touch, Mouse, Pen) Drag Engine
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentDeltaX = 0;
+    let isHorizontalDrag = null;
+    let activePointerId = null;
 
-    viewport?.addEventListener('touchend', (e) => {
-      const touchEndX = e.changedTouches[0].screenX;
-      const diff = touchEndX - touchStartX;
-      if (diff > 45 && currentPage > 0) {
-        updatePageUI(currentPage - 1);
-      } else if (diff < -45 && currentPage < totalPages - 1) {
-        updatePageUI(currentPage + 1);
+    const onPointerDown = (e) => {
+      if (totalPages <= 1) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      isDragging = true;
+      activePointerId = e.pointerId;
+      startX = e.clientX;
+      startY = e.clientY;
+      currentDeltaX = 0;
+      isHorizontalDrag = null;
+
+      try {
+        viewport.setPointerCapture(e.pointerId);
+      } catch {}
+
+      if (track) track.style.transition = 'none';
+      if (viewport) viewport.classList.add('is-dragging');
+    };
+
+    const onPointerMove = (e) => {
+      if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      if (isHorizontalDrag === null) {
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          isHorizontalDrag = Math.abs(dx) >= Math.abs(dy);
+        }
       }
-    }, { passive: true });
+
+      if (!isHorizontalDrag) return;
+
+      if (e.cancelable) e.preventDefault();
+
+      let effectiveDelta = dx;
+      if ((currentPage === 0 && dx > 0) || (currentPage === totalPages - 1 && dx < 0)) {
+        effectiveDelta = dx * 0.32;
+      }
+
+      currentDeltaX = effectiveDelta;
+      if (track) {
+        track.style.transform = `translateX(calc(-${currentPage * 100}% + ${effectiveDelta}px))`;
+      }
+    };
+
+    const onPointerUp = (e) => {
+      if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+      isDragging = false;
+      const capturedId = activePointerId;
+      activePointerId = null;
+
+      if (viewport) {
+        viewport.classList.remove('is-dragging');
+        if (capturedId !== null) {
+          try {
+            viewport.releasePointerCapture(capturedId);
+          } catch {}
+        }
+      }
+
+      const threshold = 38;
+      let targetPage = currentPage;
+
+      if (isHorizontalDrag && Math.abs(currentDeltaX) > threshold) {
+        if (currentDeltaX < -threshold && currentPage < totalPages - 1) {
+          targetPage = currentPage + 1;
+        } else if (currentDeltaX > threshold && currentPage > 0) {
+          targetPage = currentPage - 1;
+        }
+      }
+
+      updatePageUI(targetPage, true);
+      currentDeltaX = 0;
+      isHorizontalDrag = null;
+    };
+
+    viewport?.addEventListener('pointerdown', onPointerDown);
+    viewport?.addEventListener('pointermove', onPointerMove);
+    viewport?.addEventListener('pointerup', onPointerUp);
+    viewport?.addEventListener('pointercancel', onPointerUp);
 
     const handleKeyNav = (e) => {
       if (e.key === 'ArrowLeft' && currentPage > 0) {
@@ -2288,16 +2351,20 @@ export function renderProfileView(container, onBack) {
     };
     document.addEventListener('keydown', handleKeyNav);
 
-    const closeModal = () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.removeEventListener('keydown', handleKeyNav);
-      modal.remove();
-    };
-
     const handleEsc = (e) => {
       if (e.key === 'Escape') closeModal();
     };
     document.addEventListener('keydown', handleEsc);
+
+    const closeModal = () => {
+      viewport?.removeEventListener('pointerdown', onPointerDown);
+      viewport?.removeEventListener('pointermove', onPointerMove);
+      viewport?.removeEventListener('pointerup', onPointerUp);
+      viewport?.removeEventListener('pointercancel', onPointerUp);
+      document.removeEventListener('keydown', handleEsc);
+      document.removeEventListener('keydown', handleKeyNav);
+      modal.remove();
+    };
 
     modal.querySelector('#passport-close-btn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
