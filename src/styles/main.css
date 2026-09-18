@@ -8495,77 +8495,191 @@ body[data-theme="nordic_frost"] .leaflet-container {
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Visa Mode Map Banner & Button ────────────────────────────────────────── */
+/* ── 1. Visa Mode Map Banner & Switcher ────────────────────────────────────────── */
 .visa-mode-banner {
   position: absolute;
-  top: 16px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1500;
-  width: min(680px, 94vw);
+  width: min(500px, calc(100% - 24px));
   pointer-events: auto;
-  animation: slideDownBanner 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideDownBanner 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideDownBanner {
-  from { opacity: 0; transform: translate(-50%, -16px); }
+  from { opacity: 0; transform: translate(-50%, -12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 .visa-mode-inner {
   background: rgba(15, 23, 42, 0.94);
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 16px;
-  padding: 10px 18px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 158, 11, 0.15);
+  padding: 10px 14px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.visa-banner-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  width: 100%;
 }
-.visa-mode-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.visa-banner-icon {
-  font-size: 1.4rem;
-}
-.visa-banner-title {
-  font-weight: 800;
-  font-size: 0.92rem;
-  color: #f8fafc;
-}
-.visa-mode-chips {
+.visa-banner-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+.visa-banner-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.visa-passport-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.visa-ptype-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+.visa-ptype-btn:hover:not(.active) {
+  color: #f8fafc;
+}
+.visa-ptype-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.btn-exit-visa-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  color: #fca5a5;
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+.btn-exit-visa-mode:hover {
+  background: rgba(239, 68, 68, 0.32);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.visa-banner-chips-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .visa-mode-chip {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 5px 4px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-sizing: border-box;
+  text-align: center;
+}
+.visa-mode-chip .chip-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
 }
 .visa-mode-chip.free {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.14);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
-.visa-mode-chip.voa {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+.visa-mode-chip.free .chip-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
 }
 .visa-mode-chip.req {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.14);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.visa-mode-chip.req .chip-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+.visa-mode-chip.voa {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.visa-mode-chip.voa .chip-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
 }
 .visa-mode-chip.evisa {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(168, 85, 247, 0.14);
   color: #c084fc;
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+.visa-mode-chip.evisa .chip-dot {
+  background: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.7);
+}
+@media (max-width: 360px) {
+  .btn-exit-visa-mode span:last-child {
+    display: none;
+  }
+  .btn-exit-visa-mode {
+    padding: 6px 10px;
+  }
 }
 
 /* ─── Popup Visa Selector ─── */
@@ -10561,71 +10675,6 @@ body[data-theme="light"] .stamp-transport-select {
 .friend-add-btn:hover {
   background: rgba(16, 185, 129, 0.35);
   color: #fff;
-}
-
-/* ── 1. Visa Mode Banner Redesign & Switcher (User Request 1) ── */
-.visa-banner-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-}
-.visa-banner-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.visa-passport-switcher {
-  display: inline-flex;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 99px;
-  padding: 2px;
-  gap: 2px;
-}
-.visa-ptype-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 0.76rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 99px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-.visa-ptype-btn.active {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-.visa-banner-chips-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-.btn-exit-visa-mode {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #f87171;
-  border-radius: 10px;
-  padding: 6px 14px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-.btn-exit-visa-mode:hover {
-  background: rgba(239, 68, 68, 0.35);
-  color: #fff;
-  transform: translateY(-1px);
 }
 
 /* ── 2. Country Popup Visa Status Card (User Request 2) ── */

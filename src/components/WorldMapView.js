@@ -595,19 +595,32 @@ export function renderWorldMapView(container, options = {}) {
             <div class="visa-banner-top-row">
               <div class="visa-banner-left">
                 <span class="visa-banner-icon">🛂</span>
-                <span class="visa-banner-title" id="visa-banner-title">Bordo Pasaport Vize Haritası</span>
                 <div class="visa-passport-switcher" id="visa-passport-switcher">
                   <button type="button" class="visa-ptype-btn active" data-ptype="bordo">📕 Bordo</button>
                   <button type="button" class="visa-ptype-btn" data-ptype="yesil">📗 Yeşil</button>
                 </div>
               </div>
-              <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode">✕ Haritama Dön</button>
+              <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode" title="Vize Haritasından Çık">
+                <span>✕</span> <span>Haritama Dön</span>
+              </button>
             </div>
             <div class="visa-banner-chips-row">
-              <span class="visa-mode-chip free">🟢 Vizesiz</span>
-              <span class="visa-mode-chip req">🔴 Vize</span>
-              <span class="visa-mode-chip voa">🟡 Kapıda Vize</span>
-              <span class="visa-mode-chip evisa">🟣 e-Vize</span>
+              <div class="visa-mode-chip free">
+                <span class="chip-dot"></span>
+                <span class="chip-label">Vizesiz</span>
+              </div>
+              <div class="visa-mode-chip req">
+                <span class="chip-dot"></span>
+                <span class="chip-label">Vize</span>
+              </div>
+              <div class="visa-mode-chip voa">
+                <span class="chip-dot"></span>
+                <span class="chip-label">Kapıda Vize</span>
+              </div>
+              <div class="visa-mode-chip evisa">
+                <span class="chip-dot"></span>
+                <span class="chip-label">e-Vize</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1019,15 +1032,10 @@ export function renderWorldMapView(container, options = {}) {
     const visaToggleBtn = container.querySelector('#btn-toggle-visa-mode');
     const visaExitBtn = container.querySelector('#btn-exit-visa-mode');
     const visaBanner = container.querySelector('#visa-mode-banner');
-    const legendEl = container.querySelector('#map-legend');
-
+    const topRightGroup = container.querySelector('.floating-top-right-group');
     const profileWrap = container.querySelector('#profile-btn-wrap');
 
     function updateVisaBannerUi(pType) {
-      const titleEl = container.querySelector('#visa-banner-title');
-      if (titleEl) {
-        titleEl.textContent = pType === 'yesil' ? 'Yeşil Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';
-      }
       container.querySelectorAll('.visa-ptype-btn').forEach(b => {
         b.classList.toggle('active', b.getAttribute('data-ptype') === pType);
       });
@@ -1042,15 +1050,13 @@ export function renderWorldMapView(container, options = {}) {
           visaBanner.style.display = 'block';
           updateVisaBannerUi(pType);
         }
-        if (visaToggleBtn) visaToggleBtn.classList.add('active');
-        if (legendEl) legendEl.style.display = 'none';
+        if (topRightGroup) topRightGroup.style.display = 'none';
         if (profileWrap) profileWrap.style.display = 'none';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = 'none';
       } else {
         if (visaBanner) visaBanner.style.display = 'none';
-        if (visaToggleBtn) visaToggleBtn.classList.remove('active');
-        if (legendEl) legendEl.style.display = '';
+        if (topRightGroup) topRightGroup.style.display = '';
         if (profileWrap) profileWrap.style.display = '';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = '';
