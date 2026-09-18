@@ -10935,36 +10935,45 @@ body[data-theme="light"] .stamp-transport-select {
   color: #ffffff;
 }
 
-/* ── 3. Aviation Alliances Bottom-Right Chevron (User Request 4) ── */
-.alliance-card-bottom-row {
+/* ── 3. Aviation Alliances & Family Meta Row (User Request) ── */
+.alliance-meta-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+.alliance-expand-pill {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  margin-top: 14px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #94a3b8;
   font-size: 0.78rem;
   font-weight: 700;
+  color: #94a3b8;
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.alliance-card-bottom-row:hover {
+.alliance-expand-pill:hover {
   color: #f8fafc;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .alliance-chevron-bottom {
-  font-size: 0.80rem;
+  font-size: 0.75rem;
   font-weight: 900;
   transition: transform 0.2s ease;
 }
 
-/* ── 4. Aircraft Fleet Single-line Compact Rows (User Request 5) ── */
+/* ── 4. Aircraft Fleet Single-line Compact Rows (User Request) ── */
 .aircraft-row-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 .aircraft-row-item {
   display: flex;
@@ -10974,19 +10983,26 @@ body[data-theme="light"] .stamp-transport-select {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
 .aircraft-row-item:hover {
   background: rgba(15, 23, 42, 0.95);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 .aircraft-row-item.active {
   background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+.aircraft-row-item.detail-open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-color: var(--aircraft-accent, #38bdf8);
+  background: rgba(15, 23, 42, 0.95);
 }
 .aircraft-row-left {
   display: flex;
@@ -10995,8 +11011,6 @@ body[data-theme="light"] .stamp-transport-select {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  cursor: pointer;
-  user-select: none;
 }
 .aircraft-badge-icon {
   width: 36px;
@@ -11053,68 +11067,81 @@ body[data-theme="light"] .stamp-transport-select {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.aircraft-row-actions {
+.aircraft-row-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
-.aircraft-bindim-pill-btn {
+.aircraft-row-flown-tag {
+  font-size: 0.70rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.aircraft-row-chevron {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+.aircraft-row-chevron.open {
+  color: #38bdf8;
+}
+
+/* ── 5. Aircraft Detail Card & Inner Bindim Button (User Request) ── */
+.aircraft-detail-card {
+  border: 1px solid var(--aircraft-accent, rgba(255, 255, 255, 0.15));
+  border-top: none;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  background: rgba(10, 16, 30, 0.95);
+  animation: popupSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.aircraft-detail-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.aircraft-detail-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.aircraft-detail-bindim-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 11px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 99px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.80rem;
+  font-weight: 800;
   font-family: inherit;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
   color: #f8fafc;
   transition: all 0.2s ease;
-  white-space: nowrap;
   touch-action: manipulation;
-  flex-shrink: 0;
 }
-.aircraft-bindim-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+.aircraft-detail-bindim-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
 }
-.aircraft-bindim-pill-btn.flown {
+.aircraft-detail-bindim-btn.flown {
   background: linear-gradient(135deg, #059669, #10b981);
   border-color: #10b981;
   color: #ffffff;
   box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-}
-.aircraft-detail-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  padding: 0;
-  border-radius: 8px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--theme-text-muted, #94a3b8);
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  touch-action: manipulation;
-}
-.aircraft-detail-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-.aircraft-detail-toggle-btn.open {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
 }

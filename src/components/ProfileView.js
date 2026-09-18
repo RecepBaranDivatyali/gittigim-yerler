@@ -1534,22 +1534,22 @@ export function renderProfileView(container, onBack) {
                         <div class="alliance-sub">${alliance.desc}</div>
                       </div>
                     </div>
-                    <div class="alliance-progress-wrap">
-                      <div class="alliance-count-badge" style="color:${alliance.color};background:${alliance.color}18;border-color:${alliance.color}44;">
-                        ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
-                      </div>
+                  </div>
+
+                  <!-- Alliance Meta Row: Percentage Badge on Left, "Havayollarını Göster" on Right (above gray bar, at percentage level) -->
+                  <div class="alliance-meta-row">
+                    <div class="alliance-count-badge" style="color:${alliance.color};background:${alliance.color}18;border-color:${alliance.color}44;">
+                      ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
+                    </div>
+                    <div class="alliance-expand-pill alliance-toggle-trigger" data-alliance="${alliance.id}" role="button" style="cursor:pointer;user-select:none;">
+                      <span class="alliance-expand-text">${isExpanded ? (currentLang === 'tr' ? 'Havayollarını Gizle' : 'Hide Airlines') : (currentLang === 'tr' ? 'Havayollarını Göster' : 'Show Airlines')}</span>
+                      <span class="alliance-chevron-bottom" style="color:${alliance.color};">${isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </div>
 
                   <!-- Hot Wheels Style Progress Bar -->
                   <div class="alliance-progress-bar-bg">
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${alliance.color};"></div>
-                  </div>
-
-                  <!-- Alliance Card Bottom-Right Expand Indicator (User Request 4) -->
-                  <div class="alliance-card-bottom-row alliance-toggle-trigger" data-alliance="${alliance.id}">
-                    <span class="alliance-expand-text">${isExpanded ? (currentLang === 'tr' ? 'Havayollarını Gizle' : 'Hide Airlines') : (currentLang === 'tr' ? 'Havayollarını Göster' : 'Show Airlines')}</span>
-                    <span class="alliance-chevron-bottom" style="color:${alliance.color};">${isExpanded ? '▲' : '▼'}</span>
                   </div>
 
                   <!-- Grid of Airlines in this Alliance (Collapsible) -->
@@ -1601,10 +1601,16 @@ export function renderProfileView(container, onBack) {
                         <div class="alliance-sub">${family.desc}</div>
                       </div>
                     </div>
-                    <div class="alliance-progress-wrap">
-                      <div class="alliance-count-badge" style="color:${family.color};background:${family.color}18;border-color:${family.color}44;">
-                        ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
-                      </div>
+                  </div>
+
+                  <!-- Family Meta Row: Percentage Badge on Left, "Uçak Modellerini Göster" on Right (above gray bar, at percentage level) -->
+                  <div class="alliance-meta-row">
+                    <div class="alliance-count-badge" style="color:${family.color};background:${family.color}18;border-color:${family.color}44;">
+                      ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
+                    </div>
+                    <div class="alliance-expand-pill family-toggle-trigger" data-family="${family.id}" role="button" style="cursor:pointer;user-select:none;">
+                      <span class="alliance-expand-text">${isFamilyExpanded ? (currentLang === 'tr' ? 'Modelleri Gizle' : 'Hide Models') : (currentLang === 'tr' ? 'Uçak Modellerini Göster' : 'Show Aircraft Models')}</span>
+                      <span class="alliance-chevron-bottom" style="color:${family.color};">${isFamilyExpanded ? '▲' : '▼'}</span>
                     </div>
                   </div>
 
@@ -1613,25 +1619,20 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${family.color};"></div>
                   </div>
 
-                  <!-- Family Card Bottom-Right Expand Indicator (User Request 4) -->
-                  <div class="alliance-card-bottom-row family-toggle-trigger" data-family="${family.id}">
-                    <span class="alliance-expand-text">${isFamilyExpanded ? (currentLang === 'tr' ? 'Modelleri Gizle' : 'Hide Models') : (currentLang === 'tr' ? 'Uçak Modellerini Göster' : 'Show Aircraft Models')}</span>
-                    <span class="alliance-chevron-bottom" style="color:${family.color};">${isFamilyExpanded ? '▲' : '▼'}</span>
-                  </div>
-
                   <!-- Collapsible Models List (Single-line Compact Rows) -->
                   <div class="aircraft-models-list" style="margin-top: 14px; display: ${isFamilyExpanded ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
                     ${familyModels.map(model => {
                       const isFlown = !!userAircraft[model.id]?.flown;
                       const isDetailOpen = expandedAircraftDetails.has(model.id);
+                      const blueprintSvg = getAircraftBlueprint(model.id);
                       const shortType = model.type
                         ? model.type.replace(' Yolcu Uçağı', '').replace('Çift Motorlu ', '').replace('Dört Motorlu ', '')
                         : '';
 
                       return `
                         <div class="aircraft-row-wrapper">
-                          <div class="aircraft-row-item ${isFlown ? 'active' : ''}" data-model="${model.id}" style="--aircraft-accent:${model.color};">
-                            <div class="aircraft-row-left" data-action="toggle-detail" data-model="${model.id}">
+                          <div class="aircraft-row-item ${isFlown ? 'active' : ''} ${isDetailOpen ? 'detail-open' : ''}" data-model="${model.id}" style="--aircraft-accent:${model.color}; cursor:pointer;" title="${currentLang === 'tr' ? 'Detayları görmek için tıkla' : 'Click to view details'}">
+                            <div class="aircraft-row-left">
                               <div class="aircraft-badge-icon" style="background:${model.color}1c;border-color:${model.color}44;color:${model.color};">
                                 ${model.icon}
                               </div>
@@ -1643,59 +1644,62 @@ export function renderProfileView(container, onBack) {
                                 </div>
                               </div>
                             </div>
-                            <div class="aircraft-row-actions">
-                              <button type="button" class="aircraft-bindim-pill-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}" title="${isFlown ? 'Binildi' : 'Bindim'}">
-                                <span>${isFlown ? '✓' : '+'}</span>
-                                <span>${isFlown ? (currentLang === 'tr' ? 'Binildi' : 'Flown') : (currentLang === 'tr' ? 'Bindim' : 'Add')}</span>
-                              </button>
-                              <button type="button" class="aircraft-detail-toggle-btn ${isDetailOpen ? 'open' : ''}" data-action="toggle-detail" data-model="${model.id}" aria-label="Detay">
-                                <span>${isDetailOpen ? '▲' : '▼'}</span>
-                              </button>
+                            <div class="aircraft-row-right">
+                              ${isFlown ? `<span class="aircraft-row-flown-tag">${currentLang === 'tr' ? '✓ Binildi' : '✓ Flown'}</span>` : ''}
+                              <span class="aircraft-row-chevron ${isDetailOpen ? 'open' : ''}">${isDetailOpen ? '▲' : '▼'}</span>
                             </div>
                           </div>
 
                           ${isDetailOpen ? `
                             <div class="aircraft-detail-card" style="--aircraft-accent:${model.color}; margin-bottom:8px;">
+                              <!-- Detail Card Header with Action Button inside expanded card (User Request) -->
+                              <div class="aircraft-detail-header-row">
+                                <div class="aircraft-detail-header-left">
+                                  <span class="hud-tech-badge">✈️ ${currentLang === 'tr' ? 'TEKNİK VERİLER & KROKİ' : 'TECHNICAL SPECS'}</span>
+                                  <span class="hud-country-pill">${model.country || '-'}</span>
+                                </div>
+                                <button type="button" class="aircraft-detail-bindim-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}">
+                                  <span>${isFlown ? '✓' : '+'}</span>
+                                  <span>${isFlown ? (currentLang === 'tr' ? 'Binildi (Kaldır)' : 'Flown (Remove)') : (currentLang === 'tr' ? 'Bu Uçağa Bindim' : 'Add to Flown')}</span>
+                                </button>
+                              </div>
+
                               <div class="aircraft-blueprint-wrap">
                                 <div class="aircraft-blueprint-art">
                                   ${blueprintSvg}
                                   <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
                                 </div>
                                 <div class="aircraft-telemetry-hud">
-                                  <div class="hud-blueprint-header">
-                                    <span class="hud-tech-badge">✈️ TEKNİK VERİLER</span>
-                                    <span class="hud-country-pill">${model.country || '-'}</span>
-                                  </div>
                                   <div class="hud-grid-compact">
                                     <div class="hud-stat-cell" title="${model.id === 'a380' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : (model.seatLayout || '-')}">
-                                      <span class="hud-lbl">💺 Düzen</span>
+                                      <span class="hud-lbl">💺 ${currentLang === 'tr' ? 'Düzen' : 'Layout'}</span>
                                       <span class="hud-val" style="${model.id === 'a380' ? 'font-size:0.62rem;line-height:1.2;color:#f8fafc;' : ''}">${model.id === 'a380' ? 'Alt 3-4-3<br>Üst 2-4-2' : (model.seatLayout || '-')}</span>
                                     </div>
                                     <div class="hud-stat-cell">
-                                      <span class="hud-lbl">👥 Koltuk</span>
+                                      <span class="hud-lbl">👥 ${currentLang === 'tr' ? 'Koltuk' : 'Seats'}</span>
                                       <span class="hud-val">${model.seats}</span>
                                     </div>
                                     <div class="hud-stat-cell">
-                                      <span class="hud-lbl">📅 İlk Uçuş</span>
+                                      <span class="hud-lbl">📅 ${currentLang === 'tr' ? 'İlk Uçuş' : 'First Flight'}</span>
                                       <span class="hud-val">${model.firstFlight || '-'}</span>
                                     </div>
                                     <div class="hud-stat-cell">
-                                      <span class="hud-lbl">🛫 Menzil</span>
+                                      <span class="hud-lbl">🛫 ${currentLang === 'tr' ? 'Menzil' : 'Range'}</span>
                                       <span class="hud-val">${model.range}</span>
                                     </div>
                                     <div class="hud-stat-cell">
-                                      <span class="hud-lbl">⚡ Hız</span>
+                                      <span class="hud-lbl">⚡ ${currentLang === 'tr' ? 'Hız' : 'Speed'}</span>
                                       <span class="hud-val">${model.speed ? model.speed.split(' ')[0] : '-'}</span>
                                     </div>
                                     <div class="hud-stat-cell">
-                                      <span class="hud-lbl">📐 Kanat</span>
+                                      <span class="hud-lbl">📐 ${currentLang === 'tr' ? 'Kanat' : 'Wingspan'}</span>
                                       <span class="hud-val">${model.wingspan || '-'}</span>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                               <div class="aircraft-card-content" style="padding:12px;">
-                                <div class="aircraft-desc" style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);">${model.desc}</div>
+                                <div class="aircraft-desc" style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);line-height:1.4;">${model.desc}</div>
                               </div>
                             </div>
                           ` : ''}
@@ -1724,7 +1728,8 @@ export function renderProfileView(container, onBack) {
 
     // Alliance toggle header click
     contentArea.querySelectorAll('.alliance-toggle-trigger').forEach(hdr => {
-      hdr.addEventListener('click', () => {
+      hdr.addEventListener('click', (e) => {
+        e.stopPropagation();
         const aid = hdr.dataset.alliance;
         if (expandedAlliances.has(aid)) expandedAlliances.delete(aid);
         else expandedAlliances.add(aid);
@@ -1744,7 +1749,8 @@ export function renderProfileView(container, onBack) {
 
     // Family toggle header click
     contentArea.querySelectorAll('.family-toggle-trigger').forEach(hdr => {
-      hdr.addEventListener('click', () => {
+      hdr.addEventListener('click', (e) => {
+        e.stopPropagation();
         const fid = hdr.dataset.family;
         if (expandedAircraftFamilies.has(fid)) expandedAircraftFamilies.delete(fid);
         else expandedAircraftFamilies.add(fid);
@@ -1752,23 +1758,22 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    // Aircraft toggle flown button click
+    // Aircraft row click toggles expanded detailed card (User Request)
+    contentArea.querySelectorAll('.aircraft-row-item').forEach(row => {
+      row.addEventListener('click', () => {
+        const mid = row.dataset.model;
+        if (expandedAircraftDetails.has(mid)) expandedAircraftDetails.delete(mid);
+        else expandedAircraftDetails.add(mid);
+        renderFlightsTab(contentArea);
+      });
+    });
+
+    // Aircraft toggle flown button click inside expanded card (User Request)
     contentArea.querySelectorAll('[data-action="toggle-flown"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const mid = btn.dataset.model;
         toggleUserAircraft(mid);
-        renderFlightsTab(contentArea);
-      });
-    });
-
-    // Aircraft toggle detail button or row left click
-    contentArea.querySelectorAll('[data-action="toggle-detail"]').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const mid = el.dataset.model;
-        if (expandedAircraftDetails.has(mid)) expandedAircraftDetails.delete(mid);
-        else expandedAircraftDetails.add(mid);
         renderFlightsTab(contentArea);
       });
     });
