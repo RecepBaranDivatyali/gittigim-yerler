@@ -83,13 +83,16 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
     deletePhotosByTarget(String(provinceId)).catch(() => {});
   } else {
     const existing = turkeyVisits[provinceId] || {};
+    const isVisited = status === 'visited';
+    const autoEntryDate = isVisited ? new Date().toISOString().split('T')[0] : '';
+    const autoTransport = isVisited ? 'car' : '';
     turkeyVisits[provinceId] = {
       status,
       date: details.date || existing.date || new Date().toISOString().split('T')[0],
       notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
       rating: details.rating !== undefined ? details.rating : (existing.rating || 0),
-      entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
-      entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
+      entryDate: details.entryDate ? details.entryDate : (existing.entryDate || autoEntryDate),
+      entryTransport: details.entryTransport ? details.entryTransport : (existing.entryTransport || autoTransport),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
       exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
       buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
@@ -154,13 +157,16 @@ export function saveWorldVisit(countryCode, status, details = {}) {
     deletePhotosByTarget(String(countryCode)).catch(() => {});
   } else {
     const existing = worldVisits[countryCode] || {};
+    const isVisited = status === 'visited';
+    const autoEntryDate = isVisited ? new Date().toISOString().split('T')[0] : '';
+    const autoTransport = isVisited ? ((countryCode === 'TR' || countryCode.startsWith('TR::')) ? 'car' : 'flight') : '';
     worldVisits[countryCode] = {
       status,
       date: details.date || existing.date || new Date().toISOString().split('T')[0],
       notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
       rating: details.rating !== undefined ? details.rating : (existing.rating || 0),
-      entryDate: details.entryDate !== undefined ? details.entryDate : (existing.entryDate || ''),
-      entryTransport: details.entryTransport !== undefined ? details.entryTransport : (existing.entryTransport || ''),
+      entryDate: details.entryDate ? details.entryDate : (existing.entryDate || autoEntryDate),
+      entryTransport: details.entryTransport ? details.entryTransport : (existing.entryTransport || autoTransport),
       exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
       exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
       buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),

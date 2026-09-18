@@ -4176,6 +4176,17 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       const hubTabsEl = content.querySelector('#popup-action-hub-tabs');
       if (val === 'visited') {
         if (hubTabsEl) hubTabsEl.style.display = 'flex';
+        // Auto-fill stamp fields if empty
+        if (!currentEntryDate) {
+          currentEntryDate = new Date().toISOString().split('T')[0];
+          const eDateInput = content.querySelector('#popup-stamp-entry-date');
+          if (eDateInput && !eDateInput.value) {
+            eDateInput.value = currentEntryDate;
+          }
+          if (typeof updateStampPreviews === 'function') {
+            updateStampPreviews();
+          }
+        }
       } else {
         if (hubTabsEl) hubTabsEl.style.display = 'none';
         Object.values(allDrawers).forEach(d => { if (d) d.style.display = 'none'; });

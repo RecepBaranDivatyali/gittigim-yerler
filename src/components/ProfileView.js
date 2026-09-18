@@ -21,12 +21,19 @@ import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml 
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
+import { 
+  searchTravelersByUsername, getTravelerByUsername, 
+  registerOrUpdateCurrentUser, getAllCommunityTravelers 
+} from '../utils/userDatabase.js';
 
-const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁'];
+const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
   let activeCountdownTimerId = null;
+  const expandedAlliances = new Set();
+  const expandedAircraftFamilies = new Set();
+  const expandedAircraftDetails = new Set();
 
   function clearActiveTimers() {
     if (activeCountdownTimerId) {
@@ -35,11 +42,17 @@ export function renderProfileView(container, onBack) {
     }
   }
 
-  function render() {
+  function render(preserveScroll = true) {
     clearActiveTimers();
     const currentLang = getLanguage();
     const currentTheme = getTheme();
     const currentUiSize = getUiSize();
+
+    let prevScrollTop = 0;
+    const oldContentArea = document.getElementById('profile-content-area');
+    if (preserveScroll && oldContentArea) {
+      prevScrollTop = oldContentArea.scrollTop;
+    }
 
     container.innerHTML = `
       <div class="profile-overlay">
@@ -81,7 +94,7 @@ export function renderProfileView(container, onBack) {
     tabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
         activeTab = e.target.closest('.ptab').getAttribute('data-tab');
-        render();
+        render(false);
       });
     });
 
@@ -92,6 +105,10 @@ export function renderProfileView(container, onBack) {
     else if (activeTab === 'flights') renderFlightsTab(contentArea);
     else if (activeTab === 'compare') renderCompareTab(contentArea);
     else if (activeTab === 'settings') renderSettingsTab(contentArea);
+
+    if (preserveScroll && contentArea && prevScrollTop > 0) {
+      contentArea.scrollTop = prevScrollTop;
+    }
 
     if (window.__openPosterOnProfile) {
       window.__openPosterOnProfile = false;
@@ -161,11 +178,22 @@ export function renderProfileView(container, onBack) {
     };
     const shareCode = btoa(encodeURIComponent(JSON.stringify(shareData)));
 
+    registerOrUpdateCurrentUser({
+      username: profile.username || 'Gezgin',
+      avatar: profile.avatar || '🧭',
+      photoUrl: profile.photoUrl || null,
+      bio: profile.bio || '',
+      homeCountry: currentHomeCountry,
+      worldVisits: storageData.worldVisits,
+      turkeyVisits: storageData.turkeyVisits,
+      worldCities: storageData.worldCities
+    });
+
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
           <div class="profile-header">
-            <div class="profile-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
+            <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="Avatar" />` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
@@ -174,6 +202,9 @@ export function renderProfileView(container, onBack) {
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
             <div class="profile-header-actions">
+              <button id="btn-trigger-passport" class="profile-passport-btn" title="${currentLang === 'tr' ? 'Sanal Pasaport' : 'Passport'}">
+                <span>🛂</span> <span class="passport-btn-txt">${currentLang === 'tr' ? 'Pasaport' : 'Passport'}</span>
+              </button>
               <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
                 <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
               </button>
@@ -223,30 +254,13 @@ export function renderProfileView(container, onBack) {
         <!-- Upcoming Trip Countdown Card -->
         <div id="trip-countdown-container"></div>
 
-        <!-- Virtual Passport Banner Card -->
-        <div class="passport-banner-card" id="btn-trigger-passport">
-          <div class="passport-banner-inner">
-            <div class="passport-banner-emblem">🛂</div>
-            <div class="passport-banner-info">
-              <div class="passport-banner-title">
-                <span>${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Traveler Passport'}</span>
-                <span style="font-size:0.7rem;background:rgba(255,215,0,0.2);color:#fbbf24;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,215,0,0.35);">FAZ 1</span>
-              </div>
-              <div class="passport-banner-sub">${currentLang === 'tr' ? 'Resmi damgalarını, vizelerini ve biyometrik pasaportunu görüntüle' : 'View official stamped visas, entry/exit logs & biometric passport'}</div>
-            </div>
-            <div class="passport-banner-badge">
-              <span>${currentLang === 'tr' ? 'Pasaportu İncele' : 'Open Passport'} ➔</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Share Section -->
         <div class="share-section">
-          <h3>${t('shareCodeTitle')}</h3>
-          <p>${t('shareCodeDesc')}</p>
+          <h3>${currentLang === 'tr' ? '👤 Gezgin Kimliğin & Paylaşım' : 'Traveler ID & Share'}</h3>
+          <p>${currentLang === 'tr' ? 'Arkadaşların seni bu kullanıcı adıyla arayabilir veya haritalarınızı karşılaştırmak için profil kodunu iletebilirsin.' : 'Friends can search you with this username or use your profile code to compare maps.'}</p>
           <div class="share-code-row">
-            <input type="text" class="share-code-input" id="profile-share-code" readonly value="${shareCode}">
-            <button class="share-copy-btn" id="profile-copy-btn">${t('copy')}</button>
+            <input type="text" class="share-code-input" id="profile-share-code" readonly value="@${escapeHtml(profile.username || 'Gezgin')}">
+            <button class="share-copy-btn" id="profile-copy-btn">${currentLang === 'tr' ? 'Kullanıcı Adını Kopyala' : 'Copy Username'}</button>
           </div>
         </div>
       </div>
@@ -563,7 +577,8 @@ export function renderProfileView(container, onBack) {
       { id: 'midnight_gold', name: currentLang === 'tr' ? 'Gece & Altın' : 'Midnight Gold', icon: '👑', colors: ['#0b0d13', '#161922', '#e5c07b'] },
       { id: 'natgeo_atlas', name: currentLang === 'tr' ? 'Atlas Klasik' : 'NatGeo Atlas', icon: '🗺️', colors: ['#0f172a', '#1e293b', '#fbbf24'] },
       { id: 'cyberpunk', name: currentLang === 'tr' ? 'Siberpunk Gece' : 'Cyberpunk', icon: '⚡', colors: ['#050510', '#120d26', '#06b6d4'] },
-      { id: 'pure_oled', name: currentLang === 'tr' ? 'Saf OLED Siyah' : 'Pure OLED', icon: '🖤', colors: ['#000000', '#0a0a0a', '#3b82f6'] }
+      { id: 'pure_oled', name: currentLang === 'tr' ? 'Saf OLED Siyah' : 'Pure OLED', icon: '🖤', colors: ['#000000', '#0a0a0a', '#3b82f6'] },
+      { id: 'nordic_frost', name: currentLang === 'tr' ? 'Kuzey Işıkları' : 'Nordic Frost', icon: '❄️', colors: ['#04151f', '#092532', '#00ffcc'] }
     ];
 
     const uiScaleOptions = [
@@ -583,7 +598,9 @@ export function renderProfileView(container, onBack) {
           <p class="settings-card-desc">${t('profileSettingsDesc')}</p>
           
           <div class="settings-profile-preview">
-            <div class="settings-profile-avatar" id="settings-preview-avatar">${escapeHtml(userProfile.avatar || '🧭')}</div>
+            <div class="settings-profile-avatar" id="settings-preview-avatar">
+              ${userProfile.photoUrl ? `<img src="${userProfile.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(userProfile.avatar || '🧭')}
+            </div>
             <div class="settings-profile-info">
               <div class="settings-profile-name">
                 <span>${escapeHtml(userProfile.username || 'Gezgin')}</span>
@@ -598,10 +615,22 @@ export function renderProfileView(container, onBack) {
           <!-- Collapsible Profile Edit Drawer -->
           <div class="settings-edit-drawer" id="settings-edit-drawer" style="display:none;">
             <div class="settings-input-group">
-              <label>${t('selectAvatar')}</label>
+              <label>${currentLang === 'tr' ? 'Özel Profil Fotoğrafı' : 'Custom Profile Photo'}</label>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <input type="file" id="settings-photo-upload" accept="image/*" style="display:none;" />
+                <button type="button" class="settings-edit-toggle-btn" id="btn-choose-photo" style="font-size:0.85rem;padding:7px 14px;">
+                  📷 ${currentLang === 'tr' ? 'Fotoğraf Yükle' : 'Upload Photo'}
+                </button>
+                ${userProfile.photoUrl ? `
+                  <button type="button" id="btn-remove-photo" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:7px 12px;font-size:0.8rem;cursor:pointer;">
+                    🗑️ ${currentLang === 'tr' ? 'Fotoğrafı Kaldır' : 'Remove'}
+                  </button>
+                ` : ''}
+              </div>
+              <label style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);">${t('selectAvatar')}</label>
               <div class="settings-avatar-picker-grid" id="settings-avatar-picker-grid">
                 ${ALLOWED_AVATARS.map(em => `
-                  <button type="button" class="settings-avatar-pick-btn ${em === (userProfile.avatar || '🧭') ? 'selected' : ''}" data-avatar="${em}">${em}</button>
+                  <button type="button" class="settings-avatar-pick-btn ${em === (userProfile.avatar || '🧭') && !userProfile.photoUrl ? 'selected' : ''}" data-avatar="${em}">${em}</button>
                 `).join('')}
               </div>
             </div>
@@ -898,10 +927,11 @@ export function renderProfileView(container, onBack) {
 
     // ── Bind Interactive Event Handlers ──────────────────────────────────────────
 
-    // 1. Profile Edit Drawer Toggle & Avatar Picker
+    // 1. Profile Edit Drawer Toggle, Avatar Picker & Photo Upload
     const toggleEditBtn = document.getElementById('settings-toggle-edit-btn');
     const editDrawer = document.getElementById('settings-edit-drawer');
     let selectedAvatarEmoji = userProfile.avatar || '🧭';
+    let uploadedPhotoUrl = userProfile.photoUrl || null;
 
     toggleEditBtn?.addEventListener('click', () => {
       const isHidden = editDrawer.style.display === 'none';
@@ -909,13 +939,69 @@ export function renderProfileView(container, onBack) {
       toggleEditBtn.textContent = isHidden ? (currentLang === 'tr' ? '✕ Kapat' : '✕ Close') : `✏️ ${t('editProfile')}`;
     });
 
+    const photoInput = document.getElementById('settings-photo-upload');
+    const choosePhotoBtn = document.getElementById('btn-choose-photo');
+    const removePhotoBtn = document.getElementById('btn-remove-photo');
+
+    choosePhotoBtn?.addEventListener('click', () => {
+      photoInput?.click();
+    });
+
+    photoInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const rawDataUrl = evt.target?.result;
+        if (!rawDataUrl) return;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 256;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          uploadedPhotoUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          const preview = document.getElementById('settings-preview-avatar');
+          if (preview) {
+            preview.innerHTML = `<img src="${uploadedPhotoUrl}" class="avatar-custom-img" alt="Avatar">`;
+          }
+          if (removePhotoBtn) removePhotoBtn.style.display = 'inline-block';
+        };
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    removePhotoBtn?.addEventListener('click', () => {
+      uploadedPhotoUrl = null;
+      const preview = document.getElementById('settings-preview-avatar');
+      if (preview) preview.textContent = selectedAvatarEmoji;
+      removePhotoBtn.style.display = 'none';
+    });
+
     document.querySelectorAll('.settings-avatar-pick-btn').forEach(b => {
       b.addEventListener('click', () => {
         document.querySelectorAll('.settings-avatar-pick-btn').forEach(btn => btn.classList.remove('selected'));
         b.classList.add('selected');
         selectedAvatarEmoji = b.getAttribute('data-avatar');
+        uploadedPhotoUrl = null;
         const preview = document.getElementById('settings-preview-avatar');
         if (preview) preview.textContent = selectedAvatarEmoji;
+        if (removePhotoBtn) removePhotoBtn.style.display = 'none';
       });
     });
 
@@ -929,11 +1015,18 @@ export function renderProfileView(container, onBack) {
         ...userProfile,
         username: newName,
         bio: newBio,
-        avatar: selectedAvatarEmoji
+        avatar: selectedAvatarEmoji,
+        photoUrl: uploadedPhotoUrl
       };
 
       try {
         localStorage.setItem('gv_profile', JSON.stringify(updated));
+        registerOrUpdateCurrentUser({
+          username: newName,
+          avatar: selectedAvatarEmoji,
+          photoUrl: uploadedPhotoUrl,
+          bio: newBio
+        });
       } catch (e) {
         console.warn('Could not save profile', e);
       }
@@ -1161,7 +1254,7 @@ export function renderProfileView(container, onBack) {
             <p class="challenges-desc">${currentLang === 'tr' ? 'Dünyanın en ikonik rotalarını tamamla, özel unvan ve koleksiyon rozetlerini kazan!' : 'Complete the world\'s most iconic routes and unlock exclusive title badges!'}</p>
           </div>
 
-          <div class="challenges-grid">
+          <div class="challenges-scroll-track">
             ${challengesList.map(ch => {
               const title = currentLang === 'en' ? (ch.titleEn || ch.title) : ch.title;
               const desc = currentLang === 'en' ? (ch.descEn || ch.desc) : ch.desc;
@@ -1428,10 +1521,11 @@ export function renderProfileView(container, onBack) {
               const totalCount = allianceAirlines.length;
               const percent = Math.round((completedCount / totalCount) * 100);
               const isFull = completedCount === totalCount;
+              const isExpanded = expandedAlliances.has(alliance.id);
 
               return `
-                <div class="alliance-set-card" style="border-left: 4px solid ${alliance.color};">
-                  <div class="alliance-set-header">
+                <div class="alliance-set-card" style="border-left: 4px solid ${alliance.color}; margin-bottom: 16px;">
+                  <div class="alliance-set-header alliance-toggle-trigger" data-alliance="${alliance.id}" style="cursor:pointer;user-select:none;">
                     <div class="alliance-title-wrap">
                       <span class="alliance-icon">${alliance.icon}</span>
                       <div>
@@ -1443,6 +1537,7 @@ export function renderProfileView(container, onBack) {
                       <div class="alliance-count-badge" style="color:${alliance.color};background:${alliance.color}18;border-color:${alliance.color}44;">
                         ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
                       </div>
+                      <span class="alliance-chevron" style="color:${alliance.color};font-size:1.1rem;margin-left:8px;">${isExpanded ? '▴' : '▾'}</span>
                     </div>
                   </div>
 
@@ -1451,8 +1546,8 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${alliance.color};"></div>
                   </div>
 
-                  <!-- Grid of Airlines in this Alliance -->
-                  <div class="airlines-grid" style="margin-top:14px;">
+                  <!-- Grid of Airlines in this Alliance (Collapsible) -->
+                  <div class="airlines-grid" style="margin-top:14px; display:${isExpanded ? 'grid' : 'none'};">
                     ${allianceAirlines.map(airline => {
                       const uData = userAirlines[airline.id] || {};
                       const isFlown = !!uData.flown;
@@ -1480,7 +1575,7 @@ export function renderProfileView(container, onBack) {
             }).join('')}
           </div>
 
-          <!-- PANE 2: AIRCRAFT FLEET MODELS TRACKER (Categorized Families & Technical Blueprints) -->
+          <!-- PANE 2: AIRCRAFT FLEET MODELS TRACKER (Collapsible Families & Single-line Rows) -->
           <div id="flight-pane-aircraft" style="display:${flightSubTab === 'aircraft' ? 'block' : 'none'};">
             ${AIRCRAFT_FAMILIES.map(family => {
               const familyModels = AIRCRAFT_MODELS.filter(m => m.familyId === family.id);
@@ -1488,10 +1583,11 @@ export function renderProfileView(container, onBack) {
               const totalCount = familyModels.length;
               const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
               const isFull = completedCount === totalCount && totalCount > 0;
+              const isFamilyExpanded = expandedAircraftFamilies.has(family.id);
 
               return `
-                <div class="alliance-set-card" style="border-left: 4px solid ${family.color}; margin-bottom: 24px;">
-                  <div class="alliance-set-header">
+                <div class="alliance-set-card" style="border-left: 4px solid ${family.color}; margin-bottom: 20px;">
+                  <div class="alliance-set-header family-toggle-trigger" data-family="${family.id}" style="cursor:pointer;user-select:none;">
                     <div class="alliance-title-wrap">
                       <span class="alliance-icon">${family.icon}</span>
                       <div>
@@ -1503,6 +1599,7 @@ export function renderProfileView(container, onBack) {
                       <div class="alliance-count-badge" style="color:${family.color};background:${family.color}18;border-color:${family.color}44;">
                         ${isFull ? '🏆 ' : ''}${completedCount} / ${totalCount} (${percent}%)
                       </div>
+                      <span class="alliance-chevron" style="color:${family.color};font-size:1.1rem;margin-left:8px;">${isFamilyExpanded ? '▴' : '▾'}</span>
                     </div>
                   </div>
 
@@ -1511,62 +1608,78 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-progress-bar-fill" style="width:${percent}%;background:${family.color};"></div>
                   </div>
 
-                  <!-- Grid of Aircraft in this Family with Kroki / Blueprint -->
-                  <div class="aircraft-grid" style="margin-top: 14px;">
+                  <!-- Collapsible Models List (Single-line Compact Rows) -->
+                  <div class="aircraft-models-list" style="margin-top: 14px; display: ${isFamilyExpanded ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
                     ${familyModels.map(model => {
                       const isFlown = !!userAircraft[model.id]?.flown;
+                      const isDetailOpen = expandedAircraftDetails.has(model.id);
                       const blueprintSvg = getAircraftBlueprint(model.id);
+
                       return `
-                        <div class="aircraft-card ${isFlown ? 'active' : ''}" data-id="${model.id}" style="--aircraft-accent:${model.color};">
-                          <div class="aircraft-blueprint-wrap">
-                            <div class="aircraft-blueprint-art">
-                              ${blueprintSvg}
-                              <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
-                            </div>
-                            <div class="aircraft-telemetry-hud">
-                              <div class="hud-blueprint-header">
-                                <span class="hud-tech-badge">✈️ TEKNİK VERİLER</span>
-                                <span class="hud-country-pill">${model.country || '-'}</span>
-                              </div>
-                              <div class="hud-grid-compact">
-                                <div class="hud-stat-cell" title="${model.id === 'a380' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : (model.seatLayout || '-')}">
-                                  <span class="hud-lbl">💺 Düzen</span>
-                                  <span class="hud-val" style="${model.id === 'a380' ? 'font-size:0.62rem;line-height:1.2;color:#f8fafc;' : ''}">${model.id === 'a380' ? 'Alt 3-4-3<br>Üst 2-4-2' : (model.seatLayout || '-')}</span>
-                                </div>
-                                <div class="hud-stat-cell">
-                                  <span class="hud-lbl">👥 Koltuk</span>
-                                  <span class="hud-val">${model.seats}</span>
-                                </div>
-                                <div class="hud-stat-cell">
-                                  <span class="hud-lbl">📅 İlk Uçuş</span>
-                                  <span class="hud-val">${model.firstFlight || '-'}</span>
-                                </div>
-                                <div class="hud-stat-cell">
-                                  <span class="hud-lbl">🛫 Menzil</span>
-                                  <span class="hud-val">${model.range}</span>
-                                </div>
-                                <div class="hud-stat-cell">
-                                  <span class="hud-lbl">⚡ Hız</span>
-                                  <span class="hud-val">${model.speed ? model.speed.split(' ')[0] : '-'}</span>
-                                </div>
-                                <div class="hud-stat-cell">
-                                  <span class="hud-lbl">📐 Kanat</span>
-                                  <span class="hud-val">${model.wingspan || '-'}</span>
-                                </div>
+                        <div class="aircraft-row-wrapper" style="display:flex;flex-direction:column;gap:6px;">
+                          <div class="aircraft-row-item ${isFlown ? 'active' : ''}" data-model="${model.id}" style="--aircraft-accent:${model.color};">
+                            <div class="aircraft-row-left" data-action="toggle-detail" data-model="${model.id}" style="cursor:pointer;display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                              <span class="aircraft-row-icon">${model.icon}</span>
+                              <div class="aircraft-row-names" style="min-width:0;">
+                                <div class="aircraft-row-title" style="font-weight:700;color:var(--theme-text-main,#f8fafc);font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(model.name)}</div>
+                                <div class="aircraft-row-sub" style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);">${model.type} • ${model.builder}</div>
                               </div>
                             </div>
-                          </div>
-                          <div class="aircraft-card-content">
-                            <div class="aircraft-header">
-                              <span class="aircraft-icon">${model.icon}</span>
-                              <div class="aircraft-model-name">${escapeHtml(model.name)}</div>
+                            <div class="aircraft-row-actions" style="display:flex;align-items:center;gap:8px;">
+                              <button type="button" class="aircraft-row-toggle-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}">
+                                ${isFlown ? '✓ ' + (currentLang === 'tr' ? 'Binildi' : 'Flown') : '+ ' + (currentLang === 'tr' ? 'Bindim' : 'Add')}
+                              </button>
+                              <button type="button" class="aircraft-row-detail-btn" data-action="toggle-detail" data-model="${model.id}">
+                                ${isDetailOpen ? '▴ ' + (currentLang === 'tr' ? 'Gizle' : 'Hide') : '▾ ' + (currentLang === 'tr' ? 'Detay' : 'Detail')}
+                              </button>
                             </div>
-                            <div class="aircraft-builder">${model.builder} • ${model.type}</div>
-                            <div class="aircraft-desc">${model.desc}</div>
-                            <button type="button" class="aircraft-toggle-btn ${isFlown ? 'flown' : ''}">
-                              ${isFlown ? `✓ ${currentLang === 'tr' ? 'Binildi' : 'Flown'}` : `+ ${currentLang === 'tr' ? 'Bindim' : 'Add to Log'}`}
-                            </button>
                           </div>
+
+                          ${isDetailOpen ? `
+                            <div class="aircraft-detail-card" style="--aircraft-accent:${model.color}; margin-bottom:8px;">
+                              <div class="aircraft-blueprint-wrap">
+                                <div class="aircraft-blueprint-art">
+                                  ${blueprintSvg}
+                                  <div class="aircraft-badge" style="color:${model.color};border-color:${model.color}44;">${model.badge}</div>
+                                </div>
+                                <div class="aircraft-telemetry-hud">
+                                  <div class="hud-blueprint-header">
+                                    <span class="hud-tech-badge">✈️ TEKNİK VERİLER</span>
+                                    <span class="hud-country-pill">${model.country || '-'}</span>
+                                  </div>
+                                  <div class="hud-grid-compact">
+                                    <div class="hud-stat-cell" title="${model.id === 'a380' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : (model.seatLayout || '-')}">
+                                      <span class="hud-lbl">💺 Düzen</span>
+                                      <span class="hud-val" style="${model.id === 'a380' ? 'font-size:0.62rem;line-height:1.2;color:#f8fafc;' : ''}">${model.id === 'a380' ? 'Alt 3-4-3<br>Üst 2-4-2' : (model.seatLayout || '-')}</span>
+                                    </div>
+                                    <div class="hud-stat-cell">
+                                      <span class="hud-lbl">👥 Koltuk</span>
+                                      <span class="hud-val">${model.seats}</span>
+                                    </div>
+                                    <div class="hud-stat-cell">
+                                      <span class="hud-lbl">📅 İlk Uçuş</span>
+                                      <span class="hud-val">${model.firstFlight || '-'}</span>
+                                    </div>
+                                    <div class="hud-stat-cell">
+                                      <span class="hud-lbl">🛫 Menzil</span>
+                                      <span class="hud-val">${model.range}</span>
+                                    </div>
+                                    <div class="hud-stat-cell">
+                                      <span class="hud-lbl">⚡ Hız</span>
+                                      <span class="hud-val">${model.speed ? model.speed.split(' ')[0] : '-'}</span>
+                                    </div>
+                                    <div class="hud-stat-cell">
+                                      <span class="hud-lbl">📐 Kanat</span>
+                                      <span class="hud-val">${model.wingspan || '-'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="aircraft-card-content" style="padding:12px;">
+                                <div class="aircraft-desc" style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);">${model.desc}</div>
+                              </div>
+                            </div>
+                          ` : ''}
                         </div>
                       `;
                     }).join('')}
@@ -1590,6 +1703,16 @@ export function renderProfileView(container, onBack) {
       renderFlightsTab(contentArea);
     });
 
+    // Alliance toggle header click
+    contentArea.querySelectorAll('.alliance-toggle-trigger').forEach(hdr => {
+      hdr.addEventListener('click', () => {
+        const aid = hdr.dataset.alliance;
+        if (expandedAlliances.has(aid)) expandedAlliances.delete(aid);
+        else expandedAlliances.add(aid);
+        renderFlightsTab(contentArea);
+      });
+    });
+
     // Airline card click toggles flown status directly
     contentArea.querySelectorAll('.airline-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -1600,22 +1723,33 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    // Aircraft toggle click
-    contentArea.querySelectorAll('.aircraft-toggle-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const card = btn.closest('.aircraft-card');
-        const id = card.dataset.id;
-        toggleUserAircraft(id);
+    // Family toggle header click
+    contentArea.querySelectorAll('.family-toggle-trigger').forEach(hdr => {
+      hdr.addEventListener('click', () => {
+        const fid = hdr.dataset.family;
+        if (expandedAircraftFamilies.has(fid)) expandedAircraftFamilies.delete(fid);
+        else expandedAircraftFamilies.add(fid);
         renderFlightsTab(contentArea);
       });
     });
 
-    contentArea.querySelectorAll('.aircraft-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.aircraft-toggle-btn')) return;
-        const id = card.dataset.id;
-        toggleUserAircraft(id);
+    // Aircraft toggle flown button click
+    contentArea.querySelectorAll('[data-action="toggle-flown"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mid = btn.dataset.model;
+        toggleUserAircraft(mid);
+        renderFlightsTab(contentArea);
+      });
+    });
+
+    // Aircraft toggle detail button or row left click
+    contentArea.querySelectorAll('[data-action="toggle-detail"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mid = el.dataset.model;
+        if (expandedAircraftDetails.has(mid)) expandedAircraftDetails.delete(mid);
+        else expandedAircraftDetails.add(mid);
         renderFlightsTab(contentArea);
       });
     });
@@ -1839,13 +1973,6 @@ export function renderProfileView(container, onBack) {
     }
 
     const isYesil = passportType === 'yesil';
-    const passportTitle = isYesil 
-      ? (currentLang === 'tr' ? 'HUSUSİ PASAPORT' : 'SPECIAL PASSPORT')
-      : (currentLang === 'tr' ? 'UMUMA MAHSUS PASAPORT' : 'PASSPORT');
-    const passportSubtitle = currentLang === 'tr' ? 'TÜRKİYE CUMHURİYETİ' : 'REPUBLIC OF TURKEY';
-    const passportBadgeText = isYesil 
-      ? (currentLang === 'tr' ? 'YEŞİL (HUSUSİ)' : 'SPECIAL (GREEN)')
-      : (currentLang === 'tr' ? 'BORDO (STANDART)' : 'REGULAR (BURGUNDY)');
 
     const userHash = Math.abs(
       (profile.username || 'GEZGIN').split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 5381)
@@ -1892,118 +2019,131 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <div class="passport-modal-body">
+          <!-- Page Switcher Bar -->
+          <div class="passport-page-switcher" style="display:flex;justify-content:center;gap:10px;margin-bottom:14px;">
+            <button type="button" class="passport-tab-btn active" id="btn-passport-tab-id">👤 ${currentLang === 'tr' ? 'Kimlik Sayfası' : 'Identity Page'}</button>
+            <button type="button" class="passport-tab-btn" id="btn-passport-tab-stamps">🛂 ${currentLang === 'tr' ? 'Mühürler & Damgalar' : 'Stamps & Visas'} (${visitedCodes.length})</button>
+          </div>
+
           <!-- Passport Document Canvas -->
           <div id="traveler-passport-canvas" class="passport-book-card">
             
             <!-- Passport Cover -->
             <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
-              <div class="passport-cover-country">${passportSubtitle}</div>
-              <div class="passport-cover-sub">${passportTitle}</div>
+              <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
               <div class="passport-cover-emblem">🇹🇷</div>
-              <div class="passport-cover-badge">${passportBadgeText}</div>
+              <div class="passport-cover-sub">PASAPORT</div>
             </div>
 
-            <!-- Identity Page -->
-            <div class="passport-id-page">
-              <div class="passport-id-header">
-                <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
-                <span class="id-type">TUR / P</span>
-              </div>
-
-              <div class="passport-id-content">
-                <div class="passport-photo-frame">
-                  <div class="passport-photo-avatar">${escapeHtml(profile.avatar || '🧭')}</div>
-                  <div class="passport-photo-watermark">GEZGİN</div>
+            <!-- Identity Page Pane -->
+            <div id="passport-id-view" class="passport-view-pane">
+              <div class="passport-id-page">
+                <div class="passport-id-header">
+                  <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
+                  <span class="id-type">TUR / P</span>
                 </div>
 
-                <div class="passport-fields-grid">
-                  <div class="passport-field-item">
-                    <span class="f-label">${currentLang === 'tr' ? 'BELGE NO / DOC NO' : 'DOC NO'}</span>
-                    <span class="f-val">${passportNo}</span>
+                <div class="passport-id-content">
+                  <div class="passport-photo-frame">
+                    <div class="passport-photo-avatar">
+                      ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
+                    </div>
+                    <div class="passport-photo-watermark">GEZGİN</div>
                   </div>
-                  <div class="passport-field-item">
-                    <span class="f-label">${currentLang === 'tr' ? 'UYRUK / NATIONALITY' : 'NATIONALITY'}</span>
-                    <span class="f-val">TUR</span>
-                  </div>
-                  <div class="passport-field-item full">
-                    <span class="f-label">${currentLang === 'tr' ? 'AD SOYAD / FULL NAME' : 'FULL NAME'}</span>
-                    <span class="f-val">${escapeHtml((profile.username || 'GEZGİN').toUpperCase())}</span>
-                  </div>
-                  <div class="passport-field-item">
-                    <span class="f-label">${currentLang === 'tr' ? 'DÜZENLEYEN / AUTHORITY' : 'AUTHORITY'}</span>
-                    <span class="f-val">GEZGİN APP</span>
-                  </div>
-                  <div class="passport-field-item">
-                    <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
-                    <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
-                  </div>
-                  <div class="passport-field-item full">
-                    <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
-                    <span class="f-val" style="font-size:0.75rem;color:#475569;">
-                      ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal Alan' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
-                    </span>
+
+                  <div class="passport-fields-grid">
+                    <div class="passport-field-item">
+                      <span class="f-label">${currentLang === 'tr' ? 'BELGE NO / DOC NO' : 'DOC NO'}</span>
+                      <span class="f-val">${passportNo}</span>
+                    </div>
+                    <div class="passport-field-item">
+                      <span class="f-label">${currentLang === 'tr' ? 'UYRUK / NATIONALITY' : 'NATIONALITY'}</span>
+                      <span class="f-val">TUR</span>
+                    </div>
+                    <div class="passport-field-item full">
+                      <span class="f-label">${currentLang === 'tr' ? 'AD SOYAD / FULL NAME' : 'FULL NAME'}</span>
+                      <span class="f-val">${escapeHtml((profile.username || 'GEZGİN').toUpperCase())}</span>
+                    </div>
+                    <div class="passport-field-item">
+                      <span class="f-label">${currentLang === 'tr' ? 'DÜZENLEYEN / AUTHORITY' : 'AUTHORITY'}</span>
+                      <span class="f-val">GEZGİN APP</span>
+                    </div>
+                    <div class="passport-field-item">
+                      <span class="f-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID UNTIL' : 'VALID UNTIL'}</span>
+                      <span class="f-val">${currentLang === 'tr' ? 'ÖMÜR BOYU' : 'LIFETIME'}</span>
+                    </div>
+                    <div class="passport-field-item full">
+                      <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
+                      <span class="f-val" style="font-size:0.75rem;color:#475569;">
+                        ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal Alan' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="passport-mrz-box">${mrzLine1}\n${mrzLine2}</div>
+                <div class="passport-mrz-box">${escapeHtml(mrzLine1)}\n${escapeHtml(mrzLine2)}</div>
+              </div>
             </div>
 
-            <!-- Stamped Visas Page -->
-            <div class="passport-stamps-page">
-              <div class="passport-stamps-header">
-                <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & DAMGALAR (VISAS)' : 'STAMPS & VISAS'}</span>
-                <span class="p-count">${visitedCodes.length} ${currentLang === 'tr' ? 'Damga' : 'Stamps'}</span>
-              </div>
+            <!-- Stamped Visas Page Pane -->
+            <div id="passport-stamps-view" class="passport-view-pane" style="display:none;">
+              <div class="passport-stamps-page">
+                <div class="passport-stamps-header">
+                  <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & RESMİ DAMGALAR (VISAS)' : 'STAMPS & VISAS'}</span>
+                  <span class="p-count">${visitedCodes.length} ${currentLang === 'tr' ? 'Damga' : 'Stamps'}</span>
+                </div>
 
-              ${visitedCodes.length > 0 ? `
-                <div class="passport-stamps-grid">
-                  ${visitedCodes.map((cCode, idx) => {
-                    const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
-                    const cName = getCountryDisplayName(country);
-                    const visit = storageData.worldVisits?.[cCode] || {};
-                    const entryDate = formatDate(visit.entryDate || visit.date || '2024-05-15');
-                    const entryTrans = transportIcons[visit.entryTransport] || '✈️';
-                    const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
-                    const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
+                ${visitedCodes.length > 0 ? `
+                  <div class="passport-stamps-grid">
+                    ${visitedCodes.map((cCode, idx) => {
+                      const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
+                      const cName = getCountryDisplayName(country);
+                      const visit = storageData.worldVisits?.[cCode] || {};
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      const entryDate = formatDate(visit.entryDate || visit.date || todayStr);
+                      const defaultTrans = cCode === 'TR' ? 'car' : 'flight';
+                      const entryTrans = transportIcons[visit.entryTransport || defaultTrans] || '✈️';
+                      const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
+                      const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
 
-                    const rotEntry = ((idx * 7) % 7 - 3) * 1.5;
-                    const rotExit = (((idx * 11) % 7) - 3) * 1.8;
+                      const rotEntry = ((idx * 7) % 7 - 3) * 1.5;
+                      const rotExit = (((idx * 11) % 7) - 3) * 1.8;
 
-                    return `
-                      <div class="passport-stamp-cell">
-                        <div class="stamp-seal-item entry" style="transform: rotate(${rotEntry}deg);">
-                          <div class="stamp-seal-top">GİRİŞ • ENTRY</div>
-                          <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
-                          <div class="stamp-seal-mid">
-                            <span>${entryTrans}</span>
-                            <span style="font-size:0.6rem;letter-spacing:1px;">PASSED</span>
-                          </div>
-                          <div class="stamp-seal-date">${entryDate}</div>
-                        </div>
-                      </div>
-                      ${exitDate ? `
+                      return `
                         <div class="passport-stamp-cell">
-                          <div class="stamp-seal-item exit" style="transform: rotate(${rotExit}deg);">
-                            <div class="stamp-seal-top">ÇIKIŞ • EXIT</div>
+                          <div class="stamp-seal-item entry" style="transform: rotate(${rotEntry}deg);">
+                            <div class="stamp-seal-top">GİRİŞ • ENTRY</div>
                             <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
                             <div class="stamp-seal-mid">
-                              <span>${exitTrans}</span>
-                              <span style="font-size:0.6rem;letter-spacing:1px;">DEPARTED</span>
+                              <span>${entryTrans}</span>
+                              <span style="font-size:0.6rem;letter-spacing:1px;">PASSED</span>
                             </div>
-                            <div class="stamp-seal-date">${exitDate}</div>
+                            <div class="stamp-seal-date">${entryDate}</div>
                           </div>
                         </div>
-                      ` : ''}
-                    `;
-                  }).join('')}
-                </div>
-              ` : `
-                <div class="passport-empty-stamps">
-                  <div class="empty-icon">🛂</div>
-                  <p>${currentLang === 'tr' ? 'Henüz damga basılmadı. Haritadan bir ülkeye tıklayıp "Gidildi" olarak işaretle ve ulaşım aracı seç!' : 'No stamps yet. Mark countries as visited on the map and choose a transport method!'}</p>
-                </div>
-              `}
+                        ${exitDate ? `
+                          <div class="passport-stamp-cell">
+                            <div class="stamp-seal-item exit" style="transform: rotate(${rotExit}deg);">
+                              <div class="stamp-seal-top">ÇIKIŞ • EXIT</div>
+                              <div class="stamp-seal-country">${escapeHtml(cCode)} - ${escapeHtml(cName.slice(0, 10))}</div>
+                              <div class="stamp-seal-mid">
+                                <span>${exitTrans}</span>
+                                <span style="font-size:0.6rem;letter-spacing:1px;">DEPARTED</span>
+                              </div>
+                              <div class="stamp-seal-date">${exitDate}</div>
+                            </div>
+                          </div>
+                        ` : ''}
+                      `;
+                    }).join('')}
+                  </div>
+                ` : `
+                  <div class="passport-empty-stamps">
+                    <div class="empty-icon">🛂</div>
+                    <p>${currentLang === 'tr' ? 'Henüz damga basılmadı. Haritada bir ülkeye tıklayıp "Gittim" olarak işaretlediğinde resmi giriş damgan buraya otomatik mühürlenecek!' : 'No stamps yet. Mark a country as visited on the map and your entry stamp will automatically appear here!'}</p>
+                  </div>
+                `}
+              </div>
             </div>
 
           </div>
@@ -2023,6 +2163,26 @@ export function renderProfileView(container, onBack) {
     `;
 
     document.body.appendChild(modal);
+
+    // Switcher handlers
+    const tabIdBtn = modal.querySelector('#btn-passport-tab-id');
+    const tabStampsBtn = modal.querySelector('#btn-passport-tab-stamps');
+    const idPane = modal.querySelector('#passport-id-view');
+    const stampsPane = modal.querySelector('#passport-stamps-view');
+
+    tabIdBtn?.addEventListener('click', () => {
+      tabIdBtn.classList.add('active');
+      tabStampsBtn?.classList.remove('active');
+      if (idPane) idPane.style.display = 'block';
+      if (stampsPane) stampsPane.style.display = 'none';
+    });
+
+    tabStampsBtn?.addEventListener('click', () => {
+      tabStampsBtn.classList.add('active');
+      tabIdBtn?.classList.remove('active');
+      if (idPane) idPane.style.display = 'none';
+      if (stampsPane) stampsPane.style.display = 'block';
+    });
 
     const closeModal = () => {
       document.removeEventListener('keydown', handleEsc);
@@ -2400,7 +2560,7 @@ export function renderProfileView(container, onBack) {
             <div class="saved-friends-chips-row">
               ${savedFriends.map(f => `
                 <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}">
-                  <span class="sf-avatar">${escapeHtml(f.avatar || '🌍')}</span>
+                  <span class="sf-avatar">${f.photoUrl ? `<img src="${f.photoUrl}" class="avatar-custom-img" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
                   <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
                   <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="Sil">&times;</button>
                 </div>
@@ -2414,10 +2574,24 @@ export function renderProfileView(container, onBack) {
           <div class="compare-vs">⚔️ VS</div>
           <div class="compare-other">
             <div id="compare-input-area" class="compare-input-card">
-              <h3 style="color:var(--theme-text-main, #f8fafc);margin-bottom:6px;font-size:1.15rem;">${currentLang === 'tr' ? 'Arkadaşının Profilini Yükle' : 'Load Friend\'s Profile'}</h3>
-              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.82rem;margin-bottom:14px;">${currentLang === 'tr' ? 'Arkadaşının sana verdiği paylaşım kodunu yapıştırarak seyahatlerinizi yan yana karşılaştırın.' : 'Paste your friend\'s share code to compare your travels side by side.'}</p>
-              <textarea class="compare-code-input" id="compare-code" rows="3" placeholder="${t('comparePlaceholder')}"></textarea>
-              <button class="compare-load-btn" id="compare-load-btn">⚡ ${t('loadProfile')}</button>
+              <h3 style="color:var(--theme-text-main, #f8fafc);margin-bottom:6px;font-size:1.15rem;">👥 ${currentLang === 'tr' ? 'Gezgin Arkadaşını Ara & Ekle' : 'Search & Add Traveler Friend'}</h3>
+              <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.82rem;margin-bottom:14px;">${currentLang === 'tr' ? 'Kullanıcı adı ile arayın, tek tıkla listenize ekleyin veya seyahat haritalarınızı karşılaştırın.' : 'Search by username, add to your list with 1-click or compare maps.'}</p>
+              
+              <div class="friend-search-input-wrap">
+                <span class="friend-search-icon">🔍</span>
+                <input type="text" id="friend-search-input" class="friend-search-input" placeholder="${currentLang === 'tr' ? 'Kullanıcı adı yazın (örn: @atlas_mert, @selin...)' : 'Type username (e.g. @atlas_mert)...'}" autocomplete="off" />
+              </div>
+
+              <!-- Live search / suggestions dropdown -->
+              <div id="friend-search-results" class="friend-search-results" style="display:none; margin-top:12px;"></div>
+
+              <details style="margin-top:16px;font-size:0.8rem;color:var(--theme-text-muted, #94a3b8);">
+                <summary style="cursor:pointer;user-select:none;">${currentLang === 'tr' ? 'Eski paylaşım kodu ile yükle (İsteğe bağlı)' : 'Load with legacy share code (Optional)'}</summary>
+                <div style="margin-top:10px;">
+                  <textarea class="compare-code-input" id="compare-code" rows="2" placeholder="${t('comparePlaceholder')}"></textarea>
+                  <button class="compare-load-btn" id="compare-load-btn" style="margin-top:8px;">⚡ ${t('loadProfile')}</button>
+                </div>
+              </details>
             </div>
             <div id="compare-other-card" style="display:none;"></div>
           </div>
@@ -2487,7 +2661,7 @@ export function renderProfileView(container, onBack) {
       otherCard.innerHTML = `
         <div class="profile-card">
           <div class="profile-header">
-            <div class="profile-avatar">${escapeHtml(safeProfile.avatar || '✈️')}</div>
+            <div class="profile-avatar">${safeProfile.photoUrl ? `<img src="${safeProfile.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
@@ -2495,11 +2669,14 @@ export function renderProfileView(container, onBack) {
               </div>
               <div class="profile-bio">${escapeHtml(safeProfile.bio || '')}</div>
             </div>
-            ${rawCode && !isAlreadySaved ? `
-              <div class="profile-header-actions">
+            <div class="profile-header-actions" style="display:flex;flex-direction:column;gap:6px;">
+              ${!isAlreadySaved ? `
                 <button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>
-              </div>
-            ` : ''}
+              ` : ''}
+              <button type="button" id="btn-compare-back-search" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--theme-text-muted,#cbd5e1);border-radius:8px;padding:5px 10px;font-size:0.75rem;cursor:pointer;">
+                🔍 ${currentLang === 'tr' ? 'Yeni Arama' : 'New Search'}
+              </button>
+            </div>
           </div>
           <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722);">${otherTotalCountries}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
@@ -2510,12 +2687,20 @@ export function renderProfileView(container, onBack) {
         </div>
       `;
 
+      // Back to search button handler
+      document.getElementById('btn-compare-back-search')?.addEventListener('click', () => {
+        document.getElementById('compare-input-area').style.display = 'block';
+        document.getElementById('compare-other-card').style.display = 'none';
+        document.getElementById('compare-results-area').style.display = 'none';
+      });
+
       // Save friend button handler
       document.getElementById('btn-save-this-friend')?.addEventListener('click', (e) => {
         const btn = e.currentTarget;
         saveFriend({
           username: safeProfile.username,
           avatar: safeProfile.avatar,
+          photoUrl: safeProfile.photoUrl || null,
           bio: safeProfile.bio,
           code: rawCode,
           data: { profile: safeProfile, worldVisits: safeWorldVisits, turkeyVisits: safeTurkeyVisits, worldCities: safeCities }
@@ -2965,7 +3150,7 @@ export function renderProfileView(container, onBack) {
         const friend = savedFriends.find(f => f.id === fid);
         if (friend && friend.data) {
           applyFriendComparison(
-            friend.data.profile || { username: friend.username, avatar: friend.avatar },
+            friend.data.profile || { username: friend.username, avatar: friend.avatar, photoUrl: friend.photoUrl },
             friend.data.worldVisits || {},
             friend.data.turkeyVisits || {},
             friend.data.worldCities || [],
@@ -2984,6 +3169,123 @@ export function renderProfileView(container, onBack) {
         renderCompareTab(contentArea);
       });
     });
+
+    // ── Live Username Friend Search ──
+    const searchInput = contentArea.querySelector('#friend-search-input');
+    const searchResults = contentArea.querySelector('#friend-search-results');
+
+    function renderSearchResults(travelers) {
+      if (!searchResults) return;
+      if (!travelers || travelers.length === 0) {
+        searchResults.style.display = 'block';
+        searchResults.innerHTML = `
+          <div style="padding:14px;text-align:center;color:var(--theme-text-muted,#94a3b8);font-size:0.85rem;">
+            ${currentLang === 'tr' ? 'Eşleşen gezgin bulunamadı.' : 'No travelers found.'}
+          </div>
+        `;
+        return;
+      }
+
+      const currentSaved = getSavedFriends();
+
+      searchResults.style.display = 'block';
+      searchResults.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${travelers.map(tr => {
+            const isSaved = currentSaved.some(f => f.username?.toLowerCase() === tr.username?.toLowerCase());
+            const countryCount = Object.keys(tr.worldVisits || {}).filter(k => !k.includes('::') && tr.worldVisits[k]?.status === 'visited').length;
+            const provCount = Object.keys(tr.turkeyVisits || {}).filter(k => tr.turkeyVisits[k]?.status === 'visited').length;
+
+            return `
+              <div class="friend-search-item" data-username="${escapeHtml(tr.username)}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;">
+                    ${tr.photoUrl ? `<img src="${tr.photoUrl}" class="avatar-custom-img" style="width:100%;height:100%;object-fit:cover;" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="font-weight:700;color:var(--theme-text-main,#f8fafc);font-size:0.9rem;display:flex;align-items:center;gap:6px;">
+                      <span>${escapeHtml(tr.name || tr.username)}</span>
+                      <span style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);font-weight:400;">@${escapeHtml(tr.username)}</span>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                      ${countryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${provCount} ${currentLang === 'tr' ? 'İl' : 'Provinces'} • ${escapeHtml(tr.bio || '')}
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                  <button type="button" class="btn-compare-traveler" data-username="${escapeHtml(tr.username)}" style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;border-radius:8px;padding:6px 12px;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600;">
+                    ⚔️ ${currentLang === 'tr' ? 'Karşılaştır' : 'Compare'}
+                  </button>
+                  ${isSaved ? `
+                    <button type="button" disabled style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:0.78rem;font-family:inherit;">
+                      ✓ ${currentLang === 'tr' ? 'Arkadaşın' : 'Friend'}
+                    </button>
+                  ` : `
+                    <button type="button" class="btn-add-traveler" data-username="${escapeHtml(tr.username)}" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600;">
+                      + ${currentLang === 'tr' ? 'Ekle' : 'Add'}
+                    </button>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      searchResults.querySelectorAll('.btn-compare-traveler').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uName = btn.dataset.username;
+          const traveler = getTravelerByUsername(uName);
+          if (traveler) {
+            applyFriendComparison(
+              { username: traveler.username, avatar: traveler.avatar, photoUrl: traveler.photoUrl, bio: traveler.bio },
+              traveler.worldVisits || {},
+              traveler.turkeyVisits || {},
+              traveler.worldCities || [],
+              `@${traveler.username}`
+            );
+          }
+        });
+      });
+
+      searchResults.querySelectorAll('.btn-add-traveler').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const uName = btn.dataset.username;
+          const traveler = getTravelerByUsername(uName);
+          if (traveler) {
+            saveFriend({
+              username: traveler.username,
+              avatar: traveler.avatar,
+              photoUrl: traveler.photoUrl || null,
+              bio: traveler.bio,
+              code: `@${traveler.username}`,
+              data: {
+                profile: { username: traveler.username, avatar: traveler.avatar, photoUrl: traveler.photoUrl, bio: traveler.bio },
+                worldVisits: traveler.worldVisits || {},
+                turkeyVisits: traveler.turkeyVisits || {},
+                worldCities: traveler.worldCities || []
+              }
+            });
+            renderCompareTab(contentArea);
+          }
+        });
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('focus', () => {
+        const val = searchInput.value.trim();
+        const list = val ? searchTravelersByUsername(val) : getAllCommunityTravelers();
+        renderSearchResults(list);
+      });
+
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const list = val ? searchTravelersByUsername(val) : getAllCommunityTravelers();
+        renderSearchResults(list);
+      });
+    }
 
     // Manual load button
     document.getElementById('compare-load-btn')?.addEventListener('click', () => {

@@ -156,6 +156,23 @@ export const THEMES = {
     uiBorder: 'rgba(255, 255, 255, 0.15)',
     textMain: '#ffffff',
     textMuted: '#888888'
+  },
+  nordic_frost: {
+    id: 'nordic_frost',
+    name: 'Kuzey Işıkları',
+    nameEn: 'Nordic Frost',
+    icon: '❄️',
+    oceanBg: '#05131e',
+    landFill: '#0e2438',
+    provinceFill: '#0a1b2a',
+    landBorder: '#38bdf8',
+    landBorderZoomed: '#7dd3fc',
+    labelColor: '#e0f2fe',
+    labelShadow: '0 0 6px rgba(0,0,0,0.9)',
+    uiBg: 'rgba(14, 36, 56, 0.94)',
+    uiBorder: 'rgba(56, 189, 248, 0.35)',
+    textMain: '#f0f9ff',
+    textMuted: '#38bdf8'
   }
 };
 
@@ -251,11 +268,43 @@ export function applyTheme(themeId) {
   root.style.setProperty('--theme-text-muted', cfg.textMuted);
   root.style.setProperty('--text-main', cfg.textMain);
   root.style.setProperty('--text-muted', cfg.textMuted);
-  root.style.setProperty('--bg-dark', cfg.id === 'light' ? '#f1f5f9' : '#0f172a');
-  root.style.setProperty('--bg-card', cfg.id === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(30, 41, 59, 0.7)');
-  root.style.setProperty('--border-glass', cfg.id === 'light' ? 'rgba(203, 213, 225, 0.85)' : 'rgba(255, 255, 255, 0.1)');
-  root.style.setProperty('--theme-card-bg', cfg.id === 'light' ? 'rgba(255, 255, 255, 0.96)' : 'rgba(15, 23, 42, 0.65)');
-  root.style.setProperty('--theme-card-border', cfg.id === 'light' ? 'rgba(203, 213, 225, 0.85)' : 'rgba(148, 163, 184, 0.12)');
+  let bgDark = '#0f172a';
+  let bgCard = 'rgba(30, 41, 59, 0.7)';
+  let themeCardBg = 'rgba(15, 23, 42, 0.65)';
+  let borderGlass = 'rgba(255, 255, 255, 0.1)';
+  let themeCardBorder = 'rgba(148, 163, 184, 0.12)';
+
+  if (cfg.id === 'light') {
+    bgDark = '#f1f5f9';
+    bgCard = 'rgba(255, 255, 255, 0.96)';
+    themeCardBg = 'rgba(255, 255, 255, 0.96)';
+    borderGlass = 'rgba(203, 213, 225, 0.85)';
+    themeCardBorder = 'rgba(203, 213, 225, 0.85)';
+  } else if (cfg.id === 'pure_oled') {
+    bgDark = '#000000';
+    bgCard = '#0a0a0a';
+    themeCardBg = '#050505';
+    borderGlass = 'rgba(255, 255, 255, 0.18)';
+    themeCardBorder = 'rgba(255, 255, 255, 0.16)';
+  } else if (cfg.id === 'nordic_frost') {
+    bgDark = '#05131e';
+    bgCard = 'rgba(14, 36, 56, 0.85)';
+    themeCardBg = 'rgba(10, 27, 42, 0.8)';
+    borderGlass = 'rgba(56, 189, 248, 0.2)';
+    themeCardBorder = 'rgba(56, 189, 248, 0.25)';
+  } else if (cfg.id === 'cyberpunk') {
+    bgDark = '#070514';
+    bgCard = 'rgba(21, 12, 46, 0.85)';
+    themeCardBg = 'rgba(16, 8, 36, 0.85)';
+    borderGlass = 'rgba(0, 240, 255, 0.25)';
+    themeCardBorder = 'rgba(0, 240, 255, 0.3)';
+  }
+
+  root.style.setProperty('--bg-dark', bgDark);
+  root.style.setProperty('--bg-card', bgCard);
+  root.style.setProperty('--border-glass', borderGlass);
+  root.style.setProperty('--theme-card-bg', themeCardBg);
+  root.style.setProperty('--theme-card-border', themeCardBorder);
 
   const uiSize = getUiSize();
   const uiScale = UI_SCALES[uiSize] || '1.0';

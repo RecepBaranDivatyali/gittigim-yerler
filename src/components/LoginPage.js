@@ -1,7 +1,7 @@
 import { t, getLanguage, setLanguage } from '../utils/i18n.js';
 import { sanitizeText } from '../utils/security.js';
 
-const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁'];
+const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
 export function renderLoginPage(container, onLogin) {
   // Check if already logged in
