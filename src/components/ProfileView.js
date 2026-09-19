@@ -190,6 +190,9 @@ export function renderProfileView(container, onBack) {
       worldCities: storageData.worldCities
     });
 
+    const currentPassportType = getPassportType();
+    const isYesilPassport = currentPassportType === 'yesil';
+
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
@@ -203,11 +206,22 @@ export function renderProfileView(container, onBack) {
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
             <div class="profile-header-actions">
-              <button id="btn-trigger-passport" class="profile-passport-btn" title="${currentLang === 'tr' ? 'Sanal Pasaport' : 'Passport'}">
-                <span>🛂</span> <span class="passport-btn-txt">${currentLang === 'tr' ? 'Pasaport' : 'Passport'}</span>
+              <button id="btn-trigger-passport" class="profile-hero-passport-btn ${isYesilPassport ? 'yesil' : 'bordo'}" title="${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Passport'}">
+                <div class="passport-hero-badge-icon">
+                  <span class="hero-emblem-flag">🇹🇷</span>
+                  <span class="hero-p-chip">${isYesilPassport ? 'YEŞİL' : 'BORDO'}</span>
+                </div>
+                <div class="passport-hero-info">
+                  <div class="passport-hero-title">
+                    <span class="passport-hero-title-main">🛂 ${currentLang === 'tr' ? 'SANAL PASAPORT' : 'VIRTUAL PASSPORT'}</span>
+                  </div>
+                  <div class="passport-hero-sub">
+                    ${currentLang === 'tr' ? `${baseStats.worldCountryCount || 0} Ülke Mührü • Damgaları İncele ➔` : `${baseStats.worldCountryCount || 0} Country Seals • View Stamps ➔`}
+                  </div>
+                </div>
               </button>
-              <button id="btn-trigger-poster" class="profile-poster-trigger-btn" title="${t('createPoster')}">
-                <span>📸</span> <span class="poster-btn-txt">${t('createPoster')}</span>
+              <button id="btn-trigger-poster" class="profile-secondary-poster-btn" title="${t('createPoster')}">
+                <span>📸</span> <span>${t('createPoster')}</span>
               </button>
             </div>
           </div>
@@ -1658,9 +1672,8 @@ export function renderProfileView(container, onBack) {
                                   <span class="hud-tech-badge">✈️ ${currentLang === 'tr' ? 'TEKNİK VERİLER & KROKİ' : 'TECHNICAL SPECS'}</span>
                                   <span class="hud-country-pill">${model.country || '-'}</span>
                                 </div>
-                                <button type="button" class="aircraft-detail-bindim-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}">
-                                  <span>${isFlown ? '✓' : '+'}</span>
-                                  <span>${isFlown ? (currentLang === 'tr' ? 'Binildi (Kaldır)' : 'Flown (Remove)') : (currentLang === 'tr' ? 'Bu Uçağa Bindim' : 'Add to Flown')}</span>
+                                <button type="button" class="aircraft-tech-flown-btn ${isFlown ? 'flown' : ''}" data-action="toggle-flown" data-model="${model.id}" title="${isFlown ? (currentLang === 'tr' ? 'Bu uçak modeline bindin (+)' : 'Flown (+)') : (currentLang === 'tr' ? 'Bu uçak modeline binilmedi (–)' : 'Not flown (–)')}">
+                                  <span class="aircraft-flown-symbol">${isFlown ? '+' : '–'}</span>
                                 </button>
                               </div>
 
@@ -2049,9 +2062,11 @@ export function renderProfileView(container, onBack) {
           <!-- Passport Booklet Modern Swipe & Indicator Bar (User Request) -->
           <div class="passport-booklet-nav">
             <div class="booklet-page-pill">
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-prev" title="${currentLang === 'tr' ? 'Önceki Sayfa' : 'Previous Page'}">◀</button>
               <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
               <span class="booklet-pill-sep">•</span>
               <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID'}</span>
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-next" title="${currentLang === 'tr' ? 'Sonraki Sayfa' : 'Next Page'}">▶</button>
             </div>
             <div class="passport-dots-row" id="passport-dots-row">
               ${Array.from({ length: totalPages }).map((_, i) => `
@@ -2059,7 +2074,7 @@ export function renderProfileView(container, onBack) {
               `).join('')}
             </div>
             <div class="passport-swipe-hint">
-              <span>👈</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için sürükleyin' : 'Swipe to turn pages'}</span> <span>👉</span>
+              <span>📖</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için okları tıklayın veya sürükleyin' : 'Swipe or click arrows to turn pages'}</span>
             </div>
           </div>
 
@@ -2160,28 +2175,34 @@ export function renderProfileView(container, onBack) {
                             return `
                               <div class="passport-stamp-cell">
                                 <div class="stamp-seal-item ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation}deg);">
-                                  <div class="stamp-seal-top-bar">
-                                    <span class="stamp-seal-emblem">${stampStyle.shape === 'turkey_shield' ? '☪' : (stampStyle.shape === 'japan_oval' ? '🌸' : (stampStyle.shape === 'uk_round' ? '👑' : (stampStyle.shape === 'arab_octagon' ? '✦' : '★')))}</span>
-                                    <span class="stamp-seal-action">ENTRY • GİRİŞ</span>
-                                    <span class="stamp-seal-emblem">${stampStyle.shape === 'turkey_shield' ? '★' : ''}</span>
+                                  <div class="stamp-seal-inner-frame">
+                                    <div class="stamp-seal-top-bar">
+                                      <span class="stamp-seal-tag">${cCode}</span>
+                                      <span class="stamp-seal-action">${currentLang === 'tr' ? 'GİRİŞ • ADMITTED' : 'ENTRY • ADMITTED'}</span>
+                                      <span class="stamp-seal-star">★</span>
+                                    </div>
+                                    <div class="stamp-landmark-art" style="color:${stampStyle.ink};">
+                                      ${stampStyle.landmarkSvg}
+                                    </div>
+                                    <div class="stamp-seal-country-name">${escapeHtml(stampStyle.label || cName.toUpperCase())}</div>
+                                    <div class="stamp-seal-bottom-row">
+                                      <span class="stamp-transport-icon">${entryTrans}</span>
+                                      <span class="stamp-seal-date-box">${entryDate}</span>
+                                    </div>
                                   </div>
-                                  <div class="stamp-seal-country-name">${escapeHtml(stampStyle.label || cName.slice(0, 14))}</div>
-                                  <div class="stamp-seal-port">${escapeHtml(stampStyle.port)}</div>
-                                  <div class="stamp-seal-center-row">
-                                    <span class="stamp-transport-icon">${entryTrans}</span>
-                                    <span class="stamp-seal-auth">PASSED</span>
-                                  </div>
-                                  <div class="stamp-seal-date-box">${entryDate}</div>
                                 </div>
 
                                 ${exitDate ? `
                                   <div class="stamp-seal-item exit-mini ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation * -0.8}deg);margin-top:6px;">
-                                    <div class="stamp-seal-top-bar">
-                                      <span class="stamp-seal-action">EXIT • ÇIKIŞ</span>
-                                    </div>
-                                    <div class="stamp-seal-center-row">
-                                      <span class="stamp-transport-icon">${exitTrans}</span>
-                                      <span class="stamp-seal-date-box">${exitDate}</span>
+                                    <div class="stamp-seal-inner-frame">
+                                      <div class="stamp-seal-top-bar">
+                                        <span class="stamp-seal-tag">${cCode}</span>
+                                        <span class="stamp-seal-action">${currentLang === 'tr' ? 'ÇIKIŞ • DEPARTED' : 'EXIT • DEPARTED'}</span>
+                                      </div>
+                                      <div class="stamp-seal-bottom-row">
+                                        <span class="stamp-transport-icon">${exitTrans}</span>
+                                        <span class="stamp-seal-date-box">${exitDate}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 ` : ''}
@@ -2235,9 +2256,16 @@ export function renderProfileView(container, onBack) {
     function updatePageUI(index, animate = true) {
       currentPage = Math.max(0, Math.min(totalPages - 1, index));
       if (track) {
-        track.style.transition = animate ? 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)' : 'none';
+        track.style.transition = animate ? 'transform 0.42s cubic-bezier(0.2, 0.9, 0.3, 1)' : 'none';
         track.style.transform = `translateX(-${currentPage * 100}%)`;
       }
+      const sheets = modal.querySelectorAll('.passport-page-sheet');
+      sheets.forEach((sheet, i) => {
+        sheet.classList.remove('page-active', 'page-prev-sheet', 'page-next-sheet');
+        if (i === currentPage) sheet.classList.add('page-active');
+        else if (i < currentPage) sheet.classList.add('page-prev-sheet');
+        else sheet.classList.add('page-next-sheet');
+      });
       if (curNumEl) curNumEl.textContent = `${currentPage + 1} / ${totalPages}`;
       if (pageLabelEl) {
         if (currentPage === 0) {
@@ -2249,7 +2277,21 @@ export function renderProfileView(container, onBack) {
       dotBtns.forEach((dot, i) => {
         dot.classList.toggle('active', i === currentPage);
       });
+      const prevBtn = modal.querySelector('#passport-btn-prev');
+      const nextBtn = modal.querySelector('#passport-btn-next');
+      if (prevBtn) prevBtn.style.opacity = currentPage === 0 ? '0.35' : '1';
+      if (nextBtn) nextBtn.style.opacity = currentPage === totalPages - 1 ? '0.35' : '1';
     }
+
+    modal.querySelector('#passport-btn-prev')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentPage > 0) updatePageUI(currentPage - 1);
+    });
+
+    modal.querySelector('#passport-btn-next')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentPage < totalPages - 1) updatePageUI(currentPage + 1);
+    });
 
     dotBtns.forEach(dot => {
       dot.addEventListener('click', (e) => {

@@ -1039,6 +1039,22 @@ export function renderWorldMapView(container, options = {}) {
       container.querySelectorAll('.visa-ptype-btn').forEach(b => {
         b.classList.toggle('active', b.getAttribute('data-ptype') === pType);
       });
+      // Dynamic country counts per visa status for active passport
+      const counts = { vizesiz: 0, vize: 0, kapida_vize: 0, e_vize: 0 };
+      WORLD_COUNTRIES.forEach(c => {
+        const info = getVisaBadgeInfo(c.code, pType);
+        if (info && counts[info.status] !== undefined) {
+          counts[info.status]++;
+        }
+      });
+      const chipFree = container.querySelector('.visa-mode-chip.free .chip-label');
+      if (chipFree) chipFree.textContent = `Vizesiz (${counts.vizesiz})`;
+      const chipReq = container.querySelector('.visa-mode-chip.req .chip-label');
+      if (chipReq) chipReq.textContent = `Vize (${counts.vize})`;
+      const chipVoa = container.querySelector('.visa-mode-chip.voa .chip-label');
+      if (chipVoa) chipVoa.textContent = `Kapıda Vize (${counts.kapida_vize})`;
+      const chipEvisa = container.querySelector('.visa-mode-chip.evisa .chip-label');
+      if (chipEvisa) chipEvisa.textContent = `e-Vize (${counts.e_vize})`;
     }
 
     function toggleVisaMode() {
@@ -1062,12 +1078,7 @@ export function renderWorldMapView(container, options = {}) {
         if (searchWrap) searchWrap.style.display = '';
       }
 
-      if (worldLayer) {
-        worldLayer.setStyle(countryStyle);
-      }
-      if (countriesLayer) {
-        countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
-      }
+      applyVisaModeStyles();
     }
 
     // Visa passport switcher click handlers (Bordo / Yeşil)
@@ -1077,12 +1088,7 @@ export function renderWorldMapView(container, options = {}) {
         const selectedType = btn.getAttribute('data-ptype') || 'bordo';
         setPassportType(selectedType);
         updateVisaBannerUi(selectedType);
-        if (worldLayer) {
-          worldLayer.setStyle(countryStyle);
-        }
-        if (countriesLayer) {
-          countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
-        }
+        applyVisaModeStyles();
       });
     });
 
@@ -2715,9 +2721,73 @@ function getVisibleCountries() {
   return visible;
 }
 
+function applyVisaModeStyles() {
+  if (!map) return;
+
+  if (isVisaModeActive) {
+    // Unmount sub-national layers in Visa Mode so national visa regimes are unobscured
+    if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+      map.removeLayer(turkeyLayer);
+    }
+    Object.values(regionLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    Object.values(subregionLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    Object.values(stateBordersLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+      map.removeLayer(countryBordersLayer);
+    }
+  }
+
+  // Immediately re-style all country layers
+  Object.entries(countryLayersByCode).forEach(([code, layer]) => {
+    const c = countryByCode.get(code);
+    if (c && layer && layer.setStyle) {
+      layer.setStyle(countryStyle(c));
+    }
+  });
+
+  if (countriesLayer) {
+    countriesLayer.eachLayer(l => {
+      const c = findCountry(l.feature);
+      if (c && l.setStyle) {
+        l.setStyle(countryStyle(c));
+      }
+    });
+  }
+
+  onViewChange();
+  try { if (typeof scheduleLabelUpdate === 'function') scheduleLabelUpdate(); } catch {}
+  try { if (typeof updateLayerHud === 'function') updateLayerHud(); } catch {}
+}
+
 function onViewChange() {
   if (!map) return;
   const zoom = map.getZoom();
+
+  // In Visa Mode, do not mount sub-division or region layers on top of national visa colors
+  if (isVisaModeActive) {
+    if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+      map.removeLayer(countryBordersLayer);
+    }
+    if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+      map.removeLayer(turkeyLayer);
+    }
+    Object.values(regionLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    Object.values(subregionLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    Object.values(stateBordersLayers).forEach(l => {
+      if (l && map.hasLayer(l)) map.removeLayer(l);
+    });
+    return;
+  }
 
   // Prominent outer country borders: only mounted when zoomed into regions (Zoom >= REGION_ZOOM)
   if (zoom >= REGION_ZOOM) {
@@ -4266,8 +4336,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
       // Re-style map layers if in visa mode
       if (isVisaModeActive) {
-        if (worldLayer) worldLayer.setStyle(countryStyle);
-        if (countriesLayer) countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+        applyVisaModeStyles();
         const bannerTitle = document.getElementById('visa-banner-title');
         if (bannerTitle) {
           bannerTitle.textContent = nextPType === 'yesil' ? 'Yeşil Pasaport Vize Haritası' : 'Bordo Pasaport Vize Haritası';

@@ -7530,15 +7530,34 @@ body > .floating-sim-switch-pill {
 .booklet-page-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.09);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 4px 14px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.8rem;
   color: #f1f5f9;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+.booklet-turn-arrow-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 99px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.70rem;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.booklet-turn-arrow-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 .booklet-pill-badge {
   font-weight: 800;
@@ -7585,7 +7604,7 @@ body > .floating-sim-switch-pill {
   user-select: none;
 }
 
-/* -- Realistic Passport Canvas for Display & PNG Export -- */
+/* -- Realistic Passport Canvas for Display & PNG Export (3D Paper Book Engine) -- */
 .passport-book-card {
   width: 100%;
   max-width: 480px;
@@ -7596,6 +7615,7 @@ body > .floating-sim-switch-pill {
   background: #fdfbf7;
   color: #1e293b;
   position: relative;
+  perspective: 1400px;
 }
 .passport-carousel-viewport {
   width: 100%;
@@ -7604,6 +7624,7 @@ body > .floating-sim-switch-pill {
   touch-action: pan-y;
   cursor: grab;
   user-select: none;
+  perspective: 1400px;
 }
 .passport-carousel-viewport.is-dragging {
   cursor: grabbing;
@@ -7611,8 +7632,9 @@ body > .floating-sim-switch-pill {
 .passport-carousel-track {
   display: flex;
   width: 100%;
-  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.3, 1);
   will-change: transform;
+  transform-style: preserve-3d;
 }
 .passport-page-sheet {
   min-width: 100%;
@@ -7620,6 +7642,22 @@ body > .floating-sim-switch-pill {
   flex-shrink: 0;
   box-sizing: border-box;
   background: #fdfbf7;
+  transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease;
+  transform-origin: center center;
+  position: relative;
+  box-shadow: inset 16px 0 24px -12px rgba(0, 0, 0, 0.25);
+}
+.passport-page-sheet.page-prev-sheet {
+  transform: rotateY(12deg) scale(0.97);
+  opacity: 0.85;
+}
+.passport-page-sheet.page-active {
+  transform: rotateY(0deg) scale(1);
+  opacity: 1;
+}
+.passport-page-sheet.page-next-sheet {
+  transform: rotateY(-12deg) scale(0.97);
+  opacity: 0.85;
 }
 
 /* Cover Header */
@@ -7894,78 +7932,180 @@ body > .floating-sim-switch-pill {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5px 3px;
-  border-radius: 6px;
+  padding: 5px 4px;
   text-align: center;
   font-family: 'Courier New', Courier, monospace;
   font-weight: 900;
   text-transform: uppercase;
   user-select: none;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.06);
   border: 2px solid var(--stamp-ink, #b91c1c);
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.04);
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.stamp-seal-item.turkey_shield {
-  border-radius: 4px 4px 18px 18px;
+.stamp-seal-item:hover {
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.stamp-seal-inner-frame {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--stamp-ink, currentColor);
+  border-radius: inherit;
+  padding: 3px 2px;
+  min-height: 86px;
+}
+
+/* ── Distinct Airbnb Geometric Shapes ── */
+/* 1. Arch Temple (Athens / Greece style) */
+.stamp-seal-item.arch_temple {
+  border-radius: 40px 40px 6px 6px;
   border-width: 2.5px;
 }
-.stamp-seal-item.japan_oval {
-  border-radius: 28px;
-  border-style: double;
-  border-width: 3.5px;
+.stamp-seal-item.arch_temple .stamp-seal-inner-frame {
+  border-radius: 36px 36px 4px 4px;
+  border-style: solid;
+  border-width: 1px;
 }
-.stamp-seal-item.uk_round {
-  border-radius: 14px;
+
+/* 2. Hex Pointed (Alanya / Turkey badge style) */
+.stamp-seal-item.hex_pointed {
+  border-radius: 10px;
+  clip-path: polygon(50% 0%, 100% 12%, 100% 88%, 50% 100%, 0% 88%, 0% 12%);
+  padding: 7px 5px;
+}
+.stamp-seal-item.hex_pointed .stamp-seal-inner-frame {
   border-style: dashed;
 }
-.stamp-seal-item.arab_octagon {
-  border-radius: 8px;
-  clip-path: polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%);
+
+/* 3. Octagon Seal (8-sided geometric consular seal) */
+.stamp-seal-item.octagon_seal {
+  clip-path: polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%);
+  padding: 7px 4px;
 }
+.stamp-seal-item.octagon_seal .stamp-seal-inner-frame {
+  border-style: dotted;
+  border-width: 1.5px;
+}
+
+/* 4. Scalloped Circle / Wavy Seal */
+.stamp-seal-item.scalloped_circle {
+  border-radius: 20px;
+  border-style: double;
+  border-width: 4px;
+}
+
+/* 5. Diamond Badge */
+.stamp-seal-item.diamond_badge {
+  border-radius: 10px;
+  clip-path: polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%);
+  border-width: 2.2px;
+}
+
+/* 6. Pill Stadium */
+.stamp-seal-item.pill_stadium {
+  border-radius: 999px;
+  border-width: 2.5px;
+  padding: 5px 9px;
+}
+.stamp-seal-item.pill_stadium .stamp-seal-inner-frame {
+  border-radius: 999px;
+  border-style: dashed;
+}
+
+/* 7. Shield Crest */
+.stamp-seal-item.shield_crest {
+  border-radius: 6px 6px 22px 22px;
+  border-width: 2.5px;
+}
+.stamp-seal-item.shield_crest .stamp-seal-inner-frame {
+  border-radius: 4px 4px 18px 18px;
+}
+
+/* 8. Notched Rectangle */
+.stamp-seal-item.notched_rect {
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+}
+.stamp-seal-item.notched_rect .stamp-seal-inner-frame {
+  border-style: double;
+  border-width: 2.5px;
+}
+
+/* ── Center Landmark Vector Illustration ── */
+.stamp-landmark-art {
+  width: 58px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 1px;
+}
+.stamp-landmark-art svg {
+  width: 100%;
+  height: 100%;
+  max-height: 32px;
+  display: block;
+}
+
+/* Stamp typography & metadata */
 .stamp-seal-top-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.5rem;
-  letter-spacing: 0.6px;
-  margin-bottom: 2px;
+  justify-content: space-between;
+  width: 90%;
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  margin-bottom: 1px;
+}
+.stamp-seal-tag {
+  font-weight: 900;
+}
+.stamp-seal-star {
+  font-size: 0.55rem;
 }
 .stamp-seal-country-name {
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   font-weight: 900;
-  letter-spacing: 0.5px;
-  margin: 1px 0;
+  letter-spacing: 0.8px;
   line-height: 1.1;
+  margin: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 92%;
 }
-.stamp-seal-port {
-  font-size: 0.5rem;
-  letter-spacing: 0.4px;
-  opacity: 0.9;
-}
-.stamp-seal-center-row {
+.stamp-seal-bottom-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  margin: 2px 0;
-}
-.stamp-transport-icon {
-  font-size: 0.8rem;
-}
-.stamp-seal-auth {
-  font-size: 0.5rem;
-  letter-spacing: 0.8px;
-}
-.stamp-seal-date-box {
-  font-size: 0.54rem;
-  letter-spacing: 0.4px;
+  justify-content: center;
+  gap: 5px;
+  width: 90%;
   border-top: 1px dashed currentColor;
   padding-top: 2px;
   margin-top: 2px;
-  width: 90%;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+.stamp-transport-icon {
+  font-size: 0.75rem;
+}
+.stamp-seal-date-box {
+  font-size: 0.52rem;
+  letter-spacing: 0.4px;
 }
 .stamp-seal-item.exit-mini {
   transform: scale(0.85);
+  margin-top: 4px;
 }
 .passport-page-sheet-footer {
   margin-top: 10px;
@@ -10531,16 +10671,114 @@ body[data-theme="light"] .stamp-transport-select {
   text-overflow: ellipsis;
 }
 
-/* ─── Compact Passport Button in Profile Header ─── */
-.profile-passport-btn {
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(202, 138, 4, 0.12)) !important;
-  border: 1px solid rgba(234, 179, 8, 0.45) !important;
-  color: #fef08a !important;
+/* ─── Luxury Sanal Pasaport Hero Card in Profile Header (User Request) ─── */
+.profile-hero-passport-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(245, 158, 11, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  width: 100%;
 }
-.profile-passport-btn:hover {
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.35), rgba(202, 138, 4, 0.22)) !important;
-  border-color: #facc15 !important;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.3) !important;
+.profile-hero-passport-btn.bordo {
+  background: linear-gradient(135deg, #4a0418 0%, #7f1d1d 60%, #450a0a 100%);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.profile-hero-passport-btn.yesil {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 60%, #022c22 100%);
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.profile-hero-passport-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(245, 158, 11, 0.35);
+}
+.profile-hero-passport-btn.yesil:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(16, 185, 129, 0.35);
+}
+.passport-hero-badge-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  gap: 1px;
+}
+.hero-emblem-flag {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.hero-p-chip {
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #fef08a;
+}
+.profile-hero-passport-btn.yesil .hero-p-chip {
+  color: #a7f3d0;
+}
+.passport-hero-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.passport-hero-title-main {
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  color: #fef08a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.profile-hero-passport-btn.yesil .passport-hero-title-main {
+  color: #ecfdf5;
+}
+.passport-hero-sub {
+  font-size: 0.70rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Secondary Poster Trigger Button */
+.profile-secondary-poster-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--theme-text-main, #f8fafc);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+.profile-secondary-poster-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 /* ─── Passport Page Switcher in Modal ─── */
@@ -10999,9 +11237,10 @@ body[data-theme="light"] .stamp-transport-select {
   border-color: rgba(16, 185, 129, 0.45);
 }
 .aircraft-row-item.detail-open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-color: var(--aircraft-accent, #38bdf8);
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border: 1px solid var(--aircraft-accent, #38bdf8) !important;
+  border-bottom: none !important;
   background: rgba(15, 23, 42, 0.95);
 }
 .aircraft-row-left {
@@ -11093,10 +11332,12 @@ body[data-theme="light"] .stamp-transport-select {
   color: #38bdf8;
 }
 
-/* ── 5. Aircraft Detail Card & Inner Bindim Button (User Request) ── */
+/* ── 5. Aircraft Detail Card & Inner +/- Button (User Request) ── */
 .aircraft-detail-card {
-  border: 1px solid var(--aircraft-accent, rgba(255, 255, 255, 0.15));
-  border-top: none;
+  border: 1px solid var(--aircraft-accent, #38bdf8) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
   background: rgba(10, 16, 30, 0.95);
@@ -11108,40 +11349,52 @@ body[data-theme="light"] .stamp-transport-select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   gap: 10px;
-  flex-wrap: wrap;
 }
 .aircraft-detail-header-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
-.aircraft-detail-bindim-btn {
+.aircraft-tech-flown-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
   border-radius: 99px;
-  font-size: 0.80rem;
-  font-weight: 800;
-  font-family: inherit;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
-  transition: all 0.2s ease;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   touch-action: manipulation;
+  user-select: none;
+  flex-shrink: 0;
 }
-.aircraft-detail-bindim-btn:hover {
+.aircraft-tech-flown-btn:hover {
+  transform: scale(1.1);
   background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.35);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
 }
-.aircraft-detail-bindim-btn.flown {
+.aircraft-tech-flown-btn.flown {
   background: linear-gradient(135deg, #059669, #10b981);
   border-color: #10b981;
   color: #ffffff;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+.aircraft-flown-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
