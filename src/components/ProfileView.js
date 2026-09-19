@@ -1959,8 +1959,54 @@ export function renderProfileView(container, onBack) {
     );
     const passportNo = 'U' + String(userHash).padStart(8, '0').slice(0, 8);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
     const visitedCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited');
     if (stats.turkeyCount > 0 && !visitedCodes.includes('TR')) visitedCodes.push('TR');
+
+    // Helper: compute exit date if not provided (3-6 days after entry date)
+    const computeExitDateStr = (entryDateStr, countryCode, index) => {
+      try {
+        const parts = String(entryDateStr).split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const day = parseInt(parts[2], 10);
+          const d = new Date(year, month, day);
+          if (!isNaN(d.getTime())) {
+            const stayDays = 3 + (((countryCode ? countryCode.charCodeAt(0) : 65) + index) % 4);
+            d.setDate(d.getDate() + stayDays);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dt = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dt}`;
+          }
+        }
+      } catch {}
+      return entryDateStr;
+    };
+
+    // Chronological sorting: oldest visit to newest visit
+    const getVisitSortDate = (code) => {
+      if (code === 'TR' && stats.turkeyCount > 0 && !storageData.worldVisits?.['TR']) {
+        const tProvs = Object.values(storageData.turkeyVisits || {});
+        const pDates = tProvs.map(p => p.entryDate || p.date).filter(Boolean);
+        if (pDates.length > 0) {
+          pDates.sort();
+          return pDates[0];
+        }
+      }
+      const v = storageData.worldVisits?.[code] || {};
+      return v.entryDate || v.date || v.markedAt || todayStr;
+    };
+
+    visitedCodes.sort((a, b) => {
+      const dateA = getVisitSortDate(a);
+      const dateB = getVisitSortDate(b);
+      const cmp = dateA.localeCompare(dateB);
+      if (cmp !== 0) return cmp;
+      return a.localeCompare(b);
+    });
 
     const transportIcons = {
       flight: '✈️',
@@ -2106,28 +2152,35 @@ export function renderProfileView(container, onBack) {
                             const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
                             const cName = getCountryDisplayName(country);
                             const visit = storageData.worldVisits?.[cCode] || {};
-                            const todayStr = new Date().toISOString().split('T')[0];
-                            const entryDate = formatDate(visit.entryDate || visit.date || todayStr);
+                            
+                            // If user didn't enter visit date, default to marked date or today
+                            const rawEntryDate = visit.entryDate || visit.date || visit.markedAt || todayStr;
+                            const entryDate = formatDate(rawEntryDate);
                             const defaultTrans = cCode === 'TR' ? 'car' : 'flight';
                             const entryTrans = transportIcons[visit.entryTransport || defaultTrans] || '✈️';
-                            const exitDate = visit.exitDate ? formatDate(visit.exitDate) : null;
+
+                            // Always provide paired exit stamp (calculated realistic departure if not set)
+                            const rawExitDate = visit.exitDate || computeExitDateStr(rawEntryDate, cCode, globalIdx);
+                            const exitDate = formatDate(rawExitDate);
                             const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
 
                             const stampStyle = getCountryStampStyle(cCode, globalIdx);
+                            const stampCountryName = (cName || stampStyle.label || cCode).toUpperCase();
 
                             return `
                               <div class="passport-stamp-cell">
+                                <!-- Giriş Damgası (İkonik Mimari Simge ile) -->
                                 <div class="stamp-seal-item ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation}deg);">
                                   <div class="stamp-seal-inner-frame">
                                     <div class="stamp-seal-top-bar">
                                       <span class="stamp-seal-tag">${cCode}</span>
-                                      <span class="stamp-seal-action">${currentLang === 'tr' ? 'GİRİŞ • ADMITTED' : 'ENTRY • ADMITTED'}</span>
+                                      <span class="stamp-seal-action">${currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'}</span>
                                       <span class="stamp-seal-star">★</span>
                                     </div>
                                     <div class="stamp-landmark-art" style="color:${stampStyle.ink};">
                                       ${stampStyle.landmarkSvg}
                                     </div>
-                                    <div class="stamp-seal-country-name">${escapeHtml(stampStyle.label || cName.toUpperCase())}</div>
+                                    <div class="stamp-seal-country-name">${escapeHtml(stampCountryName)}</div>
                                     <div class="stamp-seal-bottom-row">
                                       <span class="stamp-transport-icon">${entryTrans}</span>
                                       <span class="stamp-seal-date-box">${entryDate}</span>
@@ -2135,20 +2188,19 @@ export function renderProfileView(container, onBack) {
                                   </div>
                                 </div>
 
-                                ${exitDate ? `
-                                  <div class="stamp-seal-item exit-mini ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation * -0.8}deg);margin-top:6px;">
-                                    <div class="stamp-seal-inner-frame">
-                                      <div class="stamp-seal-top-bar">
-                                        <span class="stamp-seal-tag">${cCode}</span>
-                                        <span class="stamp-seal-action">${currentLang === 'tr' ? 'ÇIKIŞ • DEPARTED' : 'EXIT • DEPARTED'}</span>
-                                      </div>
-                                      <div class="stamp-seal-bottom-row">
-                                        <span class="stamp-transport-icon">${exitTrans}</span>
-                                        <span class="stamp-seal-date-box">${exitDate}</span>
-                                      </div>
+                                <!-- Çıkış Damgası (Resmi Sınır Çıkış Mührü) -->
+                                <div class="stamp-seal-item exit-mini" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation * -0.6}deg);">
+                                  <div class="stamp-seal-inner-frame">
+                                    <div class="stamp-seal-top-bar">
+                                      <span class="stamp-seal-tag">${cCode}</span>
+                                      <span class="stamp-seal-action">${currentLang === 'tr' ? 'ÇIKIŞ' : 'EXIT'}</span>
+                                    </div>
+                                    <div class="stamp-seal-bottom-row">
+                                      <span class="stamp-transport-icon">${exitTrans}</span>
+                                      <span class="stamp-seal-date-box">${exitDate}</span>
                                     </div>
                                   </div>
-                                ` : ''}
+                                </div>
                               </div>
                             `;
                           }).join('')}

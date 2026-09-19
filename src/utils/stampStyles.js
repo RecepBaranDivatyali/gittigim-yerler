@@ -368,6 +368,22 @@ export const LANDMARK_SVGS = {
     <path d="M12 38h56M16 38c0-8 4-16 6-16s6 8 6 16M52 38c0-8 4-16 6-16s6 8 6 16M32 38c0-14 8-26 8-26s8 12 8 26" fill="currentColor" fill-opacity="0.15" />
   </svg>`,
 
+  // Kosova (XK): Newborn Anıtı & Prizren Kalesi
+  XK: `<svg viewBox="0 0 80 44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 38h60M12 36c10-14 46-14 56 0" stroke-width="2.2" />
+    <path d="M22 28c5-4 15-4 20 0M42 28c5-4 15-4 20 0" stroke-dasharray="2 2" />
+    <path d="M20 20h8v6h-8zM36 16h8v10h-8zM52 20h8v6h-8z" fill="currentColor" fill-opacity="0.15" />
+    <circle cx="40" cy="11" r="2" fill="currentColor" />
+  </svg>`,
+
+  // Slovakya (SK): Bratislava Kalesi & Tuna Nehri
+  SK: `<svg viewBox="0 0 80 44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 38c15-2 30-2 45 0s15 2 15 0" />
+    <path d="M16 34V18h48v16" />
+    <path d="M14 18V10l4-3 4 3v8M38 18V12l3-2 3 2v6M58 18V10l4-3 4 3v8" fill="currentColor" fill-opacity="0.15" />
+    <path d="M26 24h6v6h-6zM48 24h6v6h-6z" />
+  </svg>`,
+
   // Jenerik Ülke Özel Mühür Rozeti (Herhangi Bir Ülke İçin Kod & Çelenk İle Dinamik Üretilir)
   DEFAULT: `<svg viewBox="0 0 80 44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="40" cy="22" r="16" stroke-dasharray="3 3" />
@@ -381,65 +397,67 @@ export const LANDMARK_SVGS = {
 export const COUNTRY_CUSTOM_STAMPS = {
   // Türkiye & Balkanlar
   'TR': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TURKISH_RED, label: 'TÜRKİYE', landmark: 'TR' },
-  'GR': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.COBALT, label: 'HELLAS', landmark: 'GR' },
-  'BA': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TEAL, label: 'BOSNA I HERCEGOVINA', landmark: 'BA' },
-  'MK': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.TERRACOTTA, label: 'NORTH MACEDONIA', landmark: 'MK' },
-  'AL': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'SHQIPËRIA', landmark: 'AL' },
-  'ME': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.NAVY, label: 'CRNA GORA', landmark: 'ME' },
-  'RS': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'SRBIJA', landmark: 'RS' },
-  'HR': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.BURGUNDY, label: 'HRVATSKA', landmark: 'HR' },
-  'BG': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'BULGARIA', landmark: 'BG' },
-  'RO': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.BURGUNDY, label: 'ROMANIA', landmark: 'RO' },
+  'GR': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.COBALT, label: 'YUNANİSTAN', landmark: 'GR' },
+  'BA': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TEAL, label: 'BOSNA-HERSEK', landmark: 'BA' },
+  'MK': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.TERRACOTTA, label: 'KUZEY MAKEDONYA', landmark: 'MK' },
+  'AL': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'ARNAVUTLUK', landmark: 'AL' },
+  'ME': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.NAVY, label: 'KARADAĞ', landmark: 'ME' },
+  'RS': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'SIRBİSTAN', landmark: 'RS' },
+  'HR': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.BURGUNDY, label: 'HIRVATİSTAN', landmark: 'HR' },
+  'BG': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'BULGARİSTAN', landmark: 'BG' },
+  'RO': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.BURGUNDY, label: 'ROMANYA', landmark: 'RO' },
+  'XK': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'KOSOVA', landmark: 'XK' },
 
   // Batı & Orta Avrupa
-  'FR': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.NAVY, label: 'FRANCE', landmark: 'FR' },
-  'IT': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.BURGUNDY, label: 'ITALIA', landmark: 'IT' },
-  'ES': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TERRACOTTA, label: 'ESPAÑA', landmark: 'ES' },
-  'DE': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.NAVY, label: 'DEUTSCHLAND', landmark: 'DE' },
-  'GB': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.VIOLET, label: 'UNITED KINGDOM', landmark: 'GB' },
-  'NL': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.TERRACOTTA, label: 'NEDERLAND', landmark: 'NL' },
-  'BE': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.NAVY, label: 'BELGIQUE', landmark: 'BE' },
-  'AT': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'ÖSTERREICH', landmark: 'AT' },
-  'CH': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.CRIMSON, label: 'SCHWEIZ', landmark: 'CH' },
-  'HU': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.EMERALD, label: 'MAGYARORSZÁG', landmark: 'HU' },
-  'CZ': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.COBALT, label: 'ČESKÁ REPUBLIKA', landmark: 'CZ' },
-  'PL': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'POLSKA', landmark: 'PL' },
-  'PT': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.TEAL, label: 'PORTUGAL', landmark: 'PT' },
+  'FR': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.NAVY, label: 'FRANSA', landmark: 'FR' },
+  'IT': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.BURGUNDY, label: 'İTALYA', landmark: 'IT' },
+  'ES': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TERRACOTTA, label: 'İSPANYA', landmark: 'ES' },
+  'DE': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.NAVY, label: 'ALMANYA', landmark: 'DE' },
+  'GB': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.VIOLET, label: 'BİRLEŞİK KRALLIK', landmark: 'GB' },
+  'NL': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.TERRACOTTA, label: 'HOLLANDA', landmark: 'NL' },
+  'BE': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.NAVY, label: 'BELÇİKA', landmark: 'BE' },
+  'AT': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'AVUSTURYA', landmark: 'AT' },
+  'CH': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.CRIMSON, label: 'İSVİÇRE', landmark: 'CH' },
+  'HU': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.EMERALD, label: 'MACARİSTAN', landmark: 'HU' },
+  'CZ': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.COBALT, label: 'ÇEKYA', landmark: 'CZ' },
+  'SK': { shape: STAMP_SHAPES.NOTCHED_RECT, ink: STAMP_INKS.NAVY, label: 'SLOVAKYA', landmark: 'SK' },
+  'PL': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.CRIMSON, label: 'POLONYA', landmark: 'PL' },
+  'PT': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.TEAL, label: 'PORTEKİZ', landmark: 'PT' },
 
   // İskandinavya
-  'SE': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'SVERIGE', landmark: 'SE' },
-  'NO': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.TEAL, label: 'NORGE', landmark: 'NO' },
-  'DK': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.CRIMSON, label: 'DANMARK', landmark: 'DK' },
-  'FI': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.COBALT, label: 'SUOMI', landmark: 'FI' },
+  'SE': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'İSVEÇ', landmark: 'SE' },
+  'NO': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.TEAL, label: 'NORVEÇ', landmark: 'NO' },
+  'DK': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.CRIMSON, label: 'DANİMARKA', landmark: 'DK' },
+  'FI': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.COBALT, label: 'FİNLANDİYA', landmark: 'FI' },
 
   // Kafkaslar & Doğu Avrupa
-  'AZ': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.COBALT, label: 'AZƏRBAYCAN', landmark: 'AZ' },
-  'GE': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.BURGUNDY, label: 'GEORGIA', landmark: 'GE' },
-  'RU': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.BURGUNDY, label: 'RUSSIA', landmark: 'RU' },
+  'AZ': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.COBALT, label: 'AZERBAYCAN', landmark: 'AZ' },
+  'GE': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.BURGUNDY, label: 'GÜRCİSTAN', landmark: 'GE' },
+  'RU': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.BURGUNDY, label: 'RUSYA', landmark: 'RU' },
 
   // Orta Doğu & Kuzey Afrika
-  'EG': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.TERRACOTTA, label: 'EGYPT', landmark: 'EG' },
-  'SA': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'SAUDI ARABIA', landmark: 'SA' },
-  'AE': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TEAL, label: 'EMIRATES', landmark: 'AE' },
-  'JO': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'JORDAN', landmark: 'JO' },
-  'MA': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TERRACOTTA, label: 'MAROC', landmark: 'MA' },
+  'EG': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.TERRACOTTA, label: 'MISIR', landmark: 'EG' },
+  'SA': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'SUUDİ ARABİSTAN', landmark: 'SA' },
+  'AE': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TEAL, label: 'B.A.E.', landmark: 'AE' },
+  'JO': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'ÜRDÜN', landmark: 'JO' },
+  'MA': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TERRACOTTA, label: 'FAS', landmark: 'MA' },
 
   // Asya & Pasifik
-  'JP': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.CRIMSON, label: 'NIPPON', landmark: 'JP' },
-  'CN': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.CRIMSON, label: 'CHINA', landmark: 'CN' },
-  'KR': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.COBALT, label: 'KOREA', landmark: 'KR' },
-  'IN': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'INDIA', landmark: 'IN' },
-  'TH': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'THAILAND', landmark: 'TH' },
-  'ID': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'INDONESIA', landmark: 'ID' },
-  'VN': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.TEAL, label: 'VIET NAM', landmark: 'VN' },
-  'KH': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.BURGUNDY, label: 'CAMBODIA', landmark: 'KH' },
-  'AU': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TEAL, label: 'AUSTRALIA', landmark: 'AU' },
+  'JP': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.CRIMSON, label: 'JAPONYA', landmark: 'JP' },
+  'CN': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.CRIMSON, label: 'ÇİN', landmark: 'CN' },
+  'KR': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.COBALT, label: 'GÜNEY KORE', landmark: 'KR' },
+  'IN': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'HİNDİSTAN', landmark: 'IN' },
+  'TH': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.TERRACOTTA, label: 'TAYLAND', landmark: 'TH' },
+  'ID': { shape: STAMP_SHAPES.OCTAGON_SEAL, ink: STAMP_INKS.EMERALD, label: 'ENDONEZYA', landmark: 'ID' },
+  'VN': { shape: STAMP_SHAPES.PILL_STADIUM, ink: STAMP_INKS.TEAL, label: 'VİETNAM', landmark: 'VN' },
+  'KH': { shape: STAMP_SHAPES.ARCH_TEMPLE, ink: STAMP_INKS.BURGUNDY, label: 'KAMBOÇYA', landmark: 'KH' },
+  'AU': { shape: STAMP_SHAPES.HEX_POINTED, ink: STAMP_INKS.TEAL, label: 'AVUSTRALYA', landmark: 'AU' },
 
   // Amerika Kıtası
-  'US': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'UNITED STATES', landmark: 'US' },
-  'CA': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.TURKISH_RED, label: 'CANADA', landmark: 'CA' },
-  'MX': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.TERRACOTTA, label: 'MÉXICO', landmark: 'MX' },
-  'BR': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.EMERALD, label: 'BRASIL', landmark: 'BR' }
+  'US': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.COBALT, label: 'A.B.D.', landmark: 'US' },
+  'CA': { shape: STAMP_SHAPES.SHIELD_CREST, ink: STAMP_INKS.TURKISH_RED, label: 'KANADA', landmark: 'CA' },
+  'MX': { shape: STAMP_SHAPES.DIAMOND_BADGE, ink: STAMP_INKS.TERRACOTTA, label: 'MEKSİKA', landmark: 'MX' },
+  'BR': { shape: STAMP_SHAPES.SCALLOPED_CIRCLE, ink: STAMP_INKS.EMERALD, label: 'BREZİLYA', landmark: 'BR' }
 };
 
 /**

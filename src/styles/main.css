@@ -1795,6 +1795,7 @@ svg, g, path {
 .profile-passport-full-row {
   width: 100%;
   margin-top: 14px;
+  margin-bottom: 20px;
 }
 
 .profile-username {
@@ -8106,7 +8107,7 @@ body > .floating-sim-switch-pill {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 105px;
+  min-height: 125px;
   position: relative;
   min-width: 0;
   box-sizing: border-box;
@@ -8291,8 +8292,32 @@ body > .floating-sim-switch-pill {
   letter-spacing: 0.4px;
 }
 .stamp-seal-item.exit-mini {
-  transform: scale(0.85);
-  margin-top: 4px;
+  width: 90%;
+  max-width: 90%;
+  margin-top: 5px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  border-width: 1.5px;
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.stamp-seal-item.exit-mini .stamp-seal-inner-frame {
+  min-height: auto;
+  padding: 2px 4px;
+  border-style: dashed;
+  border-width: 1px;
+}
+.stamp-seal-item.exit-mini .stamp-seal-top-bar {
+  width: 95%;
+  font-size: 0.46rem;
+  margin-bottom: 2px;
+}
+.stamp-seal-item.exit-mini .stamp-seal-bottom-row {
+  width: 95%;
+  margin-top: 2px;
+  padding-top: 1px;
+  font-size: 0.50rem;
 }
 .passport-page-sheet-footer {
   margin-top: 10px;
