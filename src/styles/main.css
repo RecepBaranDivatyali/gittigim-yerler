@@ -8326,7 +8326,6 @@ body[data-theme="pure_oled"] .passport-modal-dialog,
 body[data-theme="pure_oled"] .alliance-set-card,
 body[data-theme="pure_oled"] .airline-card,
 body[data-theme="pure_oled"] .aircraft-card,
-body[data-theme="pure_oled"] .aircraft-row-item,
 body[data-theme="pure_oled"] .comp-card-box,
 body[data-theme="pure_oled"] .bucket-item-card,
 body[data-theme="pure_oled"] .challenges-section,
@@ -8336,6 +8335,26 @@ body[data-theme="pure_oled"] .clean-status-popup .leaflet-popup-content-wrapper 
   background: #050505 !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.95) !important;
+}
+body[data-theme="pure_oled"] .aircraft-row-item {
+  background: #080d1a !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-left: 3px solid var(--aircraft-accent, #38bdf8) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.95) !important;
+}
+body[data-theme="pure_oled"] .aircraft-row-item.detail-open {
+  background: #0d1527 !important;
+  border: 1px solid var(--aircraft-accent, #38bdf8) !important;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12) !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+body[data-theme="pure_oled"] .aircraft-detail-card {
+  background: #060a14 !important;
+  border: 1px solid var(--aircraft-accent, #38bdf8) !important;
+  border-top: none !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
 }
 body[data-theme="pure_oled"] .profile-stats,
 body[data-theme="pure_oled"] .pstat {
@@ -11220,6 +11239,7 @@ body[data-theme="light"] .stamp-transport-select {
   gap: 10px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--aircraft-accent, #38bdf8);
   border-radius: 14px;
   padding: 10px 14px;
   cursor: pointer;
