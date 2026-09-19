@@ -7,7 +7,6 @@ import {
   AIRLINE_ALLIANCES, ALL_AIRLINES, AIRCRAFT_MODELS, AIRCRAFT_FAMILIES, getAircraftBlueprint,
   getSavedFriends, saveFriend, deleteFriend,
   getHomeCountry, setHomeCountry,
-  exportBackup, importBackup,
   getPassportType, setPassportType,
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount
@@ -20,7 +19,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
-import { escapeHtml, sanitizeText, parseSecureShareCode } from '../utils/security.js';
+import { escapeHtml, sanitizeText } from '../utils/security.js';
 import { 
   searchTravelersByUsername, getTravelerByUsername, 
   registerOrUpdateCurrentUser, getAllCommunityTravelers 
@@ -86,6 +85,8 @@ export function renderProfileView(container, onBack) {
         if (confirm(t('logoutConfirm'))) {
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
+          sessionStorage.removeItem('gv_logged_in');
+          sessionStorage.removeItem('gv_profile');
           location.reload();
         }
       });
@@ -121,7 +122,7 @@ export function renderProfileView(container, onBack) {
     const currentLang = getLanguage();
     let profile = { username: 'Kullanıcı', avatar: '🧭', bio: '' };
     try {
-      const profileStr = localStorage.getItem('gv_profile');
+      const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (profileStr) {
         const parsed = JSON.parse(profileStr);
         if (parsed && typeof parsed === 'object') profile = parsed;
@@ -197,33 +198,37 @@ export function renderProfileView(container, onBack) {
       <div class="profile-main">
         <div class="profile-card">
           <div class="profile-header">
-            <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="Avatar" />` : escapeHtml(profile.avatar || '🧭')}</div>
+            <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
-                <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
-                <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
+                <div class="profile-title-badges">
+                  <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
+                  <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
+                </div>
+                <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
+                  <span>📸</span> <span>${currentLang === 'tr' ? 'Seyahat Posteri' : 'Travel Poster'}</span>
+                </button>
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
-            <div class="profile-header-actions">
-              <button id="btn-trigger-passport" class="profile-hero-passport-btn ${isYesilPassport ? 'yesil' : 'bordo'}" title="${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Passport'}">
-                <div class="passport-hero-badge-icon">
-                  <span class="hero-emblem-flag">🇹🇷</span>
-                  <span class="hero-p-chip">${isYesilPassport ? 'YEŞİL' : 'BORDO'}</span>
+          </div>
+
+          <!-- Sanal Pasaport Hero Card (Satır Boyunca Tam Genişlik - User Request) -->
+          <div class="profile-passport-full-row">
+            <button id="btn-trigger-passport" class="profile-hero-passport-btn ${isYesilPassport ? 'yesil' : 'bordo'}" title="${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Passport'}">
+              <div class="passport-hero-badge-icon">
+                <span class="hero-emblem-flag">🇹🇷</span>
+                <span class="hero-p-chip">${isYesilPassport ? 'YEŞİL' : 'BORDO'}</span>
+              </div>
+              <div class="passport-hero-info">
+                <div class="passport-hero-title">
+                  <span class="passport-hero-title-main">🛂 ${currentLang === 'tr' ? 'SANAL PASAPORT' : 'VIRTUAL PASSPORT'}</span>
                 </div>
-                <div class="passport-hero-info">
-                  <div class="passport-hero-title">
-                    <span class="passport-hero-title-main">🛂 ${currentLang === 'tr' ? 'SANAL PASAPORT' : 'VIRTUAL PASSPORT'}</span>
-                  </div>
-                  <div class="passport-hero-sub">
-                    ${currentLang === 'tr' ? `${baseStats.worldCountryCount || 0} Ülke Mührü • Damgaları İncele ➔` : `${baseStats.worldCountryCount || 0} Country Seals • View Stamps ➔`}
-                  </div>
+                <div class="passport-hero-sub">
+                  ${currentLang === 'tr' ? `${baseStats.worldCountryCount || 0} Ülke Mührü • Damgalar ve Vize Belgeleri ➔` : `${baseStats.worldCountryCount || 0} Country Seals • View Stamps & Visas ➔`}
                 </div>
-              </button>
-              <button id="btn-trigger-poster" class="profile-secondary-poster-btn" title="${t('createPoster')}">
-                <span>📸</span> <span>${t('createPoster')}</span>
-              </button>
-            </div>
+              </div>
+            </button>
           </div>
           <div class="profile-stats">
             <div class="pstat"><span class="pstat-num" style="color:var(--status-visited, #ff5722)">${baseStats.worldCountryCount || 0}</span><span class="pstat-lbl">${t('countriesVisited')}</span></div>
@@ -614,7 +619,7 @@ export function renderProfileView(container, onBack) {
           
           <div class="settings-profile-preview">
             <div class="settings-profile-avatar" id="settings-preview-avatar">
-              ${userProfile.photoUrl ? `<img src="${userProfile.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(userProfile.avatar || '🧭')}
+              ${userProfile.photoUrl ? `<img src="${userProfile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(userProfile.avatar || '🧭')}</span>` : escapeHtml(userProfile.avatar || '🧭')}
             </div>
             <div class="settings-profile-info">
               <div class="settings-profile-name">
@@ -886,32 +891,7 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
-        <!-- 7. Data Backup & Restore -->
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <h3 class="settings-card-title">💾 ${t('backupTitle')}</h3>
-          </div>
-          <p class="settings-card-desc">${t('backupDesc')}</p>
-          <div class="backup-actions-grid">
-            <button type="button" class="backup-action-card" id="settings-export-backup-btn">
-              <span class="backup-icon">📥</span>
-              <div>
-                <div class="backup-title">${t('downloadBackup')}</div>
-                <div class="backup-subtitle">${currentLang === 'tr' ? 'Tüm verilerinizi tek bir .json dosyasında cihazınıza indirin' : 'Export all your travel data as a .json backup'}</div>
-              </div>
-            </button>
-            <button type="button" class="backup-action-card" id="settings-import-backup-btn">
-              <span class="backup-icon">📤</span>
-              <div>
-                <div class="backup-title">${t('restoreBackup')}</div>
-                <div class="backup-subtitle">${currentLang === 'tr' ? 'Daha önce aldığınız bir yedek dosyasını geri yükleyin' : 'Restore from a previously saved backup file'}</div>
-              </div>
-            </button>
-            <input type="file" id="settings-backup-file-input" accept=".json" style="display:none;">
-          </div>
-        </div>
-
-        <!-- 8. Danger Zone -->
+        <!-- 7. Danger Zone -->
         <div class="settings-card settings-danger-card">
           <div class="settings-card-header">
             <h3 class="settings-card-title" style="color:#ef4444;">⚠️ ${t('dangerZone')}</h3>
@@ -1180,44 +1160,7 @@ export function renderProfileView(container, onBack) {
       render();
     });
 
-    // 7. Backup & Restore
-    document.getElementById('settings-export-backup-btn')?.addEventListener('click', () => {
-      exportBackup();
-    });
-
-    const fileInput = document.getElementById('settings-backup-file-input');
-    document.getElementById('settings-import-backup-btn')?.addEventListener('click', () => {
-      fileInput?.click();
-    });
-
-    fileInput?.addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try { e.target.value = ''; } catch {}
-        const content = event.target?.result;
-        if (content) {
-          const success = importBackup(content);
-          if (success) {
-            alert(t('backupRestored'));
-            render();
-            if (window.__refreshMapStats) {
-              window.__refreshMapStats();
-            }
-          } else {
-            alert(t('backupError'));
-          }
-        }
-      };
-      reader.onerror = () => {
-        try { e.target.value = ''; } catch {}
-        alert(t('backupError'));
-      };
-      reader.readAsText(file);
-    });
-
-    // 8. Danger Zone - Reset Data
+    // 7. Danger Zone - Reset Data
     document.getElementById('profile-reset-map-btn')?.addEventListener('click', () => {
       if (confirm(t('resetConfirm'))) {
         resetTravelData();
@@ -2000,7 +1943,7 @@ export function renderProfileView(container, onBack) {
     
     let profile = { username: 'Gezgin', avatar: '🧭', bio: '' };
     try {
-      const profileStr = localStorage.getItem('gv_profile');
+      const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (profileStr) {
         const parsed = JSON.parse(profileStr);
         if (parsed && typeof parsed === 'object') profile = parsed;
@@ -2471,7 +2414,7 @@ export function renderProfileView(container, onBack) {
     const stats = calculateStats();
     let profile = { username: 'Gezgin', avatar: '🧭', bio: '' };
     try {
-      const profileStr = localStorage.getItem('gv_profile');
+      const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (profileStr) {
         const parsed = JSON.parse(profileStr);
         if (parsed && typeof parsed === 'object') profile = parsed;
@@ -2798,19 +2741,11 @@ export function renderProfileView(container, onBack) {
               
               <div class="friend-search-input-wrap">
                 <span class="friend-search-icon">🔍</span>
-                <input type="text" id="friend-search-input" class="friend-search-input" placeholder="${currentLang === 'tr' ? 'Kullanıcı adı yazın (örn: @atlas_mert, @selin...)' : 'Type username (e.g. @atlas_mert)...'}" autocomplete="off" />
+                <input type="text" id="friend-search-input" class="friend-search-input" placeholder="${currentLang === 'tr' ? 'Kullanıcı adı yazın (örn: atlas_mert, selin...)' : 'Type username (e.g. atlas_mert, selin...)'}" autocomplete="off" />
               </div>
 
               <!-- Live search / suggestions dropdown -->
               <div id="friend-search-results" class="friend-search-results" style="display:none; margin-top:12px;"></div>
-
-              <details style="margin-top:16px;font-size:0.8rem;color:var(--theme-text-muted, #94a3b8);">
-                <summary style="cursor:pointer;user-select:none;">${currentLang === 'tr' ? 'Eski paylaşım kodu ile yükle (İsteğe bağlı)' : 'Load with legacy share code (Optional)'}</summary>
-                <div style="margin-top:10px;">
-                  <textarea class="compare-code-input" id="compare-code" rows="2" placeholder="${t('comparePlaceholder')}"></textarea>
-                  <button class="compare-load-btn" id="compare-load-btn" style="margin-top:8px;">⚡ ${t('loadProfile')}</button>
-                </div>
-              </details>
             </div>
             <div id="compare-other-card" style="display:none;"></div>
           </div>
@@ -2823,7 +2758,7 @@ export function renderProfileView(container, onBack) {
     // Render my profile in compare
     let myProfile = { username: 'Sen', avatar: '🧭', bio: '' };
     try {
-      const myProfileStr = localStorage.getItem('gv_profile');
+      const myProfileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (myProfileStr) {
         const parsed = JSON.parse(myProfileStr);
         if (parsed && typeof parsed === 'object') myProfile = parsed;
@@ -3495,41 +3430,18 @@ export function renderProfileView(container, onBack) {
     if (searchInput) {
       searchInput.addEventListener('focus', () => {
         const val = searchInput.value.trim();
-        const list = val ? searchTravelersByUsername(val) : getAllCommunityTravelers();
+        const cleanVal = val.replace(/^@+/, '').trim();
+        const list = cleanVal ? searchTravelersByUsername(cleanVal) : getAllCommunityTravelers();
         renderSearchResults(list);
       });
 
       searchInput.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        const list = val ? searchTravelersByUsername(val) : getAllCommunityTravelers();
+        const cleanVal = val.replace(/^@+/, '').trim();
+        const list = cleanVal ? searchTravelersByUsername(cleanVal) : getAllCommunityTravelers();
         renderSearchResults(list);
       });
     }
-
-    // Manual load button
-    document.getElementById('compare-load-btn')?.addEventListener('click', () => {
-      const codeInput = document.getElementById('compare-code');
-      const code = codeInput ? codeInput.value.trim() : '';
-      if (!code) {
-        alert(currentLang === 'tr' ? 'Lütfen bir profil paylaşım kodu yapıştırın.' : 'Please paste a profile share code.');
-        return;
-      }
-
-      try {
-        const decoded = parseSecureShareCode(code);
-        if (!decoded) throw new Error('Invalid code format');
-        applyFriendComparison(
-          decoded.profile || { username: 'Arkadaşın', avatar: '✈️' },
-          decoded.worldVisits || {},
-          decoded.turkeyVisits || {},
-          decoded.worldCities || [],
-          code
-        );
-      } catch (err) {
-        console.error('Compare parse error:', err);
-        alert(t('invalidCode'));
-      }
-    });
   }
 
   // Mount and render profile view

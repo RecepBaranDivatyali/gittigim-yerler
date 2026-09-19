@@ -630,9 +630,9 @@ export const WORLD_VISA_DATA = {
     "vd": "Vizesiz (30 Gün)"
   },
   "ID": {
-    "vb": "vizesiz",
-    "vy": "vizesiz",
-    "vd": "Vizesiz (30 Gün, Online Form)"
+    "vb": "kapida_vize",
+    "vy": "kapida_vize",
+    "vd": "Kapıda Vize / e-VoA (30 Gün, 500.000 IDR)"
   },
   "VN": {
     "vb": "e_vize",
@@ -1095,14 +1095,14 @@ export const WORLD_VISA_DATA = {
     "vd": "Fas Kontrolünde Giriş (90 Gün)"
   },
   "AU": {
-    "vb": "e_vize",
-    "vy": "e_vize",
-    "vd": "Online eVisitor / e600 Vizesi Zorunlu"
+    "vb": "vize",
+    "vy": "vize",
+    "vd": "Ziyaretçi Vizesi (Subclass 600 Online Başvuru)"
   },
   "NZ": {
-    "vb": "e_vize",
-    "vy": "e_vize",
-    "vd": "Online NZeTA / Vize Zorunlu"
+    "vb": "vize",
+    "vy": "vize",
+    "vd": "Ziyaretçi Vizesi Zorunlu"
   },
   "FJ": {
     "vb": "vizesiz",

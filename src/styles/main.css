@@ -1433,7 +1433,157 @@ svg, g, path {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
+}
+
+/* ── Modern Auth (Sign In / Register) Elements ── */
+.auth-tabs-row {
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.90rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.auth-tab-btn:hover {
+  color: #f8fafc;
+}
+
+.auth-tab-btn.active {
+  background: linear-gradient(135deg, rgba(255, 87, 34, 0.25), rgba(245, 158, 11, 0.25));
+  border: 1px solid rgba(255, 87, 34, 0.4);
+  color: #ff7043;
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.15);
+}
+
+.google-auth-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 12px;
+  color: #3c4043;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 18px;
+}
+
+.google-auth-btn:hover {
+  background: #f8f9fa;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.google-auth-btn:active {
+  transform: translateY(0);
+}
+
+.google-icon-svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.auth-divider span {
+  padding: 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.auth-checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.auth-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-checkbox-label input[type="checkbox"] {
+  accent-color: #ff5722;
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.auth-switch-prompt {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.84rem;
+  margin-top: 14px;
+}
+
+.auth-switch-link {
+  color: #ff7043;
+  font-weight: 700;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-left: 4px;
+}
+
+.auth-switch-link:hover {
+  color: #ff8a65;
 }
 
 .input-group label {
@@ -1606,8 +1756,45 @@ svg, g, path {
 .profile-user-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.profile-title-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-compact-poster-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+  padding: 5px 12px;
+  color: #f1f5f9;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.profile-compact-poster-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.profile-passport-full-row {
+  width: 100%;
+  margin-top: 14px;
 }
 
 .profile-username {
@@ -8955,6 +9142,7 @@ body[data-theme="nordic_frost"] .leaflet-container {
   width: 100%;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 .visa-mode-chip {
   display: flex;
@@ -8963,11 +9151,21 @@ body[data-theme="nordic_frost"] .leaflet-container {
   gap: 5px;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 5px 4px;
+  padding: 5px 6px;
   border-radius: 8px;
   white-space: nowrap;
   box-sizing: border-box;
   text-align: center;
+}
+@media (max-width: 480px) {
+  .visa-banner-chips-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .visa-mode-chip {
+    padding: 6px 10px;
+    font-size: 0.74rem;
+  }
 }
 .visa-mode-chip .chip-dot {
   width: 7px;
@@ -11231,6 +11429,11 @@ body[data-theme="light"] .stamp-transport-select {
 .aircraft-row-wrapper {
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+  border-radius: 14px;
+}
+.aircraft-row-wrapper:has(.aircraft-row-item.detail-open):hover {
+  transform: translateY(-1px);
 }
 .aircraft-row-item {
   display: flex;
@@ -11247,7 +11450,7 @@ body[data-theme="light"] .stamp-transport-select {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
-.aircraft-row-item:hover {
+.aircraft-row-item:not(.detail-open):hover {
   background: rgba(15, 23, 42, 0.95);
   border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
@@ -11262,6 +11465,12 @@ body[data-theme="light"] .stamp-transport-select {
   border: 1px solid var(--aircraft-accent, #38bdf8) !important;
   border-bottom: none !important;
   background: rgba(15, 23, 42, 0.95);
+  transform: none !important;
+}
+.aircraft-row-wrapper:hover .aircraft-row-item.detail-open {
+  background: rgba(20, 30, 52, 0.98);
+  border-color: var(--aircraft-accent, #38bdf8) !important;
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.35);
 }
 .aircraft-row-left {
   display: flex;
@@ -11364,6 +11573,11 @@ body[data-theme="light"] .stamp-transport-select {
   animation: popupSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+}
+.aircraft-row-wrapper:hover .aircraft-detail-card {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 16px var(--aircraft-accent, rgba(56, 189, 248, 0.22));
+  background: rgba(12, 19, 36, 0.98);
 }
 .aircraft-detail-header-row {
   display: flex;
