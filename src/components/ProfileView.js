@@ -1820,16 +1820,16 @@ export function renderProfileView(container, onBack) {
               <span>👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}: <strong>%${stats.populationPercent || 0}</strong></span>
             </div>
 
-            <!-- Visited Countries Badges Preview (top 16) -->
+            <!-- Visited Countries Flags Grid (Sadece Bayraklar) -->
             ${visitedCodes.length > 0 ? `
-              <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'}</div>
-              <div class="poster-flags-grid">
-                ${visitedCodes.slice(0, 16).map(cCode => {
+              <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'} (${visitedCodes.length})</div>
+              <div class="poster-flags-grid flags-only">
+                ${visitedCodes.slice(0, 35).map(cCode => {
                   const c = WORLD_COUNTRIES.find(x => x.code === cCode);
                   const cName = c ? getCountryDisplayName(c) : cCode;
-                  return `<span class="poster-flag-chip"><img src="https://flagcdn.com/w40/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /> ${escapeHtml(cName)}</span>`;
+                  return `<span class="poster-flag-chip flag-only" title="${escapeHtml(cName)}"><img src="https://flagcdn.com/w80/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /></span>`;
                 }).join('')}
-                ${visitedCodes.length > 16 ? `<span class="poster-flag-chip more">+${visitedCodes.length - 16} ${currentLang === 'tr' ? 'daha' : 'more'}</span>` : ''}
+                ${visitedCodes.length > 35 ? `<span class="poster-flag-chip more">+${visitedCodes.length - 35}</span>` : ''}
               </div>
             ` : ''}
 
