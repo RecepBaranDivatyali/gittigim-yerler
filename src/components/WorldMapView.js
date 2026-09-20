@@ -2830,8 +2830,8 @@ function onViewChange() {
 
   // ── World region layers (Level 2) ──────────────────────────────────────────
   if (zoom >= REGION_ZOOM) {
-    // Top 8 visible countries nearest to screen center get region layers mounted (prevents 40-country lag)
-    const targetCodes = visibleCodes.slice(0, 8);
+    // Top 12 visible countries nearest to screen center get region layers mounted (prevents lag)
+    const targetCodes = visibleCodes.slice(0, 12);
     const targetSet = new Set(targetCodes);
 
     // Evict off-screen or non-priority region layers from the SVG DOM to keep memory tiny & 60fps
@@ -2873,8 +2873,8 @@ function onViewChange() {
 
   // ── World subregion layers (Level 3) ──────────────────────────────────────
   if (zoom >= SUBREGION_ZOOM) {
-    // At deep zoom, only the top 4 most central visible countries need subregions
-    const targetSubCodes = visibleCodes.slice(0, 4);
+    // At deep zoom, only the top 6 most central visible countries need subregions
+    const targetSubCodes = visibleCodes.slice(0, 6);
     const targetSubSet = new Set(targetSubCodes);
 
     // Evict off-screen subregion layers
@@ -3030,7 +3030,7 @@ function attachRegionLayer(code, data) {
 
   // Validate state before mounting: user must still be at zoom >= REGION_ZOOM and country must still be visible!
   if (map && map.getZoom() >= REGION_ZOOM) {
-    const visibleNow = new Set(getVisibleCountries().slice(0, 8));
+    const visibleNow = new Set(getVisibleCountries().slice(0, 12));
     if (visibleNow.has(code)) {
       layer.addTo(map);
       if (map.getZoom() >= SUBREGION_ZOOM) {
@@ -3149,7 +3149,7 @@ function attachSubregionLayer(code, data) {
 
   subregionLayers[code] = layer;
   if (map && map.getZoom() >= SUBREGION_ZOOM) {
-    const visibleSubNow = new Set(getVisibleCountries().slice(0, 4));
+    const visibleSubNow = new Set(getVisibleCountries().slice(0, 6));
     if (visibleSubNow.has(code)) {
       layer.addTo(map);
       refreshRegionLayer(code);
@@ -3366,28 +3366,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   content.innerHTML = `
     <div class="map-status-popup-header" style="justify-content:center;flex-direction:column;align-items:center;margin-bottom:8px;gap:4px;">
-      <div class="map-status-popup-title" style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <div class="map-status-popup-title" style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
         ${flagBadgeHtml} <span>${escapeHtml(cleanTitle)}</span>
+        ${visaBadge ? `<span class="popup-visa-inline-badge ${visaBadge.status}" title="${escapeHtml(visaBadge.label)}${visaBadge.days ? ' · ' + escapeHtml(visaBadge.days) : ''}">${visaBadge.icon} ${escapeHtml(visaBadge.label)}</span>` : ''}
       </div>
-      ${visaBadge ? `
-        <div class="popup-visa-status-card" id="popup-visa-card">
-          <div class="popup-visa-status-main">
-            <div class="popup-visa-status-pill ${visaBadge.status}">
-              <span class="visa-pill-icon">${visaBadge.icon}</span>
-              <span class="visa-pill-label">${escapeHtml(visaBadge.label)}</span>
-            </div>
-            <button type="button" class="popup-visa-passport-toggle-btn" id="btn-toggle-popup-passport" title="Pasaportu Değiştir (Bordo / Yeşil)">
-              <span class="p-flag-name">${passportType === 'yesil' ? '📗 Yeşil Pasaport' : '📕 Bordo Pasaport'}</span>
-              <span class="p-swap-icon">⇄</span>
-            </button>
-          </div>
-          ${visaBadge.days ? `
-            <div class="popup-visa-status-detail">
-              <span>ℹ️ ${escapeHtml(visaBadge.days)}</span>
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
     </div>
 
     <div class="map-status-popup-buttons">

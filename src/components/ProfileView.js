@@ -2074,15 +2074,24 @@ export function renderProfileView(container, onBack) {
 
                 <!-- SAYFA 1: Kapak ve Biyometrik Kimlik Sayfası -->
                 <div class="passport-page-sheet" data-page-index="0">
-                  <!-- Passport Cover Header -->
+                  <!-- Passport Cover Header — Enhanced Design -->
                   <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
+                    <div class="passport-cover-pattern"></div>
+                    <div class="passport-cover-top-row">
+                      <div class="passport-cover-stars">✦ ✦ ✦</div>
+                    </div>
                     <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
                     <div class="passport-cover-emblem">🇹🇷</div>
                     <div class="passport-cover-sub">PASAPORT</div>
+                    <div class="passport-cover-globe-row">🌍</div>
                     <div class="passport-cover-badge">${isYesil ? 'HUSUSİ DAMGALI (YEŞİL)' : 'UMUMA MAHSUS (BORDO)'}</div>
+                    <div class="passport-cover-bottom-row">
+                      <span>REPUBLIC OF TÜRKIYE</span>
+                      <span>PASSPORT</span>
+                    </div>
                   </div>
 
-                  <!-- Identity Page Pane -->
+                  <!-- Identity Page Pane — Enhanced Design -->
                   <div class="passport-id-page">
                     <div class="passport-id-header">
                       <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
@@ -2095,6 +2104,7 @@ export function renderProfileView(container, onBack) {
                           ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
                         </div>
                         <div class="passport-photo-watermark">GEZGİN</div>
+                        <div class="passport-chip-icon">💳</div>
                       </div>
 
                       <div class="passport-fields-grid">
@@ -2121,10 +2131,23 @@ export function renderProfileView(container, onBack) {
                       </div>
                     </div>
 
-                    <div class="passport-stats-bar">
-                      <span class="f-label">${currentLang === 'tr' ? 'SEYAHAT İSTATİSTİĞİ' : 'TRAVEL SUMMARY'}</span>
-                      <div class="f-val-stats">
-                        ${stats.worldCountryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${stats.worldCityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'} • %${stats.worldPercentage} ${currentLang === 'tr' ? 'Dünya' : 'World'} • %${stats.landAreaPercent || 0} ${currentLang === 'tr' ? 'Karasal' : 'Land'} • %${stats.populationPercent || 0} ${currentLang === 'tr' ? 'Nüfus' : 'Pop'}
+                    <!-- Travel Stats Cards Row -->
+                    <div class="passport-stats-cards-row">
+                      <div class="passport-stat-card">
+                        <span class="pstat-num">${stats.worldCountryCount}</span>
+                        <span class="pstat-label">${currentLang === 'tr' ? 'Ülke' : 'Countries'}</span>
+                      </div>
+                      <div class="passport-stat-card">
+                        <span class="pstat-num">${stats.worldCityCount}</span>
+                        <span class="pstat-label">${currentLang === 'tr' ? 'Şehir' : 'Cities'}</span>
+                      </div>
+                      <div class="passport-stat-card">
+                        <span class="pstat-num">%${stats.worldPercentage}</span>
+                        <span class="pstat-label">${currentLang === 'tr' ? 'Dünya' : 'World'}</span>
+                      </div>
+                      <div class="passport-stat-card">
+                        <span class="pstat-num">${visitedCodes.length}</span>
+                        <span class="pstat-label">${currentLang === 'tr' ? 'Damga' : 'Stamps'}</span>
                       </div>
                     </div>
 

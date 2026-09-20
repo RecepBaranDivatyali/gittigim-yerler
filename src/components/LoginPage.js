@@ -4,6 +4,23 @@ import { registerOrUpdateCurrentUser } from '../utils/userDatabase.js';
 
 const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
+/** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
+function hasLegacyData() {
+  try {
+    const worldRaw = localStorage.getItem('gittigim_yerler_world_v2');
+    const turkeyRaw = localStorage.getItem('gittigim_yerler_turkey_v2');
+    if (worldRaw) {
+      const parsed = JSON.parse(worldRaw);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) return true;
+    }
+    if (turkeyRaw) {
+      const parsed = JSON.parse(turkeyRaw);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) return true;
+    }
+  } catch {}
+  return false;
+}
+
 export function renderLoginPage(container, onLogin) {
   // Check if already logged in (Persistent localStorage or current sessionStorage)
   const isLogged = localStorage.getItem('gv_logged_in') === '1' || sessionStorage.getItem('gv_logged_in') === '1';
@@ -24,12 +41,16 @@ export function renderLoginPage(container, onLogin) {
     }
   }
 
+  // Eski veri var mı? Migration modu bayrağı
+  const showMigrationBanner = hasLegacyData() && !localStorage.getItem('gv_migration_dismissed');
+
   let authMode = 'login'; // 'login' | 'register'
   let rememberMe = true;
   let selectedAvatar = '🧭';
   let emailVal = '';
   let passwordVal = '';
   let usernameVal = '';
+
 
   function saveAndCompleteLogin(profile, remember) {
     if (remember) {
@@ -160,6 +181,23 @@ export function renderLoginPage(container, onLogin) {
         </div>
 
         <div class="login-card">
+          <!-- 🔄 Migration Banner: Eski verisi olan kullanıcılar için -->
+          ${showMigrationBanner ? `
+            <div class="migration-banner" id="migration-banner">
+              <div class="migration-banner-icon">📦</div>
+              <div class="migration-banner-text">
+                <strong>${currentLang === 'tr' ? 'Gezgin verileriniz bu cihazda!' : 'Your Gezgin data is on this device!'}</strong>
+                <span>${currentLang === 'tr' ? 'Hesap oluşturarak tüm verilerinizi koruyabilirsiniz.' : 'Create an account to keep all your data.'}</span>
+              </div>
+              <div class="migration-banner-actions">
+                <button type="button" class="migration-cta-btn" id="btn-migration-signup">
+                  ${currentLang === 'tr' ? '✨ Hesap Oluştur' : '✨ Create Account'}
+                </button>
+                <button type="button" class="migration-dismiss-btn" id="btn-migration-dismiss" title="${currentLang === 'tr' ? 'Kapat' : 'Dismiss'}">✕</button>
+              </div>
+            </div>
+          ` : ''}
+
           <!-- Logo & Branding -->
           <div class="login-logo">
             <span class="login-globe">🌍</span>
@@ -260,6 +298,17 @@ export function renderLoginPage(container, onLogin) {
 
     rememberCheckbox?.addEventListener('change', (e) => {
       rememberMe = e.target.checked;
+    });
+
+    // Migration banner butonları
+    container.querySelector('#btn-migration-signup')?.addEventListener('click', () => {
+      authMode = 'register';
+      render();
+    });
+    container.querySelector('#btn-migration-dismiss')?.addEventListener('click', () => {
+      localStorage.setItem('gv_migration_dismissed', '1');
+      const banner = container.querySelector('#migration-banner');
+      if (banner) banner.remove();
     });
 
     const syncFormState = () => {
