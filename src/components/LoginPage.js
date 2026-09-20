@@ -68,7 +68,15 @@ export function renderLoginPage(container, onLogin) {
     }
 
     try {
-      registerOrUpdateCurrentUser(profile);
+      let worldVisits = {};
+      let turkeyVisits = {};
+      let worldCities = [];
+      try {
+        worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
+        turkeyVisits = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}');
+        worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_world_cities_v2') || '[]');
+      } catch {}
+      registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, worldCities);
     } catch (e) {
       console.warn('Could not register in community db', e);
     }

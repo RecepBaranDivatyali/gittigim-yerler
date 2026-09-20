@@ -28,7 +28,11 @@ export default async function handler(req, res) {
     const nowStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
 
     const cleanId = (req.body && req.body.id) ? String(req.body.id).trim().slice(0, 50) : ('fb_' + Date.now());
-    const telegramText = `📬 *Yeni Gezgin Bildirimi!*\n\n🆔 *ID:* \`${cleanId}\`\n🏷️ *Tür:* ${typeLabel}\n👤 *Kullanıcı:* ${cleanUsername}\n📱 *İletişim:* ${cleanContact}\n\n📝 *Mesaj:*\n"${cleanMsg}"\n\n🕒 *Zaman:* ${nowStr}`;
+
+    // Escape HTML for safe Telegram rendering (prevents Markdown parsing failures)
+    const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const telegramText = `📬 <b>Yeni Gezgin Bildirimi!</b>\n\n🆔 <b>ID:</b> <code>${esc(cleanId)}</code>\n🏷️ <b>Tür:</b> ${esc(typeLabel)}\n👤 <b>Kullanıcı:</b> ${esc(cleanUsername)}\n📱 <b>İletişim:</b> ${esc(cleanContact)}\n\n📝 <b>Mesaj:</b>\n${esc(cleanMsg)}\n\n🕒 <b>Zaman:</b> ${esc(nowStr)}`;
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN || '8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU';
     const chatId = process.env.TELEGRAM_CHAT_ID || '7906240525';
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         chat_id: chatId,
         text: telegramText,
-        parse_mode: 'Markdown'
+        parse_mode: 'HTML'
       })
     });
 

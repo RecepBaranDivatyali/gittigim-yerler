@@ -608,6 +608,40 @@ export function saveUserFeedback(item) {
   }
 }
 
+// Telegram Bot Direct Fallback Credentials
+const TELEGRAM_BOT_TOKEN = '8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU';
+const TELEGRAM_CHAT_ID = '7906240525';
+
+export async function sendFeedbackToTelegramDirect(fb) {
+  try {
+    const typeLabel = fb.type === 'bug' ? '🐞 Hata / Bug' : (fb.type === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
+    const nowStr = new Date(fb.createdAt || Date.now()).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const cleanMsg = String(fb.message || '').trim().slice(0, 1000);
+    const cleanContact = fb.contact ? String(fb.contact).trim().slice(0, 120) : 'Belirtilmedi';
+    const cleanUsername = fb.username ? String(fb.username).trim().slice(0, 60) : 'Gezgin';
+    const cleanId = String(fb.id || ('fb_' + Date.now())).trim().slice(0, 50);
+
+    const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const telegramText = `📬 <b>Yeni Gezgin Bildirimi!</b>\n\n🆔 <b>ID:</b> <code>${esc(cleanId)}</code>\n🏷️ <b>Tür:</b> ${esc(typeLabel)}\n👤 <b>Kullanıcı:</b> ${esc(cleanUsername)}\n📱 <b>İletişim:</b> ${esc(cleanContact)}\n\n📝 <b>Mesaj:</b>\n${esc(cleanMsg)}\n\n🕒 <b>Zaman:</b> ${esc(nowStr)}`;
+
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: telegramText,
+        parse_mode: 'HTML'
+      })
+    });
+    const data = await res.json();
+    return data && data.ok;
+  } catch (err) {
+    console.warn('Direct Telegram dispatch error:', err);
+    return false;
+  }
+}
+
 export async function syncPendingFeedbacks() {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return false;
@@ -628,6 +662,8 @@ export async function syncPendingFeedbacks() {
 
     let updated = false;
     for (const fb of pending) {
+      let isSent = false;
+      // 1. Try Vercel Serverless Endpoint first
       try {
         const res = await fetch(apiUrl, {
           method: 'POST',
@@ -641,12 +677,21 @@ export async function syncPendingFeedbacks() {
           })
         });
         if (res.ok) {
-          fb.synced = true;
-          fb.syncedAt = new Date().toISOString();
-          updated = true;
+          isSent = true;
         }
       } catch (err) {
-        console.warn('Sync pending feedback deferred for item:', fb.id, err);
+        console.warn('Vercel feedback sync failed, trying Telegram direct fallback:', fb.id, err);
+      }
+
+      // 2. Direct Telegram Fallback if Vercel serverless wasn't reachable
+      if (!isSent) {
+        isSent = await sendFeedbackToTelegramDirect(fb);
+      }
+
+      if (isSent) {
+        fb.synced = true;
+        fb.syncedAt = new Date().toISOString();
+        updated = true;
       }
     }
 
@@ -658,6 +703,33 @@ export async function syncPendingFeedbacks() {
   } catch (e) {
     console.error('Error syncing pending feedbacks', e);
     return false;
+  }
+}
+
+/** Admin / Geliştirici için: Yereldeki tüm bildirimleri Telegram'a topluca senkronize eder */
+export async function resyncAllFeedbacksToTelegram() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    if (!raw) return { count: 0, success: true };
+    let feedbacks = JSON.parse(raw);
+    if (!Array.isArray(feedbacks) || feedbacks.length === 0) return { count: 0, success: true };
+
+    let sentCount = 0;
+    for (const fb of feedbacks) {
+      const ok = await sendFeedbackToTelegramDirect(fb);
+      if (ok) {
+        fb.synced = true;
+        fb.syncedAt = new Date().toISOString();
+        sentCount++;
+      }
+    }
+
+    safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+    notifyStateChange();
+    return { count: sentCount, total: feedbacks.length, success: true };
+  } catch (err) {
+    console.error('Resync all feedbacks error:', err);
+    return { count: 0, success: false, error: err.message };
   }
 }
 

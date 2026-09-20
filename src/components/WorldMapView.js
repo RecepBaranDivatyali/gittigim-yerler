@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, setPassportType, getUserVisaOverride, setUserVisaOverride } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, setPassportType, getUserVisaOverride, setUserVisaOverride, sendFeedbackToTelegramDirect, resyncAllFeedbacksToTelegram } from '../utils/storage.js';
 import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
@@ -13,6 +13,18 @@ import { escapeHtml } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
+
+export function isCurrentUserSuperAdmin() {
+  try {
+    const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+    if (!profileStr) return false;
+    const profile = JSON.parse(profileStr);
+    const email = String(profile.email || '').toLowerCase().trim();
+    return email === 'baranimoley@gmail.com' || email === 'barandivatyali@gmail.com';
+  } catch {
+    return false;
+  }
+}
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -722,20 +734,22 @@ export function renderWorldMapView(container, options = {}) {
                 <!-- Injected dynamically -->
               </div>
 
-              <!-- Admin Mode Toggle & Login Section -->
-              <div class="fb-admin-section" id="fb-admin-auth-section">
-                <div class="fb-admin-toggle-row">
-                  <button type="button" id="btn-toggle-admin" class="fb-admin-toggle-btn">
-                    <span>👑</span> <span>${t('adminMode')}</span>
-                  </button>
-                </div>
-                <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;margin-top:8px;">
-                  <div class="fb-admin-auth-row" id="fb-admin-auth-row">
-                    <input type="password" id="fb-admin-pin" class="feedback-input" style="width:140px;margin:0;" placeholder="${t('adminPinPlaceholder')}" />
-                    <button type="button" id="btn-admin-login" class="feedback-submit-btn" style="width:auto;padding:8px 16px;margin:0;">Giriş</button>
+              <!-- Admin Mode Toggle & Login Section (Sadece baranimoley@gmail.com veya barandivatyali@gmail.com hesabına açık) -->
+              ${isCurrentUserSuperAdmin() ? `
+                <div class="fb-admin-section" id="fb-admin-auth-section">
+                  <div class="fb-admin-toggle-row">
+                    <button type="button" id="btn-toggle-admin" class="fb-admin-toggle-btn">
+                      <span>👑</span> <span>${t('adminMode')}</span>
+                    </button>
+                  </div>
+                  <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;margin-top:8px;">
+                    <div class="fb-admin-auth-row" id="fb-admin-auth-row">
+                      <input type="password" id="fb-admin-pin" class="feedback-input" style="width:140px;margin:0;" placeholder="Geliştirici Şifresi" />
+                      <button type="button" id="btn-admin-login" class="feedback-submit-btn" style="width:auto;padding:8px 16px;margin:0;">Giriş</button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -1152,7 +1166,7 @@ export function renderWorldMapView(container, options = {}) {
       if (!listWrap) return;
 
       if (authSection) {
-        authSection.style.display = isAdminActive ? 'none' : 'block';
+        authSection.style.display = (isCurrentUserSuperAdmin() && !isAdminActive) ? 'block' : 'none';
       }
 
       const statusMap = {
@@ -1178,11 +1192,14 @@ export function renderWorldMapView(container, options = {}) {
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:1.3rem;">👑</span>
               <div>
-                <div style="font-weight:800;font-size:0.85rem;color:#10b981;">Yönetici Modu (${feedbacks.length} Bildirim)</div>
-                <div style="font-size:0.72rem;color:#94a3b8;">Aşağı kaydırarak her bildirimin durumuna dokunabilirsiniz</div>
+                <div style="font-weight:800;font-size:0.85rem;color:#10b981;">Geliştirici Modu (${feedbacks.length} Bildirim)</div>
+                <div style="font-size:0.72rem;color:#94a3b8;">Telegram botuna aktarabilir veya bildirim durumlarını güncelleyebilirsiniz</div>
               </div>
             </div>
-            <button type="button" id="btn-admin-logout" class="fb-admin-logout-btn">Çıkış Yap</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" id="btn-admin-resync-tg" class="fb-admin-logout-btn" style="background:#0284c7;border-color:#38bdf8;" title="Tüm bildirimleri Telegram botuna gönder">🔄 Telegram'a Aktar</button>
+              <button type="button" id="btn-admin-logout" class="fb-admin-logout-btn">Çıkış</button>
+            </div>
           </div>
         `;
       }
@@ -1221,7 +1238,7 @@ export function renderWorldMapView(container, options = {}) {
                 ${(isAdminActive && fb.contact) ? `<span style="font-size:0.72rem;color:#94a3b8;">📱 ${escapeHtml(fb.contact)}</span>` : ''}
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
-                ${fb.synced === false ? `<span class="feedback-status-badge status-pending" title="İnternet bağlantısı kurulduğunda iletilecektir" style="background:rgba(234,179,8,0.18);color:#fbbf24;border-color:rgba(234,179,8,0.35);">⏳ İletilmeyi Bekliyor</span>` : ''}
+                ${fb.synced === false ? `<span class="feedback-status-badge status-pending" title="İnternet bağlantısı kurulduğunda iletilecektir" style="background:rgba(234,179,8,0.18);color:#fbbf24;border-color:rgba(234,179,8,0.35);">⏳ İletilmeyi Bekliyor</span>` : `<span class="feedback-status-badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:0.68rem;">✓ Telegram</span>`}
                 <span class="feedback-status-badge ${st.class}">${st.label}</span>
               </div>
             </div>
@@ -1244,6 +1261,9 @@ export function renderWorldMapView(container, options = {}) {
                 </div>
 
                 <div class="fb-admin-actions-bar">
+                  <button type="button" class="fb-action-link-btn fb-send-tg-btn" data-id="${escapeHtml(fb.id)}" style="color:#38bdf8;">
+                    ✈️ Telegram'a İlet
+                  </button>
                   <button type="button" class="fb-action-link-btn fb-toggle-note-btn" data-id="${escapeHtml(fb.id)}">
                     ${fb.devResponse ? '✏️ Yanıtı Güncelle' : '💬 Kullanıcıya Yanıt Yaz'}
                   </button>
@@ -1274,6 +1294,50 @@ export function renderWorldMapView(container, options = {}) {
           isAdminActive = false;
           localStorage.removeItem('gv_admin_active');
           renderFeedbackList();
+        });
+
+        // Tüm bildirimleri Telegram'a topluca aktar listener
+        container.querySelector('#btn-admin-resync-tg')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const btn = container.querySelector('#btn-admin-resync-tg');
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⏳ Aktarılıyor...';
+          }
+          const res = await resyncAllFeedbacksToTelegram();
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔄 Telegram\'a Aktar';
+          }
+          if (res.success) {
+            alert(`✅ ${res.count} adet bildirim Telegram botuna başarıyla aktarıldı!`);
+          } else {
+            alert('⚠️ Aktarım sırasında hata oluştu: ' + (res.error || 'Bilinmeyen hata'));
+          }
+          renderFeedbackList();
+        });
+
+        // Tek bir bildirimi doğrudan Telegram'a ilet
+        listWrap.querySelectorAll('.fb-send-tg-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-id');
+            const fb = feedbacks.find(f => f.id === targetId);
+            if (!fb) return;
+            btn.disabled = true;
+            btn.textContent = '⏳ İletiliyor...';
+            const ok = await sendFeedbackToTelegramDirect(fb);
+            btn.disabled = false;
+            btn.textContent = ok ? '✓ İletildi' : '⚠️ Tekrar Dene';
+            if (ok) {
+              fb.synced = true;
+              fb.syncedAt = new Date().toISOString();
+              try {
+                localStorage.setItem('gv_user_feedbacks', JSON.stringify(feedbacks));
+              } catch {}
+              setTimeout(() => renderFeedbackList(), 600);
+            }
+          });
         });
 
         // Quick status pills (1-click direct status toggle)
@@ -1460,7 +1524,19 @@ export function renderWorldMapView(container, options = {}) {
             console.warn('Feedback serverless endpoint returned status:', res.status);
           }
         } catch (err) {
-          console.warn('Feedback offline, saved locally for auto-sync:', err);
+          console.warn('Feedback offline or serverless unreachable, trying Telegram direct fallback:', err);
+        }
+
+        // Direct Telegram Fallback if serverless didn't succeed
+        if (!isSent) {
+          isSent = await sendFeedbackToTelegramDirect({
+            id: feedbackId,
+            type: activeFeedbackType,
+            message: msg,
+            contact,
+            username: userName,
+            createdAt: new Date().toISOString()
+          });
         }
 
         // 2. Save to user feedbacks storage
@@ -1510,14 +1586,14 @@ export function renderWorldMapView(container, options = {}) {
       const handleAdminLogin = (e) => {
         if (e) e.stopPropagation();
         const pin = adminPinInput.value.trim();
-        if (pin === '1923' || pin === 'admin') {
+        if (pin === '2179') {
           isAdminActive = true;
           localStorage.setItem('gv_admin_active', '1');
           adminPinInput.value = '';
           if (adminDrawer) adminDrawer.style.display = 'none';
           renderFeedbackList();
         } else {
-          alert('Hatalı PIN!');
+          alert('Hatalı Geliştirici Şifresi!');
         }
       };
 
