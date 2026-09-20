@@ -4798,24 +4798,64 @@ function refreshStats() {
   if (selectedCountryCode && selectedCountryCode !== 'TR' && rEl) {
     const c = WORLD_COUNTRIES.find(x => x.code === selectedCountryCode);
     if (c) {
-      const prefix = `${selectedCountryCode}::`;
-      const regVisited = Object.entries(worldVisits).filter(([k, v]) => k.startsWith(prefix) && v.status === 'visited').length;
-      const totalReg = regionCache[selectedCountryCode]?.features?.length || 0;
-
-      rEl.style.display = 'block';
+      const isGermany = selectedCountryCode === 'DE';
       const flagImgHtml = getFlagHtml(c.code);
-      rEl.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div>
-            <div style="font-size:0.85rem;font-weight:700;color:var(--theme-text-main, #f8fafc);display:flex;align-items:center;">${flagImgHtml}<span>${getCountryDisplayName(c)}</span></div>
-            <div class="stats-label">${c.continent}</div>
+      rEl.style.display = 'block';
+
+      if (isGermany) {
+        const GERMAN_STATES = [
+          'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
+          'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
+          'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
+          'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
+        ];
+        const stateVisited = GERMAN_STATES.filter(s => {
+          if (worldVisits[`DE::${s}`]?.status === 'visited') return true;
+          const subs = getSubregionsForParentRegion('DE', s);
+          return subs.some(sub => worldVisits[`DE::${sub}`]?.status === 'visited');
+        }).length;
+        const totalStates = 16;
+
+        const subregionKeys = Object.keys(KNOWN_SUBREGION_PARENTS);
+        const cityVisited = subregionKeys.filter(k => worldVisits[k]?.status === 'visited').length;
+        const totalCities = subregionKeys.length || 40;
+
+        rEl.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div>
+              <div style="font-size:0.85rem;font-weight:700;color:var(--theme-text-main, #f8fafc);display:flex;align-items:center;">${flagImgHtml}<span>${getCountryDisplayName(c)}</span></div>
+              <div class="stats-label">${c.continent}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;text-align:right;">
+              <div>
+                <div class="stats-number" style="color:#10b981;">${stateVisited}<span style="font-size:0.75rem;color:var(--theme-text-muted, #64748b);">/${totalStates}</span></div>
+                <div class="stats-label">${t('statesVisited')}</div>
+              </div>
+              <div>
+                <div class="stats-number" style="color:#3b82f6;">${cityVisited}<span style="font-size:0.75rem;color:var(--theme-text-muted, #64748b);">/${totalCities}</span></div>
+                <div class="stats-label">${t('citiesVisited')}</div>
+              </div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div class="stats-number" style="color:#3b82f6;">${regVisited}${totalReg > 0 ? `<span style="font-size:0.85rem;color:var(--theme-text-muted, #64748b);">/${totalReg}</span>` : ''}</div>
-            <div class="stats-label">${t('citiesVisited')}</div>
+        `;
+      } else {
+        const prefix = `${selectedCountryCode}::`;
+        const regVisited = Object.entries(worldVisits).filter(([k, v]) => k.startsWith(prefix) && v.status === 'visited').length;
+        const totalReg = regionCache[selectedCountryCode]?.features?.length || 0;
+
+        rEl.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:0.85rem;font-weight:700;color:var(--theme-text-main, #f8fafc);display:flex;align-items:center;">${flagImgHtml}<span>${getCountryDisplayName(c)}</span></div>
+              <div class="stats-label">${c.continent}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="stats-number" style="color:#3b82f6;">${regVisited}${totalReg > 0 ? `<span style="font-size:0.85rem;color:var(--theme-text-muted, #64748b);">/${totalReg}</span>` : ''}</div>
+              <div class="stats-label">${t('citiesVisited')}</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
   } else if (rEl) {
     rEl.style.display = 'none';
