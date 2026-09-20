@@ -4803,10 +4803,11 @@ function refreshStats() {
       const totalReg = regionCache[selectedCountryCode]?.features?.length || 0;
 
       rEl.style.display = 'block';
+      const flagImgHtml = getFlagHtml(c.code);
       rEl.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div>
-            <div style="font-size:0.85rem;font-weight:700;color:var(--theme-text-main, #f8fafc);">${c.flag} ${getCountryDisplayName(c)}</div>
+            <div style="font-size:0.85rem;font-weight:700;color:var(--theme-text-main, #f8fafc);display:flex;align-items:center;">${flagImgHtml}<span>${getCountryDisplayName(c)}</span></div>
             <div class="stats-label">${c.continent}</div>
           </div>
           <div style="text-align:right;">
