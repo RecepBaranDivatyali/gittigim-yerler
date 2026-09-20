@@ -5,7 +5,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
 import { WORLD_CITIES_INDEX } from '../data/worldCitiesData.js';
 import { getLocalizedName } from '../data/regionNames.js';
-import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, setPassportType, getUserVisaOverride, setUserVisaOverride, sendFeedbackToTelegramDirect, resyncAllFeedbacksToTelegram } from '../utils/storage.js';
+import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUserFeedbacks, saveUserFeedback, updateFeedbackStatus, deleteUserFeedback, getHomeCountry, syncPendingFeedbacks, getPassportType, setPassportType, getUserVisaOverride, setUserVisaOverride, sendFeedbackToTelegramDirect } from '../utils/storage.js';
 import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors } from '../utils/theme.js';
@@ -1187,20 +1187,31 @@ export function renderWorldMapView(container, options = {}) {
       let html = '';
 
       if (isAdminActive) {
+        const unsentCount = feedbacks.filter(fb => fb.synced !== true).length;
         html += `
           <div class="fb-admin-status-banner">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:1.3rem;">👑</span>
               <div>
                 <div style="font-weight:800;font-size:0.85rem;color:#10b981;">Geliştirici Modu (${feedbacks.length} Bildirim)</div>
-                <div style="font-size:0.72rem;color:#94a3b8;">Telegram botuna aktarabilir veya bildirim durumlarını güncelleyebilirsiniz</div>
+                <div style="font-size:0.72rem;color:#94a3b8;">Otomatik Telegram İletim Sistemi & Bildirim Yönetimi</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" id="btn-admin-resync-tg" class="fb-admin-logout-btn" style="background:#0284c7;border-color:#38bdf8;" title="Tüm bildirimleri Telegram botuna gönder">🔄 Telegram'a Aktar</button>
+              ${unsentCount > 0 ? `
+                <span style="font-size:0.7rem;background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);padding:3px 7px;border-radius:6px;font-weight:700;">⚠️ ${unsentCount} İletim Bekliyor</span>
+              ` : `
+                <span style="font-size:0.7rem;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:3px 7px;border-radius:6px;font-weight:700;">✓ Telegram Otomatik Aktif</span>
+              `}
               <button type="button" id="btn-admin-logout" class="fb-admin-logout-btn">Çıkış</button>
             </div>
           </div>
+          ${unsentCount > 0 ? `
+            <div style="margin:8px 0;padding:8px 12px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:10px;font-size:0.74rem;color:#fcd34d;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.1rem;">⚠️</span>
+              <div><b>${unsentCount} adet bildirim kuyrukta bekliyor.</b> Cihaz internete bağlandığında arka planda otomatik olarak Telegram'ınıza iletilecektir.</div>
+            </div>
+          ` : ''}
         `;
       }
 
@@ -1238,7 +1249,11 @@ export function renderWorldMapView(container, options = {}) {
                 ${(isAdminActive && fb.contact) ? `<span style="font-size:0.72rem;color:#94a3b8;">📱 ${escapeHtml(fb.contact)}</span>` : ''}
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
-                ${fb.synced === false ? `<span class="feedback-status-badge status-pending" title="İnternet bağlantısı kurulduğunda iletilecektir" style="background:rgba(234,179,8,0.18);color:#fbbf24;border-color:rgba(234,179,8,0.35);">⏳ İletilmeyi Bekliyor</span>` : `<span class="feedback-status-badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:0.68rem;">✓ Telegram</span>`}
+                ${fb.synced === true ? `
+                  <span class="feedback-status-badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:0.68rem;" title="${fb.syncedAt ? 'İletildi: ' + new Date(fb.syncedAt).toLocaleString('tr-TR') : 'Telegram\'a ulaştı'}">✓ Telegram</span>
+                ` : `
+                  <span class="feedback-status-badge status-pending" title="${escapeHtml(fb.failReason || 'İnternet bağlantısı kurulduğunda otomatik iletilecektir')}" style="background:rgba(234,179,8,0.18);color:#fbbf24;border-color:rgba(234,179,8,0.35);font-size:0.68rem;">⏳ İletim Bekliyor</span>
+                `}
                 <span class="feedback-status-badge ${st.class}">${st.label}</span>
               </div>
             </div>
@@ -1261,9 +1276,6 @@ export function renderWorldMapView(container, options = {}) {
                 </div>
 
                 <div class="fb-admin-actions-bar">
-                  <button type="button" class="fb-action-link-btn fb-send-tg-btn" data-id="${escapeHtml(fb.id)}" style="color:#38bdf8;">
-                    ✈️ Telegram'a İlet
-                  </button>
                   <button type="button" class="fb-action-link-btn fb-toggle-note-btn" data-id="${escapeHtml(fb.id)}">
                     ${fb.devResponse ? '✏️ Yanıtı Güncelle' : '💬 Kullanıcıya Yanıt Yaz'}
                   </button>
@@ -1288,56 +1300,17 @@ export function renderWorldMapView(container, options = {}) {
 
       // Attach listeners in Admin Mode
       if (isAdminActive) {
+        // Otomatik sessiz arka plan senkronizasyonu: Geliştirici moduna girildiğinde bekleyen varsa anında ilet
+        syncPendingFeedbacks().then(() => {
+          // Gerekirse badge'leri arka planda yeniler
+        });
+
         // Logout listener
         container.querySelector('#btn-admin-logout')?.addEventListener('click', (e) => {
           e.stopPropagation();
           isAdminActive = false;
           localStorage.removeItem('gv_admin_active');
           renderFeedbackList();
-        });
-
-        // Tüm bildirimleri Telegram'a topluca aktar listener
-        container.querySelector('#btn-admin-resync-tg')?.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const btn = container.querySelector('#btn-admin-resync-tg');
-          if (btn) {
-            btn.disabled = true;
-            btn.textContent = '⏳ Aktarılıyor...';
-          }
-          const res = await resyncAllFeedbacksToTelegram();
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = '🔄 Telegram\'a Aktar';
-          }
-          if (res.success) {
-            alert(`✅ ${res.count} adet bildirim Telegram botuna başarıyla aktarıldı!`);
-          } else {
-            alert('⚠️ Aktarım sırasında hata oluştu: ' + (res.error || 'Bilinmeyen hata'));
-          }
-          renderFeedbackList();
-        });
-
-        // Tek bir bildirimi doğrudan Telegram'a ilet
-        listWrap.querySelectorAll('.fb-send-tg-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const targetId = btn.getAttribute('data-id');
-            const fb = feedbacks.find(f => f.id === targetId);
-            if (!fb) return;
-            btn.disabled = true;
-            btn.textContent = '⏳ İletiliyor...';
-            const ok = await sendFeedbackToTelegramDirect(fb);
-            btn.disabled = false;
-            btn.textContent = ok ? '✓ İletildi' : '⚠️ Tekrar Dene';
-            if (ok) {
-              fb.synced = true;
-              fb.syncedAt = new Date().toISOString();
-              try {
-                localStorage.setItem('gv_user_feedbacks', JSON.stringify(feedbacks));
-              } catch {}
-              setTimeout(() => renderFeedbackList(), 600);
-            }
-          });
         });
 
         // Quick status pills (1-click direct status toggle)
@@ -1499,37 +1472,10 @@ export function renderWorldMapView(container, options = {}) {
         const feedbackId = 'fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
         let isSent = false;
-        // 1. Send via secure Vercel serverless API endpoint
+        let failReason = '';
+        // 1. Direct Telegram dispatch first (Fastest, works universally on mobile & web)
         try {
-          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          const apiUrl = isLocal && !window.Capacitor
-            ? 'https://gittigim-yerler.vercel.app/api/feedback'
-            : '/api/feedback';
-
-          const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: feedbackId,
-              type: activeFeedbackType,
-              message: msg,
-              contact,
-              username: userName
-            })
-          });
-
-          if (res.ok) {
-            isSent = true;
-          } else {
-            console.warn('Feedback serverless endpoint returned status:', res.status);
-          }
-        } catch (err) {
-          console.warn('Feedback offline or serverless unreachable, trying Telegram direct fallback:', err);
-        }
-
-        // Direct Telegram Fallback if serverless didn't succeed
-        if (!isSent) {
-          isSent = await sendFeedbackToTelegramDirect({
+          const res = await sendFeedbackToTelegramDirect({
             id: feedbackId,
             type: activeFeedbackType,
             message: msg,
@@ -1537,16 +1483,54 @@ export function renderWorldMapView(container, options = {}) {
             username: userName,
             createdAt: new Date().toISOString()
           });
+          if (res && res.ok) {
+            isSent = true;
+          } else {
+            failReason = res?.error || 'Doğrudan Telegram gönderimi başarısız';
+          }
+        } catch (err) {
+          failReason = err?.message || 'Ağ bağlantı hatası';
         }
 
-        // 2. Save to user feedbacks storage
+        // 2. Serverless fallback if direct didn't succeed
+        if (!isSent) {
+          try {
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiUrl = isLocal && !window.Capacitor
+              ? 'https://gittigim-yerler.vercel.app/api/feedback'
+              : '/api/feedback';
+
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: feedbackId,
+                type: activeFeedbackType,
+                message: msg,
+                contact,
+                username: userName
+              })
+            });
+
+            if (res.ok) {
+              isSent = true;
+              failReason = '';
+            }
+          } catch (err) {
+            console.warn('Feedback serverless endpoint fallback unreachable:', err);
+          }
+        }
+
+        // 3. Save to user feedbacks storage (with synced status and delivery info)
         saveUserFeedback({
           id: feedbackId,
           type: activeFeedbackType,
           message: msg,
           contact,
           username: userName,
-          synced: isSent
+          synced: isSent,
+          syncedAt: isSent ? new Date().toISOString() : null,
+          failReason: isSent ? null : (failReason || 'İnternet bağlantısı bekleniyor')
         });
 
         submitFeedbackBtn.disabled = false;

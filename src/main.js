@@ -2,7 +2,7 @@ import './styles/main.css';
 import { renderWorldMapView } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
-import { onStateChange, syncPendingFeedbacks } from './utils/storage.js';
+import { onStateChange, syncPendingFeedbacks, initFeedbackSync } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
 import { initPhoneSimulator } from './components/PhoneSimulator.js';
@@ -42,11 +42,8 @@ function initApp() {
     setTimeout(syncAppHeight, 150);
   });
 
-  // Auto-sync any offline feedbacks whenever app boots or device regains internet connection
-  syncPendingFeedbacks();
-  window.addEventListener('online', () => {
-    syncPendingFeedbacks();
-  });
+  // Auto-sync offline feedbacks & archive flush whenever app boots or device regains internet connection
+  initFeedbackSync();
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
 

@@ -562,9 +562,20 @@ export function toggleUserAircraft(modelId) {
 // ─── Feedback & Bug Report Tracker ──────────────────────────────────────────
 export function getUserFeedbacks() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
-    const parsed = raw ? JSON.parse(raw) : null;
-    let feedbacks = Array.isArray(parsed) ? parsed : [];
+    const rawPrimary = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const rawLegacy = localStorage.getItem('gv_user_feedbacks');
+    let feedbacks = [];
+    try {
+      const listA = rawPrimary ? JSON.parse(rawPrimary) : [];
+      const listB = rawLegacy ? JSON.parse(rawLegacy) : [];
+      const seen = new Set();
+      for (const it of [...listA, ...listB]) {
+        if (it && it.id && !seen.has(it.id)) {
+          seen.add(it.id);
+          feedbacks.push(it);
+        }
+      }
+    } catch {}
     
     // Apply any status overrides (e.g. from developer/admin or shared status)
     const overrides = getFeedbackStatusOverrides();
@@ -612,10 +623,11 @@ export function saveUserFeedback(item) {
 const TELEGRAM_BOT_TOKEN = '8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU';
 const TELEGRAM_CHAT_ID = '7906240525';
 
-export async function sendFeedbackToTelegramDirect(fb) {
+export async function sendFeedbackToTelegramDirect(fb, options = {}) {
   try {
     const typeLabel = fb.type === 'bug' ? '🐞 Hata / Bug' : (fb.type === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
-    const nowStr = new Date(fb.createdAt || Date.now()).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const nowStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const createdStr = fb.createdAt ? new Date(fb.createdAt).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : nowStr;
     const cleanMsg = String(fb.message || '').trim().slice(0, 1000);
     const cleanContact = fb.contact ? String(fb.contact).trim().slice(0, 120) : 'Belirtilmedi';
     const cleanUsername = fb.username ? String(fb.username).trim().slice(0, 60) : 'Gezgin';
@@ -623,7 +635,22 @@ export async function sendFeedbackToTelegramDirect(fb) {
 
     const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    const telegramText = `📬 <b>Yeni Gezgin Bildirimi!</b>\n\n🆔 <b>ID:</b> <code>${esc(cleanId)}</code>\n🏷️ <b>Tür:</b> ${esc(typeLabel)}\n👤 <b>Kullanıcı:</b> ${esc(cleanUsername)}\n📱 <b>İletişim:</b> ${esc(cleanContact)}\n\n📝 <b>Mesaj:</b>\n${esc(cleanMsg)}\n\n🕒 <b>Zaman:</b> ${esc(nowStr)}`;
+    let headerPrefix = '📬 <b>Yeni Gezgin Bildirimi!</b>';
+    if (options.isHistorical || fb.isHistoricalArchive) {
+      headerPrefix = '📜 <b>[Geçmiş Bildirim Arşivi - Otomatik İletim]</b>';
+    } else if (options.isQueued || fb.synced === false) {
+      headerPrefix = '🕒 <b>[Kuyruktan İletildi - Gecikmeli Teslimat]</b>';
+    }
+
+    let timeDetails = `🕒 <b>Zaman:</b> ${esc(nowStr)}`;
+    if (createdStr && createdStr !== nowStr) {
+      timeDetails = `📅 <b>Oluşturulma:</b> ${esc(createdStr)}\n⚡ <b>İletilme:</b> ${esc(nowStr)}`;
+    }
+
+    const telegramText = `${headerPrefix}\n\n🆔 <b>ID:</b> <code>${esc(cleanId)}</code>\n🏷️ <b>Tür:</b> ${esc(typeLabel)}\n👤 <b>Kullanıcı:</b> ${esc(cleanUsername)}\n📱 <b>İletişim:</b> ${esc(cleanContact)}\n\n📝 <b>Mesaj:</b>\n${esc(cleanMsg)}\n\n${timeDetails}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -632,71 +659,92 @@ export async function sendFeedbackToTelegramDirect(fb) {
         chat_id: TELEGRAM_CHAT_ID,
         text: telegramText,
         parse_mode: 'HTML'
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+
     const data = await res.json();
-    return data && data.ok;
+    if (data && data.ok) {
+      return { ok: true };
+    }
+    return { ok: false, error: data?.description || 'Telegram reddetti' };
   } catch (err) {
     console.warn('Direct Telegram dispatch error:', err);
-    return false;
+    return { ok: false, error: err?.name === 'AbortError' ? 'Zaman aşımı (12s)' : (err?.message || 'Ağ bağlantı hatası') };
   }
 }
 
+/**
+ * Bekleyen tüm bildirimleri arka planda sessizce ve otomatik olarak Telegram'a aktarır.
+ * Hiçbir buton veya kullanıcı müdahalesi gerektirmez.
+ */
 export async function syncPendingFeedbacks() {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return false;
   }
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
-    if (!raw) return true;
-    let feedbacks = JSON.parse(raw);
+    const rawPrimary = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const rawLegacy = localStorage.getItem('gv_user_feedbacks');
+    let feedbacks = [];
+    try {
+      const listA = rawPrimary ? JSON.parse(rawPrimary) : [];
+      const listB = rawLegacy ? JSON.parse(rawLegacy) : [];
+      const seen = new Set();
+      for (const it of [...listA, ...listB]) {
+        if (it && it.id && !seen.has(it.id)) {
+          seen.add(it.id);
+          feedbacks.push(it);
+        }
+      }
+    } catch {}
+
     if (!Array.isArray(feedbacks) || feedbacks.length === 0) return true;
 
-    const pending = feedbacks.filter(fb => fb.synced === false);
+    // synced değeri true OLMAYAN (false, null, undefined, eski sürümler) her şeyi yakala
+    const pending = feedbacks.filter(fb => fb.synced !== true);
     if (pending.length === 0) return true;
-
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    const apiUrl = isLocal && !(typeof window !== 'undefined' && window.Capacitor)
-      ? 'https://gittigim-yerler.vercel.app/api/feedback'
-      : '/api/feedback';
 
     let updated = false;
     for (const fb of pending) {
-      let isSent = false;
-      // 1. Try Vercel Serverless Endpoint first
-      try {
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: fb.id,
-            type: fb.type,
-            message: fb.message,
-            contact: fb.contact,
-            username: fb.username
-          })
-        });
-        if (res.ok) {
-          isSent = true;
-        }
-      } catch (err) {
-        console.warn('Vercel feedback sync failed, trying Telegram direct fallback:', fb.id, err);
+      let result = await sendFeedbackToTelegramDirect(fb, { isQueued: true });
+
+      // Direct başarısız olursa Vercel sunucusunu dene
+      if (!result.ok) {
+        try {
+          const apiUrl = 'https://gittigim-yerler.vercel.app/api/feedback';
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: fb.id,
+              type: fb.type,
+              message: fb.message,
+              contact: fb.contact,
+              username: fb.username
+            })
+          });
+          if (res.ok) {
+            result = { ok: true };
+          }
+        } catch {}
       }
 
-      // 2. Direct Telegram Fallback if Vercel serverless wasn't reachable
-      if (!isSent) {
-        isSent = await sendFeedbackToTelegramDirect(fb);
-      }
-
-      if (isSent) {
+      if (result.ok) {
         fb.synced = true;
         fb.syncedAt = new Date().toISOString();
+        delete fb.failReason;
+        updated = true;
+      } else {
+        fb.synced = false;
+        fb.failReason = result.error || 'İletim hatası';
         updated = true;
       }
     }
 
     if (updated) {
       safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+      try { localStorage.removeItem('gv_user_feedbacks'); } catch {}
       notifyStateChange();
     }
     return true;
@@ -706,31 +754,82 @@ export async function syncPendingFeedbacks() {
   }
 }
 
-/** Admin / Geliştirici için: Yereldeki tüm bildirimleri Telegram'a topluca senkronize eder */
-export async function resyncAllFeedbacksToTelegram() {
+/**
+ * Geçmiş bildirimleri tek seferliğine tespit edip Telegram'a arşiv olarak iletir.
+ * 'gv_past_feedbacks_flushed_v2' ile mühürlenir, asla mükerrer gönderim yapmaz.
+ */
+export async function flushPastFeedbacksOnce() {
+  if (typeof window === 'undefined') return;
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
-    if (!raw) return { count: 0, success: true };
-    let feedbacks = JSON.parse(raw);
-    if (!Array.isArray(feedbacks) || feedbacks.length === 0) return { count: 0, success: true };
-
-    let sentCount = 0;
-    for (const fb of feedbacks) {
-      const ok = await sendFeedbackToTelegramDirect(fb);
-      if (ok) {
-        fb.synced = true;
-        fb.syncedAt = new Date().toISOString();
-        sentCount++;
-      }
+    const isFlushed = localStorage.getItem('gv_past_feedbacks_flushed_v2');
+    if (isFlushed === 'true') {
+      // Zaten geçmiş aktarımı yapılmış, sadece bekleyenleri senkronize et
+      syncPendingFeedbacks();
+      return;
     }
 
-    safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+    // İlk kez çalışıyor: Tüm geçmiş bildirimleri topla
+    const rawPrimary = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const rawLegacy = localStorage.getItem('gv_user_feedbacks');
+    let feedbacks = [];
+    try {
+      const listA = rawPrimary ? JSON.parse(rawPrimary) : [];
+      const listB = rawLegacy ? JSON.parse(rawLegacy) : [];
+      const seen = new Set();
+      for (const it of [...listA, ...listB]) {
+        if (it && it.id && !seen.has(it.id)) {
+          seen.add(it.id);
+          feedbacks.push(it);
+        }
+      }
+    } catch {}
+
+    if (feedbacks.length > 0) {
+      let count = 0;
+      for (const fb of feedbacks) {
+        // İletilmemiş olanları arşiv damgasıyla gönder
+        if (fb.synced !== true) {
+          const res = await sendFeedbackToTelegramDirect(fb, { isHistorical: true });
+          if (res.ok) {
+            fb.synced = true;
+            fb.syncedAt = new Date().toISOString();
+            fb.isHistoricalArchive = true;
+            delete fb.failReason;
+            count++;
+          }
+        }
+      }
+      safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
+      try { localStorage.removeItem('gv_user_feedbacks'); } catch {}
+      console.log(`[Gezgin] Geçmiş ${count} adet bildirim Telegram'a tek seferlik başarıyla aktarıldı.`);
+    }
+
+    localStorage.setItem('gv_past_feedbacks_flushed_v2', 'true');
     notifyStateChange();
-    return { count: sentCount, total: feedbacks.length, success: true };
   } catch (err) {
-    console.error('Resync all feedbacks error:', err);
-    return { count: 0, success: false, error: err.message };
+    console.warn('Flush past feedbacks error:', err);
   }
+}
+
+/**
+ * Uygulama başlangıcında ve ağ değişikliklerinde otomatik senkronizasyon motorunu başlatır
+ */
+export function initFeedbackSync() {
+  if (typeof window === 'undefined') return;
+  setTimeout(() => {
+    flushPastFeedbacksOnce();
+  }, 1500);
+
+  window.addEventListener('online', () => {
+    syncPendingFeedbacks();
+  });
+
+  // Her 60 saniyede bir arka planda bekleyen varsa otomatik dene
+  setInterval(() => {
+    if (navigator.onLine) {
+      syncPendingFeedbacks();
+    }
+  }, 60000);
 }
 
 export function getFeedbackStatusOverrides() {

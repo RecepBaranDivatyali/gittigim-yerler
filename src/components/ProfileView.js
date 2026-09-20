@@ -197,6 +197,9 @@ export function renderProfileView(container, onBack) {
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
+          <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
+            <span class="poster-icon-emoji">📸</span>
+          </button>
           <div class="profile-header">
             <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
@@ -205,9 +208,6 @@ export function renderProfileView(container, onBack) {
                   <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
                   <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
                 </div>
-                <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
-                  <span>📸</span> <span>${currentLang === 'tr' ? 'Seyahat Posteri' : 'Travel Poster'}</span>
-                </button>
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
