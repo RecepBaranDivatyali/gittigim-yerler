@@ -911,10 +911,10 @@ body {
   padding: 0 !important;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  width: 320px !important;
-  max-width: calc(100vw - 28px) !important;
+  width: 330px !important;
+  max-width: calc(100vw - 24px) !important;
   box-sizing: border-box !important;
-  max-height: min(560px, calc(100vh - 120px)) !important;
+  max-height: min(680px, calc(100vh - 60px)) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain;
@@ -939,8 +939,8 @@ body {
 }
 
 .map-status-popup {
-  padding: 14px 14px 28px 14px;
-  width: 320px !important;
+  padding: 12px 14px 14px 14px;
+  width: 330px !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
   overflow-x: hidden !important;
@@ -951,39 +951,42 @@ body {
   font-size: 0.95rem;
   font-weight: 700;
   color: #f1f5f9;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-align: center;
   letter-spacing: 0.01em;
 }
 
 .map-status-popup-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .map-status-btn {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-radius: 9px;
   border: 1.5px solid color-mix(in srgb, var(--btn-color) 40%, transparent);
   background: color-mix(in srgb, var(--btn-color) 12%, transparent);
   color: color-mix(in srgb, var(--btn-color) 90%, #fff);
   cursor: pointer;
   transition: all 0.18s ease;
-  text-align: left;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .map-status-btn:hover {
   background: color-mix(in srgb, var(--btn-color) 28%, transparent);
   border-color: var(--btn-color);
   color: #fff;
-  transform: translateX(2px);
+  transform: translateY(-1px);
 }
 
 .map-status-btn.active {
@@ -10362,18 +10365,18 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
 .popup-action-hub-tabs {
   display: flex;
   gap: 4px;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 8px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .popup-hub-btn {
   flex: 1;
   min-width: 0;
-  padding: 6px 2px;
+  padding: 6px 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10386,10 +10389,15 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 .popup-hub-btn .hub-btn-icon {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   line-height: 1;
+  transition: transform 0.18s ease;
+}
+.popup-hub-btn:hover .hub-btn-icon {
+  transform: scale(1.12);
 }
 .popup-hub-btn .hub-btn-label {
   font-size: 0.65rem;
@@ -10405,21 +10413,68 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   border-color: rgba(59, 130, 246, 0.5);
   color: #60a5fa;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  font-weight: 700;
+}
+.popup-hub-btn[data-drawer="stamp"].active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+.popup-hub-btn[data-drawer="journal"].active {
+  background: rgba(236, 72, 153, 0.2);
+  border-color: rgba(236, 72, 153, 0.5);
+  color: #f472b6;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+}
+.popup-hub-btn[data-drawer="places"].active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+.popup-hub-btn[data-drawer="review"].active {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: rgba(234, 179, 8, 0.5);
+  color: #fde047;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
+}
+.popup-hub-btn[data-drawer="guide"].active {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: rgba(14, 165, 233, 0.5);
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+}
+.hub-btn-dot {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+.hub-btn-dot.emerald {
+  background: #10b981;
+  box-shadow: 0 0 5px #10b981;
+}
+.hub-btn-dot.pink {
+  background: #ec4899;
+  box-shadow: 0 0 5px #ec4899;
 }
 
 /* ─── 📸 Journal Drawer & Photo Album ──────────────────────────────────── */
 .map-status-journal-drawer {
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
-  padding: 12px;
+  padding: 10px 12px;
   margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
   animation: popupSlideDown 0.25s ease-out;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .journal-drawer-header {
   display: flex;
@@ -10429,10 +10484,10 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   font-weight: 700;
   color: #f8fafc;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 6px;
+  padding-bottom: 5px;
 }
 .journal-section-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
@@ -10442,34 +10497,40 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 .journal-mood-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 4px 8px;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   color: #cbd5e1;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .journal-mood-btn:hover {
   background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateY(-1px);
 }
 .journal-mood-btn.active {
   background: rgba(236, 72, 153, 0.25);
   border-color: #ec4899;
   color: #f472b6;
   font-weight: 700;
-  box-shadow: 0 0 8px rgba(236, 72, 153, 0.3);
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.35);
+  transform: translateY(-1px);
 }
 .journal-photos-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 .journal-upload-trigger {
   background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(168, 85, 247, 0.3));
@@ -10480,19 +10541,53 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
+  font-family: inherit;
   transition: all 0.15s ease;
 }
 .journal-upload-trigger:hover {
-  background: rgba(236, 72, 153, 0.4);
+  background: rgba(236, 72, 153, 0.45);
   transform: scale(1.02);
 }
 .journal-photos-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  max-height: 140px;
+  max-height: 120px;
   overflow-y: auto;
   padding-right: 2px;
+}
+.journal-empty-dropzone {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border: 1.5px dashed rgba(236, 72, 153, 0.35);
+  border-radius: 10px;
+  background: rgba(236, 72, 153, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  gap: 2px;
+}
+.journal-empty-dropzone:hover {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.6);
+  transform: translateY(-1px);
+}
+.journal-empty-dropzone .dropzone-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.journal-empty-dropzone .dropzone-text {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #f472b6;
+}
+.journal-empty-dropzone .dropzone-sub {
+  font-size: 0.65rem;
+  color: #94a3b8;
 }
 .journal-photo-thumb {
   position: relative;
@@ -10516,8 +10611,8 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 99px;
   background: rgba(0, 0, 0, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -10542,7 +10637,7 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   font-size: 0.72rem;
   color: #64748b;
   text-align: center;
-  padding: 10px 4px;
+  padding: 8px 4px;
 }
 .journal-textarea {
   width: 100%;
@@ -10562,20 +10657,30 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
 }
 .journal-save-btn {
   width: 100%;
+  padding: 8px 12px;
+  margin-top: 4px;
   background: linear-gradient(135deg, #ec4899, #8b5cf6);
   border: none;
-  border-radius: 8px;
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 7px;
-  cursor: pointer;
+  border-radius: 9px;
+  color: #ffffff;
   font-family: inherit;
-  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+  transition: all 0.18s ease;
 }
 .journal-save-btn:hover {
-  opacity: 0.92;
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(236, 72, 153, 0.5);
+  filter: brightness(1.08);
+}
+.journal-save-btn:active {
+  transform: translateY(0);
 }
 
 /* ─── 🍽️ Places / Cafes / Restaurants Drawer ───────────────────────────── */

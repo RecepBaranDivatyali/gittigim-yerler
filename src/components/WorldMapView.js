@@ -3465,21 +3465,23 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
     <!-- 🎛️ Segmented Action Hub Tabs (Only visible when status === 'visited') -->
     <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-      <button type="button" class="popup-hub-btn" data-drawer="stamp" title="Pasaport Damgaları">
+      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate) ? 'has-data' : ''}" data-drawer="stamp" title="Pasaport Damgaları">
         <span class="hub-btn-icon">🛂</span>
         <span class="hub-btn-label">Damga</span>
+        ${(currentEntryDate || currentExitDate) ? `<span class="hub-btn-dot emerald"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar">
+      <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar">
         <span class="hub-btn-icon">📸</span>
         <span class="hub-btn-label">Günlük</span>
+        ${(currentJournal?.text || currentJournal?.mood) ? `<span class="hub-btn-dot pink"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn" data-drawer="places" title="Mekanlar & Restoranlar">
+      <button type="button" class="popup-hub-btn ${currentPlaces.length > 0 ? 'has-data' : ''}" data-drawer="places" title="Mekanlar & Restoranlar">
         <span class="hub-btn-icon">🍽️</span>
-        <span class="hub-btn-label">Mekanlar</span>
+        <span class="hub-btn-label">Mekanlar${currentPlaces.length > 0 ? ` (${currentPlaces.length})` : ''}</span>
       </button>
-      <button type="button" class="popup-hub-btn" data-drawer="review" title="Puan & Not">
+      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="Puan & Not">
         <span class="hub-btn-icon">⭐</span>
-        <span class="hub-btn-label">Puan</span>
+        <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : 'Puan'}</span>
       </button>
       ${guide ? `
         <button type="button" class="popup-hub-btn" data-drawer="guide" title="Rehber & Bilgi">
@@ -3564,9 +3566,9 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <div class="journal-photos-section">
         <div class="journal-photos-top-row">
           <span class="journal-section-label">FOTOĞRAFLAR (<span id="journal-photo-count">0</span>):</span>
-          <label class="journal-upload-trigger" for="journal-file-input">
+          <button type="button" class="journal-upload-trigger" id="journal-upload-btn">
             <span>➕ Fotoğraf Yükle</span>
-          </label>
+          </button>
           <input type="file" id="journal-file-input" accept="image/*" style="display:none;" />
         </div>
         <div class="journal-photos-grid" id="journal-photos-grid">
@@ -3577,7 +3579,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <!-- Günlük Notu / Anı Yazısı -->
       <div class="journal-text-section">
         <div class="journal-section-label">GÜNLÜK NOTUNUZ:</div>
-        <textarea id="journal-text-input" class="journal-textarea" placeholder="Bu seyahatten unutulmaz bir anı, his veya tavsiye yazın..." rows="3">${escapeHtml(currentJournal?.text || '')}</textarea>
+        <textarea id="journal-text-input" class="journal-textarea" placeholder="Bu seyahatten unutulmaz bir anı, his veya tavsiye yazın..." rows="3">${escapeHtml(currentJournal?.text || currentNotes || '')}</textarea>
         <button type="button" id="btn-save-journal" class="journal-save-btn">
           <span>💾 Günlüğü Kaydet</span>
         </button>
@@ -3772,6 +3774,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const name = e.currentTarget.dataset.name;
         currentBuddies = currentBuddies.filter(x => x !== name);
         renderBuddyChips();
+        persistVisitDetails({ buddies: currentBuddies });
       });
     });
   }
@@ -3784,6 +3787,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       currentBuddies.push(val);
       buddyInput.value = '';
       renderBuddyChips();
+      persistVisitDetails({ buddies: currentBuddies });
     }
   });
 
@@ -3817,7 +3821,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if (saveBtn) {
       saveBtn.innerHTML = '<span>✅ Pasaporta Damgalandı!</span>';
       setTimeout(() => {
-        if (saveBtn) saveBtn.innerHTML = '<span>💾 Damgaları & Yol Arkadaşlarını Kaydet</span>';
+        if (saveBtn) saveBtn.innerHTML = '<span>💾 Damgaları & Bilgileri Kaydet</span>';
         if (allDrawers.stamp) allDrawers.stamp.style.display = 'none';
         hubBtns.forEach(b => { if (b.dataset.drawer === 'stamp') b.classList.remove('active'); });
       }, 1200);
@@ -3828,6 +3832,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const photosGrid = content.querySelector('#journal-photos-grid');
   const photoCountSpan = content.querySelector('#journal-photo-count');
   const fileInput = content.querySelector('#journal-file-input');
+  const uploadBtn = content.querySelector('#journal-upload-btn');
+
+  uploadBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    fileInput?.click();
+  });
 
   async function loadAndRenderPhotos() {
     if (!photosGrid) return;
@@ -3836,7 +3847,17 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     if (photoCountSpan) photoCountSpan.textContent = photos.length;
 
     if (photos.length === 0) {
-      photosGrid.innerHTML = '<div class="journal-no-photos">Henüz fotoğraf eklenmemiş. Yukarıdaki <b>➕ Fotoğraf Yükle</b> butonuyla anılarınızı ekleyin!</div>';
+      photosGrid.innerHTML = `
+        <div class="journal-empty-dropzone" id="journal-empty-dropzone" title="Fotoğraf Yükle">
+          <span class="dropzone-icon">📷</span>
+          <div class="dropzone-text">Fotoğraf eklemek için dokunun</div>
+          <div class="dropzone-sub">Seyahat anılarınızı albümde saklayın</div>
+        </div>
+      `;
+      photosGrid.querySelector('#journal-empty-dropzone')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput?.click();
+      });
       return;
     }
 
@@ -3888,19 +3909,41 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   moodBtns.forEach(mb => {
     mb.addEventListener('click', (e) => {
       e.stopPropagation();
-      moodBtns.forEach(b => b.classList.remove('active'));
       const mood = mb.dataset.mood;
       if (selectedMood === mood) {
         selectedMood = '';
+        mb.classList.remove('active');
       } else {
         selectedMood = mood;
+        moodBtns.forEach(b => b.classList.remove('active'));
         mb.classList.add('active');
       }
+      currentJournal = {
+        ...(currentJournal || {}),
+        mood: selectedMood,
+        text: journalTextInput?.value.trim() || currentJournal?.text || '',
+        updatedAt: new Date().toISOString()
+      };
+      persistVisitDetails({ journal: currentJournal });
     });
   });
 
   const saveJournalBtn = content.querySelector('#btn-save-journal');
   const journalTextInput = content.querySelector('#journal-text-input');
+
+  journalTextInput?.addEventListener('blur', () => {
+    const jText = journalTextInput.value.trim();
+    if (jText !== (currentJournal?.text || '')) {
+      currentJournal = {
+        ...(currentJournal || {}),
+        text: jText,
+        mood: selectedMood,
+        updatedAt: new Date().toISOString()
+      };
+      persistVisitDetails({ journal: currentJournal, notes: jText });
+    }
+  });
+
   saveJournalBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     const jText = journalTextInput?.value.trim() || '';
@@ -3911,7 +3954,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     };
     currentJournal = journalData;
 
-    persistVisitDetails({ journal: journalData });
+    persistVisitDetails({ journal: journalData, notes: jText });
+    triggerConfetti();
 
     if (saveJournalBtn) {
       saveJournalBtn.innerHTML = '<span>✅ Günlük Kaydedildi!</span>';
@@ -4053,7 +4097,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   // Note save handler
   const saveNote = () => {
     const noteVal = content.querySelector('#popup-note-input')?.value.trim() || '';
-    persistVisitDetails({ notes: noteVal });
+    currentNotes = noteVal;
+    const jTextInput = content.querySelector('#journal-text-input');
+    if (jTextInput) jTextInput.value = noteVal;
+    currentJournal = {
+      ...(currentJournal || {}),
+      text: noteVal,
+      mood: selectedMood,
+      updatedAt: new Date().toISOString()
+    };
+    persistVisitDetails({ notes: noteVal, journal: currentJournal });
     const saveBtn = content.querySelector('#popup-note-save-btn');
     if (saveBtn) {
       saveBtn.textContent = '✓';
