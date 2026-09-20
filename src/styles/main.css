@@ -10580,17 +10580,18 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
 }
 .place-inputs-row {
   display: flex;
-  gap: 6px;
   margin-top: 6px;
+  width: 100%;
 }
 .place-input {
   flex: 1;
+  width: 100%;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   color: #f8fafc;
   font-size: 0.75rem;
-  padding: 5px 8px;
+  padding: 6px 10px;
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
@@ -10598,35 +10599,48 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
 .place-input:focus {
   border-color: #f59e0b;
 }
-.place-select {
+.place-notes-row {
+  display: flex;
+  margin-top: 6px;
+  width: 100%;
+}
+.place-bottom-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  width: 100%;
+}
+.place-bottom-row .place-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
   background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   color: #f8fafc;
-  font-size: 0.72rem;
-  padding: 5px 6px;
+  font-size: 0.75rem;
+  padding: 6px 8px;
   outline: none;
   font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
 }
-.place-notes-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.place-add-btn {
+.place-bottom-row .place-add-btn {
   background: linear-gradient(135deg, #f59e0b, #ef4444);
   border: none;
   border-radius: 8px;
   color: #fff;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 5px 12px;
+  padding: 6px 14px;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
-.place-add-btn:hover {
+.place-bottom-row .place-add-btn:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }

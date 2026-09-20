@@ -3525,20 +3525,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         </div>
       </div>
 
-      <!-- Canlı Damga Mürekkep Önizlemesi -->
-      <div class="stamp-live-preview-row">
-        <div class="ink-stamp-badge ink-entry" id="ink-preview-entry">
-          <div class="ink-header">★ ENTRY / GİRİŞ ★</div>
-          <div class="ink-code">${countryFlag} ${countryCode || 'TR'}</div>
-          <div class="ink-sub" id="ink-entry-sub">${transportIcons[currentEntryTransport]?.split(' ')[0] || '✈️'} ${currentEntryDate || 'Tarih Seç'}</div>
-        </div>
-        <div class="ink-stamp-badge ink-exit" id="ink-preview-exit">
-          <div class="ink-header">★ EXIT / ÇIKIŞ ★</div>
-          <div class="ink-code">${countryFlag} ${countryCode || 'TR'}</div>
-          <div class="ink-sub" id="ink-exit-sub">${transportIcons[currentExitTransport]?.split(' ')[0] || '✈️'} ${currentExitDate || 'Tarih Seç'}</div>
-        </div>
-      </div>
-
       <!-- Yol Arkadaşları / Travel Buddies Bölümü -->
       <div class="stamp-section-box stamp-buddies-box">
         <div class="stamp-section-label">👥 YOL ARKADAŞLARI</div>
@@ -3616,7 +3602,14 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         </div>
 
         <div class="place-inputs-row">
-          <input type="text" id="place-name-input" class="place-input" placeholder="Mekan adı (Örn: Café de Flore)..." maxlength="50" />
+          <input type="text" id="place-name-input" class="place-input full-width" placeholder="Mekan adı (Örn: Café de Flore)..." maxlength="50" />
+        </div>
+
+        <div class="place-notes-row">
+          <input type="text" id="place-note-input" class="place-input full-width" placeholder="Gurme/ziyaret notu (Örn: Kruvasanı ve kahvesi şahane!)..." maxlength="100" />
+        </div>
+
+        <div class="place-bottom-row">
           <select id="place-rating-select" class="place-select">
             <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
             <option value="4">⭐⭐⭐⭐ (4/5)</option>
@@ -3624,10 +3617,6 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
             <option value="2">⭐⭐ (2/5)</option>
             <option value="1">⭐ (1/5)</option>
           </select>
-        </div>
-
-        <div class="place-notes-row">
-          <input type="text" id="place-note-input" class="place-input" placeholder="Gurme/ziyaret notu (Örn: Kruvasanı ve kahvesi şahane!)..." maxlength="100" />
           <button type="button" id="btn-add-place" class="place-add-btn">+ Ekle</button>
         </div>
       </div>
