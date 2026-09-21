@@ -7,6 +7,19 @@ import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
 import { initPhoneSimulator } from './components/PhoneSimulator.js';
 
+// Listen for PWA installation prompt globally
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.__deferredInstallPrompt = e;
+  });
+  window.addEventListener('appinstalled', () => {
+    window.__deferredInstallPrompt = null;
+    const installCard = document.getElementById('settings-install-app-card');
+    if (installCard) installCard.style.display = 'none';
+  });
+}
+
 function syncAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.documentElement.style.setProperty('--app-height', `${h}px`);

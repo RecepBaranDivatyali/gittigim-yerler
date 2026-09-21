@@ -25,6 +25,7 @@ import {
   registerOrUpdateCurrentUser, getAllCommunityTravelers 
 } from '../utils/userDatabase.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
+import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 
 const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
@@ -902,6 +903,34 @@ export function renderProfileView(container, onBack) {
           </button>
         </div>
 
+        <!-- 8. App Installation Card (Only shown if NOT already installed or native) -->
+        ${!isAppInstalledOrNative() ? `
+        <div class="settings-card settings-install-card" id="settings-install-app-card">
+          <div class="settings-card-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:1.8rem;line-height:1;">📲</span>
+              <div>
+                <h3 class="settings-card-title" style="color:#38bdf8;">${currentLang === 'tr' ? 'Uygulamayı Cihazına Yükle' : 'Install App on Device'}</h3>
+                <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">
+                  ${isIosDevice() 
+                    ? (currentLang === 'tr' ? 'iPhone ana ekranına ekle, Safari çubukları olmadan tam ekran kullan!' : 'Add to iPhone home screen for full-screen experience!') 
+                    : (currentLang === 'tr' ? 'Tek tıkla telefonuna veya bilgisayarına yükle' : 'Install with one click on your phone or desktop')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="settings-card-desc" style="margin-bottom:14px;">
+            ${currentLang === 'tr' 
+              ? 'Gezgin\'i cihazınıza yükleyerek internet bağlantınız zayıf olsa bile anında açabilir, seyahat haritanızı gerçek bir uygulama konforunda tam ekran yönetebilirsiniz.' 
+              : 'Install Gezgin to your home screen for quick offline access and full-screen traveler experience.'}
+          </p>
+          <button type="button" class="settings-install-btn" id="btn-install-pwa">
+            <span style="font-size:1.2rem;">📥</span>
+            <span>${currentLang === 'tr' ? (isIosDevice() ? 'iPhone\'a Yükle (Nasıl Yapılır?)' : 'Uygulamayı Yükle') : 'Install App'}</span>
+          </button>
+        </div>
+        ` : ''}
+
         <!-- 9. App Info & Security Footnote -->
         <div class="settings-about-box">
           <div class="settings-about-logo">
@@ -1167,6 +1196,11 @@ export function renderProfileView(container, onBack) {
         alert(currentLang === 'tr' ? 'Harita verileri başarıyla sıfırlandı.' : 'Map data reset successfully.');
         render();
       }
+    });
+
+    // 8. PWA / Mobile App Installation Trigger
+    document.getElementById('btn-install-pwa')?.addEventListener('click', () => {
+      triggerAppInstallation(currentLang);
     });
   }
 
