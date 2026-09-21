@@ -1227,8 +1227,9 @@ export function deleteUserVisa(visaId) {
 export function getActiveVisas() {
   const today = new Date().toISOString().split('T')[0];
   return getUserVisas().filter(v => {
-    if (!v.validFrom || !v.validUntil) return false;
-    return today >= v.validFrom && today <= v.validUntil;
+    // A visa is active if it has not expired (i.e. validUntil is today or in future, or not set)
+    if (v.validUntil && today > v.validUntil) return false;
+    return true;
   });
 }
 
@@ -1240,12 +1241,35 @@ export function getActiveVisas() {
  */
 export function getVisaCoverageForCountry(countryCode) {
   if (!countryCode) return null;
-  const code = countryCode.toUpperCase();
+  const code = countryCode.toUpperCase().trim();
+  const countryAliases = {
+    DE: ['DE', 'DEU', 'DEUTSCHLAND', 'ALMANYA', 'GERMANY'],
+    US: ['US', 'USA', 'UNITED STATES', 'AMERIKA', 'AMERİKA'],
+    GB: ['GB', 'GBR', 'UK', 'UNITED KINGDOM', 'İNGİLTERE', 'INGILTERE'],
+    FR: ['FR', 'FRA', 'FRANCE', 'FRANSA'],
+    IT: ['IT', 'ITA', 'ITALY', 'İTALYA', 'ITALYA'],
+    ES: ['ES', 'ESP', 'SPAIN', 'İSPANYA', 'ISPANYA'],
+    GR: ['GR', 'GRC', 'GREECE', 'YUNANİSTAN', 'YUNANISTAN'],
+    NL: ['NL', 'NLD', 'NETHERLANDS', 'HOLLANDA'],
+    JP: ['JP', 'JPN', 'JAPAN', 'JAPONYA'],
+    CA: ['CA', 'CAN', 'CANADA', 'KANADA'],
+    AE: ['AE', 'ARE', 'UAE', 'BAE', 'UNITED ARAB EMIRATES'],
+    AU: ['AU', 'AUS', 'AUSTRALIA', 'AVUSTRALYA']
+  };
+
   for (const visa of getActiveVisas()) {
     const type = (visa.visaType || '').toLowerCase();
     const coverage = VISA_COVERAGE_MAP[type] || [];
     if (coverage.includes(code)) return visa;
-    if (visa.singleCountry && visa.singleCountry.toUpperCase() === code) return visa;
+    if (visa.singleCountry && visa.singleCountry.toUpperCase().trim() === code) return visa;
+    
+    // Check issuing country matches this country or alias
+    if (visa.issuingCountry) {
+      const issuing = visa.issuingCountry.toUpperCase().trim();
+      if (issuing === code) return visa;
+      const aliases = countryAliases[code];
+      if (aliases && aliases.some(a => issuing === a || issuing.startsWith(a))) return visa;
+    }
   }
   return null;
 }

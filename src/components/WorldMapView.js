@@ -1062,7 +1062,11 @@ export function renderWorldMapView(container, options = {}) {
       });
       // Dynamic country counts per visa status for active passport
       const counts = { vizesiz: 0, vize: 0, kapida_vize: 0, e_vize: 0 };
+      let coveredCount = 0;
       WORLD_COUNTRIES.forEach(c => {
+        if (getVisaCoverageForCountry(c.code)) {
+          coveredCount++;
+        }
         const info = getVisaBadgeInfo(c.code, pType);
         if (info && counts[info.status] !== undefined) {
           counts[info.status]++;
@@ -1076,6 +1080,12 @@ export function renderWorldMapView(container, options = {}) {
       if (chipVoa) chipVoa.textContent = `Kapıda Vize (${counts.kapida_vize})`;
       const chipEvisa = container.querySelector('.visa-mode-chip.evisa .chip-label');
       if (chipEvisa) chipEvisa.textContent = `e-Vize (${counts.e_vize})`;
+
+      const chipMyVisa = container.querySelector('.visa-mode-chip.personal-visa .chip-label');
+      if (chipMyVisa) {
+        chipMyVisa.textContent = coveredCount > 0 ? `Vizem Var (${coveredCount})` : 'Vizem Var';
+      }
+      try { updateVisaBannerMyVisas(); } catch {}
     }
 
     function toggleVisaMode() {
@@ -3526,74 +3536,72 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       ` : ''}
     </div>
 
-    <!-- 📅 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi -->
+    <!-- 📅 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi (Kompakt Tek Satır Tasarım) -->
     <div class="map-status-stamp-drawer" id="map-status-stamp-drawer" style="display: none;">
-      <div class="stamp-drawer-header">
-        <span class="stamp-drawer-title">📅 Ziyaret Tarihleri & Pasaport Damgası</span>
-      </div>
-
-      <!-- Çoklu Ziyaret Seçici & Yönetici Çubuğu -->
-      <div class="stamp-visits-manager" id="stamp-visits-manager">
-        <div class="stamp-visits-top-row">
-          <span class="stamp-visits-label">SEYAHAT GEÇMİŞİ (<span id="stamp-visits-count">${currentVisits.length}</span>):</span>
-          <button type="button" id="btn-add-new-visit" class="stamp-visit-add-pill-btn">➕ Yeni Ziyaret Ekle</button>
-        </div>
-        <div class="stamp-visits-scroll" id="stamp-visits-tabs-container"></div>
-      </div>
-
-      <!-- Giriş Damgası Bölümü -->
-      <div class="stamp-section-box stamp-entry-box">
-        <div class="stamp-section-label">🟢 GİRİŞ DAMGASI (ENTRY)</div>
-        <div class="stamp-inputs-row">
-          <input type="date" id="popup-stamp-entry-date" class="stamp-date-field" value="${currentEntryDate}" />
-          <select id="popup-stamp-entry-transport" class="stamp-transport-select">
-            <option value="flight" ${currentEntryTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
-            <option value="train" ${currentEntryTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
-            <option value="car" ${currentEntryTransport === 'car' ? 'selected' : ''}>🚗 Şahsi Araba</option>
-            <option value="bus" ${currentEntryTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
-            <option value="ship" ${currentEntryTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
-          </select>
+      
+      <!-- Çoklu Ziyaret Seçici (Tek Satır ve Şık) -->
+      <div class="stamp-visits-manager-inline" id="stamp-visits-manager">
+        <div class="stamp-visits-single-line">
+          <span class="stamp-visits-inline-label">✈️ Seyahatler:</span>
+          <div class="stamp-visits-inline-scroll" id="stamp-visits-tabs-container"></div>
+          <button type="button" id="btn-add-new-visit" class="stamp-visit-add-inline-btn" title="Yeni Seyahat Ekle">➕ Ekle</button>
+          <button type="button" id="btn-delete-active-visit" class="stamp-visit-del-inline-btn" title="Bu Seyahati Sil" style="display:none;">🗑️ Sil</button>
         </div>
       </div>
 
-      <!-- Çıkış Damgası Bölümü -->
-      <div class="stamp-section-box stamp-exit-box">
-        <div class="stamp-section-label">🔴 ÇIKIŞ DAMGASI (EXIT)</div>
-        <div class="stamp-inputs-row">
-          <input type="date" id="popup-stamp-exit-date" class="stamp-date-field" value="${currentExitDate}" />
-          <select id="popup-stamp-exit-transport" class="stamp-transport-select">
-            <option value="flight" ${currentExitTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
-            <option value="train" ${currentExitTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
-            <option value="car" ${currentExitTransport === 'car' ? 'selected' : ''}>🚗 Şahsi Araba</option>
-            <option value="bus" ${currentExitTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
-            <option value="ship" ${currentExitTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
-          </select>
+      <!-- Giriş & Çıkış Damgaları (Tek Satırda Yan Yana 2 Sütun) -->
+      <div class="stamp-dates-dual-card">
+        <!-- Giriş Damgası (Gidiş) -->
+        <div class="stamp-date-col entry-col">
+          <div class="stamp-date-col-header">
+            <span class="stamp-dot-pill green"></span>
+            <span class="stamp-col-heading">GİRİŞ (ENTRY)</span>
+          </div>
+          <div class="stamp-col-inputs">
+            <input type="date" id="popup-stamp-entry-date" class="stamp-date-field compact" value="${currentEntryDate}" />
+            <select id="popup-stamp-entry-transport" class="stamp-transport-select compact">
+              <option value="flight" ${currentEntryTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
+              <option value="train" ${currentEntryTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
+              <option value="car" ${currentEntryTransport === 'car' ? 'selected' : ''}>🚗 Araba</option>
+              <option value="bus" ${currentEntryTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
+              <option value="ship" ${currentEntryTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Çıkış Damgası (Dönüş) -->
+        <div class="stamp-date-col exit-col">
+          <div class="stamp-date-col-header">
+            <span class="stamp-dot-pill red"></span>
+            <span class="stamp-col-heading">ÇIKIŞ (EXIT)</span>
+          </div>
+          <div class="stamp-col-inputs">
+            <input type="date" id="popup-stamp-exit-date" class="stamp-date-field compact" value="${currentExitDate}" />
+            <select id="popup-stamp-exit-transport" class="stamp-transport-select compact">
+              <option value="flight" ${currentExitTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
+              <option value="train" ${currentExitTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
+              <option value="car" ${currentExitTransport === 'car' ? 'selected' : ''}>🚗 Araba</option>
+              <option value="bus" ${currentExitTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
+              <option value="ship" ${currentExitTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <!-- Yol Arkadaşları / Travel Buddies Bölümü -->
-      <div class="stamp-section-box stamp-buddies-box">
-        <div class="stamp-section-label">👥 YOL ARKADAŞLARI</div>
+      <!-- Yol Arkadaşları / Travel Buddies Bölümü (Kompakt) -->
+      <div class="stamp-buddies-compact-box">
         <div class="stamp-buddies-input-row">
-          <input type="text" id="popup-buddy-input" class="stamp-buddy-input" placeholder="Arkadaş ekle (Örn: Ece, @ali)..." maxlength="25" />
-          <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn">+ Ekle</button>
+          <span class="stamp-buddies-icon">👥</span>
+          <input type="text" id="popup-buddy-input" class="stamp-buddy-input compact" placeholder="Yol arkadaşı ekle (Örn: Ece)..." maxlength="25" />
+          <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn compact">+ Ekle</button>
         </div>
         <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
           ${currentBuddies.map(b => `<span class="buddy-chip">${escapeHtml(b)} <button type="button" class="del-buddy" data-name="${escapeHtml(b)}">&times;</button></span>`).join('')}
         </div>
       </div>
 
-      <div class="stamp-visit-footer-controls">
-        <button type="button" id="btn-toggle-featured-visit" class="stamp-feature-toggle-btn">
-          ⭐ Bu Ziyareti Pasaportta Göster
-        </button>
-        <button type="button" id="btn-delete-active-visit" class="stamp-delete-visit-btn" style="display:none;">
-          🗑️ Ziyareti Sil
-        </button>
-      </div>
-
-      <button type="button" id="btn-save-stamp-data" class="stamp-save-btn">
-        <span>💾 Damgaları & Bilgileri Kaydet</span>
+      <button type="button" id="btn-save-stamp-data" class="stamp-save-btn compact">
+        <span>💾 Bilgileri Kaydet</span>
       </button>
     </div>
 

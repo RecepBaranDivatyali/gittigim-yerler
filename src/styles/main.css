@@ -14736,3 +14736,200 @@ body[data-theme="light"] .stamp-transport-select {
   color: #64748b;
   letter-spacing: 0.2px;
 }
+
+
+/* ==========================================================================
+   COMPACT SINGLE-ROW TRAVEL HISTORY & DATES CARD (USER REQUEST)
+   ========================================================================== */
+
+.stamp-visits-manager-inline {
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.stamp-visits-single-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 4px 7px;
+  box-sizing: border-box;
+}
+
+.stamp-visits-inline-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #94a3b8;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.stamp-visits-inline-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+}
+.stamp-visits-inline-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.stamp-visits-inline-scroll .stamp-visit-tab-pill {
+  padding: 2px 7px !important;
+  font-size: 0.67rem !important;
+  border-radius: 6px !important;
+  gap: 3px !important;
+}
+
+.stamp-visit-add-inline-btn {
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px dashed #3b82f6;
+  color: #60a5fa;
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.stamp-visit-add-inline-btn:hover {
+  background: rgba(59, 130, 246, 0.28);
+  color: #93c5fd;
+}
+
+.stamp-visit-del-inline-btn {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #f87171;
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.stamp-visit-del-inline-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Dual Column Dates Card (Side by Side in 1 Row) */
+.stamp-dates-dual-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stamp-date-col {
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
+}
+
+.stamp-date-col.entry-col {
+  border-left: 2.5px solid #10b981;
+}
+
+.stamp-date-col.exit-col {
+  border-left: 2.5px solid #ef4444;
+}
+
+.stamp-date-col-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stamp-dot-pill {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.stamp-dot-pill.green { background: #34d399; }
+.stamp-dot-pill.red { background: #f87171; }
+
+.stamp-col-heading {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+.stamp-date-col.entry-col .stamp-col-heading { color: #34d399; }
+.stamp-date-col.exit-col .stamp-col-heading { color: #f87171; }
+
+.stamp-col-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stamp-date-field.compact {
+  font-size: 0.67rem;
+  padding: 3px 5px;
+  border-radius: 5px;
+  height: 26px;
+}
+
+.stamp-transport-select.compact {
+  font-size: 0.67rem;
+  padding: 3px 4px;
+  border-radius: 5px;
+  height: 26px;
+}
+
+/* Compact Buddies Box */
+.stamp-buddies-compact-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
+}
+
+.stamp-buddies-compact-box .stamp-buddies-input-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stamp-buddies-icon {
+  font-size: 0.72rem;
+}
+
+.stamp-buddy-input.compact {
+  font-size: 0.67rem;
+  padding: 3px 6px;
+  flex: 1;
+  height: 24px;
+}
+
+.stamp-buddy-add-btn.compact {
+  font-size: 0.64rem;
+  padding: 2px 7px;
+  height: 24px;
+}
+
+.stamp-save-btn.compact {
+  padding: 6px;
+  font-size: 0.74rem;
+  margin-top: 2px;
+}
