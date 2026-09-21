@@ -19,7 +19,10 @@ export const THEMES = {
     uiBg: 'rgba(30, 41, 59, 0.92)',
     uiBorder: 'rgba(255, 255, 255, 0.12)',
     textMain: '#f8fafc',
-    textMuted: '#94a3b8'
+    textMuted: '#94a3b8',
+    accentColor: '#38bdf8',
+    accentRgb: '56, 189, 248',
+    accentContrast: '#ffffff'
   },
   light: {
     id: 'light',
@@ -36,7 +39,10 @@ export const THEMES = {
     uiBg: 'rgba(255, 255, 255, 0.96)',
     uiBorder: 'rgba(203, 213, 225, 0.9)',
     textMain: '#0f172a',
-    textMuted: '#64748b'
+    textMuted: '#64748b',
+    accentColor: '#2563eb',
+    accentRgb: '37, 99, 235',
+    accentContrast: '#ffffff'
   },
   ocean: {
     id: 'ocean',
@@ -53,7 +59,10 @@ export const THEMES = {
     uiBg: 'rgba(12, 25, 41, 0.92)',
     uiBorder: 'rgba(42, 90, 140, 0.35)',
     textMain: '#e0f0ff',
-    textMuted: '#7ab0d4'
+    textMuted: '#7ab0d4',
+    accentColor: '#0ea5e9',
+    accentRgb: '14, 165, 233',
+    accentContrast: '#ffffff'
   },
   emerald: {
     id: 'emerald',
@@ -70,7 +79,10 @@ export const THEMES = {
     uiBg: 'rgba(10, 31, 10, 0.92)',
     uiBorder: 'rgba(45, 107, 45, 0.35)',
     textMain: '#d4f5d4',
-    textMuted: '#7abf7a'
+    textMuted: '#7abf7a',
+    accentColor: '#10b981',
+    accentRgb: '16, 185, 129',
+    accentContrast: '#ffffff'
   },
   vintage: {
     id: 'vintage',
@@ -87,7 +99,10 @@ export const THEMES = {
     uiBg: 'rgba(44, 24, 16, 0.92)',
     uiBorder: 'rgba(107, 82, 64, 0.35)',
     textMain: '#f5e6d0',
-    textMuted: '#b8a088'
+    textMuted: '#b8a088',
+    accentColor: '#d97706',
+    accentRgb: '217, 119, 6',
+    accentContrast: '#ffffff'
   },
   midnight_gold: {
     id: 'midnight_gold',
@@ -104,7 +119,10 @@ export const THEMES = {
     uiBg: 'rgba(15, 17, 28, 0.94)',
     uiBorder: 'rgba(212, 175, 55, 0.35)',
     textMain: '#fef3c7',
-    textMuted: '#d4af37'
+    textMuted: '#d4af37',
+    accentColor: '#f59e0b',
+    accentRgb: '245, 158, 11',
+    accentContrast: '#0f172a'
   },
   natgeo_atlas: {
     id: 'natgeo_atlas',
@@ -121,7 +139,10 @@ export const THEMES = {
     uiBg: 'rgba(247, 238, 225, 0.95)',
     uiBorder: 'rgba(140, 112, 82, 0.3)',
     textMain: '#2b2118',
-    textMuted: '#664d33'
+    textMuted: '#664d33',
+    accentColor: '#eab308',
+    accentRgb: '234, 179, 8',
+    accentContrast: '#1c1917'
   },
   cyberpunk: {
     id: 'cyberpunk',
@@ -138,7 +159,10 @@ export const THEMES = {
     uiBg: 'rgba(18, 10, 38, 0.94)',
     uiBorder: 'rgba(0, 240, 255, 0.4)',
     textMain: '#00f0ff',
-    textMuted: '#ff007f'
+    textMuted: '#ff007f',
+    accentColor: '#00f0ff',
+    accentRgb: '0, 240, 255',
+    accentContrast: '#070514'
   },
   pure_oled: {
     id: 'pure_oled',
@@ -155,7 +179,10 @@ export const THEMES = {
     uiBg: 'rgba(10, 10, 10, 0.96)',
     uiBorder: 'rgba(255, 255, 255, 0.15)',
     textMain: '#ffffff',
-    textMuted: '#888888'
+    textMuted: '#888888',
+    accentColor: '#ffffff',
+    accentRgb: '255, 255, 255',
+    accentContrast: '#000000'
   },
   nordic_frost: {
     id: 'nordic_frost',
@@ -172,7 +199,10 @@ export const THEMES = {
     uiBg: 'rgba(14, 36, 56, 0.94)',
     uiBorder: 'rgba(56, 189, 248, 0.35)',
     textMain: '#f0f9ff',
-    textMuted: '#38bdf8'
+    textMuted: '#38bdf8',
+    accentColor: '#00ffcc',
+    accentRgb: '0, 255, 204',
+    accentContrast: '#05131e'
   }
 };
 
@@ -268,6 +298,9 @@ export function applyTheme(themeId) {
   root.style.setProperty('--theme-text-muted', cfg.textMuted);
   root.style.setProperty('--text-main', cfg.textMain);
   root.style.setProperty('--text-muted', cfg.textMuted);
+  root.style.setProperty('--theme-accent', cfg.accentColor || '#38bdf8');
+  root.style.setProperty('--theme-accent-rgb', cfg.accentRgb || '56, 189, 248');
+  root.style.setProperty('--theme-accent-contrast', cfg.accentContrast || '#ffffff');
   let bgDark = '#0f172a';
   let bgCard = 'rgba(30, 41, 59, 0.7)';
   let themeCardBg = 'rgba(15, 23, 42, 0.65)';

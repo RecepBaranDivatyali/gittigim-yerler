@@ -20,6 +20,9 @@
   --radius-sm: 8px;
   --shadow-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --theme-accent: #38bdf8;
+  --theme-accent-rgb: 56, 189, 248;
+  --theme-accent-contrast: #ffffff;
 }
 
 html {
@@ -1180,10 +1183,10 @@ svg, g, path {
 }
 
 .floating-profile-btn:hover {
-  background: rgba(255, 87, 34, 0.25);
-  border-color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
+  border-color: var(--theme-accent, #38bdf8);
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(255, 87, 34, 0.35);
+  box-shadow: 0 10px 28px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
 }
 
 .floating-profile-btn:active {
@@ -1785,8 +1788,8 @@ svg, g, path {
 }
 
 .ptab.active {
-  background: rgba(255, 87, 34, 0.2);
-  color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.2);
+  color: var(--theme-accent, #38bdf8);
   font-weight: 700;
 }
 
@@ -1913,10 +1916,10 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
 .profile-card-label {
   display: inline-flex;
   align-items: center;
-  background: rgba(255, 87, 34, 0.2);
-  border: 1px solid rgba(255, 87, 34, 0.3);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.2);
+  border: 1px solid rgba(var(--theme-accent-rgb, 56, 189, 248), 0.3);
   border-radius: 8px;
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
   font-size: 0.68rem;
   font-weight: 700;
   padding: 3px 7px;
@@ -2158,9 +2161,9 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
 
 .compare-vs {
   align-self: center;
-  background: rgba(255, 87, 34, 0.15);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.15);
   border-radius: 99px;
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
   font-size: 1.1rem;
   font-weight: 800;
   padding: 10px 14px;
@@ -3143,7 +3146,7 @@ body[data-theme="light"] .ptab {
 }
 body[data-theme="light"] .ptab.active {
   background: #ffffff !important;
-  color: #ff5722 !important;
+  color: var(--theme-accent, #2563eb) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 body[data-theme="light"] .profile-username,
@@ -3263,8 +3266,8 @@ body[data-theme="light"] .aviation-subtab-btn {
   color: #334155 !important;
 }
 body[data-theme="light"] .aviation-subtab-btn.active {
-  background: rgba(255, 87, 34, 0.12) !important;
-  color: #ff5722 !important;
+  background: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.12) !important;
+  color: var(--theme-accent, #2563eb) !important;
 }
 
 /* Bucket List */
@@ -3303,7 +3306,7 @@ body[data-theme="light"] .compare-subtab {
 }
 body[data-theme="light"] .compare-subtab.active {
   background: #ffffff !important;
-  color: #ff5722 !important;
+  color: var(--theme-accent, #2563eb) !important;
 }
 body[data-theme="light"] .comp-card-box {
   background: #f8fafc !important;
@@ -3336,9 +3339,9 @@ body[data-theme="light"] .theme-select-btn {
 }
 body[data-theme="light"] .lang-select-btn.active,
 body[data-theme="light"] .theme-select-btn.active {
-  background: rgba(255, 87, 34, 0.12) !important;
-  border-color: #ff5722 !important;
-  color: #ea580c !important;
+  background: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.12) !important;
+  border-color: var(--theme-accent, #2563eb) !important;
+  color: var(--theme-accent, #2563eb) !important;
 }
 
 .floating-feedback-wrap {
@@ -4417,9 +4420,9 @@ body[data-theme="light"] .theme-select-btn.active {
   color: var(--theme-text-main, #f8fafc);
 }
 .aviation-subtab-btn.active {
-  background: rgba(255, 87, 34, 0.2);
-  border-color: #ff5722;
-  color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.2);
+  border-color: var(--theme-accent, #38bdf8);
+  color: var(--theme-accent, #38bdf8);
 }
 body[data-theme="light"] .aviation-subtab-btn {
   background: rgba(241, 245, 249, 0.9);
@@ -4427,9 +4430,9 @@ body[data-theme="light"] .aviation-subtab-btn {
   color: #64748b;
 }
 body[data-theme="light"] .aviation-subtab-btn.active {
-  background: rgba(255, 87, 34, 0.15);
-  border-color: #ff5722;
-  color: #ea580c;
+  background: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.15);
+  border-color: var(--theme-accent, #2563eb);
+  color: var(--theme-accent, #2563eb);
 }
 
 /* ── Travel Poster Modal ── */
@@ -6162,7 +6165,7 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-card:hover {
-  border-color: rgba(255, 87, 34, 0.35);
+  border-color: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
 }
 
 .settings-card-header {
@@ -6238,10 +6241,10 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-edit-toggle-btn {
-  background: rgba(255, 87, 34, 0.15);
-  border: 1px solid rgba(255, 87, 34, 0.35);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.15);
+  border: 1px solid rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
   border-radius: 12px;
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
   font-weight: 700;
   font-size: 0.86rem;
   padding: 9px 16px;
@@ -6252,7 +6255,7 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-edit-toggle-btn:hover {
-  background: rgba(255, 87, 34, 0.28);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.28);
   transform: translateY(-1px);
 }
 
@@ -6331,10 +6334,10 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-avatar-pick-btn.selected {
-  background: rgba(255, 87, 34, 0.22);
-  border-color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.22);
+  border-color: var(--theme-accent, #38bdf8);
   transform: scale(1.1);
-  box-shadow: 0 0 12px rgba(255, 87, 34, 0.35);
+  box-shadow: 0 0 12px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
 }
 
 .settings-input-group {
@@ -6363,14 +6366,14 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-text-input:focus {
-  border-color: #ff5722;
+  border-color: var(--theme-accent, #38bdf8);
 }
 
 .settings-save-profile-btn {
-  background: linear-gradient(135deg, #ff5722, #f59e0b);
+  background: linear-gradient(135deg, var(--theme-accent, #38bdf8), #0284c7);
   border: none;
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--theme-accent-contrast, #ffffff);
   font-weight: 700;
   font-size: 0.92rem;
   padding: 11px 20px;
@@ -6410,13 +6413,13 @@ body[data-theme="light"] .fb-card-date {
 
 .theme-card-btn:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 87, 34, 0.4);
+  border-color: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.4);
 }
 
 .theme-card-btn.active {
-  background: rgba(255, 87, 34, 0.12);
-  border-color: #ff5722;
-  box-shadow: 0 0 16px rgba(255, 87, 34, 0.22);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.16);
+  border-color: var(--theme-accent, #38bdf8);
+  box-shadow: 0 0 16px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 
 .theme-card-icon {
@@ -6451,8 +6454,8 @@ body[data-theme="light"] .fb-card-date {
   right: 6px;
   font-size: 0.62rem;
   font-weight: 800;
-  background: #ff5722;
-  color: #ffffff;
+  background: var(--theme-accent, #38bdf8);
+  color: var(--theme-accent-contrast, #ffffff);
   padding: 2px 6px;
   border-radius: 6px;
   line-height: 1;
@@ -6492,11 +6495,11 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .scale-card-btn.active {
-  background: rgba(255, 87, 34, 0.15);
-  border-color: #ff5722;
-  color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.16);
+  border-color: var(--theme-accent, #38bdf8);
+  color: var(--theme-accent, #38bdf8);
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(255, 87, 34, 0.2);
+  box-shadow: 0 0 14px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 
 .scale-card-icon {
@@ -6551,10 +6554,10 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-mode-btn.active {
-  background: rgba(255, 87, 34, 0.15);
-  border-color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.16);
+  border-color: var(--theme-accent, #38bdf8);
   color: #f8fafc;
-  box-shadow: 0 0 12px rgba(255, 87, 34, 0.2);
+  box-shadow: 0 0 14px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 
 .settings-mode-icon {
@@ -6578,7 +6581,7 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .settings-mode-btn.active .settings-mode-title {
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
 }
 
 .settings-mode-sub {
@@ -6614,10 +6617,10 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .lang-btn.active {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: #3b82f6;
-  color: #60a5fa;
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.22);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.18);
+  border-color: var(--theme-accent, #38bdf8);
+  color: var(--theme-accent, #38bdf8);
+  box-shadow: 0 0 14px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 
 /* Custom Searchable Country Picker */
@@ -6654,14 +6657,14 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .country-picker-trigger:hover {
-  border-color: rgba(255, 87, 34, 0.6);
+  border-color: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.6);
   background: rgba(15, 23, 42, 0.95);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .country-picker-trigger[aria-expanded="true"] {
-  border-color: #ff5722;
-  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.25);
+  border-color: var(--theme-accent, #38bdf8);
+  box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 
 .country-picker-trigger-content {
@@ -6710,7 +6713,7 @@ body[data-theme="light"] .fb-card-date {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 16px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 87, 34, 0.15);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.15);
   overflow: hidden;
   animation: countryDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -6785,8 +6788,8 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .country-picker-option.selected {
-  background: rgba(255, 87, 34, 0.16);
-  border: 1px solid rgba(255, 87, 34, 0.35);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.16);
+  border: 1px solid rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
 }
 
 .country-picker-option-left {
@@ -6814,12 +6817,12 @@ body[data-theme="light"] .fb-card-date {
 }
 
 .country-picker-option.selected .country-picker-option-name {
-  color: #ff8a65;
+  color: var(--theme-accent, #38bdf8);
   font-weight: 700;
 }
 
 .country-picker-option-check {
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
   font-weight: 800;
   font-size: 1rem;
   margin-left: 8px;
@@ -7259,7 +7262,7 @@ body[data-theme="light"] .settings-card {
 }
 
 body[data-theme="light"] .settings-card:hover {
-  border-color: #ff5722 !important;
+  border-color: var(--theme-accent, #2563eb) !important;
 }
 
 body[data-theme="light"] .settings-profile-preview,
@@ -7286,7 +7289,7 @@ body[data-theme="light"] .country-picker-trigger {
 }
 body[data-theme="light"] .country-picker-trigger:hover {
   background: #f8fafc !important;
-  border-color: #ff5722 !important;
+  border-color: var(--theme-accent, #2563eb) !important;
 }
 body[data-theme="light"] .country-picker-trigger-name {
   color: #0f172a !important;
@@ -7294,7 +7297,7 @@ body[data-theme="light"] .country-picker-trigger-name {
 body[data-theme="light"] .country-picker-dropdown {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 87, 34, 0.2) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(var(--theme-accent-rgb, 37, 99, 235), 0.2) !important;
 }
 body[data-theme="light"] .country-picker-search-box {
   background: #f1f5f9 !important;
@@ -7310,8 +7313,8 @@ body[data-theme="light"] .country-picker-option:hover {
   background: #f1f5f9 !important;
 }
 body[data-theme="light"] .country-picker-option.selected {
-  background: rgba(255, 87, 34, 0.1) !important;
-  border-color: rgba(255, 87, 34, 0.3) !important;
+  background: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.1) !important;
+  border-color: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.3) !important;
 }
 
 
@@ -7329,21 +7332,21 @@ body[data-theme="light"] .settings-text-input {
 body[data-theme="light"] .theme-card-btn.active,
 body[data-theme="light"] .scale-btn.active,
 body[data-theme="light"] .scale-card-btn.active,
-body[data-theme="light"] .settings-mode-btn.active {
-  background: #fff7ed !important;
-  border-color: #ff5722 !important;
-  color: #ea580c !important;
+body[data-theme="light"] .settings-mode-btn.active,
+body[data-theme="light"] .lang-btn.active,
+body[data-theme="light"] .passport-type-btn.active {
+  background: rgba(var(--theme-accent-rgb, 37, 99, 235), 0.1) !important;
+  border-color: var(--theme-accent, #2563eb) !important;
+  color: var(--theme-accent, #2563eb) !important;
 }
 
-body[data-theme="light"] .lang-btn.active {
-  background: #eff6ff !important;
-  border-color: #3b82f6 !important;
-  color: #2563eb !important;
+body[data-theme="light"] .settings-mode-btn.active .settings-mode-title {
+  color: var(--theme-accent, #2563eb) !important;
 }
 
 body[data-theme="light"] .backup-action-card:hover {
   background: #f1f5f9 !important;
-  border-color: #ff5722 !important;
+  border-color: var(--theme-accent, #2563eb) !important;
 }
 
 body[data-theme="light"] .reset-colors-btn {
@@ -7901,13 +7904,13 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   background: rgba(255, 255, 255, 0.1);
 }
 .stamp-trans-btn.active {
-  background: rgba(255, 87, 34, 0.2);
-  border-color: #ff5722;
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.2);
+  border-color: var(--theme-accent, #38bdf8);
   color: #fff;
-  box-shadow: 0 0 10px rgba(255, 87, 34, 0.25);
+  box-shadow: 0 0 10px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 .stamp-trans-btn.active span.lbl {
-  color: #ff5722;
+  color: var(--theme-accent, #38bdf8);
   font-weight: 700;
 }
 
@@ -7923,7 +7926,7 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   outline: none;
 }
 .stamp-date-input:focus {
-  border-color: #ff5722;
+  border-color: var(--theme-accent, #38bdf8);
 }
 
 .stamp-save-btn {
@@ -8996,9 +8999,9 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   transform: translateY(-1px);
 }
 .passport-type-btn.active {
-  background: rgba(255, 87, 34, 0.12);
-  border-color: #ff5722;
-  box-shadow: 0 0 16px rgba(255, 87, 34, 0.25);
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.15);
+  border-color: var(--theme-accent, #38bdf8);
+  box-shadow: 0 0 16px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.25);
 }
 .passport-type-icon {
   font-size: 2rem;

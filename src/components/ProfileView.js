@@ -566,15 +566,15 @@ export function renderProfileView(container, onBack) {
     const currentPassportType = getPassportType();
 
     const themeList = [
-      { id: 'dark', name: currentLang === 'tr' ? 'Karanlık' : 'Dark', icon: '🌙', colors: ['#090d16', '#1e293b', '#ff5722'] },
-      { id: 'light', name: currentLang === 'tr' ? 'Aydınlık' : 'Light', icon: '☀️', colors: ['#c5dff6', '#f8fafc', '#ff5722'] },
-      { id: 'ocean', name: currentLang === 'tr' ? 'Okyanus' : 'Ocean', icon: '🌊', colors: ['#0c1929', '#1a3a5c', '#38bdf8'] },
+      { id: 'dark', name: currentLang === 'tr' ? 'Karanlık' : 'Dark', icon: '🌙', colors: ['#090d16', '#1e293b', '#38bdf8'] },
+      { id: 'light', name: currentLang === 'tr' ? 'Aydınlık' : 'Light', icon: '☀️', colors: ['#c5dff6', '#f8fafc', '#2563eb'] },
+      { id: 'ocean', name: currentLang === 'tr' ? 'Okyanus' : 'Ocean', icon: '🌊', colors: ['#0c1929', '#1a3a5c', '#0ea5e9'] },
       { id: 'emerald', name: currentLang === 'tr' ? 'Zümrüt' : 'Emerald', icon: '🌲', colors: ['#0a1f0a', '#1a3d1a', '#10b981'] },
       { id: 'vintage', name: currentLang === 'tr' ? 'Nostalji' : 'Vintage', icon: '📜', colors: ['#2c1810', '#4a3828', '#d97706'] },
-      { id: 'midnight_gold', name: currentLang === 'tr' ? 'Gece & Altın' : 'Midnight Gold', icon: '👑', colors: ['#0b0d13', '#161922', '#e5c07b'] },
-      { id: 'natgeo_atlas', name: currentLang === 'tr' ? 'Atlas Klasik' : 'NatGeo Atlas', icon: '🗺️', colors: ['#0f172a', '#1e293b', '#fbbf24'] },
-      { id: 'cyberpunk', name: currentLang === 'tr' ? 'Siberpunk Gece' : 'Cyberpunk', icon: '⚡', colors: ['#050510', '#120d26', '#06b6d4'] },
-      { id: 'pure_oled', name: currentLang === 'tr' ? 'Saf OLED Siyah' : 'Pure OLED', icon: '🖤', colors: ['#000000', '#0a0a0a', '#3b82f6'] },
+      { id: 'midnight_gold', name: currentLang === 'tr' ? 'Gece & Altın' : 'Midnight Gold', icon: '👑', colors: ['#0b0d13', '#161922', '#f59e0b'] },
+      { id: 'natgeo_atlas', name: currentLang === 'tr' ? 'Atlas Klasik' : 'NatGeo Atlas', icon: '🗺️', colors: ['#0f172a', '#1e293b', '#eab308'] },
+      { id: 'cyberpunk', name: currentLang === 'tr' ? 'Siberpunk Gece' : 'Cyberpunk', icon: '⚡', colors: ['#050510', '#120d26', '#00f0ff'] },
+      { id: 'pure_oled', name: currentLang === 'tr' ? 'Saf OLED Siyah' : 'Pure OLED', icon: '🖤', colors: ['#000000', '#0a0a0a', '#ffffff'] },
       { id: 'nordic_frost', name: currentLang === 'tr' ? 'Kuzey Işıkları' : 'Nordic Frost', icon: '❄️', colors: ['#04151f', '#092532', '#00ffcc'] }
     ];
 
