@@ -3339,7 +3339,7 @@ export function renderProfileView(container, onBack) {
           name: c ? getCountryDisplayName(c) : k,
           flag: c?.flag || '🌍',
           rating: Number(v.rating) || 0,
-          notes: v.notes || ''
+          notes: cleanNote(v.notes)
         });
       }
     });
@@ -3350,7 +3350,7 @@ export function renderProfileView(container, onBack) {
           name: p?.name || `İl ${pid}`,
           flag: '🇹🇷',
           rating: Number(v.rating) || 0,
-          notes: v.notes || ''
+          notes: cleanNote(v.notes)
         });
       }
     });

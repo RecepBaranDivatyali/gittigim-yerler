@@ -3735,7 +3735,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         `).join('')}
       </div>
       <div class="popup-notes-input-row">
-        <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${escapeHtml(currentNotes)}" />
+        <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${escapeHtml(cleanNote(currentNotes))}" />
         <button type="button" id="popup-note-save-btn" class="popup-note-save-btn" title="${t('save')}">💾</button>
       </div>
     </div>
