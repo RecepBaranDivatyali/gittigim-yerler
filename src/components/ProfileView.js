@@ -23,9 +23,11 @@ import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusCo
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText } from '../utils/security.js';
 import { 
-  searchTravelersByUsername, getTravelerByUsername, 
+  searchTravelersByUsername, searchTravelersByUsernameAsync,
+  getTravelerByUsername, getTravelerByUsernameAsync,
   registerOrUpdateCurrentUser, getAllCommunityTravelers 
 } from '../utils/userDatabase.js';
+import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 
@@ -214,6 +216,10 @@ export function renderProfileView(container, onBack) {
                 <div class="profile-title-badges">
                   <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
                   <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
+                  <button type="button" class="profile-cloud-sync-pill" id="profile-cloud-sync-pill" title="${currentLang === 'tr' ? 'Bulut Senkronizasyonu - Tıkla ve Eşitle' : 'Cloud Sync - Click to Sync'}">
+                    <span class="cloud-sync-dot"></span>
+                    <span class="cloud-sync-text">${currentLang === 'tr' ? 'Bulut Eşitlendi' : 'Cloud Synced'}</span>
+                  </button>
                 </div>
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
@@ -290,6 +296,41 @@ export function renderProfileView(container, onBack) {
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
     });
+
+    // Cloud Sync Pill Logic
+    const syncPill = document.getElementById('profile-cloud-sync-pill');
+    if (syncPill) {
+      const updateSyncPillUI = (status) => {
+        const dot = syncPill.querySelector('.cloud-sync-dot');
+        const text = syncPill.querySelector('.cloud-sync-text');
+        if (!dot || !text) return;
+
+        syncPill.classList.remove('sync-synced', 'sync-syncing', 'sync-offline', 'sync-error');
+        if (status.status === 'syncing') {
+          syncPill.classList.add('sync-syncing');
+          text.textContent = currentLang === 'tr' ? 'Eşitleniyor...' : 'Syncing...';
+          syncPill.title = currentLang === 'tr' ? 'Bulut ile eşitleniyor...' : 'Syncing with cloud...';
+        } else if (status.status === 'offline') {
+          syncPill.classList.add('sync-offline');
+          text.textContent = currentLang === 'tr' ? 'Çevrimdışı Mod' : 'Offline Mode';
+          syncPill.title = currentLang === 'tr' ? 'İnternet yok, verileriniz cihazda güvenle saklanıyor' : 'Offline, changes saved locally';
+        } else if (status.status === 'error') {
+          syncPill.classList.add('sync-error');
+          text.textContent = currentLang === 'tr' ? 'Eşitleme Hatası' : 'Sync Error';
+          syncPill.title = status.error || (currentLang === 'tr' ? 'Eşitleme hatası, tekrar denemek için tıklayın' : 'Sync error, click to retry');
+        } else {
+          syncPill.classList.add('sync-synced');
+          text.textContent = currentLang === 'tr' ? 'Bulut Eşitlendi' : 'Cloud Synced';
+          syncPill.title = currentLang === 'tr' ? 'Tüm seyahatleriniz Google Firebase bulutunda güncel' : 'All travels synced to cloud';
+        }
+      };
+
+      updateSyncPillUI(getSyncStatus());
+      onSyncStatusChange(updateSyncPillUI);
+      syncPill.addEventListener('click', () => {
+        queueCloudSync(true);
+      });
+    }
 
     // Fetch photos for profile showcase & counter
     getAllPhotos(24).then(photos => {
@@ -3985,9 +4026,9 @@ export function renderProfileView(container, onBack) {
       `;
 
       searchResults.querySelectorAll('.btn-compare-traveler').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const uName = btn.dataset.username;
-          const traveler = getTravelerByUsername(uName);
+          const traveler = await getTravelerByUsernameAsync(uName);
           if (traveler) {
             applyFriendComparison(
               { username: traveler.username, avatar: traveler.avatar, photoUrl: traveler.photoUrl, bio: traveler.bio },
@@ -4001,10 +4042,10 @@ export function renderProfileView(container, onBack) {
       });
 
       searchResults.querySelectorAll('.btn-add-traveler').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const uName = btn.dataset.username;
-          const traveler = getTravelerByUsername(uName);
+          const traveler = await getTravelerByUsernameAsync(uName);
           if (traveler) {
             saveFriend({
               username: traveler.username,
@@ -4026,18 +4067,38 @@ export function renderProfileView(container, onBack) {
     }
 
     if (searchInput) {
-      searchInput.addEventListener('focus', () => {
+      let searchTimeout = null;
+      const doSearch = async () => {
         const val = searchInput.value.trim();
         const cleanVal = val.replace(/^@+/, '').trim();
-        const list = cleanVal ? searchTravelersByUsername(cleanVal) : getAllCommunityTravelers();
-        renderSearchResults(list);
+        if (!cleanVal) {
+          renderSearchResults(getAllCommunityTravelers());
+          return;
+        }
+        // Immediate local search for instant 0ms feedback
+        const localList = searchTravelersByUsername(cleanVal);
+        renderSearchResults(localList);
+        
+        // Cloud search merge
+        try {
+          const mergedList = await searchTravelersByUsernameAsync(cleanVal);
+          if (searchInput.value.trim().replace(/^@+/, '').trim() === cleanVal) {
+            renderSearchResults(mergedList);
+          }
+        } catch (err) {
+          console.warn('Async search failed, staying with local list', err);
+        }
+      };
+
+      searchInput.addEventListener('focus', () => {
+        doSearch();
       });
 
-      searchInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
-        const cleanVal = val.replace(/^@+/, '').trim();
-        const list = cleanVal ? searchTravelersByUsername(cleanVal) : getAllCommunityTravelers();
-        renderSearchResults(list);
+      searchInput.addEventListener('input', () => {
+        if (searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          doSearch();
+        }, 200);
       });
     }
   }

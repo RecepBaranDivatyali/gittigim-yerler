@@ -1,5 +1,6 @@
 // userDatabase.js - Offline-First Community Traveler Database & Accounts
 // Supports username-based friend search, 1-click comparison, and offline synchronization
+import { searchCloudTravelers, getCloudTravelerProfile, queueCloudSync } from '../services/syncService.js';
 
 const COMMUNITY_USERS_KEY = 'gv_community_travelers';
 const CURRENT_ACCOUNT_KEY = 'gv_account';
@@ -169,6 +170,9 @@ export function registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, 
     }
 
     localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify(users));
+    try {
+      queueCloudSync();
+    } catch {}
   } catch (e) {
     console.warn('Error updating current user in community db', e);
   }
@@ -185,9 +189,63 @@ export function searchTravelersByUsername(query) {
   });
 }
 
+/**
+ * Searches travelers with instant local results plus background/live cloud query
+ */
+export async function searchTravelersByUsernameAsync(query) {
+  const localResults = searchTravelersByUsername(query);
+  if (!navigator.onLine) return localResults;
+
+  try {
+    const cloudResults = await searchCloudTravelers(query);
+    if (Array.isArray(cloudResults) && cloudResults.length > 0) {
+      const mergedMap = new Map();
+      localResults.forEach(u => mergedMap.set(u.username.toLowerCase(), u));
+      cloudResults.forEach(u => {
+        const k = u.username.toLowerCase();
+        if (!mergedMap.has(k)) {
+          mergedMap.set(k, {
+            id: u.uid || ('user_' + k),
+            username: u.username,
+            name: u.displayName || u.username,
+            avatar: u.avatar || '🧭',
+            photoUrl: u.photoUrl || null,
+            bio: u.bio || '',
+            homeCountry: u.homeCountry || 'TR',
+            stats: u.stats || { worldCountryCount: 0, turkeyCount: 0, worldCityCount: 0 },
+            worldVisits: u.worldVisits || {},
+            turkeyVisits: u.turkeyVisits || {},
+            worldCities: u.worldCities || []
+          });
+        }
+      });
+      return Array.from(mergedMap.values());
+    }
+  } catch (e) {
+    console.warn('Async cloud search fallback to local:', e);
+  }
+
+  return localResults;
+}
+
 export function getTravelerByUsername(username) {
   if (!username) return null;
   const clean = username.trim().toLowerCase().replace(/^@/, '');
   const all = getAllCommunityTravelers();
   return all.find(u => u.username.toLowerCase() === clean) || null;
 }
+
+export async function getTravelerByUsernameAsync(username) {
+  const local = getTravelerByUsername(username);
+  if (local && Object.keys(local.worldVisits || {}).length > 0) return local;
+  if (!navigator.onLine) return local;
+
+  try {
+    const cloud = await getCloudTravelerProfile(username);
+    if (cloud) return cloud;
+  } catch (e) {
+    console.warn('Async get traveler fallback to local:', e);
+  }
+  return local;
+}
+

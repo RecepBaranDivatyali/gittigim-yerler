@@ -13352,3 +13352,116 @@ body[data-theme="light"] .stamp-transport-select {
 .light-theme .stamp-zoom-card-meta {
   border-top-color: #e2e8f0;
 }
+
+
+/* ==========================================================================
+   CLOUD SYNC STATUS PILL (FIREBASE OFFLINE-FIRST)
+   ========================================================================== */
+.profile-cloud-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 3px 9px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.profile-cloud-sync-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.profile-cloud-sync-pill .cloud-sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+/* Synced */
+.profile-cloud-sync-pill.sync-synced {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #34d399;
+}
+.profile-cloud-sync-pill.sync-synced .cloud-sync-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+/* Syncing */
+.profile-cloud-sync-pill.sync-syncing {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+}
+.profile-cloud-sync-pill.sync-syncing .cloud-sync-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+  animation: pulse-sync-dot 1s infinite alternate;
+}
+
+/* Offline */
+.profile-cloud-sync-pill.sync-offline {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+  color: #fbbf24;
+}
+.profile-cloud-sync-pill.sync-offline .cloud-sync-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+/* Error */
+.profile-cloud-sync-pill.sync-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #f87171;
+}
+.profile-cloud-sync-pill.sync-error .cloud-sync-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulse-sync-dot {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.25); opacity: 1; }
+}
+
+.light-theme .profile-cloud-sync-pill {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #64748b;
+}
+.light-theme .profile-cloud-sync-pill.sync-synced {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669;
+}
+.light-theme .profile-cloud-sync-pill.sync-syncing {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+}
+.light-theme .profile-cloud-sync-pill.sync-offline {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #d97706;
+}
+.light-theme .profile-cloud-sync-pill.sync-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}

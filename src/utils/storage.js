@@ -5,6 +5,8 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
 import { calculateDemographicImpact } from '../data/worldDemographics.js';
 import { deletePhotosByTarget } from './photoStorage.js';
+import { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
+export { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
 
 export const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
@@ -492,6 +494,11 @@ function notifyStateChange() {
   const sStats = calculateStats();
   checkAndNotifyAchievements(sData, sStats);
   listeners.forEach(cb => cb(sData, sStats));
+  try {
+    queueCloudSync();
+  } catch (e) {
+    console.warn('Auto cloud sync trigger error:', e);
+  }
 }
 
 // ─── Bucket List Priority Rankings ───────────────────────────────────────────

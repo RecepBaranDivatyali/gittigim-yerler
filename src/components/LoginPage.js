@@ -1,6 +1,15 @@
 import { t, getLanguage, setLanguage } from '../utils/i18n.js';
 import { sanitizeText, escapeHtml } from '../utils/security.js';
 import { registerOrUpdateCurrentUser } from '../utils/userDatabase.js';
+import { auth } from '../services/firebase.js';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  updateProfile
+} from 'firebase/auth';
+import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 
 const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
 
@@ -77,8 +86,19 @@ export function renderLoginPage(container, onLogin) {
         worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_world_cities_v2') || '[]');
       } catch {}
       registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, worldCities);
+
+      // Trigger automatic cloud sync and merge in background
+      if (navigator.onLine) {
+        fetchAndMergeUserDataFromCloud(profile.username).then(() => {
+          queueCloudSync(true);
+        }).catch(() => {
+          queueCloudSync(true);
+        });
+      } else {
+        queueCloudSync(true);
+      }
     } catch (e) {
-      console.warn('Could not register in community db', e);
+      console.warn('Could not register in community db / cloud sync', e);
     }
 
     onLogin(profile);
@@ -361,9 +381,29 @@ export function renderLoginPage(container, onLogin) {
       render();
     });
 
-    // Google Sign-In button click
-    container.querySelector('#btn-google-auth')?.addEventListener('click', () => {
+    // Google Sign-In button click with Firebase Auth & Fallback
+    container.querySelector('#btn-google-auth')?.addEventListener('click', async () => {
       syncFormState();
+      if (navigator.onLine && auth) {
+        try {
+          const provider = new GoogleAuthProvider();
+          const result = await signInWithPopup(auth, provider);
+          if (result && result.user) {
+            const u = result.user;
+            const profile = {
+              username: u.displayName || u.email.split('@')[0],
+              email: u.email,
+              avatar: selectedAvatar || '✈️',
+              photoUrl: u.photoURL || null,
+              createdAt: new Date().toISOString()
+            };
+            saveAndCompleteLogin(profile, true);
+            return;
+          }
+        } catch (err) {
+          console.warn('Google popup auth notice, showing picker:', err?.code || err?.message);
+        }
+      }
       showGoogleAccountPicker(currentLang);
     });
 
@@ -379,9 +419,9 @@ export function renderLoginPage(container, onLogin) {
       });
     });
 
-    // Form submission
+    // Form submission with Firebase Auth
     const form = container.querySelector('#auth-main-form');
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
       syncFormState();
 
       if (!emailVal || !emailVal.includes('@')) {
@@ -412,6 +452,22 @@ export function renderLoginPage(container, onLogin) {
 
       // Capitalize clean display name
       const formattedName = profileUsername.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+      // Attempt real Firebase Auth in background
+      if (navigator.onLine && auth) {
+        try {
+          if (authMode === 'register') {
+            const cred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
+            if (cred.user) {
+              await updateProfile(cred.user, { displayName: formattedName }).catch(() => {});
+            }
+          } else {
+            await signInWithEmailAndPassword(auth, emailVal, passwordVal);
+          }
+        } catch (fbErr) {
+          console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
+        }
+      }
 
       const profile = {
         username: formattedName,
