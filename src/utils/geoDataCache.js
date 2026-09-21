@@ -1,6 +1,6 @@
 // geoDataCache.js - Ultra-fast IndexedDB caching for GeoJSON map datasets
 const DB_NAME = 'GezginGeoCacheDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'geojson_datasets';
 
 let dbPromise = null;

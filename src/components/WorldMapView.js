@@ -1746,7 +1746,7 @@ export function renderWorldMapView(container, options = {}) {
 function refreshAllStyles() {
   invalidateStorageCache();
   if (countryBordersLayer) {
-    countryBordersLayer.setStyle(countryBorderStyle());
+    countryBordersLayer.setStyle(f => countryBorderStyle(f));
   }
   if (countriesLayer) {
     countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
@@ -1798,6 +1798,7 @@ function initMap(container) {
     fadeAnimation: true,
     markerZoomAnimation: true,
   });
+  window.__leaflet_map = map;
 
   map.on('popupclose', () => {
     lastPopupClosedAt = Date.now();
@@ -1970,7 +1971,7 @@ function initMap(container) {
       countryBordersLayer = L.geoJSON(data, {
         renderer: countryBordersRenderer,
         pane: 'countryBordersPane',
-        style: () => countryBorderStyle(),
+        style: f => countryBorderStyle(f),
         interactive: false
       });
       if (map && map.getZoom() >= REGION_ZOOM) {
@@ -2026,6 +2027,9 @@ function initMap(container) {
         countriesLayer.eachLayer(l => {
           if (findCountry(l.feature)?.code === 'TR') l.setStyle(countryStyle(findCountry(l.feature)));
         });
+      }
+      if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+        countryBordersLayer.setStyle(f => countryBorderStyle(f));
       }
     }
     scheduleLabelUpdate();
@@ -2894,19 +2898,19 @@ function onViewChange() {
     }
   }
 
+  let bordersNeedUpdate = false;
   // Only restyle borders if zoom category actually changed (avoids 250 SVG re-stylings per drag)
   const currentZoomCategory = zoom >= SUBREGION_ZOOM ? 3 : (zoom >= REGION_ZOOM ? 2 : 1);
   if (currentZoomCategory !== lastZoomCategory) {
     lastZoomCategory = currentZoomCategory;
-    if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
-      countryBordersLayer.setStyle(countryBorderStyle());
-    }
+    bordersNeedUpdate = true;
   }
 
   // ── Turkey Level 2 (81 Provinces) ──────────────────────────────────────────
   if (isTurkeyInView() && zoom >= REGION_ZOOM) {
     if (turkeyLayer && !map.hasLayer(turkeyLayer)) {
       turkeyLayer.addTo(map);
+      bordersNeedUpdate = true;
       if (countryLayersByCode['TR']) {
         countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
@@ -2914,6 +2918,7 @@ function onViewChange() {
   } else {
     if (turkeyLayer && map.hasLayer(turkeyLayer)) {
       map.removeLayer(turkeyLayer);
+      bordersNeedUpdate = true;
       if (countryLayersByCode['TR']) {
         countryLayersByCode['TR'].setStyle(countryStyle(countryByCode.get('TR')));
       }
@@ -2932,6 +2937,7 @@ function onViewChange() {
     Object.entries(regionLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer) && !targetSet.has(code)) {
         map.removeLayer(layer);
+        bordersNeedUpdate = true;
         if (countryLayersByCode[code]) {
           countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
         }
@@ -2943,6 +2949,7 @@ function onViewChange() {
         if (regionLayers[code]) {
           if (!map.hasLayer(regionLayers[code])) {
             regionLayers[code].addTo(map);
+            bordersNeedUpdate = true;
             if (countryLayersByCode[code]) {
               countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
             }
@@ -2958,11 +2965,16 @@ function onViewChange() {
     Object.entries(regionLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
+        bordersNeedUpdate = true;
       }
     });
     if (countriesLayer) {
       countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
     }
+  }
+
+  if (bordersNeedUpdate && countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+    countryBordersLayer.setStyle(f => countryBorderStyle(f));
   }
 
   // ── World subregion layers (Level 3) ──────────────────────────────────────
@@ -3132,6 +3144,9 @@ function attachRegionLayer(code, data) {
       }
       if (countryLayersByCode[code]) {
         countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+      }
+      if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+        countryBordersLayer.setStyle(f => countryBorderStyle(f));
       }
       scheduleLabelUpdate();
     }
@@ -4824,16 +4839,36 @@ function getEffectiveCountryStatus(countryCode) {
   return 'unvisited';
 }
 
-function countryBorderStyle() {
+function countryBorderStyle(f) {
+  const c = f ? findCountry(f) : null;
+  const code = c?.code;
   const zoom = map?.getZoom() || 3;
   const isDark = getTheme() !== 'light';
   const zoomed = zoom >= REGION_ZOOM;
+
+  // When zoomed into regions: if this country has its own provinces or regions actively displayed on map,
+  // do NOT draw the coarse duplicate world-countries border over them!
+  if (zoomed && code) {
+    const hasRegionLayer = regionLayers[code] && map && map.hasLayer(regionLayers[code]);
+    const hasTurkeyLayer = code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer);
+    if (hasRegionLayer || hasTurkeyLayer) {
+      return {
+        fill: false,
+        fillOpacity: 0,
+        opacity: 0,
+        stroke: false,
+        interactive: false
+      };
+    }
+  }
+
   return {
     fill: false,
     fillOpacity: 0,
     color: isDark ? 'rgba(255, 255, 255, 0.90)' : 'rgba(15, 23, 42, 0.85)',
     weight: zoomed ? (zoom >= SUBREGION_ZOOM ? 2.1 : 1.9) : 1.3,
     opacity: 1,
+    stroke: true,
     interactive: false
   };
 }
