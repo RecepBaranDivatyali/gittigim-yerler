@@ -2263,76 +2263,216 @@ export function renderProfileView(container, onBack) {
                   const issuingLabel = visa.issuingCountry || (visa.visaType === 'schengen' ? 'DEUTSCHLAND' : '');
                   const hologramColor = isExpired ? '#9ca3af' : vTypeInfo.color;
 
+                  // Visa type specific theming
+                  const visaThemes = {
+                    schengen: {
+                      bg: 'linear-gradient(160deg, #f4f7fc 0%, #e8eef8 40%, #dce7f5 100%)',
+                      accentBg: '#1a3a8f',
+                      accentBg2: '#122d75',
+                      watermark: '🇪🇺',
+                      securityColor: '#1a3a8f',
+                      officialSeal: 'EU',
+                      bottomBand: '#1a3a8f'
+                    },
+                    us: {
+                      bg: 'linear-gradient(160deg, #fdf4f4 0%, #f8e8e8 40%, #f5d8d8 100%)',
+                      accentBg: '#b22234',
+                      accentBg2: '#8b1828',
+                      watermark: '🦅',
+                      securityColor: '#b22234',
+                      officialSeal: 'USA',
+                      bottomBand: '#002868'
+                    },
+                    uk: {
+                      bg: 'linear-gradient(160deg, #f4f6fd 0%, #e8ecf8 40%, #dce3f5 100%)',
+                      accentBg: '#012169',
+                      accentBg2: '#010d4d',
+                      watermark: '👑',
+                      securityColor: '#012169',
+                      officialSeal: 'UK',
+                      bottomBand: '#012169'
+                    },
+                    canada: {
+                      bg: 'linear-gradient(160deg, #fdf5f5 0%, #f9e8e8 40%, #f5d8d8 100%)',
+                      accentBg: '#d52b1e',
+                      accentBg2: '#a82014',
+                      watermark: '🍁',
+                      securityColor: '#d52b1e',
+                      officialSeal: 'CAN',
+                      bottomBand: '#d52b1e'
+                    },
+                    japan: {
+                      bg: 'linear-gradient(160deg, #fdf5f5 0%, #f9eaea 40%, #f5e0e0 100%)',
+                      accentBg: '#bc002d',
+                      accentBg2: '#960024',
+                      watermark: '⛩️',
+                      securityColor: '#bc002d',
+                      officialSeal: 'JPN',
+                      bottomBand: '#bc002d'
+                    },
+                    australia: {
+                      bg: 'linear-gradient(160deg, #f4f6fd 0%, #e8edf8 40%, #dce4f5 100%)',
+                      accentBg: '#00008b',
+                      accentBg2: '#000066',
+                      watermark: '🦘',
+                      securityColor: '#00008b',
+                      officialSeal: 'AUS',
+                      bottomBand: '#00008b'
+                    },
+                    uae: {
+                      bg: 'linear-gradient(160deg, #f4fdf6 0%, #e8f8ec 40%, #dcf5e3 100%)',
+                      accentBg: '#007a3d',
+                      accentBg2: '#005a2d',
+                      watermark: '🕌',
+                      securityColor: '#007a3d',
+                      officialSeal: 'UAE',
+                      bottomBand: '#007a3d'
+                    },
+                    other: {
+                      bg: 'linear-gradient(160deg, #f5f5f5 0%, #ebebeb 40%, #e0e0e0 100%)',
+                      accentBg: '#374151',
+                      accentBg2: '#1f2937',
+                      watermark: '🌍',
+                      securityColor: '#374151',
+                      officialSeal: 'INT',
+                      bottomBand: '#374151'
+                    }
+                  };
+                  const vTheme = visaThemes[(visa.visaType || 'other').toLowerCase()] || visaThemes.other;
+                  const finalAccent = isExpired ? '#9ca3af' : vTheme.accentBg;
+                  const finalAccent2 = isExpired ? '#6b7280' : vTheme.accentBg2;
+                  const finalSecurity = isExpired ? '#9ca3af' : vTheme.securityColor;
+                  const finalBg = isExpired
+                    ? 'linear-gradient(160deg, #f0f0f0 0%, #e5e5e5 40%, #d8d8d8 100%)'
+                    : vTheme.bg;
+
                   return `
-                    <div class="passport-page-sheet passport-visa-sheet" data-page-index="${visaPageIndex}">
-                      <div class="passport-visa-leaf-bg" style="--visa-accent:${hologramColor};">
-                        <div class="passport-visa-guilloche-pattern" style="border-color:${hologramColor}30;"></div>
-                        <div class="passport-visa-hologram-strip" style="background:linear-gradient(180deg,${hologramColor}40,${hologramColor}15,${hologramColor}40);"></div>
+                    <div class="passport-page-sheet passport-visa-sheet pv2" data-page-index="${visaPageIndex}" style="--vz-accent:${finalAccent};--vz-accent2:${finalAccent2};--vz-sec:${finalSecurity};background:${finalBg};">
+
+                      <!-- Security background layer -->
+                      <div class="pv2-security-layer">
+                        <div class="pv2-guilloche"></div>
+                        <div class="pv2-watermark">${vTheme.watermark}</div>
+                        <div class="pv2-microline-h"></div>
+                        <div class="pv2-microline-h" style="top:55%;"></div>
+                        <div class="pv2-corner-seal pv2-cs-tl">${vTheme.officialSeal}</div>
+                        <div class="pv2-corner-seal pv2-cs-br">${vTheme.officialSeal}</div>
                       </div>
 
+                      <!-- Expired diagonal stamp -->
                       ${isExpired ? `<div class="passport-visa-expired-stamp">EXPIRED<br>SÜRESİ DOLDU</div>` : ''}
 
-                      <div class="passport-visa-content ${isExpired ? 'passport-visa-expired' : ''}">
-                        <div class="passport-visa-header" style="background:${vTypeInfo.color};">
-                          <span class="passport-visa-flag">${vTypeInfo.flag}</span>
-                          <div class="passport-visa-title-wrap">
-                            <div class="passport-visa-country-title">${escapeHtml(vTypeInfo.title)}</div>
-                            ${issuingLabel ? `<div class="passport-visa-issuing">${escapeHtml(issuingLabel)}</div>` : ''}
+                      <!-- === TOP HEADER BAR === -->
+                      <div class="pv2-header" style="background:linear-gradient(135deg,${finalAccent} 0%,${finalAccent2} 100%);">
+                        <div class="pv2-header-left">
+                          <span class="pv2-flag">${vTypeInfo.flag}</span>
+                          <div class="pv2-titles">
+                            <div class="pv2-visa-word">VISA • VİZE • ${vTheme.officialSeal}</div>
+                            <div class="pv2-country-name">${escapeHtml(vTypeInfo.title)}</div>
+                            ${issuingLabel ? `<div class="pv2-issuing-country">${escapeHtml(issuingLabel)}</div>` : ''}
                           </div>
-                          <div class="passport-visa-status-dot ${isActive ? 'active' : 'expired'}">
-                            ${isActive ? '🟢' : '🔴'}
+                        </div>
+                        <div class="pv2-header-right">
+                          <div class="pv2-status-badge ${isActive ? 'pv2-active' : 'pv2-expired-badge'}">
+                            <span class="pv2-status-dot"></span>
+                            <span>${isActive ? (currentLang === 'tr' ? 'GEÇERLİ' : 'VALID') : (currentLang === 'tr' ? 'SONA ERDİ' : 'EXPIRED')}</span>
+                          </div>
+                          <div class="pv2-entries-badge">${entriesLabel}</div>
+                        </div>
+                      </div>
+
+                      <!-- === HOLOGRAM STRIP (horizontal, under header) === -->
+                      <div class="pv2-hologram-strip" style="background:linear-gradient(90deg,${finalAccent}22,${finalAccent}55,#fff8,${finalAccent}55,${finalAccent}22);border-color:${finalAccent}44;">
+                        <span class="pv2-holo-text">◆ SECURITY FEATURE · GÜVENLİK ÖZELLİĞİ · HOLOGRAPHIC · ${vTheme.officialSeal} ◆</span>
+                      </div>
+
+                      <!-- === MAIN BODY === -->
+                      <div class="pv2-body">
+
+                        <!-- Left: Photo & Seal -->
+                        <div class="pv2-photo-col">
+                          <div class="pv2-photo-frame" style="border-color:${finalAccent};">
+                            <div class="pv2-photo-inner">
+                              ${profile.photoUrl
+                                ? `<img src="${profile.photoUrl}" alt="" style="width:100%;height:100%;object-fit:cover;"/>`
+                                : `<span class="pv2-avatar-emoji">${escapeHtml(profile.avatar || '🧭')}</span>`
+                              }
+                            </div>
+                            <div class="pv2-photo-caption" style="background:${finalAccent};color:#fff;">PHOTO · FOTOĞRAF</div>
+                          </div>
+                          <div class="pv2-official-seal" style="border-color:${finalAccent};color:${finalAccent};">
+                            <div class="pv2-seal-ring" style="border-color:${finalAccent}40;">
+                              <div class="pv2-seal-text">${vTheme.officialSeal}</div>
+                              <div class="pv2-seal-sub">OFFICIAL</div>
+                            </div>
                           </div>
                         </div>
 
-                        <div class="passport-visa-body">
-                          <div class="passport-visa-photo-col">
-                            <div class="passport-visa-photo">
-                              ${profile.photoUrl ? `<img src="${profile.photoUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;"/>` : `<span style="font-size:2.2rem;">${escapeHtml(profile.avatar || '🧭')}</span>`}
-                            </div>
-                            <div class="passport-visa-photo-label">FOTOĞRAF / PHOTO</div>
-                          </div>
-                          <div class="passport-visa-fields-col">
-                            <div class="passport-visa-field-row">
-                              <div class="passport-visa-field">
-                                <span class="pvf-label">${currentLang === 'tr' ? 'GİRİŞ SAYISI / ENTRIES' : 'ENTRIES'}</span>
-                                <span class="pvf-value">${entriesLabel}</span>
-                              </div>
-                              <div class="passport-visa-field">
-                                <span class="pvf-label">${currentLang === 'tr' ? 'SÜRE / DURATION' : 'DURATION'}</span>
-                                <span class="pvf-value">${durationLabel} ${currentLang === 'tr' ? 'GÜN' : 'DAYS'}</span>
-                              </div>
-                            </div>
-                            <div class="passport-visa-field-row">
-                              <div class="passport-visa-field">
-                                <span class="pvf-label">${currentLang === 'tr' ? 'GEÇERLİLİK / VALID FROM' : 'VALID FROM'}</span>
-                                <span class="pvf-value">${visaFromFmt}</span>
-                              </div>
-                              <div class="passport-visa-field">
-                                <span class="pvf-label">${currentLang === 'tr' ? 'BİTİŞ / VALID UNTIL' : 'VALID UNTIL'}</span>
-                                <span class="pvf-value" style="color:${isExpired ? '#ef4444' : 'inherit'};">${visaUntilFmt}</span>
-                              </div>
-                            </div>
-                            <div class="passport-visa-field full-width">
-                              <span class="pvf-label">${currentLang === 'tr' ? 'VİZE SAHİBİ / NAME' : 'NAME'}</span>
-                              <span class="pvf-value">${escapeHtml((profile.username || 'GEZGIN').toUpperCase())}</span>
-                            </div>
-                            ${visaNo ? `
-                            <div class="passport-visa-field full-width">
-                              <span class="pvf-label">${currentLang === 'tr' ? 'VİZE NO / VISA NO' : 'VISA NO'}</span>
-                              <span class="pvf-value" style="font-family:monospace;letter-spacing:1px;">${escapeHtml(visaNo)}</span>
-                            </div>` : ''}
-                          </div>
-                        </div>
+                        <!-- Right: Data fields grid -->
+                        <div class="pv2-fields">
 
-                        <div class="passport-visa-actions-row">
-                          <button type="button" class="passport-visa-edit-btn" data-visa-id="${visa.id}">✏️ ${currentLang === 'tr' ? 'Düzenle' : 'Edit'}</button>
-                          <button type="button" class="passport-visa-delete-btn" data-visa-id="${visa.id}">🗑️ ${currentLang === 'tr' ? 'Sil' : 'Delete'}</button>
-                          <button type="button" class="passport-add-visa-btn small" data-add-after="${visa.id}">➕ ${currentLang === 'tr' ? 'Vize Ekle' : 'Add Visa'}</button>
-                        </div>
+                          <!-- Row 1: Entries + Duration -->
+                          <div class="pv2-field-row">
+                            <div class="pv2-field">
+                              <div class="pv2-field-label">ENTRIES · GİRİŞ</div>
+                              <div class="pv2-field-value pv2-value-large" style="color:${finalAccent};">${entriesLabel}</div>
+                            </div>
+                            <div class="pv2-field">
+                              <div class="pv2-field-label">DURATION · SÜRE</div>
+                              <div class="pv2-field-value pv2-value-large" style="color:${finalAccent};">${durationLabel}<span class="pv2-value-unit"> ${currentLang === 'tr' ? 'GÜN' : 'DAYS'}</span></div>
+                            </div>
+                          </div>
 
-                        <div class="passport-visa-mrz-zone">
-                          V&lt;TUR${escapeHtml(safeUserUpper.slice(0,6))}&lt;&lt;${escapeHtml(vTypeInfo.title.replace(/[^A-Z]/g, '').slice(0,10))}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br>
-                          ${escapeHtml(visaNo.replace(/[^A-Z0-9]/g, '').padEnd(9,'&lt;').slice(0,9))}TUR9501018${entriesLabel.replace('MULT','M')}${durationLabel}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;02
+                          <!-- Divider -->
+                          <div class="pv2-field-divider" style="background:${finalAccent}22;"></div>
+
+                          <!-- Row 2: Valid From + Valid Until -->
+                          <div class="pv2-field-row">
+                            <div class="pv2-field">
+                              <div class="pv2-field-label">VALID FROM · GEÇERLİ</div>
+                              <div class="pv2-field-value">${visaFromFmt}</div>
+                            </div>
+                            <div class="pv2-field">
+                              <div class="pv2-field-label">VALID UNTIL · BİTİŞ</div>
+                              <div class="pv2-field-value" style="color:${isExpired ? '#dc2626' : finalAccent};">${visaUntilFmt}</div>
+                            </div>
+                          </div>
+
+                          <!-- Row 3: Holder Name -->
+                          <div class="pv2-field pv2-field-wide">
+                            <div class="pv2-field-label">VISA HOLDER · VİZE SAHİBİ</div>
+                            <div class="pv2-field-value pv2-holder-name">${escapeHtml((profile.username || 'GEZGIN').toUpperCase())}</div>
+                          </div>
+
+                          <!-- Row 4: Visa Number (if present) -->
+                          ${visaNo ? `
+                          <div class="pv2-field pv2-field-wide">
+                            <div class="pv2-field-label">VISA NO · VİZE NO</div>
+                            <div class="pv2-field-value pv2-mono">${escapeHtml(visaNo)}</div>
+                          </div>` : ''}
+
+                        </div>
+                      </div>
+
+                      <!-- === ACTION BUTTONS (styled as official stamps) === -->
+                      <div class="pv2-actions">
+                        <button type="button" class="pv2-btn pv2-btn-edit" data-visa-id="${visa.id}">
+                          <span>✏️</span><span>${currentLang === 'tr' ? 'Düzenle' : 'Edit'}</span>
+                        </button>
+                        <button type="button" class="pv2-btn pv2-btn-delete" data-visa-id="${visa.id}">
+                          <span>🗑️</span><span>${currentLang === 'tr' ? 'Sil' : 'Delete'}</span>
+                        </button>
+                        <button type="button" class="pv2-btn pv2-btn-add passport-add-visa-btn small" data-add-after="${visa.id}">
+                          <span>➕</span><span>${currentLang === 'tr' ? 'Yeni Vize' : 'Add Visa'}</span>
+                        </button>
+                      </div>
+
+                      <!-- === MRZ ZONE (Machine Readable) === -->
+                      <div class="pv2-mrz">
+                        <div class="pv2-mrz-label">MACHINE READABLE ZONE · MAKİNE OKUMA BÖLGESİ</div>
+                        <div class="pv2-mrz-lines">
+                          <div class="pv2-mrz-line">V&lt;TUR${escapeHtml(safeUserUpper.padEnd(6,'<').slice(0,6))}&lt;&lt;${escapeHtml(vTypeInfo.title.replace(/[^A-Z]/g,'').padEnd(20,'<').slice(0,20))}&lt;&lt;&lt;&lt;&lt;&lt;</div>
+                          <div class="pv2-mrz-line">${escapeHtml((visaNo || 'A00000000').replace(/[^A-Z0-9]/g,'').padEnd(9,'<').slice(0,9))}0TUR9501018${entriesLabel.replace('MULT','M')}${durationLabel}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;02</div>
                         </div>
                       </div>
 
@@ -3001,7 +3141,7 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    modal.querySelectorAll('.passport-visa-edit-btn').forEach(btn => {
+    modal.querySelectorAll('.passport-visa-edit-btn, .pv2-btn-edit').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const visaId = btn.dataset.visaId;
@@ -3010,7 +3150,7 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    modal.querySelectorAll('.passport-visa-delete-btn').forEach(btn => {
+    modal.querySelectorAll('.passport-visa-delete-btn, .pv2-btn-delete').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const visaId = btn.dataset.visaId;
@@ -3026,14 +3166,14 @@ export function renderProfileView(container, onBack) {
       if (addBtn) {
         e.stopPropagation(); openVisaFormModal(null); return;
       }
-      const editBtn = e.target.closest('.passport-visa-edit-btn');
+      const editBtn = e.target.closest('.passport-visa-edit-btn, .pv2-btn-edit');
       if (editBtn) {
         e.stopPropagation();
         const visaId = editBtn.dataset.visaId;
         const v = getUserVisas().find(v2 => v2.id === visaId);
         if (v) openVisaFormModal(v); return;
       }
-      const delBtn = e.target.closest('.passport-visa-delete-btn');
+      const delBtn = e.target.closest('.passport-visa-delete-btn, .pv2-btn-delete');
       if (delBtn) {
         e.stopPropagation();
         const visaId = delBtn.dataset.visaId;

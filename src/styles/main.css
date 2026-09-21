@@ -13465,3 +13465,472 @@ body[data-theme="light"] .stamp-transport-select {
   border-color: rgba(239, 68, 68, 0.3);
   color: #dc2626;
 }
+
+
+/* ============================================================
+   VISA CARD v2 — REALISTIC OFFICIAL DOCUMENT DESIGN
+   ============================================================ */
+
+/* Base sheet override for pv2 */
+.passport-visa-sheet.pv2 {
+  background: #f4f7fc;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ── Security Background Layer ─────────────────────────────── */
+.pv2-security-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.pv2-guilloche {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      30deg,
+      transparent,
+      transparent 5px,
+      var(--vz-sec, #1a3a8f) 5px,
+      var(--vz-sec, #1a3a8f) 5.5px
+    ),
+    repeating-linear-gradient(
+      -30deg,
+      transparent,
+      transparent 5px,
+      var(--vz-sec, #1a3a8f) 5px,
+      var(--vz-sec, #1a3a8f) 5.5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 10px,
+      var(--vz-sec, #1a3a8f) 10px,
+      var(--vz-sec, #1a3a8f) 10.3px
+    );
+  opacity: 0.045;
+}
+
+.pv2-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6rem;
+  opacity: 0.055;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+.pv2-microline-h {
+  position: absolute;
+  top: 35%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--vz-sec, #1a3a8f)30, transparent);
+  opacity: 0.15;
+}
+
+.pv2-corner-seal {
+  position: absolute;
+  font-size: 0.42rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  opacity: 0.12;
+  color: var(--vz-sec, #1a3a8f);
+  font-family: 'Courier New', monospace;
+}
+.pv2-cs-tl { top: 8px; left: 10px; }
+.pv2-cs-br { bottom: 32px; right: 10px; }
+
+/* ── HEADER BAR ────────────────────────────────────────────── */
+.pv2-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: 56px;
+  flex-shrink: 0;
+}
+
+.pv2-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  padding: 8px 10px 8px 12px;
+}
+
+.pv2-flag {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.pv2-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.pv2-visa-word {
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.pv2-country-name {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.pv2-issuing-country {
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+}
+
+.pv2-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.15);
+  border-left: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+  min-width: 56px;
+}
+
+.pv2-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.42rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.pv2-active {
+  background: rgba(16,185,129,0.3);
+  color: #d1fae5;
+  border: 1px solid rgba(16,185,129,0.4);
+}
+.pv2-expired-badge {
+  background: rgba(239,68,68,0.3);
+  color: #fee2e2;
+  border: 1px solid rgba(239,68,68,0.4);
+}
+.pv2-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.pv2-active .pv2-status-dot { background: #10b981; }
+.pv2-expired-badge .pv2-status-dot { background: #ef4444; }
+
+.pv2-entries-badge {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 1px;
+  font-family: 'Courier New', monospace;
+}
+
+/* ── HOLOGRAM STRIP ─────────────────────────────────────────── */
+.pv2-hologram-strip {
+  position: relative;
+  z-index: 2;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.pv2-holo-text {
+  font-size: 0.35rem;
+  font-weight: 700;
+  color: rgba(0,0,0,0.35);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+}
+
+/* ── MAIN BODY ──────────────────────────────────────────────── */
+.pv2-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px 6px 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Photo Column ───────────────────────────────────────────── */
+.pv2-photo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pv2-photo-frame {
+  border: 2px solid var(--vz-accent, #1a3a8f);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 58px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.pv2-photo-inner {
+  width: 58px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+  overflow: hidden;
+}
+
+.pv2-avatar-emoji {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.pv2-photo-caption {
+  font-size: 0.32rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.pv2-official-seal {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--vz-accent, #1a3a8f);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pv2-seal-ring {
+  width: 38px;
+  height: 38px;
+  border: 1.5px dashed var(--vz-accent, #1a3a8f);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv2-seal-text {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--vz-accent, #1a3a8f);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.pv2-seal-sub {
+  font-size: 0.3rem;
+  font-weight: 700;
+  color: var(--vz-accent, #1a3a8f);
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+/* ── Fields ─────────────────────────────────────────────────── */
+.pv2-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pv2-field-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pv2-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pv2-field-wide {
+  flex: none;
+  width: 100%;
+}
+
+.pv2-field-label {
+  font-size: 0.38rem;
+  color: rgba(0,0,0,0.42);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pv2-field-value {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pv2-value-large {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.pv2-value-unit {
+  font-size: 0.5rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.pv2-holder-name {
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+}
+
+.pv2-mono {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  font-size: 0.62rem;
+}
+
+.pv2-field-divider {
+  height: 1px;
+  width: 100%;
+  margin: 1px 0;
+  border-radius: 1px;
+}
+
+/* ── Action Buttons ─────────────────────────────────────────── */
+.pv2-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 5px;
+  padding: 5px 12px 4px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(0,0,0,0.07);
+  background: rgba(255,255,255,0.5);
+}
+
+.pv2-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid;
+}
+
+.pv2-btn-edit {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+.pv2-btn-edit:hover { background: #dbeafe; }
+
+.pv2-btn-delete {
+  background: #fff1f2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+.pv2-btn-delete:hover { background: #fee2e2; }
+
+.pv2-btn-add {
+  background: rgba(59,130,246,0.07);
+  border: 1.5px dashed #3b82f6;
+  color: #2563eb;
+}
+.pv2-btn-add:hover { background: rgba(59,130,246,0.15); }
+
+/* ── MRZ Zone ───────────────────────────────────────────────── */
+.pv2-mrz {
+  position: relative;
+  z-index: 2;
+  background: rgba(0,0,0,0.04);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding: 3px 10px 2px;
+}
+
+.pv2-mrz-label {
+  font-size: 0.3rem;
+  color: rgba(0,0,0,0.35);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.pv2-mrz-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pv2-mrz-line {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.46rem;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
