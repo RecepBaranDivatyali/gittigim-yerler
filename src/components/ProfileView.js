@@ -279,16 +279,6 @@ export function renderProfileView(container, onBack) {
 
         <!-- Upcoming Trip Countdown Card -->
         <div id="trip-countdown-container"></div>
-
-        <!-- Share Section -->
-        <div class="share-section">
-          <h3>${currentLang === 'tr' ? '👤 Gezgin Kimliğin & Paylaşım' : 'Traveler ID & Share'}</h3>
-          <p>${currentLang === 'tr' ? 'Arkadaşların seni bu kullanıcı adıyla arayabilir veya haritalarınızı karşılaştırmak için profil kodunu iletebilirsin.' : 'Friends can search you with this username or use your profile code to compare maps.'}</p>
-          <div class="share-code-row">
-            <input type="text" class="share-code-input" id="profile-share-code" readonly value="@${escapeHtml(profile.username || 'Gezgin')}">
-            <button class="share-copy-btn" id="profile-copy-btn">${currentLang === 'tr' ? 'Kullanıcı Adını Kopyala' : 'Copy Username'}</button>
-          </div>
-        </div>
       </div>
     `;
 
@@ -543,27 +533,8 @@ export function renderProfileView(container, onBack) {
         renderTripCountdown();
       });
     }
-
-    document.getElementById('profile-copy-btn')?.addEventListener('click', (e) => {
-      const input = document.getElementById('profile-share-code');
-      const textToCopy = input ? input.value : '';
-      const updateBtn = () => {
-        e.target.textContent = t('copied');
-        setTimeout(() => e.target.textContent = t('copy'), 2000);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(textToCopy).then(updateBtn).catch(() => {
-          input?.select();
-          document.execCommand('copy');
-          updateBtn();
-        });
-      } else {
-        input?.select();
-        document.execCommand('copy');
-        updateBtn();
-      }
-    });
   }
+
 
   function renderSettingsTab(contentArea) {
     const currentLang = getLanguage();
