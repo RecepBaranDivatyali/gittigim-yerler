@@ -160,18 +160,56 @@ export function saveWorldVisit(countryCode, status, details = {}) {
     const isVisited = status === 'visited';
     const autoEntryDate = isVisited ? new Date().toISOString().split('T')[0] : '';
     const autoTransport = isVisited ? ((countryCode === 'TR' || countryCode.startsWith('TR::')) ? 'car' : 'flight') : '';
+    
+    // Multi-visit array preservation & synchronization
+    let visits = details.visits;
+    let featuredIdx = details.featuredVisitIndex !== undefined 
+      ? details.featuredVisitIndex 
+      : (existing.featuredVisitIndex !== undefined ? existing.featuredVisitIndex : 0);
+
+    if (!Array.isArray(visits) || visits.length === 0) {
+      if (Array.isArray(existing.visits) && existing.visits.length > 0) {
+        visits = [...existing.visits];
+        // If entry/exit details passed, update the currently featured visit
+        const fv = visits[featuredIdx] || visits[0];
+        if (fv) {
+          if (details.entryDate !== undefined) fv.entryDate = details.entryDate;
+          if (details.entryTransport !== undefined) fv.entryTransport = details.entryTransport;
+          if (details.exitDate !== undefined) fv.exitDate = details.exitDate;
+          if (details.exitTransport !== undefined) fv.exitTransport = details.exitTransport;
+          if (details.buddies !== undefined) fv.buddies = details.buddies;
+        }
+      } else if (isVisited) {
+        visits = [{
+          id: 'v_init',
+          entryDate: details.entryDate || existing.entryDate || autoEntryDate,
+          entryTransport: details.entryTransport || existing.entryTransport || autoTransport,
+          exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
+          exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || autoTransport),
+          buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || [])
+        }];
+      } else {
+        visits = [];
+      }
+    }
+
+    const safeFeaturedIdx = visits.length > 0 ? Math.max(0, Math.min(visits.length - 1, featuredIdx)) : 0;
+    const featuredVisit = visits[safeFeaturedIdx] || {};
+
     worldVisits[countryCode] = {
       status,
-      date: details.date || existing.date || new Date().toISOString().split('T')[0],
+      date: details.date || existing.date || featuredVisit.entryDate || new Date().toISOString().split('T')[0],
       notes: details.notes !== undefined ? details.notes : (existing.notes || ''),
       rating: details.rating !== undefined ? details.rating : (existing.rating || 0),
-      entryDate: details.entryDate ? details.entryDate : (existing.entryDate || autoEntryDate),
-      entryTransport: details.entryTransport ? details.entryTransport : (existing.entryTransport || autoTransport),
-      exitDate: details.exitDate !== undefined ? details.exitDate : (existing.exitDate || ''),
-      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
-      buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
+      entryDate: details.entryDate ? details.entryDate : (featuredVisit.entryDate || existing.entryDate || autoEntryDate),
+      entryTransport: details.entryTransport ? details.entryTransport : (featuredVisit.entryTransport || existing.entryTransport || autoTransport),
+      exitDate: details.exitDate !== undefined ? details.exitDate : (featuredVisit.exitDate !== undefined ? featuredVisit.exitDate : (existing.exitDate || '')),
+      exitTransport: details.exitTransport !== undefined ? details.exitTransport : (featuredVisit.exitTransport !== undefined ? featuredVisit.exitTransport : (existing.exitTransport || '')),
+      buddies: details.buddies !== undefined ? details.buddies : (featuredVisit.buddies !== undefined ? featuredVisit.buddies : (existing.buddies || [])),
       places: details.places !== undefined ? details.places : (existing.places || []),
-      journal: details.journal !== undefined ? details.journal : (existing.journal || null)
+      journal: details.journal !== undefined ? details.journal : (existing.journal || null),
+      visits,
+      featuredVisitIndex: safeFeaturedIdx
     };
     if (status === 'visited') {
       triggerConfetti();
@@ -186,6 +224,54 @@ export function saveWorldVisit(countryCode, status, details = {}) {
   }
 
   notifyStateChange();
+}
+
+export function getCountryVisits(countryCode) {
+  const { worldVisits } = getStorageData();
+  const visit = worldVisits[countryCode];
+  if (!visit || visit.status !== 'visited') return [];
+  if (Array.isArray(visit.visits) && visit.visits.length > 0) {
+    return visit.visits;
+  }
+  return [{
+    id: 'v_default',
+    entryDate: visit.entryDate || visit.date || '',
+    entryTransport: visit.entryTransport || (countryCode === 'TR' ? 'car' : 'flight'),
+    exitDate: visit.exitDate || '',
+    exitTransport: visit.exitTransport || visit.entryTransport || 'flight',
+    buddies: Array.isArray(visit.buddies) ? visit.buddies : []
+  }];
+}
+
+export function saveCountryVisits(countryCode, visitsList, featuredIndex = 0) {
+  const { worldVisits } = getStorageData();
+  const existing = worldVisits[countryCode] || { status: 'visited' };
+  const safeVisits = Array.isArray(visitsList) && visitsList.length > 0 ? visitsList : [];
+  const validIndex = Math.max(0, Math.min(safeVisits.length - 1, featuredIndex));
+  const featured = safeVisits[validIndex] || safeVisits[0] || {};
+
+  worldVisits[countryCode] = {
+    ...existing,
+    status: existing.status || 'visited',
+    featuredVisitIndex: validIndex,
+    visits: safeVisits,
+    entryDate: featured.entryDate || existing.entryDate || '',
+    entryTransport: featured.entryTransport || existing.entryTransport || 'flight',
+    exitDate: featured.exitDate !== undefined ? featured.exitDate : (existing.exitDate || ''),
+    exitTransport: featured.exitTransport !== undefined ? featured.exitTransport : (existing.exitTransport || 'flight'),
+    buddies: Array.isArray(featured.buddies) ? featured.buddies : (existing.buddies || []),
+    date: featured.entryDate || existing.date || new Date().toISOString().split('T')[0]
+  };
+
+  safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(worldVisits));
+  notifyStateChange();
+  return worldVisits[countryCode];
+}
+
+export function setCountryFeaturedVisit(countryCode, featuredIndex) {
+  const visits = getCountryVisits(countryCode);
+  if (visits.length === 0) return;
+  return saveCountryVisits(countryCode, visits, featuredIndex);
 }
 
 export function toggleWorldCity(countryCode, cityName, isVisited, notes = '') {

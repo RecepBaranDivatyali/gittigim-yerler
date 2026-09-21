@@ -10,7 +10,8 @@ import {
   getPassportType, setPassportType,
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount,
-  getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber
+  getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
+  getCountryVisits, setCountryFeaturedVisit
 } from '../utils/storage.js';
 import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
@@ -2322,23 +2323,33 @@ export function renderProfileView(container, onBack) {
                             const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
                             const cName = getCountryDisplayName(country);
                             const visit = storageData.worldVisits?.[cCode] || {};
+                            const visitsList = (Array.isArray(visit.visits) && visit.visits.length > 0) ? visit.visits : [visit];
+                            const visitCount = visitsList.length;
+                            const featuredIdx = (typeof visit.featuredVisitIndex === 'number' && visitsList[visit.featuredVisitIndex]) ? visit.featuredVisitIndex : 0;
+                            const activeVisit = visitsList[featuredIdx] || visit;
                             
                             // If user didn't enter visit date, default to marked date or today
-                            const rawEntryDate = visit.entryDate || visit.date || visit.markedAt || todayStr;
+                            const rawEntryDate = activeVisit.entryDate || activeVisit.date || activeVisit.markedAt || visit.entryDate || visit.date || todayStr;
                             const entryDate = formatDate(rawEntryDate);
                             const defaultTrans = cCode === 'TR' ? 'car' : 'flight';
-                            const entryTrans = transportIcons[visit.entryTransport || defaultTrans] || '✈️';
+                            const entryTrans = transportIcons[activeVisit.entryTransport || defaultTrans] || '✈️';
 
                             // Always provide paired exit stamp (calculated realistic departure if not set)
-                            const rawExitDate = visit.exitDate || computeExitDateStr(rawEntryDate, cCode, globalIdx);
+                            const rawExitDate = activeVisit.exitDate || visit.exitDate || computeExitDateStr(rawEntryDate, cCode, globalIdx);
                             const exitDate = formatDate(rawExitDate);
-                            const exitTrans = transportIcons[visit.exitTransport] || entryTrans;
+                            const exitTrans = transportIcons[activeVisit.exitTransport] || entryTrans;
 
                             const stampStyle = getCountryStampStyle(cCode, globalIdx);
                             const stampCountryName = (cName || stampStyle.label || cCode).toUpperCase();
 
                             return `
-                              <div class="passport-stamp-cell">
+                              <div class="passport-stamp-cell ${visitCount > 1 ? 'has-multi-visits' : ''}" data-ccode="${cCode}" title="${visitCount > 1 ? (currentLang === 'tr' ? `${visitCount} farklı seyahat — Damgaları görmek ve seçmek için tıkla` : `${visitCount} visits — Click to inspect and select stamp`) : (currentLang === 'tr' ? 'Damgayı yakından incele' : 'Inspect stamp')}">
+                                ${visitCount > 1 ? `
+                                  <div class="stamp-multiplier-badge" data-ccode="${cCode}" title="${visitCount} farklı ziyaret">
+                                    <span class="multiplier-x">x</span><span class="multiplier-num">${visitCount}</span>
+                                  </div>
+                                ` : ''}
+
                                 <!-- Giriş Damgası (İkonik Mimari Simge ile) -->
                                 <div class="stamp-seal-item ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation}deg);">
                                   <div class="stamp-seal-inner-frame">
@@ -2485,7 +2496,7 @@ export function renderProfileView(container, onBack) {
       if (totalPages <= 1) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       // Do not initiate drag or capture pointer if user tapped an interactive element
-      if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn')) {
+      if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn, .passport-stamp-cell, .stamp-multiplier-badge')) {
         return;
       }
       isDragging = true;
@@ -2789,6 +2800,157 @@ export function renderProfileView(container, onBack) {
         openPassportModal(1);
       });
     }
+
+    // ─── 🔍 Zoom-In Stamp Modal & Multi-Stamp Picker ───
+    function openStampZoomModal(cCode) {
+      const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
+      const cName = getCountryDisplayName(country);
+      const visits = getCountryVisits(cCode);
+      const visit = storageData.worldVisits?.[cCode] || {};
+      const currentFeatIdx = typeof visit.featuredVisitIndex === 'number' ? visit.featuredVisitIndex : 0;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'passport-stamps-zoom-overlay';
+      overlay.innerHTML = `
+        <div class="passport-stamps-zoom-modal">
+          <div class="zoom-modal-header">
+            <div class="zoom-modal-title-group">
+              <span class="zoom-country-flag">${country.flag || '🌍'}</span>
+              <div>
+                <h3 class="zoom-country-name">${escapeHtml(cName)}</h3>
+                <span class="zoom-country-sub">${visits.length} ${currentLang === 'tr' ? 'Farklı Ziyaret & Damga Koleksiyonu' : 'Different Visits & Stamp Collection'}</span>
+              </div>
+            </div>
+            <button type="button" class="zoom-modal-close-btn" id="btn-close-zoom-modal">&times;</button>
+          </div>
+
+          <div class="zoom-modal-hint">
+            <span>💡</span>
+            <span>${currentLang === 'tr' ? 'Pasaport sayfasında gösterilmesini istediğiniz damgaya dokunun:' : 'Tap the stamp you want displayed on your passport page:'}</span>
+          </div>
+
+          <div class="zoom-stamps-cards-list">
+            ${visits.map((v, vIdx) => {
+              const isFeat = vIdx === currentFeatIdx;
+              const vRawEntry = v.entryDate || v.date || todayStr;
+              const vEntryDate = formatDate(vRawEntry);
+              const vDefaultTrans = cCode === 'TR' ? 'car' : 'flight';
+              const vEntryTrans = transportIcons[v.entryTransport || vDefaultTrans] || '✈️';
+              const vRawExit = v.exitDate || computeExitDateStr(vRawEntry, cCode, vIdx);
+              const vExitDate = formatDate(vRawExit);
+              const vExitTrans = transportIcons[v.exitTransport] || vEntryTrans;
+              const stampStyle = getCountryStampStyle(cCode, vIdx);
+              const stampCountryName = (cName || stampStyle.label || cCode).toUpperCase();
+              const buddies = Array.isArray(v.buddies) ? v.buddies : [];
+
+              return `
+                <div class="stamp-zoom-card ${isFeat ? 'is-active-stamp' : ''}" data-vidx="${vIdx}">
+                  <div class="stamp-zoom-card-top">
+                    <span class="stamp-zoom-card-num">${vIdx + 1}. ${currentLang === 'tr' ? 'Ziyaret' : 'Visit'}</span>
+                    ${isFeat ? `
+                      <span class="stamp-zoom-active-badge">✓ ${currentLang === 'tr' ? 'Pasaportta Gösteriliyor' : 'Shown on Passport'}</span>
+                    ` : `
+                      <span class="stamp-zoom-select-btn">🎯 ${currentLang === 'tr' ? 'Bunu Pasaporta Seç' : 'Select for Passport'}</span>
+                    `}
+                  </div>
+
+                  <div class="stamp-zoom-card-stamps-row">
+                    <!-- Giriş Damgası -->
+                    <div class="stamp-seal-item ${stampStyle.shape}" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation}deg);zoom:1.15;">
+                      <div class="stamp-seal-inner-frame">
+                        <div class="stamp-seal-top-bar">
+                          <span class="stamp-seal-tag">${cCode}</span>
+                          <span class="stamp-seal-action">${currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'}</span>
+                          <span class="stamp-seal-star">★</span>
+                        </div>
+                        <div class="stamp-landmark-art" style="color:${stampStyle.ink};">
+                          ${stampStyle.landmarkSvg}
+                        </div>
+                        <div class="stamp-seal-country-name">${escapeHtml(stampCountryName)}</div>
+                        <div class="stamp-seal-bottom-row">
+                          <span class="stamp-transport-icon">${vEntryTrans}</span>
+                          <span class="stamp-seal-date-box">${vEntryDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Çıkış Damgası -->
+                    <div class="stamp-seal-item exit-mini" style="--stamp-ink:${stampStyle.ink};color:${stampStyle.ink};border-color:${stampStyle.ink};transform:rotate(${stampStyle.rotation * -0.6}deg);zoom:1.15;">
+                      <div class="stamp-seal-inner-frame">
+                        <div class="stamp-seal-top-bar">
+                          <span class="stamp-seal-tag">${cCode}</span>
+                          <span class="stamp-seal-action">${currentLang === 'tr' ? 'ÇIKIŞ' : 'EXIT'}</span>
+                        </div>
+                        <div class="stamp-seal-bottom-row">
+                          <span class="stamp-transport-icon">${vExitTrans}</span>
+                          <span class="stamp-seal-date-box">${vExitDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="stamp-zoom-card-meta">
+                    <div class="stamp-zoom-meta-item">
+                      <span class="meta-label">📅 ${currentLang === 'tr' ? 'Giriş - Çıkış' : 'Dates'}:</span>
+                      <span class="meta-val">${vEntryDate || '—'} ➔ ${vExitDate || '—'}</span>
+                    </div>
+                    <div class="stamp-zoom-meta-item">
+                      <span class="meta-label">🚀 ${currentLang === 'tr' ? 'Ulaşım' : 'Transport'}:</span>
+                      <span class="meta-val">${vEntryTrans}</span>
+                    </div>
+                    ${buddies.length > 0 ? `
+                      <div class="stamp-zoom-meta-item buddies">
+                        <span class="meta-label">👥 ${currentLang === 'tr' ? 'Yol Arkadaşları' : 'Buddies'}:</span>
+                        <div class="meta-buddies-row">
+                          ${buddies.map(b => `<span class="meta-buddy-chip">${escapeHtml(b)}</span>`).join('')}
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      const closeZoom = () => {
+        overlay.remove();
+      };
+
+      overlay.querySelector('#btn-close-zoom-modal')?.addEventListener('click', closeZoom);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeZoom();
+      });
+
+      overlay.querySelectorAll('.stamp-zoom-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const vIdx = parseInt(card.dataset.vidx, 10);
+          if (!isNaN(vIdx)) {
+            setCountryFeaturedVisit(cCode, vIdx);
+            try {
+              import('canvas-confetti').then(m => m.default({ particleCount: 40, spread: 50, origin: { y: 0.6 } }));
+            } catch {}
+            closeZoom();
+            closeModal();
+            openPassportModal(currentPage);
+          }
+        });
+      });
+    }
+
+    modal.querySelectorAll('.passport-stamp-cell').forEach(cell => {
+      cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cCode = cell.dataset.ccode;
+        if (cCode) {
+          openStampZoomModal(cCode);
+        }
+      });
+    });
 
     // Direct click bindings for visa buttons to guarantee immediate response
     modal.querySelectorAll('#btn-passport-add-visa-empty, .passport-add-visa-btn').forEach(btn => {

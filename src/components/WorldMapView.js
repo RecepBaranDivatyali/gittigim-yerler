@@ -3424,6 +3424,22 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentJournal = wData.journal || null;
   }
 
+  // Multi-visit initialization
+  const countryVisitObj = (type === 'province') ? (turkeyVisits[id.replace('TR::', '')] || {}) : (worldVisits[id] || {});
+  let currentVisits = Array.isArray(countryVisitObj.visits) && countryVisitObj.visits.length > 0
+    ? JSON.parse(JSON.stringify(countryVisitObj.visits))
+    : [{
+        id: 'v_init',
+        entryDate: currentEntryDate,
+        entryTransport: currentEntryTransport,
+        exitDate: currentExitDate,
+        exitTransport: currentExitTransport,
+        buddies: [...currentBuddies]
+      }];
+  let currentFeaturedVisitIndex = typeof countryVisitObj.featuredVisitIndex === 'number' ? countryVisitObj.featuredVisitIndex : 0;
+  if (currentFeaturedVisitIndex >= currentVisits.length) currentFeaturedVisitIndex = 0;
+  let activeVisitIndex = currentFeaturedVisitIndex;
+
   const content = document.createElement('div');
   content.className = 'map-status-popup';
   L.DomEvent.disableClickPropagation(content);
@@ -3484,10 +3500,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
     <!-- 🎛️ Segmented Action Hub Tabs (Only visible when status === 'visited') -->
     <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate) ? 'has-data' : ''}" data-drawer="stamp" title="Pasaport Damgaları">
-        <span class="hub-btn-icon">🛂</span>
-        <span class="hub-btn-label">Damga</span>
-        ${(currentEntryDate || currentExitDate) ? `<span class="hub-btn-dot emerald"></span>` : ''}
+      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? 'has-data' : ''}" data-drawer="stamp" title="Ziyaret Tarihleri & Pasaport Damgaları">
+        <span class="hub-btn-icon">📅</span>
+        <span class="hub-btn-label">Tarih</span>
+        ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? `<span class="hub-btn-dot emerald"></span>` : ''}
       </button>
       <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar">
         <span class="hub-btn-icon">📸</span>
@@ -3510,10 +3526,19 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       ` : ''}
     </div>
 
-    <!-- 🛂 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi -->
+    <!-- 📅 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi -->
     <div class="map-status-stamp-drawer" id="map-status-stamp-drawer" style="display: none;">
       <div class="stamp-drawer-header">
-        <span class="stamp-drawer-title">🛂 Giriş & Çıkış Pasaport Damgası</span>
+        <span class="stamp-drawer-title">📅 Ziyaret Tarihleri & Pasaport Damgası</span>
+      </div>
+
+      <!-- Çoklu Ziyaret Seçici & Yönetici Çubuğu -->
+      <div class="stamp-visits-manager" id="stamp-visits-manager">
+        <div class="stamp-visits-top-row">
+          <span class="stamp-visits-label">SEYAHAT GEÇMİŞİ (<span id="stamp-visits-count">${currentVisits.length}</span>):</span>
+          <button type="button" id="btn-add-new-visit" class="stamp-visit-add-pill-btn">➕ Yeni Ziyaret Ekle</button>
+        </div>
+        <div class="stamp-visits-scroll" id="stamp-visits-tabs-container"></div>
       </div>
 
       <!-- Giriş Damgası Bölümü -->
@@ -3556,6 +3581,15 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
           ${currentBuddies.map(b => `<span class="buddy-chip">${escapeHtml(b)} <button type="button" class="del-buddy" data-name="${escapeHtml(b)}">&times;</button></span>`).join('')}
         </div>
+      </div>
+
+      <div class="stamp-visit-footer-controls">
+        <button type="button" id="btn-toggle-featured-visit" class="stamp-feature-toggle-btn">
+          ⭐ Bu Ziyareti Pasaportta Göster
+        </button>
+        <button type="button" id="btn-delete-active-visit" class="stamp-delete-visit-btn" style="display:none;">
+          🗑️ Ziyareti Sil
+        </button>
       </div>
 
       <button type="button" id="btn-save-stamp-data" class="stamp-save-btn">
@@ -3773,12 +3807,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     }
   }
 
-  entryDateInput?.addEventListener('input', updateStampPreviews);
-  entryTransportSelect?.addEventListener('change', updateStampPreviews);
-  exitDateInput?.addEventListener('input', updateStampPreviews);
-  exitTransportSelect?.addEventListener('change', updateStampPreviews);
+  // Multi-visit management and synchronization
+  const visitsContainer = content.querySelector('#stamp-visits-tabs-container');
+  const visitsCountSpan = content.querySelector('#stamp-visits-count');
+  const addVisitBtn = content.querySelector('#btn-add-new-visit');
+  const deleteVisitBtn = content.querySelector('#btn-delete-active-visit');
+  const toggleFeaturedBtn = content.querySelector('#btn-toggle-featured-visit');
 
-  // Travel Buddies interactivity
   const buddiesChipsEl = content.querySelector('#popup-buddies-chips');
   const buddyInput = content.querySelector('#popup-buddy-input');
   const buddyAddBtn = content.querySelector('#popup-buddy-add-btn');
@@ -3793,12 +3828,98 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         const name = e.currentTarget.dataset.name;
         currentBuddies = currentBuddies.filter(x => x !== name);
         renderBuddyChips();
-        persistVisitDetails({ buddies: currentBuddies });
+        syncActiveVisitFromForm();
       });
     });
   }
 
-  renderBuddyChips();
+  function syncFormFromActiveVisit() {
+    const v = currentVisits[activeVisitIndex] || {};
+    if (entryDateInput) entryDateInput.value = v.entryDate || '';
+    if (entryTransportSelect) entryTransportSelect.value = v.entryTransport || (countryCode === 'TR' ? 'car' : 'flight');
+    if (exitDateInput) exitDateInput.value = v.exitDate || '';
+    if (exitTransportSelect) exitTransportSelect.value = v.exitTransport || (countryCode === 'TR' ? 'car' : 'flight');
+    currentBuddies = Array.isArray(v.buddies) ? [...v.buddies] : [];
+    renderBuddyChips();
+    updateStampPreviews();
+    updateVisitsUI();
+  }
+
+  function syncActiveVisitFromForm() {
+    if (!currentVisits[activeVisitIndex]) {
+      currentVisits[activeVisitIndex] = { id: 'v_' + Date.now() };
+    }
+    const v = currentVisits[activeVisitIndex];
+    v.entryDate = entryDateInput ? entryDateInput.value : '';
+    v.entryTransport = entryTransportSelect ? entryTransportSelect.value : 'flight';
+    v.exitDate = exitDateInput ? exitDateInput.value : '';
+    v.exitTransport = exitTransportSelect ? exitTransportSelect.value : 'flight';
+    v.buddies = [...currentBuddies];
+  }
+
+  function updateVisitsUI() {
+    if (visitsCountSpan) visitsCountSpan.textContent = currentVisits.length;
+    if (!visitsContainer) return;
+    const transEmoji = { flight: '✈️', train: '🚆', car: '🚗', bus: '🚌', ship: '🚢' };
+    visitsContainer.innerHTML = currentVisits.map((v, idx) => {
+      const isAct = idx === activeVisitIndex;
+      const isFeat = idx === currentFeaturedVisitIndex;
+      const icon = transEmoji[v.entryTransport] || '✈️';
+      const year = v.entryDate ? v.entryDate.split('-')[0] : '';
+      return `
+        <button type="button" class="stamp-visit-tab-pill ${isAct ? 'active' : ''} ${isFeat ? 'featured' : ''}" data-idx="${idx}">
+          <span class="pill-num">${idx + 1}. Ziyaret</span>
+          <span class="pill-icon">${icon}</span>
+          ${year ? `<span class="pill-year">${year}</span>` : ''}
+          ${isFeat ? `<span class="pill-star" title="Pasaportta Gösterilen Damga">⭐</span>` : ''}
+        </button>
+      `;
+    }).join('');
+
+    visitsContainer.querySelectorAll('.stamp-visit-tab-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        syncActiveVisitFromForm();
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (!isNaN(idx) && currentVisits[idx]) {
+          activeVisitIndex = idx;
+          syncFormFromActiveVisit();
+        }
+      });
+    });
+
+    if (deleteVisitBtn) {
+      deleteVisitBtn.style.display = currentVisits.length > 1 ? 'inline-flex' : 'none';
+    }
+    if (toggleFeaturedBtn) {
+      const isFeat = activeVisitIndex === currentFeaturedVisitIndex;
+      toggleFeaturedBtn.classList.toggle('active', isFeat);
+      toggleFeaturedBtn.innerHTML = isFeat
+        ? '<span>⭐ Bu Ziyaret Pasaportta Gösteriliyor (Aktif)</span>'
+        : '<span>☆ Bu Ziyareti Pasaport Damgası Yap</span>';
+    }
+  }
+
+  entryDateInput?.addEventListener('input', () => {
+    syncActiveVisitFromForm();
+    updateStampPreviews();
+    updateVisitsUI();
+  });
+  entryTransportSelect?.addEventListener('change', () => {
+    syncActiveVisitFromForm();
+    updateStampPreviews();
+    updateVisitsUI();
+  });
+  exitDateInput?.addEventListener('input', () => {
+    syncActiveVisitFromForm();
+    updateStampPreviews();
+    updateVisitsUI();
+  });
+  exitTransportSelect?.addEventListener('change', () => {
+    syncActiveVisitFromForm();
+    updateStampPreviews();
+    updateVisitsUI();
+  });
 
   buddyAddBtn?.addEventListener('click', () => {
     const val = (buddyInput?.value || '').trim();
@@ -3806,7 +3927,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       currentBuddies.push(val);
       buddyInput.value = '';
       renderBuddyChips();
-      persistVisitDetails({ buddies: currentBuddies });
+      syncActiveVisitFromForm();
     }
   });
 
@@ -3817,20 +3938,54 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     }
   });
 
+  addVisitBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    syncActiveVisitFromForm();
+    const newVisit = {
+      id: 'v_' + Date.now(),
+      entryDate: new Date().toISOString().split('T')[0],
+      entryTransport: countryCode === 'TR' ? 'car' : 'flight',
+      exitDate: '',
+      exitTransport: countryCode === 'TR' ? 'car' : 'flight',
+      buddies: []
+    };
+    currentVisits.push(newVisit);
+    activeVisitIndex = currentVisits.length - 1;
+    syncFormFromActiveVisit();
+  });
+
+  deleteVisitBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (currentVisits.length <= 1) return;
+    if (confirm('Bu seyahat kaydını silmek istediğinize emin misiniz?')) {
+      currentVisits.splice(activeVisitIndex, 1);
+      if (activeVisitIndex >= currentVisits.length) activeVisitIndex = currentVisits.length - 1;
+      if (currentFeaturedVisitIndex >= currentVisits.length) currentFeaturedVisitIndex = 0;
+      syncFormFromActiveVisit();
+    }
+  });
+
+  toggleFeaturedBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentFeaturedVisitIndex = activeVisitIndex;
+    updateVisitsUI();
+  });
+
+  syncFormFromActiveVisit();
+
   // Save Stamp Data Handler
   content.querySelector('#btn-save-stamp-data')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const eDate = entryDateInput?.value || '';
-    const eTrans = entryTransportSelect?.value || 'flight';
-    const xDate = exitDateInput?.value || '';
-    const xTrans = exitTransportSelect?.value || 'flight';
-
+    syncActiveVisitFromForm();
+    const feat = currentVisits[currentFeaturedVisitIndex] || currentVisits[0] || {};
     const stampPayload = {
-      entryDate: eDate,
-      entryTransport: eTrans,
-      exitDate: xDate,
-      exitTransport: xTrans,
-      buddies: currentBuddies
+      entryDate: feat.entryDate || '',
+      entryTransport: feat.entryTransport || 'flight',
+      exitDate: feat.exitDate || '',
+      exitTransport: feat.exitTransport || 'flight',
+      buddies: Array.isArray(feat.buddies) ? feat.buddies : [],
+      visits: currentVisits,
+      featuredVisitIndex: currentFeaturedVisitIndex
     };
 
     persistVisitDetails(stampPayload);
