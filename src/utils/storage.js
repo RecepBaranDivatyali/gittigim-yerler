@@ -1043,3 +1043,133 @@ export function setUserVisaOverride(countryCode, visaStatus) {
   notifyStateChange();
 }
 
+// ─── User Personal Visa Records ──────────────────────────────────────────────
+
+/**
+ * All 29 Schengen Area member states.
+ * A single Schengen visa covers all of these countries.
+ */
+export const SCHENGEN_COUNTRIES = [
+  'AT', 'BE', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU',
+  'IS', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL', 'PT',
+  'SK', 'SI', 'ES', 'SE', 'CH', 'LI', 'HR', 'BG', 'RO', 'CY'
+];
+
+/**
+ * Visa type → covered country codes mapping.
+ */
+export const VISA_COVERAGE_MAP = {
+  schengen: ['AT', 'BE', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU',
+             'IS', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL', 'PT',
+             'SK', 'SI', 'ES', 'SE', 'CH', 'LI', 'HR', 'BG', 'RO', 'CY'],
+  us: ['US'],
+  uk: ['GB'],
+  canada: ['CA'],
+  japan: ['JP'],
+  australia: ['AU'],
+  uae: ['AE'],
+  other: []
+};
+
+/**
+ * Returns all user-entered visa records.
+ * @returns {Array}
+ */
+export function getUserVisas() {
+  try {
+    const raw = localStorage.getItem('gv_user_visas_v1');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Saves a visa record. Updates if id matches, otherwise creates new.
+ * @param {Object} visaData
+ */
+export function saveUserVisa(visaData) {
+  try {
+    let visas = getUserVisas();
+    if (visaData.id) {
+      const idx = visas.findIndex(v => v.id === visaData.id);
+      if (idx >= 0) {
+        visas[idx] = { ...visas[idx], ...visaData, updatedAt: new Date().toISOString() };
+      } else {
+        visas.push({ ...visaData, updatedAt: new Date().toISOString() });
+      }
+    } else {
+      const newVisa = {
+        ...visaData,
+        id: 'visa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        createdAt: new Date().toISOString()
+      };
+      visas.push(newVisa);
+    }
+    safeSetItem('gv_user_visas_v1', JSON.stringify(visas));
+    notifyStateChange();
+  } catch (e) {
+    console.warn('Error saving visa:', e);
+  }
+}
+
+/**
+ * Deletes a visa record by id.
+ * @param {string} visaId
+ */
+export function deleteUserVisa(visaId) {
+  try {
+    let visas = getUserVisas().filter(v => v.id !== visaId);
+    safeSetItem('gv_user_visas_v1', JSON.stringify(visas));
+    notifyStateChange();
+  } catch (e) {
+    console.warn('Error deleting visa:', e);
+  }
+}
+
+/**
+ * Returns only visas currently active (today within validFrom..validUntil).
+ * @returns {Array}
+ */
+export function getActiveVisas() {
+  const today = new Date().toISOString().split('T')[0];
+  return getUserVisas().filter(v => {
+    if (!v.validFrom || !v.validUntil) return false;
+    return today >= v.validFrom && today <= v.validUntil;
+  });
+}
+
+/**
+ * Returns visa coverage info for a specific country.
+ * Checks if user has an active visa covering countryCode.
+ * @param {string} countryCode - ISO 3166-1 alpha-2
+ * @returns {Object|null} visa object or null
+ */
+export function getVisaCoverageForCountry(countryCode) {
+  if (!countryCode) return null;
+  const code = countryCode.toUpperCase();
+  for (const visa of getActiveVisas()) {
+    const type = (visa.visaType || '').toLowerCase();
+    const coverage = VISA_COVERAGE_MAP[type] || [];
+    if (coverage.includes(code)) return visa;
+    if (visa.singleCountry && visa.singleCountry.toUpperCase() === code) return visa;
+  }
+  return null;
+}
+
+/**
+ * Generates a realistic-looking visa number for the given type.
+ * @param {string} visaType
+ * @param {string} issuingCountry ISO-3 code (e.g. 'DEU')
+ * @returns {string}
+ */
+export function generateVisaNumber(visaType, issuingCountry) {
+  const prefixMap = {
+    schengen: (issuingCountry || 'DEU').toUpperCase().slice(0, 3),
+    us: 'USA', uk: 'GBR', canada: 'CAN', japan: 'JPN',
+    australia: 'AUS', uae: 'UAE',
+    other: (issuingCountry || 'OTH').toUpperCase().slice(0, 3)
+  };
+  const prefix = prefixMap[visaType] || 'OTH';
+  return prefix + String(Math.floor(10000000 + Math.random() * 89999999));
+}

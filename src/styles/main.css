@@ -7803,10 +7803,17 @@ body > .floating-sim-switch-pill {
   border: 1px solid rgba(168, 85, 247, 0.5);
   color: #c084fc;
 }
+.popup-visa-inline-badge.valid-personal-visa {
+  background: rgba(0, 230, 118, 0.22);
+  border: 1px solid #00e676;
+  color: #00e676;
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.35);
+}
 body[data-theme="light"] .popup-visa-inline-badge.free { background: rgba(16,185,129,0.12); color: #059669; }
 body[data-theme="light"] .popup-visa-inline-badge.req  { background: rgba(239,68,68,0.12);  color: #dc2626; }
 body[data-theme="light"] .popup-visa-inline-badge.voa  { background: rgba(245,158,11,0.12); color: #d97706; }
 body[data-theme="light"] .popup-visa-inline-badge.evisa{ background: rgba(168,85,247,0.12); color: #7c3aed; }
+body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { background: rgba(0, 200, 83, 0.15); border-color: #00c853; color: #047857; }
 
 /* -- 2. Map Popup: Collapsible Drawers (Stamp & Guide) -- */
 .map-status-drawer-toggle-row {
@@ -12337,3 +12344,495 @@ body[data-theme="light"] .stamp-transport-select {
   align-items: center;
   justify-content: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   VISA PAGE STYLES — Passport Visa Leaf + Form Dialog
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Visa Leaf (Full page in passport carousel) ───────────────────────── */
+.passport-visa-sheet {
+  position: relative;
+  overflow: hidden;
+  background: #f5f0e8;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.passport-visa-leaf-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.passport-visa-guilloche-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 6px,
+      var(--visa-accent, #1a4ca330) 6px,
+      var(--visa-accent, #1a4ca330) 7px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 6px,
+      var(--visa-accent, #1a4ca315) 6px,
+      var(--visa-accent, #1a4ca315) 7px
+    );
+  opacity: 0.35;
+}
+
+.passport-visa-hologram-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  background: linear-gradient(180deg, #c0c0c040, #c0c0c015, #c0c0c040);
+  border-right: 1px solid rgba(255,255,255,0.3);
+}
+
+/* ── Expired overlay stamp ──────────────────────────────────────────── */
+.passport-visa-expired-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ef4444;
+  border: 4px solid #ef4444;
+  padding: 6px 18px;
+  border-radius: 6px;
+  text-align: center;
+  line-height: 1.3;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.85;
+  letter-spacing: 2px;
+  font-family: 'Courier New', monospace;
+  background: rgba(255,255,255,0.12);
+}
+
+.passport-visa-expired .passport-visa-content {
+  opacity: 0.55;
+}
+
+/* ── Visa content container ─────────────────────────────────────────── */
+.passport-visa-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 0 6px 22px; /* 22px left = hologram strip width + gap */
+}
+
+/* ── Visa header bar ─────────────────────────────────────────────────── */
+.passport-visa-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.passport-visa-flag {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.passport-visa-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.passport-visa-country-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.passport-visa-issuing {
+  font-size: 0.5rem;
+  opacity: 0.85;
+  letter-spacing: 0.3px;
+}
+.passport-visa-status-dot {
+  font-size: 0.75rem;
+}
+
+/* ── Visa body (photo + fields) ──────────────────────────────────────── */
+.passport-visa-body {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px 4px;
+  flex: 1;
+  min-height: 0;
+}
+.passport-visa-photo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.passport-visa-photo {
+  width: 52px;
+  height: 64px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+.passport-visa-photo-label {
+  font-size: 0.38rem;
+  color: rgba(0,0,0,0.55);
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────── */
+.passport-visa-fields-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.passport-visa-field-row {
+  display: flex;
+  gap: 6px;
+}
+.passport-visa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.passport-visa-field.full-width {
+  flex: none;
+  width: 100%;
+}
+.pvf-label {
+  font-size: 0.38rem;
+  color: rgba(0,0,0,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+.pvf-value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Action buttons row ─────────────────────────────────────────────── */
+.passport-visa-actions-row {
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px 4px;
+  flex-wrap: wrap;
+}
+.passport-visa-edit-btn,
+.passport-visa-delete-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.passport-visa-edit-btn {
+  background: #f0f4ff;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+.passport-visa-edit-btn:hover { background: #dbeafe; }
+.passport-visa-delete-btn {
+  background: #fff1f2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+.passport-visa-delete-btn:hover { background: #fee2e2; }
+
+.passport-add-visa-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px dashed #3b82f6;
+  background: rgba(59,130,246,0.07);
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.passport-add-visa-btn:hover { background: rgba(59,130,246,0.15); }
+.passport-add-visa-btn.small { font-size: 0.65rem; padding: 4px 10px; }
+
+/* ── MRZ zone ──────────────────────────────────────────────────────── */
+.passport-visa-mrz-zone {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.45rem;
+  color: rgba(0,0,0,0.5);
+  padding: 4px 10px 2px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  background: rgba(0,0,0,0.04);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* ── Empty visa page ───────────────────────────────────────────────── */
+.passport-visa-empty-sheet {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f5e9 100%);
+}
+.passport-visa-empty-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 20px 16px;
+  text-align: center;
+  gap: 8px;
+}
+.passport-visa-empty-icon { font-size: 2.5rem; }
+.passport-visa-empty-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.passport-visa-empty-desc {
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   VISA FORM DIALOG
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.passport-visa-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 13000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  backdrop-filter: blur(4px);
+}
+.passport-visa-form-dialog {
+  background: #1e293b;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.passport-visa-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.passport-visa-form-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.visa-form-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.visa-form-close-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+
+.passport-visa-form-body {
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+.visa-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.visa-form-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.visa-form-select,
+.visa-form-input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.visa-form-select:focus, .visa-form-input:focus {
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.1);
+}
+.visa-form-select option { background: #1e293b; color: #f1f5f9; }
+
+.visa-form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.visa-form-entry-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.visa-entry-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.visa-entry-btn:hover { border-color: rgba(59,130,246,0.6); color: #93c5fd; }
+.visa-entry-btn.active {
+  background: rgba(59,130,246,0.25);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.passport-visa-form-footer {
+  padding: 12px 20px 16px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.visa-form-cancel-btn,
+.visa-form-save-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  border: none;
+}
+.visa-form-cancel-btn {
+  background: rgba(255,255,255,0.08);
+  color: #94a3b8;
+}
+.visa-form-cancel-btn:hover { background: rgba(255,255,255,0.14); }
+.visa-form-save-btn {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+}
+.visa-form-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59,130,246,0.45); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   VISA MAP BANNER — My Visas button
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.visa-banner-my-visas-btn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(16,185,129,0.15));
+  border: 1px solid rgba(0,230,118,0.5);
+  color: #00e676;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.visa-banner-my-visas-btn:hover {
+  background: rgba(0,230,118,0.28);
+  transform: translateY(-1px);
+}
+
+/* ── Light theme overrides ──────────────────────────────────────────── */
+.light-theme .passport-visa-form-dialog {
+  background: #fff;
+  border-color: rgba(0,0,0,0.1);
+}
+.light-theme .passport-visa-form-header h3 { color: #1e293b; }
+.light-theme .visa-form-close-btn { color: #64748b; }
+.light-theme .visa-form-close-btn:hover { background: rgba(0,0,0,0.06); color: #1e293b; }
+.light-theme .visa-form-field label { color: #64748b; }
+.light-theme .visa-form-select,
+.light-theme .visa-form-input {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+.light-theme .visa-form-select:focus, .light-theme .visa-form-input:focus { border-color: #3b82f6; background: #eff6ff; }
+.light-theme .visa-form-select option { background: #fff; color: #1e293b; }
+.light-theme .visa-entry-btn {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+}
+.light-theme .visa-entry-btn.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+.light-theme .visa-form-cancel-btn { background: #f1f5f9; color: #64748b; }
+.light-theme .visa-form-cancel-btn:hover { background: #e2e8f0; }
+.light-theme .passport-visa-form-footer { border-top-color: #e2e8f0; }
+.light-theme .passport-visa-form-header { border-bottom-color: #e2e8f0; }
+.light-theme .pvf-value { color: #0f172a; }
+.light-theme .passport-visa-form-body { background: #fff; }
+
