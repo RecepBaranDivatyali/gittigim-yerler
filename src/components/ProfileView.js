@@ -11,7 +11,7 @@ import {
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount,
   getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
-  getCountryVisits, setCountryFeaturedVisit
+  getCountryVisits, setCountryFeaturedVisit, cleanNote
 } from '../utils/storage.js';
 import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
@@ -3905,15 +3905,17 @@ export function renderProfileView(container, onBack) {
                   ${(() => {
                     const reviews = [];
                     Object.entries(myStorage.worldVisits || {}).forEach(([k, v]) => {
-                      if (v && (v.rating || v.notes)) {
+                      const cNote = cleanNote(v?.notes);
+                      if (v && (v.rating || cNote)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: v.notes });
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: cNote });
                       }
                     });
                     Object.entries(myStorage.turkeyVisits || {}).forEach(([pid, v]) => {
-                      if (v && (v.rating || v.notes)) {
+                      const cNote = cleanNote(v?.notes);
+                      if (v && (v.rating || cNote)) {
                         const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: v.notes });
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: cNote });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz puan veya not girmediniz.' : 'No reviews or notes yet.'}</span>`;
@@ -3937,15 +3939,17 @@ export function renderProfileView(container, onBack) {
                   ${(() => {
                     const reviews = [];
                     Object.entries(safeWorldVisits).forEach(([k, v]) => {
-                      if (v && (v.rating || v.notes)) {
+                      const cNote = cleanNote(v?.notes);
+                      if (v && (v.rating || cNote)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: v.notes });
+                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: cNote });
                       }
                     });
                     Object.entries(safeTurkeyVisits).forEach(([pid, v]) => {
-                      if (v && (v.rating || v.notes)) {
+                      const cNote = cleanNote(v?.notes);
+                      if (v && (v.rating || cNote)) {
                         const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: v.notes });
+                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: cNote });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının henüz yorumu yok.' : 'Friend has no reviews yet.'}</span>`;

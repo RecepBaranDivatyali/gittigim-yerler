@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { TURKEY_PROVINCES, TURKEY_REGIONS } from '../data/turkeyData.js';
-import { getStorageData, saveTurkeyVisit } from '../utils/storage.js';
+import { getStorageData, saveTurkeyVisit, cleanNote } from '../utils/storage.js';
 
 let turkeyMapInstance = null;
 let geojsonLayer = null;
@@ -335,7 +335,7 @@ function openProvinceModal(province, container) {
     </div>
   `;
 
-  modalWrapper.querySelector('#visit-notes').value = currentVisit.notes || '';
+  modalWrapper.querySelector('#visit-notes').value = cleanNote(currentVisit.notes);
 
   // Options click
   modalWrapper.querySelectorAll('.status-opt-btn').forEach(btn => {
