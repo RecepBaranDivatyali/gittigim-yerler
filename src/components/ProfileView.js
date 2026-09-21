@@ -120,7 +120,7 @@ export function renderProfileView(container, onBack) {
     }
     if (window.__openPassportOnProfile) {
       window.__openPassportOnProfile = false;
-      setTimeout(() => openPassportModal(), 200);
+      setTimeout(() => openPassportModal(1), 200);
     }
   }
 
@@ -1974,7 +1974,7 @@ export function renderProfileView(container, onBack) {
     });
   }
 
-  async function openPassportModal() {
+  async function openPassportModal(initialPageIndex = 0) {
     const currentLang = getLanguage();
     const storageData = getStorageData();
     const stats = calculateStats();
@@ -2440,7 +2440,7 @@ export function renderProfileView(container, onBack) {
     document.body.appendChild(modal);
 
     // Carousel Navigation & Drag Engine
-    let currentPage = 0;
+    let currentPage = Math.max(0, Math.min(totalPages - 1, initialPageIndex));
     const track = modal.querySelector('#passport-track');
     const curNumEl = modal.querySelector('#passport-cur-page-num');
     const pageLabelEl = modal.querySelector('#passport-page-label');
@@ -2480,6 +2480,10 @@ export function renderProfileView(container, onBack) {
       if (nextBtn) nextBtn.style.opacity = currentPage === totalPages - 1 ? '0.35' : '1';
     }
 
+    if (initialPageIndex > 0) {
+      updatePageUI(currentPage, false);
+    }
+
     modal.querySelector('#passport-btn-prev')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (currentPage > 0) updatePageUI(currentPage - 1);
@@ -2509,6 +2513,10 @@ export function renderProfileView(container, onBack) {
     const onPointerDown = (e) => {
       if (totalPages <= 1) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Do not initiate drag or capture pointer if user tapped an interactive element
+      if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn')) {
+        return;
+      }
       isDragging = true;
       activePointerId = e.pointerId;
       startX = e.clientX;
@@ -2660,178 +2668,208 @@ export function renderProfileView(container, onBack) {
       }
     });
 
-    // ─── Visa Form Logic ───────────────────────────────────────────────────
-
-    function openVisaFormModal(existingVisa) {
-      const isEdit = !!existingVisa;
-      const lang = currentLang;
-      const formDialog = document.createElement('div');
-      formDialog.className = 'passport-visa-form-overlay';
-      const issuingOpts = [
-        ['DEUTSCHLAND','🇩🇪 Almanya'],['FRANCE','🇫🇷 Fransa'],['NETHERLANDS','🇳🇱 Hollanda'],
-        ['ITALY','🇮🇹 İtalya'],['SPAIN','🇪🇸 İspanya'],['GREECE','🇬🇷 Yunanistan'],
-        ['AUSTRIA','🇦🇹 Avusturya'],['BELGIUM','🇧🇪 Belçika'],['SWEDEN','🇸🇪 İsveç'],
-        ['POLAND','🇵🇱 Polonya'],['SWITZERLAND','🇨🇭 İsviçre'],['CZECHIA','🇨🇿 Çekya']
-      ];
-      const evt = (existing, val) => existing === val ? ' selected' : '';
-      const iopt = issuingOpts.map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.issuingCountry, v) + '>' + l + '</option>').join('');
-
-      const typeOptions = [
-        ['schengen','🇪🇺 Schengen'],['us','🇺🇸 ABD / USA (B1/B2)'],['uk','🇬🇧 İngiltere / UK'],
-        ['canada','🇨🇦 Kanada'],['japan','🇯🇵 Japonya'],['australia','🇦🇺 Avustralya'],
-        ['uae','🇦🇪 BAE / UAE'],['other', lang === 'tr' ? '🌍 Diğer' : '🌍 Other']
-      ].map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.visaType, v) + '>' + l + '</option>').join('');
-
-      const eBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-val="' + val + '">' + label + '</button>';
-      const dBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-dur="' + val + '">' + label + '</button>';
-      const hasCustomDur = existingVisa?.durationDays && ![30,90,180].includes(existingVisa.durationDays);
-
-      formDialog.innerHTML =
-        '<div class="passport-visa-form-dialog">' +
-          '<div class="passport-visa-form-header">' +
-            '<h3>' + (isEdit ? (lang==='tr'?'✏️ Vizeyi Düzenle':'✏️ Edit Visa') : (lang==='tr'?'➕ Yeni Vize Ekle':'➕ Add New Visa')) + '</h3>' +
-            '<button type="button" class="visa-form-close-btn">&times;</button>' +
-          '</div>' +
-          '<div class="passport-visa-form-body">' +
-            '<div class="visa-form-field">' +
-              '<label>' + (lang==='tr'?'Vize Türü':'Visa Type') + '</label>' +
-              '<select class="visa-form-select" id="vf-type">' + typeOptions + '</select>' +
-            '</div>' +
-            '<div class="visa-form-field" id="vf-issuing-wrap">' +
-              '<label>' + (lang==='tr'?'Veren Ülke':'Issuing Country') + '</label>' +
-              '<select class="visa-form-select" id="vf-issuing">' + iopt + '</select>' +
-            '</div>' +
-            '<div class="visa-form-field" id="vf-single-country-wrap" style="display:none;">' +
-              '<label>' + (lang==='tr'?'Ülke Kodu (2 Harf, ör: JP)':'Country Code (2-letter, e.g. JP)') + '</label>' +
-              '<input type="text" class="visa-form-input" id="vf-single-country" maxlength="2" placeholder="JP" value="' + (existingVisa?.singleCountry||'') + '">' +
-            '</div>' +
-            '<div class="visa-form-field">' +
-              '<label>' + (lang==='tr'?'Giriş Hakkı':'Entry Type') + '</label>' +
-              '<div class="visa-form-entry-btns">' +
-                eBtn('mult','MULT', !existingVisa || existingVisa?.entries==='mult') +
-                eBtn('2','02', existingVisa?.entries==='2') +
-                eBtn('1','01', existingVisa?.entries==='1') +
-              '</div>' +
-              '<input type="hidden" id="vf-entries" value="' + (existingVisa?.entries||'mult') + '">' +
-            '</div>' +
-            '<div class="visa-form-field">' +
-              '<label>' + (lang==='tr'?'Kalış Süresi (Gün)':'Duration (Days)') + '</label>' +
-              '<div class="visa-form-entry-btns">' +
-                dBtn('30','30', existingVisa?.durationDays===30) +
-                dBtn('90','90', !existingVisa || existingVisa?.durationDays===90) +
-                dBtn('180','180', existingVisa?.durationDays===180) +
-                dBtn('custom', lang==='tr'?'Özel':'Custom', hasCustomDur) +
-              '</div>' +
-              '<input type="number" class="visa-form-input" id="vf-duration-custom" min="1" max="365" value="' + (hasCustomDur?existingVisa.durationDays:'') + '" style="display:' + (hasCustomDur?'block':'none') + ';margin-top:8px;">' +
-              '<input type="hidden" id="vf-duration" value="' + (existingVisa?.durationDays||90) + '">' +
-            '</div>' +
-            '<div class="visa-form-row-2col">' +
-              '<div class="visa-form-field"><label>' + (lang==='tr'?'Başlangıç Tarihi':'Valid From') + '</label><input type="date" class="visa-form-input" id="vf-from" value="' + (existingVisa?.validFrom||'') + '"></div>' +
-              '<div class="visa-form-field"><label>' + (lang==='tr'?'Bitiş Tarihi':'Valid Until') + '</label><input type="date" class="visa-form-input" id="vf-until" value="' + (existingVisa?.validUntil||'') + '"></div>' +
-            '</div>' +
-            '<div class="visa-form-field">' +
-              '<label>' + (lang==='tr'?'Vize No (Opsiyonel)':'Visa Number (Optional)') + '</label>' +
-              '<input type="text" class="visa-form-input" id="vf-visano" placeholder="' + (lang==='tr'?'Otomatik üretilir':'Auto-generated if empty') + '" value="' + (existingVisa?.visaNumber||'') + '">' +
-            '</div>' +
-          '</div>' +
-          '<div class="passport-visa-form-footer">' +
-            '<button type="button" class="visa-form-cancel-btn">' + (lang==='tr'?'İptal':'Cancel') + '</button>' +
-            '<button type="button" class="visa-form-save-btn">💾 ' + (isEdit?(lang==='tr'?'Kaydet':'Save'):(lang==='tr'?'Ekle':'Add')) + '</button>' +
-          '</div>' +
-        '</div>';
-
-      document.body.appendChild(formDialog);
-
-      const typeSelect = formDialog.querySelector('#vf-type');
-      const issuingWrap = formDialog.querySelector('#vf-issuing-wrap');
-      const singleWrap = formDialog.querySelector('#vf-single-country-wrap');
-      const updateTypeUI = () => {
-        const val = typeSelect.value;
-        issuingWrap.style.display = val === 'schengen' ? '' : 'none';
-        singleWrap.style.display = val === 'other' ? '' : 'none';
-      };
-      typeSelect.addEventListener('change', updateTypeUI);
-      updateTypeUI();
-
-      formDialog.querySelectorAll('.visa-entry-btn[data-val]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          formDialog.querySelectorAll('.visa-entry-btn[data-val]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          formDialog.querySelector('#vf-entries').value = btn.dataset.val;
-        });
-      });
-
-      const durInput = formDialog.querySelector('#vf-duration-custom');
-      const durHidden = formDialog.querySelector('#vf-duration');
-      formDialog.querySelectorAll('.visa-entry-btn[data-dur]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          formDialog.querySelectorAll('.visa-entry-btn[data-dur]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          if (btn.dataset.dur === 'custom') { durInput.style.display = 'block'; durInput.focus(); }
-          else { durInput.style.display = 'none'; durHidden.value = btn.dataset.dur; }
-        });
-      });
-      durInput.addEventListener('input', () => { durHidden.value = durInput.value; });
-
-      const closeFormDialog = () => formDialog.remove();
-      formDialog.querySelector('.visa-form-close-btn').addEventListener('click', closeFormDialog);
-      formDialog.querySelector('.visa-form-cancel-btn').addEventListener('click', closeFormDialog);
-      formDialog.addEventListener('click', e => { if (e.target === formDialog) closeFormDialog(); });
-
-      formDialog.querySelector('.visa-form-save-btn').addEventListener('click', () => {
-        const visaType = typeSelect.value;
-        const from = formDialog.querySelector('#vf-from').value;
-        const until = formDialog.querySelector('#vf-until').value;
-        if (!from || !until) {
-          alert(lang === 'tr' ? 'Lütfen başlangıç ve bitiş tarihini girin.' : 'Please enter valid from and until dates.');
-          return;
-        }
-        const activeDurBtn = formDialog.querySelector('.visa-entry-btn[data-dur].active');
-        const durVal = activeDurBtn?.dataset.dur === 'custom'
-          ? (parseInt(durInput.value) || 90)
-          : parseInt(activeDurBtn?.dataset.dur || '90');
-
-        const visaData = {
-          ...(isEdit ? { id: existingVisa.id } : {}),
-          visaType,
-          issuingCountry: visaType === 'schengen' ? (formDialog.querySelector('#vf-issuing')?.value || '') : '',
-          singleCountry: visaType === 'other' ? (formDialog.querySelector('#vf-single-country')?.value || '').toUpperCase() : '',
-          entries: formDialog.querySelector('#vf-entries').value || 'mult',
-          durationDays: durVal,
-          validFrom: from,
-          validUntil: until,
-          visaNumber: formDialog.querySelector('#vf-visano').value ||
-            generateVisaNumber(visaType, formDialog.querySelector('#vf-issuing')?.value || '')
-        };
-
-        saveUserVisa(visaData);
-        closeFormDialog();
-        closeModal();
-        openPassportModal();
-      });
-    }
-
-    // Delegated visa action clicks
-    modal.addEventListener('click', (e) => {
-      if (e.target.closest('#btn-passport-add-visa-empty') || e.target.closest('.passport-add-visa-btn')) {
-        e.stopPropagation(); openVisaFormModal(null); return;
-      }
-      if (e.target.closest('.passport-visa-edit-btn')) {
-        e.stopPropagation();
-        const visaId = e.target.closest('.passport-visa-edit-btn').dataset.visaId;
-        const v = getUserVisas().find(v2 => v2.id === visaId);
-        if (v) openVisaFormModal(v); return;
-      }
-      if (e.target.closest('.passport-visa-delete-btn')) {
-        e.stopPropagation();
-        const visaId = e.target.closest('.passport-visa-delete-btn').dataset.visaId;
-        if (confirm(currentLang === 'tr' ? 'Bu vizeyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this visa?')) {
-          deleteUserVisa(visaId); closeModal(); openPassportModal();
-        }
-        return;
-      }
-    });
-
+    // ─── Visa Form Logic ───────────────────────────────────────────────────
+
+    function openVisaFormModal(existingVisa) {
+      const isEdit = !!existingVisa;
+      const lang = currentLang;
+      const formDialog = document.createElement('div');
+      formDialog.className = 'passport-visa-form-overlay';
+      const issuingOpts = [
+        ['DEUTSCHLAND','🇩🇪 Almanya'],['FRANCE','🇫🇷 Fransa'],['NETHERLANDS','🇳🇱 Hollanda'],
+        ['ITALY','🇮🇹 İtalya'],['SPAIN','🇪🇸 İspanya'],['GREECE','🇬🇷 Yunanistan'],
+        ['AUSTRIA','🇦🇹 Avusturya'],['BELGIUM','🇧🇪 Belçika'],['SWEDEN','🇸🇪 İsveç'],
+        ['POLAND','🇵🇱 Polonya'],['SWITZERLAND','🇨🇭 İsviçre'],['CZECHIA','🇨🇿 Çekya']
+      ];
+      const evt = (existing, val) => existing === val ? ' selected' : '';
+      const iopt = issuingOpts.map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.issuingCountry, v) + '>' + l + '</option>').join('');
+
+      const typeOptions = [
+        ['schengen','🇪🇺 Schengen'],['us','🇺🇸 ABD / USA (B1/B2)'],['uk','🇬🇧 İngiltere / UK'],
+        ['canada','🇨🇦 Kanada'],['japan','🇯🇵 Japonya'],['australia','🇦🇺 Avustralya'],
+        ['uae','🇦🇪 BAE / UAE'],['other', lang === 'tr' ? '🌍 Diğer' : '🌍 Other']
+      ].map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.visaType, v) + '>' + l + '</option>').join('');
+
+      const eBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-val="' + val + '">' + label + '</button>';
+      const dBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-dur="' + val + '">' + label + '</button>';
+      const hasCustomDur = existingVisa?.durationDays && ![30,90,180].includes(existingVisa.durationDays);
+
+      formDialog.innerHTML =
+        '<div class="passport-visa-form-dialog">' +
+          '<div class="passport-visa-form-header">' +
+            '<h3>' + (isEdit ? (lang==='tr'?'✏️ Vizeyi Düzenle':'✏️ Edit Visa') : (lang==='tr'?'➕ Yeni Vize Ekle':'➕ Add New Visa')) + '</h3>' +
+            '<button type="button" class="visa-form-close-btn">&times;</button>' +
+          '</div>' +
+          '<div class="passport-visa-form-body">' +
+            '<div class="visa-form-field">' +
+              '<label>' + (lang==='tr'?'Vize Türü':'Visa Type') + '</label>' +
+              '<select class="visa-form-select" id="vf-type">' + typeOptions + '</select>' +
+            '</div>' +
+            '<div class="visa-form-field" id="vf-issuing-wrap">' +
+              '<label>' + (lang==='tr'?'Veren Ülke':'Issuing Country') + '</label>' +
+              '<select class="visa-form-select" id="vf-issuing">' + iopt + '</select>' +
+            '</div>' +
+            '<div class="visa-form-field" id="vf-single-country-wrap" style="display:none;">' +
+              '<label>' + (lang==='tr'?'Ülke Kodu (2 Harf, ör: JP)':'Country Code (2-letter, e.g. JP)') + '</label>' +
+              '<input type="text" class="visa-form-input" id="vf-single-country" maxlength="2" placeholder="JP" value="' + (existingVisa?.singleCountry||'') + '">' +
+            '</div>' +
+            '<div class="visa-form-field">' +
+              '<label>' + (lang==='tr'?'Giriş Hakkı':'Entry Type') + '</label>' +
+              '<div class="visa-form-entry-btns">' +
+                eBtn('mult','MULT', !existingVisa || existingVisa?.entries==='mult') +
+                eBtn('2','02', existingVisa?.entries==='2') +
+                eBtn('1','01', existingVisa?.entries==='1') +
+              '</div>' +
+              '<input type="hidden" id="vf-entries" value="' + (existingVisa?.entries||'mult') + '">' +
+            '</div>' +
+            '<div class="visa-form-field">' +
+              '<label>' + (lang==='tr'?'Kalış Süresi (Gün)':'Duration (Days)') + '</label>' +
+              '<div class="visa-form-entry-btns">' +
+                dBtn('30','30', existingVisa?.durationDays===30) +
+                dBtn('90','90', !existingVisa || existingVisa?.durationDays===90) +
+                dBtn('180','180', existingVisa?.durationDays===180) +
+                dBtn('custom', lang==='tr'?'Özel':'Custom', hasCustomDur) +
+              '</div>' +
+              '<input type="number" class="visa-form-input" id="vf-duration-custom" min="1" max="365" value="' + (hasCustomDur?existingVisa.durationDays:'') + '" style="display:' + (hasCustomDur?'block':'none') + ';margin-top:8px;">' +
+              '<input type="hidden" id="vf-duration" value="' + (existingVisa?.durationDays||90) + '">' +
+            '</div>' +
+            '<div class="visa-form-row-2col">' +
+              '<div class="visa-form-field"><label>' + (lang==='tr'?'Başlangıç Tarihi':'Valid From') + '</label><input type="date" class="visa-form-input" id="vf-from" value="' + (existingVisa?.validFrom||'') + '"></div>' +
+              '<div class="visa-form-field"><label>' + (lang==='tr'?'Bitiş Tarihi':'Valid Until') + '</label><input type="date" class="visa-form-input" id="vf-until" value="' + (existingVisa?.validUntil||'') + '"></div>' +
+            '</div>' +
+            '<div class="visa-form-field">' +
+              '<label>' + (lang==='tr'?'Vize No (Opsiyonel)':'Visa Number (Optional)') + '</label>' +
+              '<input type="text" class="visa-form-input" id="vf-visano" placeholder="' + (lang==='tr'?'Otomatik üretilir':'Auto-generated if empty') + '" value="' + (existingVisa?.visaNumber||'') + '">' +
+            '</div>' +
+          '</div>' +
+          '<div class="passport-visa-form-footer">' +
+            '<button type="button" class="visa-form-cancel-btn">' + (lang==='tr'?'İptal':'Cancel') + '</button>' +
+            '<button type="button" class="visa-form-save-btn">💾 ' + (isEdit?(lang==='tr'?'Kaydet':'Save'):(lang==='tr'?'Ekle':'Add')) + '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(formDialog);
+
+      const typeSelect = formDialog.querySelector('#vf-type');
+      const issuingWrap = formDialog.querySelector('#vf-issuing-wrap');
+      const singleWrap = formDialog.querySelector('#vf-single-country-wrap');
+      const updateTypeUI = () => {
+        const val = typeSelect.value;
+        issuingWrap.style.display = val === 'schengen' ? '' : 'none';
+        singleWrap.style.display = val === 'other' ? '' : 'none';
+      };
+      typeSelect.addEventListener('change', updateTypeUI);
+      updateTypeUI();
+
+      formDialog.querySelectorAll('.visa-entry-btn[data-val]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formDialog.querySelectorAll('.visa-entry-btn[data-val]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          formDialog.querySelector('#vf-entries').value = btn.dataset.val;
+        });
+      });
+
+      const durInput = formDialog.querySelector('#vf-duration-custom');
+      const durHidden = formDialog.querySelector('#vf-duration');
+      formDialog.querySelectorAll('.visa-entry-btn[data-dur]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formDialog.querySelectorAll('.visa-entry-btn[data-dur]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.dur === 'custom') { durInput.style.display = 'block'; durInput.focus(); }
+          else { durInput.style.display = 'none'; durHidden.value = btn.dataset.dur; }
+        });
+      });
+      durInput.addEventListener('input', () => { durHidden.value = durInput.value; });
+
+      const closeFormDialog = () => formDialog.remove();
+      formDialog.querySelector('.visa-form-close-btn').addEventListener('click', closeFormDialog);
+      formDialog.querySelector('.visa-form-cancel-btn').addEventListener('click', closeFormDialog);
+      formDialog.addEventListener('click', e => { if (e.target === formDialog) closeFormDialog(); });
+
+      formDialog.querySelector('.visa-form-save-btn').addEventListener('click', () => {
+        const visaType = typeSelect.value;
+        const from = formDialog.querySelector('#vf-from').value;
+        const until = formDialog.querySelector('#vf-until').value;
+        if (!from || !until) {
+          alert(lang === 'tr' ? 'Lütfen başlangıç ve bitiş tarihini girin.' : 'Please enter valid from and until dates.');
+          return;
+        }
+        const activeDurBtn = formDialog.querySelector('.visa-entry-btn[data-dur].active');
+        const durVal = activeDurBtn?.dataset.dur === 'custom'
+          ? (parseInt(durInput.value) || 90)
+          : parseInt(activeDurBtn?.dataset.dur || '90');
+
+        const visaData = {
+          ...(isEdit ? { id: existingVisa.id } : {}),
+          visaType,
+          issuingCountry: visaType === 'schengen' ? (formDialog.querySelector('#vf-issuing')?.value || '') : '',
+          singleCountry: visaType === 'other' ? (formDialog.querySelector('#vf-single-country')?.value || '').toUpperCase() : '',
+          entries: formDialog.querySelector('#vf-entries').value || 'mult',
+          durationDays: durVal,
+          validFrom: from,
+          validUntil: until,
+          visaNumber: formDialog.querySelector('#vf-visano').value ||
+            generateVisaNumber(visaType, formDialog.querySelector('#vf-issuing')?.value || '')
+        };
+
+        saveUserVisa(visaData);
+        closeFormDialog();
+        closeModal();
+        openPassportModal(1);
+      });
+    }
+
+    // Direct click bindings for visa buttons to guarantee immediate response
+    modal.querySelectorAll('#btn-passport-add-visa-empty, .passport-add-visa-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openVisaFormModal(null);
+      });
+    });
+
+    modal.querySelectorAll('.passport-visa-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const visaId = btn.dataset.visaId;
+        const v = getUserVisas().find(v2 => v2.id === visaId);
+        if (v) openVisaFormModal(v);
+      });
+    });
+
+    modal.querySelectorAll('.passport-visa-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const visaId = btn.dataset.visaId;
+        if (confirm(currentLang === 'tr' ? 'Bu vizeyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this visa?')) {
+          deleteUserVisa(visaId); closeModal(); openPassportModal(1);
+        }
+      });
+    });
+
+    // Delegated visa action clicks (backup)
+    modal.addEventListener('click', (e) => {
+      const addBtn = e.target.closest('#btn-passport-add-visa-empty') || e.target.closest('.passport-add-visa-btn');
+      if (addBtn) {
+        e.stopPropagation(); openVisaFormModal(null); return;
+      }
+      const editBtn = e.target.closest('.passport-visa-edit-btn');
+      if (editBtn) {
+        e.stopPropagation();
+        const visaId = editBtn.dataset.visaId;
+        const v = getUserVisas().find(v2 => v2.id === visaId);
+        if (v) openVisaFormModal(v); return;
+      }
+      const delBtn = e.target.closest('.passport-visa-delete-btn');
+      if (delBtn) {
+        e.stopPropagation();
+        const visaId = delBtn.dataset.visaId;
+        if (confirm(currentLang === 'tr' ? 'Bu vizeyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this visa?')) {
+          deleteUserVisa(visaId); closeModal(); openPassportModal();
+        }
+        return;
+      }
+    });
+
   }
 
   // ─── 🎁 Gezgin Wrapped (Yıl Sonu Seyahat Karnesi) ──────────────────────────

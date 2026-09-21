@@ -12584,6 +12584,12 @@ body[data-theme="light"] .stamp-transport-select {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+.passport-add-visa-btn * {
+  pointer-events: none;
 }
 .passport-add-visa-btn:hover { background: rgba(59,130,246,0.15); }
 .passport-add-visa-btn.small { font-size: 0.65rem; padding: 4px 10px; }
