@@ -3677,13 +3677,14 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         </div>
 
         <div class="place-bottom-row">
-          <select id="place-rating-select" class="place-select">
-            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-            <option value="4">⭐⭐⭐⭐ (4/5)</option>
-            <option value="3">⭐⭐⭐ (3/5)</option>
-            <option value="2">⭐⭐ (2/5)</option>
-            <option value="1">⭐ (1/5)</option>
-          </select>
+          <div class="place-star-rating-box" title="Mekan Puanı">
+            <div class="place-stars-row" id="place-stars-row">
+              ${[1, 2, 3, 4, 5].map(s => `
+                <span class="place-star filled" data-score="${s}" title="${s}/5">★</span>
+              `).join('')}
+            </div>
+            <span class="place-stars-score" id="place-stars-score">5/5</span>
+          </div>
           <button type="button" id="btn-add-place" class="place-add-btn">+ Ekle</button>
         </div>
       </div>
@@ -4166,9 +4167,46 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   const placesListEl = content.querySelector('#places-saved-list');
   const placeNameInput = content.querySelector('#place-name-input');
-  const placeRatingSelect = content.querySelector('#place-rating-select');
   const placeNoteInput = content.querySelector('#place-note-input');
   const addPlaceBtn = content.querySelector('#btn-add-place');
+
+  // Interactive Place Stars (1-5) matching evaluate/IMDb style
+  let selectedPlaceRating = 5;
+  const placeStars = content.querySelectorAll('.place-star');
+  const placeScoreDisplay = content.querySelector('#place-stars-score');
+  const placeStarsRow = content.querySelector('#place-stars-row');
+
+  function renderPlaceStars(val) {
+    placeStars.forEach(s => {
+      const sVal = parseInt(s.dataset.score, 10);
+      if (sVal <= val) {
+        s.classList.add('filled');
+      } else {
+        s.classList.remove('filled');
+      }
+    });
+    if (placeScoreDisplay) {
+      placeScoreDisplay.textContent = `${val}/5`;
+    }
+  }
+
+  placeStars.forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      const hoverVal = parseInt(star.dataset.score, 10);
+      renderPlaceStars(hoverVal);
+    });
+
+    star.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const scoreVal = parseInt(star.dataset.score, 10);
+      selectedPlaceRating = scoreVal;
+      renderPlaceStars(selectedPlaceRating);
+    });
+  });
+
+  placeStarsRow?.addEventListener('mouseleave', () => {
+    renderPlaceStars(selectedPlaceRating);
+  });
 
   const catIcons = {
     restaurant: '🍽️',
@@ -4224,7 +4262,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       id: 'place_' + Date.now(),
       name,
       category: selectedCategory,
-      rating: parseInt(placeRatingSelect?.value || '5', 10),
+      rating: selectedPlaceRating,
       note: (placeNoteInput?.value || '').trim(),
       createdAt: new Date().toISOString()
     };
@@ -4233,6 +4271,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     persistVisitDetails({ places: currentPlaces });
     if (placeNameInput) placeNameInput.value = '';
     if (placeNoteInput) placeNoteInput.value = '';
+    selectedPlaceRating = 5;
+    renderPlaceStars(5);
     renderPlacesList();
     triggerConfetti();
   });
