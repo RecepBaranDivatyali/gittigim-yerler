@@ -249,3 +249,14 @@ export async function getTravelerByUsernameAsync(username) {
   return local;
 }
 
+export function isUsernameAvailable(username, currentUserId = null) {
+  if (!username || typeof username !== 'string') return false;
+  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  if (!clean) return false;
+  const users = getAllCommunityTravelers();
+  const existing = users.find(u => u.username.toLowerCase() === clean);
+  if (!existing) return true;
+  if (currentUserId && existing.id === currentUserId) return true;
+  return false;
+}
+

@@ -91,6 +91,10 @@ export async function fetchGeoDataWithCache(url, cacheKey, revalidateAfterMs = 7
   // 2. Not in IndexedDB: fetch from network and save to IndexedDB
   const res = await fetch(url);
   if (!res.ok) throw new Error('Network error ' + res.status);
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType && !contentType.includes('application/json') && !contentType.includes('text/plain') && !contentType.includes('application/geo+json')) {
+    throw new Error('Expected JSON response but received ' + contentType);
+  }
   const data = await res.json();
   setCachedGeoData(cacheKey, data);
   return data;

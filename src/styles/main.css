@@ -1827,6 +1827,15 @@ svg, g, path {
   font-size: 3.2rem;
   line-height: 1;
   flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .profile-user-info {
@@ -1834,22 +1843,23 @@ svg, g, path {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding-right: 40px;
 }
 
 .profile-user-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px 12px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .profile-title-badges {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
@@ -1908,9 +1918,7 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
   color: #f8fafc;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 155px;
+  max-width: 100%;
 }
 
 .profile-card-label {
@@ -4060,6 +4068,10 @@ body[data-theme="light"] .theme-select-btn.active {
   padding: 4px 12px;
   font-size: 0.78rem;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 .bucket-list-grid {
   display: flex;
@@ -10008,13 +10020,66 @@ body[data-theme="light"] .popup-visa-note-bar {
   gap: 8px;
   pointer-events: auto;
 }
-.floating-top-right-group #map-legend.floating-legend {
+.floating-top-right-group #map-legend.floating-legend:not(.expanded) {
   position: relative !important;
   top: auto !important;
   right: auto !important;
   left: auto !important;
   bottom: auto !important;
   margin: 0 !important;
+}
+.floating-top-right-group #map-legend.floating-legend.expanded {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 3000 !important;
+  height: auto !important;
+  min-width: 145px !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+}
+.floating-top-right-group #map-legend.floating-legend.expanded .legend-items-list {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+.floating-top-right-group #map-legend.floating-legend.expanded .legend-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 0.78rem !important;
+  margin: 0 !important;
+}
+.floating-top-right-group #map-legend.floating-legend.expanded .legend-text {
+  display: inline-block !important;
+  font-size: 0.75rem !important;
+  color: #f1f5f9 !important;
+  white-space: nowrap !important;
+}
+body.light-theme .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="light"] .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded {
+  background: rgba(250, 243, 233, 0.98) !important;
+  border: 1px solid rgba(140, 112, 82, 0.35) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+}
+body.light-theme .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="light"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text {
+  color: #1e293b !important;
 }
 .floating-visa-mode-btn {
   height: 40px;
@@ -10078,7 +10143,7 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   .floating-visa-mode-btn .visa-btn-lbl {
     display: none !important;
   }
-  #map-legend.floating-legend {
+  #map-legend.floating-legend:not(.expanded) {
     height: 32px !important;
     padding: 0 8px !important;
     border-radius: 99px !important;
@@ -11943,7 +12008,8 @@ body[data-theme="light"] .stamp-transport-select {
 .avatar-custom-img {
   width: 100%;
   height: 100%;
-  border-radius: 99px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
   object-fit: cover;
   display: block;
 }
@@ -14969,3 +15035,312 @@ body[data-theme="light"] .stamp-transport-select {
   font-size: 0.74rem;
   margin-top: 2px;
 }
+
+
+/* ─── Compare Card Close Button (✕) ─── */
+.compare-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.compare-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+/* ─── Friend Search Responsive Rules (Prevent Horizontal Overflow) ─── */
+.friend-search-results {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+.friend-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+.friend-search-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.friend-search-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.friend-search-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.friend-search-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.friend-search-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.friend-search-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.friend-search-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friend-search-handle {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friend-search-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friend-search-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.friend-search-select-btn {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.friend-search-select-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.friend-search-save-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.friend-search-save-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+/* ─── Visa Banner My Visas Button Contrast ─── */
+.light-theme .visa-banner-my-visas-btn,
+body[data-theme="light"] .visa-banner-my-visas-btn,
+body[data-theme="natgeo_atlas"] .visa-banner-my-visas-btn {
+  background: rgba(5, 150, 105, 0.14) !important;
+  border: 1px solid rgba(5, 150, 105, 0.45) !important;
+  color: #047857 !important;
+}
+.light-theme .visa-banner-my-visas-btn:hover,
+body[data-theme="light"] .visa-banner-my-visas-btn:hover,
+body[data-theme="natgeo_atlas"] .visa-banner-my-visas-btn:hover {
+  background: rgba(5, 150, 105, 0.24) !important;
+}
+
+/* ─── Travel Poster Card Theme Adaptations ─── */
+.travel-poster-card.theme-light {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.12), 0 0 20px rgba(0, 0, 0, 0.04) !important;
+}
+.travel-poster-card.theme-light .poster-brand-text,
+.travel-poster-card.theme-light .poster-user-sign-name {
+  color: #0f172a !important;
+}
+.travel-poster-card.theme-light .poster-date,
+.travel-poster-card.theme-light .poster-tagline,
+.travel-poster-card.theme-light .poster-stat-lbl,
+.travel-poster-card.theme-light .poster-flags-title {
+  color: #64748b !important;
+}
+.travel-poster-card.theme-light .poster-map-box {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.04) !important;
+}
+.travel-poster-card.theme-light .poster-stat-box {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+.travel-poster-card.theme-light .poster-footer {
+  border-color: #e2e8f0 !important;
+}
+
+.travel-poster-card.theme-natgeo_atlas {
+  background: #ede1cf !important;
+  border: 1px solid rgba(140, 112, 82, 0.4) !important;
+  box-shadow: 0 24px 60px rgba(78, 59, 42, 0.25) !important;
+}
+.travel-poster-card.theme-natgeo_atlas .poster-brand-text,
+.travel-poster-card.theme-natgeo_atlas .poster-user-sign-name {
+  color: #3d2b1f !important;
+}
+.travel-poster-card.theme-natgeo_atlas .poster-date,
+.travel-poster-card.theme-natgeo_atlas .poster-tagline,
+.travel-poster-card.theme-natgeo_atlas .poster-stat-lbl,
+.travel-poster-card.theme-natgeo_atlas .poster-flags-title {
+  color: #785a44 !important;
+}
+.travel-poster-card.theme-natgeo_atlas .poster-map-box {
+  background: #faf4ea !important;
+  border-color: rgba(140, 112, 82, 0.3) !important;
+  box-shadow: inset 0 0 15px rgba(140, 112, 82, 0.1) !important;
+}
+.travel-poster-card.theme-natgeo_atlas .poster-stat-box {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(140, 112, 82, 0.25) !important;
+}
+.travel-poster-card.theme-natgeo_atlas .poster-footer {
+  border-color: rgba(140, 112, 82, 0.3) !important;
+}
+
+.travel-poster-card.theme-vintage {
+  background: #231916 !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+.travel-poster-card.theme-pure_oled {
+  background: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── Friend Search Item Action Buttons ── */
+.btn-compare-traveler {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-compare-traveler:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn-add-traveler {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-add-traveler:hover {
+  background: rgba(16, 185, 129, 0.28);
+  color: #fff;
+}
+.btn-friend-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .friend-search-item {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .friend-search-sub {
+    max-width: 140px;
+  }
+  .btn-compare-traveler, .btn-add-traveler, .btn-friend-saved {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+}
+

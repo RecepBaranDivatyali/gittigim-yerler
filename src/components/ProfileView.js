@@ -19,19 +19,27 @@ import { TRAVEL_CHALLENGES, calculateChallengesProgress } from '../data/challeng
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
-import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize } from '../utils/theme.js';
+import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize, getThemeConfig, isLightTheme } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
 import { escapeHtml, sanitizeText } from '../utils/security.js';
 import { 
   searchTravelersByUsername, searchTravelersByUsernameAsync,
   getTravelerByUsername, getTravelerByUsernameAsync,
-  registerOrUpdateCurrentUser, getAllCommunityTravelers 
+  registerOrUpdateCurrentUser, getAllCommunityTravelers,
+  isUsernameAvailable
 } from '../utils/userDatabase.js';
 import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 
-const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
+const ALLOWED_AVATARS = [
+  '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
+  '🚁', '🏕️', '⛺', '🗿', '🗽', '🗼', '⛩️', '🌍', '🌎', '🌏',
+  '🦅', '🐉', '🦁', '🐺', '🦊', '🐯', '🐻', '🐼', '🐨', '🐬', 
+  '🐋', '🐧', '🦉', '🐪', '🐎', '🐤', '🐥', '🌺', '🌴', '🌲', 
+  '🌋', '🌅', '🌌', '🪐', '⭐', '🔥', '⚡', '🌈', '💎', '🤠', 
+  '🧳', '📸', '🏄', '🧗', '🚵', '🎿', '⛵', '🛰️', '🪂'
+];
 
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
@@ -213,12 +221,12 @@ export function renderProfileView(container, onBack) {
             <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
+                <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
                 <div class="profile-title-badges">
-                  <span class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</span>
                   <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
                   <button type="button" class="profile-cloud-sync-pill" id="profile-cloud-sync-pill" title="${currentLang === 'tr' ? 'Bulut Senkronizasyonu - Tıkla ve Eşitle' : 'Cloud Sync - Click to Sync'}">
                     <span class="cloud-sync-dot"></span>
-                    <span class="cloud-sync-text">${currentLang === 'tr' ? 'Bulut Eşitlendi' : 'Cloud Synced'}</span>
+                    <span class="cloud-sync-text">${currentLang === 'tr' ? 'Eşitlendi' : 'Synced'}</span>
                   </button>
                 </div>
               </div>
@@ -998,24 +1006,19 @@ export function renderProfileView(container, onBack) {
         if (!rawDataUrl) return;
         const img = new Image();
         img.onload = () => {
+          const targetDim = 512;
           const canvas = document.createElement('canvas');
-          const maxDim = 256;
-          let w = img.width;
-          let h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            } else {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
-          canvas.width = w;
-          canvas.height = h;
+          canvas.width = targetDim;
+          canvas.height = targetDim;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          uploadedPhotoUrl = canvas.toDataURL('image/jpeg', 0.85);
+          
+          // Center crop square to preserve aspect ratio without distortion
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, targetDim, targetDim);
+          uploadedPhotoUrl = canvas.toDataURL('image/jpeg', 0.92);
 
           const preview = document.getElementById('settings-preview-avatar');
           if (preview) {
@@ -1051,6 +1054,14 @@ export function renderProfileView(container, onBack) {
       const nameInput = document.getElementById('settings-edit-username');
       const bioInput = document.getElementById('settings-edit-bio');
       const newName = sanitizeText(nameInput?.value || '', 20) || 'Gezgin';
+      const cleanCurrent = (userProfile.username || '').trim().toLowerCase();
+      const cleanNew = newName.trim().toLowerCase();
+      if (cleanNew !== cleanCurrent && !isUsernameAvailable(newName)) {
+        alert(currentLang === 'tr'
+          ? `"${newName}" kullanıcı adı zaten başka bir gezgin tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.`
+          : `Username "${newName}" is already taken by another traveler. Please choose another.`);
+        return;
+      }
       const newBio = sanitizeText(bioInput?.value || '', 60);
 
       const updated = {
@@ -1380,7 +1391,7 @@ export function renderProfileView(container, onBack) {
           id: code,
           name: getCountryDisplayName(c),
           sub: c.continent || 'Dünya',
-          flag: `https://flagcdn.com/w40/${code.toLowerCase()}.png`,
+          flag: code.toUpperCase() === 'IL' ? '' : `https://flagcdn.com/w40/${code.toLowerCase()}.png`,
           status: data.status === 'target' ? 'planned' : data.status,
           type: 'country'
         });
@@ -1402,12 +1413,12 @@ export function renderProfileView(container, onBack) {
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="share-section" style="margin-top:0;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="flex:1;min-width:0;">
               <h3 style="margin-bottom:4px;">🎯 ${t('tabBucket')}</h3>
               <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Planladığın ve gitmek istediğin yerlerin öncelik sırasını belirle.' : 'Prioritize your planned and dream destinations.'}</p>
             </div>
-            <span class="bucket-count-badge">${bucketItems.length} ${currentLang === 'tr' ? 'Hedef' : 'Places'}</span>
+            <span class="bucket-count-badge" style="white-space:nowrap;flex-shrink:0;">${bucketItems.length} ${currentLang === 'tr' ? 'Hedef' : 'Places'}</span>
           </div>
 
           ${bucketItems.length === 0 ? `
@@ -1806,9 +1817,10 @@ export function renderProfileView(container, onBack) {
     }
     const earnedMedals = getEarnedAchievements(storageData, stats);
     const visitedColor = getStatusColor('visited');
+    const themeCfg = getThemeConfig(currentTheme);
 
     // Visited country codes
-    const visitedCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited');
+    const visitedCodes = Object.keys(storageData.worldVisits || {}).filter(k => !k.includes('::') && storageData.worldVisits[k]?.status === 'visited' && k.toUpperCase() !== 'IL');
     if (stats.turkeyCount > 0 && !visitedCodes.includes('TR')) visitedCodes.push('TR');
 
     const modal = document.createElement('div');
@@ -1822,7 +1834,7 @@ export function renderProfileView(container, onBack) {
 
         <div class="poster-preview-container">
           <!-- The Rendered World Map Poster Card -->
-          <div id="travel-poster-canvas" class="travel-poster-card" style="--poster-accent:${visitedColor};">
+          <div id="travel-poster-canvas" class="travel-poster-card theme-${currentTheme}" data-theme="${currentTheme}" style="--poster-accent:${visitedColor};">
             <div class="poster-noise-bg"></div>
             
             <div class="poster-header">
@@ -1877,6 +1889,7 @@ export function renderProfileView(container, onBack) {
               <div class="poster-flags-title">${currentLang === 'tr' ? 'Ziyaret Edilen Ülkeler' : 'Visited Countries'} (${visitedCodes.length})</div>
               <div class="poster-flags-grid flags-only">
                 ${visitedCodes.slice(0, 35).map(cCode => {
+                  if (cCode.toUpperCase() === 'IL') return '';
                   const c = WORLD_COUNTRIES.find(x => x.code === cCode);
                   const cName = c ? getCountryDisplayName(c) : cCode;
                   return `<span class="poster-flag-chip flag-only" title="${escapeHtml(cName)}"><img src="https://flagcdn.com/w80/${cCode.toLowerCase()}.png" class="poster-chip-flag" alt="${cCode}" /></span>`;
@@ -1913,10 +1926,17 @@ export function renderProfileView(container, onBack) {
 
     document.body.appendChild(modal);
 
-    // Highlight visited countries on the poster SVG map
+    // Highlight visited countries on the poster SVG map with active theme styling
     const svgEl = modal.querySelector('.poster-world-svg') || modal.querySelector('.poster-svg-wrapper svg') || modal.querySelector('svg');
     if (svgEl) {
+      if (themeCfg.landFill) {
+        svgEl.querySelectorAll('.poster-map-country, path').forEach(p => {
+          p.style.fill = themeCfg.landFill;
+          p.style.stroke = themeCfg.landBorder;
+        });
+      }
       visitedCodes.forEach(cCode => {
+        if (cCode.toUpperCase() === 'IL') return;
         const paths = svgEl.querySelectorAll(`path[data-code="${cCode}"], [id="${cCode}"]`);
         paths.forEach(p => {
           p.classList.add('visited');
@@ -2926,10 +2946,35 @@ export function renderProfileView(container, onBack) {
       const formDialog = document.createElement('div');
       formDialog.className = 'passport-visa-form-overlay';
       const issuingOpts = [
-        ['DEUTSCHLAND','🇩🇪 Almanya'],['FRANCE','🇫🇷 Fransa'],['NETHERLANDS','🇳🇱 Hollanda'],
-        ['ITALY','🇮🇹 İtalya'],['SPAIN','🇪🇸 İspanya'],['GREECE','🇬🇷 Yunanistan'],
-        ['AUSTRIA','🇦🇹 Avusturya'],['BELGIUM','🇧🇪 Belçika'],['SWEDEN','🇸🇪 İsveç'],
-        ['POLAND','🇵🇱 Polonya'],['SWITZERLAND','🇨🇭 İsviçre'],['CZECHIA','🇨🇿 Çekya']
+        ['DEUTSCHLAND', '🇩🇪 Almanya'],
+        ['AUSTRIA', '🇦🇹 Avusturya'],
+        ['BELGIUM', '🇧🇪 Belçika'],
+        ['BULGARIA', '🇧🇬 Bulgaristan'],
+        ['CZECHIA', '🇨🇿 Çekya'],
+        ['DENMARK', '🇩🇰 Danimarka'],
+        ['ESTONIA', '🇪🇪 Estonya'],
+        ['FINLAND', '🇫🇮 Finlandiya'],
+        ['FRANCE', '🇫🇷 Fransa'],
+        ['CROATIA', '🇭🇷 Hırvatistan'],
+        ['NETHERLANDS', '🇳🇱 Hollanda'],
+        ['SPAIN', '🇪🇸 İspanya'],
+        ['SWEDEN', '🇸🇪 İsveç'],
+        ['SWITZERLAND', '🇨🇭 İsviçre'],
+        ['ITALY', '🇮🇹 İtalya'],
+        ['ICELAND', '🇮🇸 İzlanda'],
+        ['LATVIA', '🇱🇻 Letonya'],
+        ['LIECHTENSTEIN', '🇱🇮 Lihtenştayn'],
+        ['LITHUANIA', '🇱🇹 Litvanya'],
+        ['LUXEMBOURG', '🇱🇺 Lüksemburg'],
+        ['HUNGARY', '🇭🇺 Macaristan'],
+        ['MALTA', '🇲🇹 Malta'],
+        ['NORWAY', '🇳🇴 Norveç'],
+        ['POLAND', '🇵🇱 Polonya'],
+        ['PORTUGAL', '🇵🇹 Portekiz'],
+        ['ROMANIA', '🇷🇴 Romanya'],
+        ['SLOVAKIA', '🇸🇰 Slovakya'],
+        ['SLOVENIA', '🇸🇮 Slovenya'],
+        ['GREECE', '🇬🇷 Yunanistan']
       ];
       const evt = (existing, val) => existing === val ? ' selected' : '';
       const iopt = issuingOpts.map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.issuingCountry, v) + '>' + l + '</option>').join('');
@@ -3679,7 +3724,8 @@ export function renderProfileView(container, onBack) {
       const otherCard = document.getElementById('compare-other-card');
       otherCard.style.display = 'block';
       otherCard.innerHTML = `
-        <div class="profile-card">
+        <div class="profile-card" style="position:relative;">
+          <button type="button" id="btn-close-compare" class="compare-close-btn" title="${currentLang === 'tr' ? 'Karşılaştırmayı Kapat' : 'Close Comparison'}">✕</button>
           <div class="profile-header">
             <div class="profile-avatar">${safeProfile.photoUrl ? `<img src="${safeProfile.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div class="profile-user-info">
@@ -3693,9 +3739,6 @@ export function renderProfileView(container, onBack) {
               ${!isAlreadySaved ? `
                 <button type="button" id="btn-save-this-friend" class="save-friend-action-btn">⭐ ${t('saveFriend')}</button>
               ` : ''}
-              <button type="button" id="btn-compare-back-search" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--theme-text-muted,#cbd5e1);border-radius:8px;padding:5px 10px;font-size:0.75rem;cursor:pointer;">
-                🔍 ${currentLang === 'tr' ? 'Yeni Arama' : 'New Search'}
-              </button>
             </div>
           </div>
           <div class="profile-stats" style="grid-template-columns:repeat(2,1fr);">
@@ -3707,12 +3750,14 @@ export function renderProfileView(container, onBack) {
         </div>
       `;
 
-      // Back to search button handler
-      document.getElementById('btn-compare-back-search')?.addEventListener('click', () => {
+      // Back / Close comparison handler
+      const handleCloseComparison = () => {
         document.getElementById('compare-input-area').style.display = 'block';
         document.getElementById('compare-other-card').style.display = 'none';
         document.getElementById('compare-results-area').style.display = 'none';
-      });
+      };
+      document.getElementById('btn-close-compare')?.addEventListener('click', handleCloseComparison);
+      document.getElementById('btn-compare-back-search')?.addEventListener('click', handleCloseComparison);
 
       // Save friend button handler
       document.getElementById('btn-save-this-friend')?.addEventListener('click', (e) => {
@@ -3991,12 +4036,12 @@ export function renderProfileView(container, onBack) {
                       if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz kaydedilmiş mekan yok.' : 'No saved places yet.'}</span>`;
                       const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
                       return places.map(pl => {
-                        const r = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+                        const r = (pl.rating !== undefined && pl.rating !== null && pl.rating !== '') ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 0;
                         return `
                         <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                           <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                             <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
-                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : ''}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : `<span style="color:var(--theme-text-muted,#64748b);font-size:0.72rem;font-weight:400;">(${currentLang === 'tr' ? 'Puansız' : 'Unrated'})</span>`}</span>
                           </div>
                           ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
                         </div>
@@ -4024,12 +4069,12 @@ export function renderProfileView(container, onBack) {
                       if (places.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının kayıtlı mekanı yok.' : 'Friend has no saved places.'}</span>`;
                       const catIcons = { restaurant: '🍽️', cafe: '☕', museum: '🏛️', nature: '🏖️', shopping: '🛍️', hotel: '🏨' };
                       return places.map(pl => {
-                        const r = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+                        const r = (pl.rating !== undefined && pl.rating !== null && pl.rating !== '') ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 0;
                         return `
                         <div class="comp-review-item" style="border-radius:8px;padding:8px 10px;font-size:0.85rem;">
                           <div class="comp-review-title" style="display:flex;justify-content:space-between;align-items:center;font-weight:600;">
                             <span>${catIcons[pl.category] || '📍'} ${escapeHtml(pl.name)}</span>
-                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : ''}</span>
+                            <span style="color:#f59e0b;font-size:0.75rem;">${r > 0 ? '⭐'.repeat(r) : `<span style="color:var(--theme-text-muted,#64748b);font-size:0.72rem;font-weight:400;">(${currentLang === 'tr' ? 'Puansız' : 'Unrated'})</span>`}</span>
                           </div>
                           ${pl.note ? `<div style="color:var(--theme-text-muted, #94a3b8);font-size:0.78rem;margin-top:4px;font-style:italic;">"${escapeHtml(pl.note)}"</div>` : ''}
                         </div>
@@ -4083,9 +4128,21 @@ export function renderProfileView(container, onBack) {
           .then(geoData => {
             if (!geoData || !geoData.features) return;
 
+            const resolveCountryCode = (feature) => {
+              const p = feature?.properties || {};
+              const directCode = p['ISO3166-1-Alpha-2'] || p.ISO_A2 || p.iso_a2 || feature.id;
+              if (directCode && directCode !== '-99') return directCode;
+              const cName = p.name || p.NAME || p.admin || p.ADMIN;
+              if (cName) {
+                const found = WORLD_COUNTRIES.find(x => x.nameEn === cName || x.name === cName);
+                if (found) return found.code;
+              }
+              return directCode || null;
+            };
+
             const duoGeoLayer = L.geoJSON(geoData, {
               style: (feature) => {
-                const code = feature.id || feature.properties?.ISO_A2 || feature.properties?.wb_a2 || feature.properties?.postal;
+                const code = resolveCountryCode(feature);
                 const isCommon = commonCountries.includes(code);
                 const isMine = onlyMyCountries.includes(code);
                 const isOther = onlyOtherCountries.includes(code);
@@ -4101,7 +4158,7 @@ export function renderProfileView(container, onBack) {
                 }
               },
               onEachFeature: (feature, layer) => {
-                const code = feature.id || feature.properties?.ISO_A2 || feature.properties?.wb_a2 || feature.properties?.postal;
+                const code = resolveCountryCode(feature);
                 const cObj = WORLD_COUNTRIES.find(x => x.code === code);
                 const cName = cObj ? getCountryDisplayName(cObj) : (feature.properties?.name || code);
 
@@ -4118,9 +4175,11 @@ export function renderProfileView(container, onBack) {
                   statusBadge = `<span style="color:#3b82f6;font-weight:700;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)} gezdi!` : 'Only friend visited!'}</span>`;
                 }
 
+                const flagIcon = (code === 'IL') ? '' : (cObj?.flag || '🌍');
+
                 layer.bindPopup(`
                   <div style="font-family:inherit;padding:6px 8px;text-align:center;min-width:140px;">
-                    <div style="font-size:1.3rem;margin-bottom:2px;">${cObj?.flag || '🌍'}</div>
+                    ${flagIcon ? `<div style="font-size:1.3rem;margin-bottom:2px;">${flagIcon}</div>` : ''}
                     <div style="font-weight:800;color:#0f172a;font-size:0.95rem;">${escapeHtml(cName)}</div>
                     <div style="margin-top:6px;font-size:0.8rem;">${statusBadge}</div>
                   </div>
@@ -4221,32 +4280,32 @@ export function renderProfileView(container, onBack) {
             const provCount = Object.keys(tr.turkeyVisits || {}).filter(k => tr.turkeyVisits[k]?.status === 'visited').length;
 
             return `
-              <div class="friend-search-item" data-username="${escapeHtml(tr.username)}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;gap:10px;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;">
-                    ${tr.photoUrl ? `<img src="${tr.photoUrl}" class="avatar-custom-img" style="width:100%;height:100%;object-fit:cover;" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
+              <div class="friend-search-item" data-username="${escapeHtml(tr.username)}">
+                <div class="friend-search-user-info">
+                  <div class="friend-search-avatar">
+                    ${tr.photoUrl ? `<img src="${tr.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
                   </div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:700;color:var(--theme-text-main,#f8fafc);font-size:0.9rem;display:flex;align-items:center;gap:6px;">
-                      <span>${escapeHtml(tr.name || tr.username)}</span>
-                      <span style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);font-weight:400;">@${escapeHtml(tr.username)}</span>
+                  <div class="friend-search-meta">
+                    <div class="friend-search-name-row">
+                      <span class="friend-search-name">${escapeHtml(tr.name || tr.username)}</span>
+                      <span class="friend-search-handle">@${escapeHtml(tr.username)}</span>
                     </div>
-                    <div style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                      ${countryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${provCount} ${currentLang === 'tr' ? 'İl' : 'Provinces'} • ${escapeHtml(tr.bio || '')}
+                    <div class="friend-search-sub">
+                      ${countryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${provCount} ${currentLang === 'tr' ? 'İl' : 'Provinces'}${tr.bio ? ` • ${escapeHtml(tr.bio)}` : ''}
                     </div>
                   </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                  <button type="button" class="btn-compare-traveler" data-username="${escapeHtml(tr.username)}" style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;border-radius:8px;padding:6px 12px;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600;">
-                    ⚔️ ${currentLang === 'tr' ? 'Karşılaştır' : 'Compare'}
+                <div class="friend-search-actions">
+                  <button type="button" class="btn-compare-traveler" data-username="${escapeHtml(tr.username)}">
+                    <span>⚔️</span> <span class="btn-label-text">${currentLang === 'tr' ? 'Kıyasla' : 'Compare'}</span>
                   </button>
                   ${isSaved ? `
-                    <button type="button" disabled style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:0.78rem;font-family:inherit;">
-                      ✓ ${currentLang === 'tr' ? 'Arkadaşın' : 'Friend'}
+                    <button type="button" class="btn-friend-saved" disabled>
+                      <span>✓</span> <span class="btn-label-text">${currentLang === 'tr' ? 'Arkadaşın' : 'Friend'}</span>
                     </button>
                   ` : `
-                    <button type="button" class="btn-add-traveler" data-username="${escapeHtml(tr.username)}" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:600;">
-                      + ${currentLang === 'tr' ? 'Ekle' : 'Add'}
+                    <button type="button" class="btn-add-traveler" data-username="${escapeHtml(tr.username)}">
+                      <span>+</span> <span class="btn-label-text">${currentLang === 'tr' ? 'Ekle' : 'Add'}</span>
                     </button>
                   `}
                 </div>

@@ -280,6 +280,11 @@ export function onThemeChange(fn) {
   };
 }
 
+export function isLightTheme(themeId) {
+  const id = themeId || getTheme();
+  return id === 'light' || id === 'natgeo_atlas';
+}
+
 export function applyTheme(themeId) {
   const cfg = getThemeConfig(themeId);
   const root = document.documentElement;
@@ -313,6 +318,18 @@ export function applyTheme(themeId) {
     themeCardBg = 'rgba(255, 255, 255, 0.96)';
     borderGlass = 'rgba(203, 213, 225, 0.85)';
     themeCardBorder = 'rgba(203, 213, 225, 0.85)';
+  } else if (cfg.id === 'natgeo_atlas') {
+    bgDark = '#ede1cf';
+    bgCard = 'rgba(253, 248, 242, 0.96)';
+    themeCardBg = 'rgba(250, 243, 233, 0.95)';
+    borderGlass = 'rgba(140, 112, 82, 0.35)';
+    themeCardBorder = 'rgba(140, 112, 82, 0.35)';
+  } else if (cfg.id === 'vintage') {
+    bgDark = '#23140c';
+    bgCard = 'rgba(44, 24, 16, 0.92)';
+    themeCardBg = 'rgba(38, 20, 14, 0.88)';
+    borderGlass = 'rgba(107, 82, 64, 0.4)';
+    themeCardBorder = 'rgba(107, 82, 64, 0.4)';
   } else if (cfg.id === 'pure_oled') {
     bgDark = '#000000';
     bgCard = '#0a0a0a';
@@ -345,6 +362,7 @@ export function applyTheme(themeId) {
   document.documentElement.setAttribute('data-ui-size', uiSize);
   document.body.setAttribute('data-ui-size', uiSize);
   document.body.setAttribute('data-theme', cfg.id);
+  document.body.classList.toggle('light-theme', isLightTheme(cfg.id));
 }
 
 

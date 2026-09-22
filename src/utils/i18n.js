@@ -325,6 +325,7 @@ export function getLocalizedName(rawName, countryCode) {
 
 export function getCountryFlagHtml(countryCode, fallbackEmoji = '🇹🇷', options = {}) {
   const code = (countryCode || 'TR').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'TR';
+  if (code === 'IL') return '';
   const width = parseInt(options.width, 10) || 24;
   const height = parseInt(options.height, 10) || 16;
   const safeClassName = escapeHtml(options.className || 'country-flag-icon');

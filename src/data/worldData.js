@@ -79,7 +79,7 @@ export const WORLD_COUNTRIES = [
     "name": "İsrail",
     "nameEn": "Israel",
     "continent": "asia",
-    "flag": "🇮🇱"
+    "flag": ""
   },
   {
     "code": "PS",

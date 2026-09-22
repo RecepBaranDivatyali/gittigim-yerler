@@ -10,8 +10,16 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
+import { isUsernameAvailable } from '../utils/userDatabase.js';
 
-const ALLOWED_AVATARS = ['🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🦅', '🌺', '🐉', '🦁', '🐤', '🐥'];
+const ALLOWED_AVATARS = [
+  '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
+  '🚁', '🏕️', '⛺', '🗿', '🗽', '🗼', '⛩️', '🌍', '🌎', '🌏',
+  '🦅', '🐉', '🦁', '🐺', '🦊', '🐯', '🐻', '🐼', '🐨', '🐬', 
+  '🐋', '🐧', '🦉', '🐪', '🐎', '🐤', '🐥', '🌺', '🌴', '🌲', 
+  '🌋', '🌅', '🌌', '🪐', '⭐', '🔥', '⚡', '🌈', '💎', '🤠', 
+  '🧳', '📸', '🏄', '🧗', '🚵', '🎿', '⛵', '🛰️', '🪂'
+];
 
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
@@ -437,6 +445,12 @@ export function renderLoginPage(container, onLogin) {
       let profileUsername = '';
       if (authMode === 'register') {
         profileUsername = sanitizeText(usernameVal.slice(0, 25), 25) || emailVal.split('@')[0];
+        if (!isUsernameAvailable(profileUsername)) {
+          alert(currentLang === 'tr' 
+            ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 
+            : `Username "${profileUsername}" is already taken. Please choose another.`);
+          return;
+        }
       } else {
         // In login mode, use stored profile if available or derive from email
         let existingName = emailVal.split('@')[0];
