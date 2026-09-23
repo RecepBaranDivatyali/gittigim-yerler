@@ -112,10 +112,10 @@ function initLeafletTurkeyGeoJsonMap(container) {
     zoom: 6,
     minZoom: 4.5,
     maxZoom: 12,
-    zoomSnap: 0,
+    zoomSnap: 0.25,
     zoomDelta: 0.5,
-    wheelPxPerZoomLevel: 120,
-    wheelDebounceTime: 40,
+    wheelPxPerZoomLevel: 60,
+    wheelDebounceTime: 0,
     zoomControl: true,
     attributionControl: false
   });

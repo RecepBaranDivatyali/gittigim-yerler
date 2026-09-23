@@ -4328,12 +4328,12 @@ export function renderProfileView(container, onBack) {
         duoMapInstance = L.map(mapEl, {
           center: [25, 10],
           zoom: 2,
-          minZoom: 1.2,
+          minZoom: 1.8,
           maxZoom: 10,
-          zoomSnap: 0,
+          zoomSnap: 0.25,
           zoomDelta: 0.5,
-          wheelPxPerZoomLevel: 120,
-          wheelDebounceTime: 40,
+          wheelPxPerZoomLevel: 60,
+          wheelDebounceTime: 0,
           zoomControl: true,
           attributionControl: false
         });
