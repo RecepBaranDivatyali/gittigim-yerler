@@ -4948,32 +4948,15 @@ function getEffectiveCountryStatus(countryCode) {
 
 function countryBorderStyle(f) {
   const c = f ? findCountry(f) : null;
-  const code = c?.code;
   const zoom = map?.getZoom() || 3;
   const isDark = getTheme() !== 'light';
   const zoomed = zoom >= REGION_ZOOM;
 
-  // When zoomed into regions: if this country has its own provinces or regions actively displayed on map,
-  // do NOT draw the coarse duplicate world-countries border over them!
-  if (zoomed && code) {
-    const hasRegionLayer = regionLayers[code] && map && map.hasLayer(regionLayers[code]);
-    const hasTurkeyLayer = code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer);
-    if (hasRegionLayer || hasTurkeyLayer) {
-      return {
-        fill: false,
-        fillOpacity: 0,
-        opacity: 0,
-        stroke: false,
-        interactive: false
-      };
-    }
-  }
-
   return {
     fill: false,
     fillOpacity: 0,
-    color: isDark ? 'rgba(255, 255, 255, 0.90)' : 'rgba(15, 23, 42, 0.85)',
-    weight: zoomed ? (zoom >= SUBREGION_ZOOM ? 2.1 : 1.9) : 1.3,
+    color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(15, 23, 42, 0.80)',
+    weight: zoomed ? (zoom >= SUBREGION_ZOOM ? 2.0 : 1.7) : 1.3,
     opacity: 1,
     stroke: true,
     interactive: false
@@ -5030,15 +5013,7 @@ function countryStyle(c) {
     const hasRegionLayer = (regionLayers[code] && map && map.hasLayer(regionLayers[code])) ||
                            (code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer));
     if (hasRegionLayer) {
-      return {
-        fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
-        fillOpacity: status === 'unvisited' ? 0.95 : cfg.fillOpacity,
-        stroke: false,
-        color: 'transparent',
-        weight: 0,
-        opacity: 0,
-        interactive: false
-      };
+      isInteractive = false;
     }
   }
 
@@ -5049,8 +5024,9 @@ function countryStyle(c) {
     fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
     fillOpacity,
     color: isDark ? 'rgba(255, 255, 255, 0.70)' : 'rgba(15, 23, 42, 0.65)',
-    weight: zoomed ? 2.0 : 1.5,
-    opacity: 1.0,
+    weight: zoomed ? 1.8 : 1.4,
+    opacity: 0.9,
+    stroke: true,
     interactive: isInteractive
   };
 }
