@@ -3364,6 +3364,68 @@ body[data-theme="light"] .theme-select-btn.active {
   color: var(--theme-accent, #2563eb) !important;
 }
 
+/* ─── Floating Zoom Controls (+ / − Micro-Zoom Buttons) ─────────────── */
+.floating-zoom-controls {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right, 16px));
+  bottom: calc(max(16px, env(safe-area-inset-bottom, 16px)) + 58px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2400;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.floating-zoom-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+  font-size: 1.35rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 1;
+  padding: 0;
+}
+
+.floating-zoom-btn:hover {
+  background: rgba(30, 41, 59, 0.96);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.floating-zoom-btn:active {
+  transform: scale(0.94);
+  background: rgba(59, 130, 246, 0.3);
+}
+
+body[data-theme="light"] .floating-zoom-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #1e293b;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+body[data-theme="light"] .floating-zoom-btn:hover {
+  background: #ffffff;
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
 .floating-feedback-wrap {
   position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -3538,6 +3600,16 @@ body[data-theme="light"] .theme-select-btn.active {
 }
 
 @media (max-width: 768px) {
+  .floating-zoom-controls {
+    bottom: calc(max(76px, env(safe-area-inset-bottom, 76px)) + 52px);
+    right: max(16px, env(safe-area-inset-right, 16px));
+  }
+  .floating-zoom-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+    border-radius: 50%;
+  }
   .floating-feedback-wrap {
     bottom: max(76px, env(safe-area-inset-bottom, 76px));
     right: max(16px, env(safe-area-inset-right, 16px));

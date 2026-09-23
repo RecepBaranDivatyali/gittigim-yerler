@@ -689,6 +689,12 @@ export function renderWorldMapView(container, options = {}) {
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
 
+        <!-- Floating Zoom Controls (Continuous & Micro-zoom buttons) -->
+        <div id="map-zoom-controls" class="floating-zoom-controls">
+          <button type="button" id="btn-map-zoom-in" class="floating-zoom-btn" title="Yaklaştır (+)" aria-label="Yaklaştır">+</button>
+          <button type="button" id="btn-map-zoom-out" class="floating-zoom-btn" title="Uzaklaştır (−)" aria-label="Uzaklaştır">−</button>
+        </div>
+
         <!-- Floating Feedback Button (bottom-right: aligned at safe height bottom:76px) -->
         <div id="feedback-btn-wrap" class="floating-feedback-wrap">
           <button id="btn-open-feedback" class="floating-feedback-btn" aria-label="${t('feedbackBtn')}">
@@ -1149,6 +1155,18 @@ export function renderWorldMapView(container, options = {}) {
         if (options.onOpenProfile) options.onOpenProfile();
       });
     }
+
+    // Floating Zoom Controls (+ / − with fine 0.5 increments)
+    const zoomInBtn = container.querySelector('#btn-map-zoom-in');
+    const zoomOutBtn = container.querySelector('#btn-map-zoom-out');
+    zoomInBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (map) map.setZoom(map.getZoom() + 0.5);
+    });
+    zoomOutBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (map) map.setZoom(map.getZoom() - 0.5);
+    });
 
     // Feedback modal handling
     const openFeedbackBtn = container.querySelector('#btn-open-feedback');
@@ -1768,15 +1786,19 @@ function initMap(container) {
   map = L.map(el, {
     center: [39.0, 35.0],
     zoom: 4,
-    minZoom: 2,
-    maxZoom: 12,
+    minZoom: 1.2,
+    maxZoom: 14,
+    zoomSnap: 0,
+    zoomDelta: 0.5,
+    wheelPxPerZoomLevel: 120,
+    wheelDebounceTime: 40,
     zoomControl: false,
     attributionControl: false,
     doubleClickZoom: true,
     tap: false,
     worldCopyJump: false,
     maxBounds: [[-85, -180], [85, 180]],
-    maxBoundsViscosity: 1.0,
+    maxBoundsViscosity: 0.8,
     inertia: true,
     inertiaDeceleration: 3000,
     easeLinearity: 0.2,
@@ -1921,7 +1943,7 @@ function initMap(container) {
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
-          map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
+          map.flyTo(e.latlng, map.getZoom() + 1.0, { duration: 0.4 });
         });
       }
     }).addTo(map);
@@ -2003,7 +2025,7 @@ function initMap(container) {
         });
         layer.on('dblclick', e => {
           L.DomEvent.stopPropagation(e);
-          map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
+          map.flyTo(e.latlng, map.getZoom() + 1.0, { duration: 0.4 });
         });
       }
     });
@@ -3097,7 +3119,7 @@ function attachRegionLayer(code, data) {
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
-        map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
+        map.flyTo(e.latlng, map.getZoom() + 1.0, { duration: 0.4 });
       });
     }
   });
@@ -3237,7 +3259,7 @@ function attachSubregionLayer(code, data) {
       });
       l.on('dblclick', e => {
         L.DomEvent.stopPropagation(e);
-        map.flyTo(e.latlng, map.getZoom() + 1.5, { duration: 0.5 });
+        map.flyTo(e.latlng, map.getZoom() + 1.0, { duration: 0.4 });
       });
     }
   });

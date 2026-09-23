@@ -110,8 +110,12 @@ function initLeafletTurkeyGeoJsonMap(container) {
   turkeyMapInstance = L.map(mapElement, {
     center: [39.0, 35.2],
     zoom: 6,
-    minZoom: 5,
-    maxZoom: 10,
+    minZoom: 4.5,
+    maxZoom: 12,
+    zoomSnap: 0,
+    zoomDelta: 0.5,
+    wheelPxPerZoomLevel: 120,
+    wheelDebounceTime: 40,
     zoomControl: true,
     attributionControl: false
   });
