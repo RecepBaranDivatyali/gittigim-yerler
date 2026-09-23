@@ -2126,9 +2126,9 @@ export function renderProfileView(container, onBack) {
     const today = new Date().toISOString().split('T')[0];
 
     const stampPagesCount = Math.max(1, Math.ceil(visitedCodes.length / 4));
-    // Page structure: 1 Biometric ID + N Visa pages (1 per visa or 1 empty if none) + stamp pages
+    // Page structure: Page 0 = Cover, Page 1 = Biometric ID, Pages 2..N = Visas and Stamps
     const visaPagesCount = Math.max(1, userVisas.length);
-    const totalPages = 1 + visaPagesCount + stampPagesCount;
+    const totalPages = 2 + visaPagesCount + stampPagesCount;
 
     const modal = document.createElement('div');
     modal.className = 'passport-modal-overlay';
@@ -2147,9 +2147,6 @@ export function renderProfileView(container, onBack) {
                 <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
               `).join('')}
             </div>
-            <div class="passport-swipe-hint">
-              <span>📖</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için yana kaydırın veya noktalara dokunun' : 'Swipe left/right or tap dots to turn pages'}</span>
-            </div>
           </div>
 
           <!-- Passport Document Booklet Canvas (Swipeable/Slideable Carousel) -->
@@ -2157,8 +2154,8 @@ export function renderProfileView(container, onBack) {
             <div class="passport-carousel-viewport" id="passport-viewport">
               <div class="passport-carousel-track" id="passport-track">
 
-                <!-- SAYFA 1: Kapak ve Biyometrik Kimlik Sayfası -->
-                <div class="passport-page-sheet" data-page-index="0">
+                <!-- SAYFA 1: Hakiki Pasaport Kapağı -->
+                <div class="passport-page-sheet passport-cover-sheet" data-page-index="0">
                   <!-- Passport Cover Header — Authentic Gold Embossed Leather Design -->
                   <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
                     <div class="passport-cover-pattern"></div>
@@ -2168,10 +2165,10 @@ export function renderProfileView(container, onBack) {
                     <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
 
                     <div class="passport-cover-crest-wrap">
-                      <svg viewBox="0 0 100 100" class="passport-cover-crest-svg" width="56" height="56">
+                      <svg viewBox="0 0 100 100" class="passport-cover-crest-svg" width="84" height="84">
                         <defs>
                           <filter id="goldShadow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.6"/>
+                            <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.6"/>
                           </filter>
                         </defs>
                         <!-- Crescent & Star (Ay-Yıldız) in Gold -->
@@ -2184,7 +2181,7 @@ export function renderProfileView(container, onBack) {
                     <div class="passport-cover-badge">${isYesil ? 'HUSUSİ DAMGALI (YEŞİL)' : 'UMUMA MAHSUS (BORDO)'}</div>
 
                     <div class="passport-cover-chip-row">
-                      <svg viewBox="0 0 32 20" class="passport-cover-chip-svg" width="22" height="14">
+                      <svg viewBox="0 0 32 20" class="passport-cover-chip-svg" width="30" height="18">
                         <rect x="1" y="1" width="30" height="18" rx="3" fill="none" stroke="#facc15" stroke-width="2"/>
                         <line x1="1" y1="10" x2="31" y2="10" stroke="#facc15" stroke-width="2"/>
                         <circle cx="16" cy="10" r="4.5" fill="#facc15"/>
@@ -2196,7 +2193,10 @@ export function renderProfileView(container, onBack) {
                       <span>PASSPORT</span>
                     </div>
                   </div>
+                </div>
 
+                <!-- SAYFA 2: Biyometrik Kimlik Sayfası -->
+                <div class="passport-page-sheet passport-identity-sheet" data-page-index="1">
                   <!-- Identity Page Pane — High Security Biometric Reproduction -->
                   <div class="passport-id-page">
                     <!-- Background watermark crest -->
@@ -2283,6 +2283,7 @@ export function renderProfileView(container, onBack) {
                   const isExpired = visa && visa.validUntil && today > visa.validUntil;
                   const isActive = visa && !isExpired;
                   const visaPageIndex = vIdx + 1;
+                  const sheetIndex = 2 + vIdx;
 
                   const visaTypeLabels = {
                     schengen: { title: 'SCHENGENER STAATEN / SCHENGEN STATES', flag: '🇪🇺', color: '#1a4ca3' },
@@ -2298,7 +2299,7 @@ export function renderProfileView(container, onBack) {
                   if (!visa) {
                     // Empty visa page - add button
                     return `
-                      <div class="passport-page-sheet passport-visa-sheet passport-visa-empty-sheet" data-page-index="${visaPageIndex}">
+                      <div class="passport-page-sheet passport-visa-sheet passport-visa-empty-sheet" data-page-index="${sheetIndex}">
                         <div class="passport-visa-leaf-bg">
                           <div class="passport-visa-guilloche-pattern"></div>
                         </div>
@@ -2312,7 +2313,7 @@ export function renderProfileView(container, onBack) {
                         </div>
                         <div class="passport-page-sheet-footer">
                           <span>TÜRKİYE CUMHURİYETİ PASAPORTU</span>
-                          <span>${visaPageIndex + 1}</span>
+                          <span>${sheetIndex + 1}</span>
                         </div>
                       </div>
                     `;
@@ -2451,7 +2452,7 @@ export function renderProfileView(container, onBack) {
                   const mrzLine2V = `${mrzVCode}0TUR9501018${entriesLabel.slice(0,1)}${durationLabel}<<<<<<<<<<<<<<02`.slice(0, 44);
 
                   return `
-                    <div class="passport-page-sheet passport-visa-sheet pv3-sheet" data-page-index="${visaPageIndex}">
+                    <div class="passport-page-sheet passport-visa-sheet pv3-sheet" data-page-index="${sheetIndex}">
                       <!-- Background security watermark for passport page -->
                       <div class="pv3-page-security-bg"></div>
 
@@ -2632,7 +2633,7 @@ export function renderProfileView(container, onBack) {
 
                       <div class="passport-page-sheet-footer">
                         <span>TÜRKİYE CUMHURİYETİ PASAPORTU</span>
-                        <span>${visaPageIndex + 1}</span>
+                        <span>${sheetIndex + 1}</span>
                       </div>
                     </div>
                   `;
@@ -2642,10 +2643,11 @@ export function renderProfileView(container, onBack) {
                 ${Array.from({ length: stampPagesCount }).map((_, pageIdx) => {
                   const sliceStart = pageIdx * 4;
                   const pageCodes = visitedCodes.slice(sliceStart, sliceStart + 4);
-                  const pageNum = pageIdx + 1 + visaPagesCount + 1;
+                  const stampSheetIndex = 2 + visaPagesCount + pageIdx;
+                  const pageNum = stampSheetIndex + 1;
 
                   return `
-                    <div class="passport-page-sheet passport-stamp-page-sheet" data-page-index="${pageIdx + 1 + visaPagesCount}">
+                    <div class="passport-page-sheet passport-stamp-page-sheet" data-page-index="${stampSheetIndex}">
                       <div class="passport-stamps-header">
                         <span class="p-title">✈️ ${currentLang === 'tr' ? 'MÜHÜRLER & RESMİ DAMGALAR' : 'STAMPS & SEALS'}</span>
                         <span class="p-count">${currentLang === 'tr' ? 'Sayfa' : 'Page'} ${pageNum} / ${totalPages}</span>
@@ -2768,11 +2770,14 @@ export function renderProfileView(container, onBack) {
       if (curNumEl) curNumEl.textContent = `${currentPage + 1} / ${totalPages}`;
       if (pageLabelEl) {
         if (currentPage === 0) {
+          pageLabelEl.textContent = currentLang === 'tr' ? 'Pasaport Kapağı' : 'Passport Cover';
+        } else if (currentPage === 1) {
           pageLabelEl.textContent = currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID';
-        } else if (currentPage <= visaPagesCount) {
-          pageLabelEl.textContent = currentLang === 'tr' ? `Vize ${currentPage} / ${visaPagesCount}` : `Visa ${currentPage} / ${visaPagesCount}`;
+        } else if (currentPage < 2 + visaPagesCount) {
+          const vIdx = currentPage - 1;
+          pageLabelEl.textContent = currentLang === 'tr' ? `Vize ${vIdx} / ${visaPagesCount}` : `Visa ${vIdx} / ${visaPagesCount}`;
         } else {
-          const stampIdx = currentPage - visaPagesCount;
+          const stampIdx = currentPage - (1 + visaPagesCount);
           pageLabelEl.textContent = `${currentLang === 'tr' ? 'Damgalar' : 'Stamps'} (${currentLang === 'tr' ? 'Sayfa' : 'Page'} ${stampIdx})`;
         }
       }
@@ -3015,18 +3020,41 @@ export function renderProfileView(container, onBack) {
       const iopt = issuingOpts.map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.issuingCountry, v) + '>' + l + '</option>').join('');
 
       const allWorldSorted = WORLD_COUNTRIES.slice().sort((a, b) => getCountryDisplayName(a).localeCompare(getCountryDisplayName(b), lang === 'tr' ? 'tr' : 'en'));
-      const singleCountryOptions = '<option value="">' + (lang === 'tr' ? '— Ülke Seçin —' : '— Select Country —') + '</option>' +
-        allWorldSorted.map(c => {
-          const flagPrefix = (c.code === 'IL') ? '' : (c.flag ? c.flag + ' ' : '');
-          const isSel = (c.code === existingVisa?.singleCountry) ? 'selected' : '';
-          return '<option value="' + c.code + '" ' + isSel + '>' + flagPrefix + escapeHtml(getCountryDisplayName(c)) + ' (' + c.code + ')</option>';
-        }).join('');
 
-      const typeOptions = [
-        ['schengen','🇪🇺 Schengen'],['us','🇺🇸 ABD / USA (B1/B2)'],['uk','🇬🇧 İngiltere / UK'],
-        ['canada','🇨🇦 Kanada'],['japan','🇯🇵 Japonya'],['australia','🇦🇺 Avustralya'],
-        ['uae','🇦🇪 BAE / UAE'],['other', lang === 'tr' ? '🌍 Diğer' : '🌍 Other']
-      ].map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.visaType, v) + '>' + l + '</option>').join('');
+      const typeList = [
+        { value: 'schengen', label: 'Schengen', flagHtml: getCountryFlagHtml('EU') },
+        { value: 'us', label: 'ABD / USA (B1/B2)', flagHtml: getCountryFlagHtml('US') },
+        { value: 'uk', label: 'İngiltere / UK', flagHtml: getCountryFlagHtml('GB') },
+        { value: 'canada', label: 'Kanada', flagHtml: getCountryFlagHtml('CA') },
+        { value: 'japan', label: 'Japonya', flagHtml: getCountryFlagHtml('JP') },
+        { value: 'australia', label: 'Avustralya', flagHtml: getCountryFlagHtml('AU') },
+        { value: 'uae', label: 'BAE / UAE', flagHtml: getCountryFlagHtml('AE') },
+        { value: 'other', label: lang === 'tr' ? 'Diğer Ülke' : 'Other Country', flagHtml: '<span style="font-size:1.15rem;line-height:1;">🌐</span>' }
+      ];
+
+      const cMap = {
+        GERMANY: 'DE', FRANCE: 'FR', ITALY: 'IT', SPAIN: 'ES', NETHERLANDS: 'NL',
+        AUSTRIA: 'AT', BELGIUM: 'BE', SWITZERLAND: 'CH', CZECHIA: 'CZ', POLAND: 'PL',
+        PORTUGAL: 'PT', SWEDEN: 'SE', NORWAY: 'NO', DENMARK: 'DK', FINLAND: 'FI',
+        HUNGARY: 'HU', SLOVAKIA: 'SK', SLOVENIA: 'SI', GREECE: 'GR', ESTONIA: 'EE',
+        LATVIA: 'LV', LITHUANIA: 'LT', LUXEMBOURG: 'LU', MALTA: 'MT', CROATIA: 'HR',
+        BULGARIA: 'BG', ROMANIA: 'RO', ICELAND: 'IS', LIECHTENSTEIN: 'LI'
+      };
+
+      const issuingList = issuingOpts.map(([code, name]) => {
+        const cCode = cMap[code] || 'EU';
+        return {
+          value: code,
+          label: name.replace(/^[^\s]+\s+/, ''),
+          flagHtml: getCountryFlagHtml(cCode)
+        };
+      });
+
+      const singleCountryList = allWorldSorted.map(c => ({
+        value: c.code,
+        label: `${getCountryDisplayName(c)} (${c.code})`,
+        flagHtml: getCountryFlagHtml(c.code)
+      }));
 
       const eBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-val="' + val + '">' + label + '</button>';
       const dBtn = (val, label, cond) => '<button type="button" class="visa-entry-btn' + (cond ? ' active' : '') + '" data-dur="' + val + '">' + label + '</button>';
@@ -3041,15 +3069,15 @@ export function renderProfileView(container, onBack) {
           '<div class="passport-visa-form-body">' +
             '<div class="visa-form-field">' +
               '<label>' + (lang==='tr'?'Vize Türü':'Visa Type') + '</label>' +
-              '<select class="visa-form-select" id="vf-type">' + typeOptions + '</select>' +
+              '<div id="vf-type-container"></div>' +
             '</div>' +
             '<div class="visa-form-field" id="vf-issuing-wrap">' +
               '<label>' + (lang==='tr'?'Veren Ülke':'Issuing Country') + '</label>' +
-              '<select class="visa-form-select" id="vf-issuing">' + iopt + '</select>' +
+              '<div id="vf-issuing-container"></div>' +
             '</div>' +
             '<div class="visa-form-field" id="vf-single-country-wrap" style="display:none;">' +
               '<label>' + (lang==='tr'?'Ülke Seçin':'Select Country') + '</label>' +
-              '<select class="visa-form-select" id="vf-single-country">' + singleCountryOptions + '</select>' +
+              '<div id="vf-single-country-container"></div>' +
             '</div>' +
             '<div class="visa-form-field">' +
               '<label>' + (lang==='tr'?'Giriş Hakkı':'Entry Type') + '</label>' +
@@ -3088,15 +3116,125 @@ export function renderProfileView(container, onBack) {
 
       document.body.appendChild(formDialog);
 
-      const typeSelect = formDialog.querySelector('#vf-type');
+      function renderCustomSelect({ containerId, inputId, items, initialVal, placeholder, searchable }) {
+        const wrap = formDialog.querySelector('#' + containerId);
+        if (!wrap) return;
+        const curItem = items.find(it => it.value === initialVal) || (initialVal ? null : items[0]);
+        wrap.innerHTML =
+          '<div class="custom-flag-select" id="cfs-' + inputId + '">' +
+            '<button type="button" class="custom-flag-select-trigger" id="' + inputId + '-trigger">' +
+              '<span class="cfs-selected-flag">' + (curItem ? curItem.flagHtml : '') + '</span>' +
+              '<span class="cfs-selected-label">' + (curItem ? escapeHtml(curItem.label) : escapeHtml(placeholder)) + '</span>' +
+              '<span class="cfs-arrow">▼</span>' +
+            '</button>' +
+            '<div class="custom-flag-select-dropdown" id="' + inputId + '-dropdown" style="display:none;">' +
+              (searchable ? '<div class="cfs-search-box"><input type="text" class="cfs-search-input" placeholder="' + (lang === 'tr' ? 'Ülke ara...' : 'Search country...') + '" autocomplete="off"></div>' : '') +
+              '<div class="cfs-options-list">' +
+                items.map(it =>
+                  '<div class="cfs-option-item' + (it.value === (curItem ? curItem.value : '') ? ' selected' : '') + '" data-val="' + it.value + '">' +
+                    '<span class="cfs-option-flag">' + it.flagHtml + '</span>' +
+                    '<span class="cfs-option-label">' + escapeHtml(it.label) + '</span>' +
+                  '</div>'
+                ).join('') +
+              '</div>' +
+            '</div>' +
+            '<input type="hidden" id="' + inputId + '" value="' + (curItem ? curItem.value : '') + '">' +
+          '</div>';
+
+        const trigger = wrap.querySelector('#' + inputId + '-trigger');
+        const dropdown = wrap.querySelector('#' + inputId + '-dropdown');
+        const hiddenInput = wrap.querySelector('#' + inputId);
+        const searchInput = wrap.querySelector('.cfs-search-input');
+
+        const toggleDropdown = (open) => {
+          formDialog.querySelectorAll('.custom-flag-select-dropdown').forEach(dd => {
+            if (dd !== dropdown) dd.style.display = 'none';
+          });
+          const shouldOpen = open !== undefined ? open : dropdown.style.display === 'none';
+          dropdown.style.display = shouldOpen ? 'flex' : 'none';
+          if (shouldOpen && searchInput) {
+            searchInput.value = '';
+            wrap.querySelectorAll('.cfs-option-item').forEach(el => el.style.display = 'flex');
+            setTimeout(() => searchInput.focus(), 60);
+          }
+        };
+
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleDropdown();
+        });
+
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.trim().toLowerCase();
+            wrap.querySelectorAll('.cfs-option-item').forEach(el => {
+              const txt = el.textContent.toLowerCase();
+              el.style.display = txt.includes(q) ? 'flex' : 'none';
+            });
+          });
+          searchInput.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        wrap.querySelectorAll('.cfs-option-item').forEach(optEl => {
+          optEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = optEl.dataset.val;
+            const chosen = items.find(it => it.value === val);
+            if (chosen) {
+              hiddenInput.value = chosen.value;
+              wrap.querySelector('.cfs-selected-flag').innerHTML = chosen.flagHtml;
+              wrap.querySelector('.cfs-selected-label').textContent = chosen.label;
+              wrap.querySelectorAll('.cfs-option-item').forEach(el => el.classList.remove('selected'));
+              optEl.classList.add('selected');
+              toggleDropdown(false);
+              hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          });
+        });
+      }
+
+      formDialog.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-flag-select')) {
+          formDialog.querySelectorAll('.custom-flag-select-dropdown').forEach(dd => dd.style.display = 'none');
+        }
+      });
+
+      renderCustomSelect({
+        containerId: 'vf-type-container',
+        inputId: 'vf-type',
+        items: typeList,
+        initialVal: existingVisa?.visaType || 'schengen',
+        placeholder: lang === 'tr' ? 'Vize Türü Seçin' : 'Select Visa Type',
+        searchable: false
+      });
+
+      renderCustomSelect({
+        containerId: 'vf-issuing-container',
+        inputId: 'vf-issuing',
+        items: issuingList,
+        initialVal: existingVisa?.issuingCountry || 'GERMANY',
+        placeholder: lang === 'tr' ? 'Veren Ülke Seçin' : 'Select Issuing Country',
+        searchable: false
+      });
+
+      renderCustomSelect({
+        containerId: 'vf-single-country-container',
+        inputId: 'vf-single-country',
+        items: singleCountryList,
+        initialVal: existingVisa?.singleCountry || '',
+        placeholder: lang === 'tr' ? '— Ülke Seçin —' : '— Select Country —',
+        searchable: true
+      });
+
+      const typeInput = formDialog.querySelector('#vf-type');
       const issuingWrap = formDialog.querySelector('#vf-issuing-wrap');
       const singleWrap = formDialog.querySelector('#vf-single-country-wrap');
       const updateTypeUI = () => {
-        const val = typeSelect.value;
+        const val = typeInput.value;
         issuingWrap.style.display = val === 'schengen' ? '' : 'none';
         singleWrap.style.display = val === 'other' ? '' : 'none';
       };
-      typeSelect.addEventListener('change', updateTypeUI);
+      typeInput.addEventListener('change', updateTypeUI);
       updateTypeUI();
 
       formDialog.querySelectorAll('.visa-entry-btn[data-val]').forEach(btn => {

@@ -13,6 +13,7 @@ import { escapeHtml } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
+import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
 
 export function isCurrentUserSuperAdmin() {
   try {
@@ -689,11 +690,6 @@ export function renderWorldMapView(container, options = {}) {
           <div id="stats-regions" class="stats-chip stats-chip-region" style="display:none;"></div>
         </div>
 
-        <!-- Floating Zoom Controls (Continuous & Micro-zoom buttons) -->
-        <div id="map-zoom-controls" class="floating-zoom-controls">
-          <button type="button" id="btn-map-zoom-in" class="floating-zoom-btn" title="Yaklaştır (+)" aria-label="Yaklaştır">+</button>
-          <button type="button" id="btn-map-zoom-out" class="floating-zoom-btn" title="Uzaklaştır (−)" aria-label="Uzaklaştır">−</button>
-        </div>
 
         <!-- Floating Feedback Button (bottom-right: aligned at safe height bottom:76px) -->
         <div id="feedback-btn-wrap" class="floating-feedback-wrap">
@@ -1156,17 +1152,6 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
-    // Floating Zoom Controls (+ / − with fine 0.5 increments)
-    const zoomInBtn = container.querySelector('#btn-map-zoom-in');
-    const zoomOutBtn = container.querySelector('#btn-map-zoom-out');
-    zoomInBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (map) map.setZoom(map.getZoom() + 0.5);
-    });
-    zoomOutBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (map) map.setZoom(map.getZoom() - 0.5);
-    });
 
     // Feedback modal handling
     const openFeedbackBtn = container.querySelector('#btn-open-feedback');
@@ -1713,6 +1698,7 @@ export function renderWorldMapView(container, options = {}) {
 
   window.__refreshMapStats = refreshStats;
   window.__leafletMapInstance = map;
+  window.__openStatusPopup = openStatusPopup;
   refreshStats();
 
   const cleanup = () => {
@@ -3133,9 +3119,9 @@ function attachRegionLayer(code, data) {
     style: () => ({
       fill: false,
       fillOpacity: 0,
-      color: getTheme() !== 'light' ? 'rgba(226, 232, 240, 0.70)' : 'rgba(30, 41, 59, 0.65)',
-      weight: 1.7,
-      opacity: 1,
+      color: getTheme() !== 'light' ? 'rgba(226, 232, 240, 0.50)' : 'rgba(30, 41, 59, 0.45)',
+      weight: 1.1,
+      opacity: 0.9,
       interactive: false
     }),
     interactive: false
@@ -3535,28 +3521,28 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
     </div>
 
-    <!-- 🎛️ Segmented Action Hub Tabs (Only visible when status === 'visited') -->
-    <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? 'has-data' : ''}" data-drawer="stamp" title="Ziyaret Tarihleri & Pasaport Damgaları">
+    <!-- 🎛️ Segmented Action Hub Tabs (Always accessible when guide exists, full suite when visited) -->
+    <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${(currentStatus === 'visited' || guide) ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? 'has-data' : ''}" data-drawer="stamp" title="Ziyaret Tarihleri & Pasaport Damgaları" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">📅</span>
         <span class="hub-btn-label">Tarih</span>
         ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? `<span class="hub-btn-dot emerald"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar">
+      <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">📸</span>
         <span class="hub-btn-label">Günlük</span>
         ${(currentJournal?.text || currentJournal?.mood) ? `<span class="hub-btn-dot pink"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn ${currentPlaces.length > 0 ? 'has-data' : ''}" data-drawer="places" title="Mekanlar & Restoranlar">
+      <button type="button" class="popup-hub-btn ${currentPlaces.length > 0 ? 'has-data' : ''}" data-drawer="places" title="Mekanlar & Restoranlar" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">🍽️</span>
         <span class="hub-btn-label">Mekanlar${currentPlaces.length > 0 ? ` (${currentPlaces.length})` : ''}</span>
       </button>
-      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="Puan & Not">
+      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="Puan & Not" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">⭐</span>
         <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : 'Puan'}</span>
       </button>
       ${guide ? `
-        <button type="button" class="popup-hub-btn" data-drawer="guide" title="Rehber & Bilgi">
+        <button type="button" class="popup-hub-btn" data-drawer="guide" title="Rehber & Bilgi" style="display: flex;">
           <span class="hub-btn-icon">🧳</span>
           <span class="hub-btn-label">Rehber</span>
         </button>
@@ -3566,14 +3552,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     <!-- 📅 Pasaport Giriş & Çıkış Çift Damgası Çekmecesi (Kompakt Tek Satır Tasarım) -->
     <div class="map-status-stamp-drawer" id="map-status-stamp-drawer" style="display: none;">
       
-      <!-- Çoklu Ziyaret Seçici (Tek Satır ve Şık) -->
+      <!-- Çoklu Ziyaret Seçici (Ferah İki Satırlı Tasarım) -->
       <div class="stamp-visits-manager-inline" id="stamp-visits-manager">
-        <div class="stamp-visits-single-line">
-          <span class="stamp-visits-inline-label">✈️ Seyahatler:</span>
-          <div class="stamp-visits-inline-scroll" id="stamp-visits-tabs-container"></div>
-          <button type="button" id="btn-add-new-visit" class="stamp-visit-add-inline-btn" title="Yeni Seyahat Ekle">➕ Ekle</button>
-          <button type="button" id="btn-delete-active-visit" class="stamp-visit-del-inline-btn" title="Bu Seyahati Sil" style="display:none;">🗑️ Sil</button>
+        <div class="stamp-visits-top-row">
+          <span class="stamp-visits-inline-label">✈️ SEYAHATLER:</span>
+          <div class="stamp-visits-actions-inline">
+            <button type="button" id="btn-add-new-visit" class="stamp-visit-add-inline-btn" title="Yeni Seyahat Ekle">➕ Ekle</button>
+            <button type="button" id="btn-delete-active-visit" class="stamp-visit-del-inline-btn" title="Bu Seyahati Sil" style="display:none;">🗑️ Sil</button>
+          </div>
         </div>
+        <div class="stamp-visits-inline-scroll" id="stamp-visits-tabs-container"></div>
       </div>
 
       <!-- Giriş & Çıkış Damgaları (Tek Satırda Yan Yana 2 Sütun) -->
@@ -3615,11 +3603,14 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         </div>
       </div>
 
-      <!-- Yol Arkadaşları / Travel Buddies Bölümü (Kompakt) -->
+      <!-- Yol Arkadaşları / Travel Buddies Bölümü (Canlı Arama & Kullanıcı Eşleştirme) -->
       <div class="stamp-buddies-compact-box">
         <div class="stamp-buddies-input-row">
           <span class="stamp-buddies-icon">👥</span>
-          <input type="text" id="popup-buddy-input" class="stamp-buddy-input compact" placeholder="Yol arkadaşı ekle (Örn: Ece)..." maxlength="25" />
+          <div class="buddy-input-autocomplete-wrap">
+            <input type="text" id="popup-buddy-input" class="stamp-buddy-input compact" placeholder="@kullanıcı adı ara ve seç..." autocomplete="off" maxlength="30" />
+            <div id="popup-buddy-suggestions" class="buddy-suggestions-popover" style="display:none;"></div>
+          </div>
           <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn compact">+ Ekle</button>
         </div>
         <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
@@ -3957,13 +3948,82 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     updateVisitsUI();
   });
 
+  const buddySuggestions = content.querySelector('#popup-buddy-suggestions');
+
+  function showBuddySuggestions(query) {
+    if (!buddySuggestions) return;
+    const cleanQ = (query || '').trim().toLowerCase().replace(/^@/, '');
+    const travelers = getAllCommunityTravelers();
+    const matches = travelers.filter(u => {
+      const uName = (u.username || '').toLowerCase();
+      const dName = (u.name || '').toLowerCase();
+      return uName.includes(cleanQ) || dName.includes(cleanQ);
+    }).slice(0, 6);
+
+    if (matches.length === 0) {
+      buddySuggestions.style.display = 'none';
+      return;
+    }
+
+    buddySuggestions.innerHTML = matches.map(u => `
+      <div class="buddy-suggestion-item" data-username="${escapeHtml(u.username)}">
+        <span class="bs-avatar">${escapeHtml(u.avatar || '🧭')}</span>
+        <div class="bs-meta">
+          <span class="bs-name">${escapeHtml(u.name || u.username)}</span>
+          <span class="bs-handle">@${escapeHtml(u.username)}</span>
+        </div>
+      </div>
+    `).join('');
+    buddySuggestions.style.display = 'block';
+
+    buddySuggestions.querySelectorAll('.buddy-suggestion-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const un = item.dataset.username;
+        const tag = `@${un}`;
+        if (!currentBuddies.includes(tag)) {
+          currentBuddies.push(tag);
+          renderBuddyChips();
+          syncActiveVisitFromForm();
+        }
+        if (buddyInput) buddyInput.value = '';
+        buddySuggestions.style.display = 'none';
+      });
+    });
+  }
+
+  buddyInput?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    if (val.length >= 1) {
+      showBuddySuggestions(val);
+    } else {
+      if (buddySuggestions) buddySuggestions.style.display = 'none';
+    }
+  });
+
+  buddyInput?.addEventListener('focus', () => {
+    if (buddyInput.value.length >= 1) {
+      showBuddySuggestions(buddyInput.value);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (buddySuggestions && !buddySuggestions.contains(e.target) && e.target !== buddyInput) {
+      buddySuggestions.style.display = 'none';
+    }
+  });
+
   buddyAddBtn?.addEventListener('click', () => {
-    const val = (buddyInput?.value || '').trim();
-    if (val && !currentBuddies.includes(val)) {
-      currentBuddies.push(val);
-      buddyInput.value = '';
-      renderBuddyChips();
-      syncActiveVisitFromForm();
+    let val = (buddyInput?.value || '').trim();
+    if (val) {
+      if (!val.startsWith('@')) val = '@' + val;
+      if (!currentBuddies.includes(val)) {
+        currentBuddies.push(val);
+        buddyInput.value = '';
+        if (buddySuggestions) buddySuggestions.style.display = 'none';
+        renderBuddyChips();
+        syncActiveVisitFromForm();
+      }
     }
   });
 
@@ -4026,6 +4086,27 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
     persistVisitDetails(stampPayload);
     triggerConfetti();
+
+    // Sync visit to all tagged travel buddies' profiles in community database
+    try {
+      const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+      const curProfile = profileStr ? JSON.parse(profileStr) : { username: 'gezgin' };
+      currentVisits.forEach(v => {
+        if (Array.isArray(v.buddies)) {
+          v.buddies.forEach(b => {
+            if (b && typeof b === 'string') {
+              syncTripToBuddy(b, id, {
+                entryDate: v.entryDate,
+                exitDate: v.exitDate,
+                entryTransport: v.entryTransport
+              }, curProfile);
+            }
+          });
+        }
+      });
+    } catch (err) {
+      console.warn('Buddy sync error:', err);
+    }
 
     const saveBtn = content.querySelector('#btn-save-stamp-data');
     if (saveBtn) {
@@ -4627,6 +4708,9 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       const hubTabsEl = content.querySelector('#popup-action-hub-tabs');
       if (val === 'visited') {
         if (hubTabsEl) hubTabsEl.style.display = 'flex';
+        hubBtns.forEach(b => {
+          b.style.display = 'flex';
+        });
         // Auto-fill stamp fields if empty
         if (!currentEntryDate) {
           currentEntryDate = new Date().toISOString().split('T')[0];
@@ -4639,9 +4723,24 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           }
         }
       } else {
-        if (hubTabsEl) hubTabsEl.style.display = 'none';
-        Object.values(allDrawers).forEach(d => { if (d) d.style.display = 'none'; });
-        hubBtns.forEach(b => b.classList.remove('active'));
+        if (guide) {
+          if (hubTabsEl) hubTabsEl.style.display = 'flex';
+          hubBtns.forEach(b => {
+            if (b.dataset.drawer === 'guide') {
+              b.style.display = 'flex';
+            } else {
+              b.style.display = 'none';
+            }
+          });
+        } else {
+          if (hubTabsEl) hubTabsEl.style.display = 'none';
+        }
+        Object.entries(allDrawers).forEach(([k, d]) => {
+          if (d && k !== 'guide') d.style.display = 'none';
+        });
+        hubBtns.forEach(b => {
+          if (b.dataset.drawer !== 'guide') b.classList.remove('active');
+        });
       }
 
       if (activeStatusPopup) {
@@ -4927,11 +5026,19 @@ function countryStyle(c) {
   const cfg = STATUS[status];
 
   let isInteractive = true;
-  if (zoomed) {
-    const hasRegionLayer = regionLayers[code] && map.hasLayer(regionLayers[code]);
-    const hasTurkeyLayer = code === 'TR' && turkeyLayer && map.hasLayer(turkeyLayer);
-    if (hasRegionLayer || hasTurkeyLayer) {
-      isInteractive = false;
+  if (zoomed && code) {
+    const hasRegionLayer = (regionLayers[code] && map && map.hasLayer(regionLayers[code])) ||
+                           (code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer));
+    if (hasRegionLayer) {
+      return {
+        fillColor: status === 'unvisited' ? themeCfg.landFill : cfg.color,
+        fillOpacity: status === 'unvisited' ? 0.95 : cfg.fillOpacity,
+        stroke: false,
+        color: 'transparent',
+        weight: 0,
+        opacity: 0,
+        interactive: false
+      };
     }
   }
 

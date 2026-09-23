@@ -15523,4 +15523,607 @@ body[data-theme="natgeo_atlas"] .visa-banner-my-visas-btn:hover {
   text-overflow: clip;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   🗺️ ENHANCED POPUP STAMP & VISITS DRAWER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Multi-visit manager: Two-row spacious layout preventing truncation & overlap */
+.stamp-visits-manager-inline {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.stamp-visits-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.stamp-visits-inline-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.stamp-visits-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stamp-visit-add-inline-btn {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.18s ease;
+  line-height: 1.2;
+}
+.stamp-visit-add-inline-btn:hover {
+  background: rgba(34, 197, 94, 0.32);
+  border-color: #22c55e;
+  transform: translateY(-1px);
+}
+.stamp-visit-del-inline-btn {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #f87171;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.18s ease;
+  line-height: 1.2;
+}
+.stamp-visit-del-inline-btn:hover {
+  background: rgba(239, 68, 68, 0.32);
+  border-color: #ef4444;
+}
+.stamp-visits-inline-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.stamp-visits-inline-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.stamp-visits-inline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+.stamp-visit-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+.stamp-visit-tab-pill:hover {
+  background: #334155;
+  color: #ffffff;
+  border-color: rgba(148, 163, 184, 0.5);
+}
+.stamp-visit-tab-pill.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+}
+.stamp-visit-tab-pill.featured {
+  border-color: #facc15;
+}
+.stamp-visit-tab-pill .pill-num {
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.stamp-visit-tab-pill .pill-icon {
+  font-size: 0.82rem;
+}
+.stamp-visit-tab-pill .pill-year {
+  font-size: 0.68rem;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.stamp-visit-tab-pill .pill-star {
+  font-size: 0.72rem;
+  color: #facc15;
+}
+
+/* Dual Card for Entry & Exit Dates */
+.stamp-dates-dual-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.stamp-date-col {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.stamp-date-col.entry-col {
+  border-left: 3px solid #10b981;
+}
+.stamp-date-col.exit-col {
+  border-left: 3px solid #ef4444;
+}
+.stamp-date-col-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stamp-dot-pill {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stamp-dot-pill.green {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+.stamp-dot-pill.red {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+.stamp-col-heading {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stamp-col-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.stamp-date-field.compact {
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  height: 28px;
+  border-radius: 6px;
+}
+.stamp-transport-select.compact {
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  height: 28px;
+  border-radius: 6px;
+}
+
+/* Travel Buddies Autocomplete & Popover */
+.stamp-buddies-compact-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.stamp-buddies-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+}
+.stamp-buddies-icon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.buddy-input-autocomplete-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.stamp-buddy-input.compact {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.74rem;
+  padding: 4px 8px;
+  height: 28px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.stamp-buddy-input.compact:focus {
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.1);
+}
+.stamp-buddy-add-btn.compact {
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 28px;
+  transition: all 0.15s;
+}
+.stamp-buddy-add-btn.compact:hover {
+  background: rgba(56, 189, 248, 0.32);
+}
+.buddy-suggestions-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+  z-index: 10005;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.buddy-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s;
+}
+.buddy-suggestion-item:last-child {
+  border-bottom: none;
+}
+.buddy-suggestion-item:hover {
+  background: #1e293b;
+}
+.bs-avatar {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+}
+.bs-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.bs-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bs-handle {
+  font-size: 0.68rem;
+  color: #38bdf8;
+  font-family: monospace;
+}
+.stamp-buddies-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.buddy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+.del-buddy {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0 1px;
+}
+.del-buddy:hover {
+  color: #ef4444;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🛂 PASSPORT STANDALONE COVER & BIOMETRIC ID PAGES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.passport-cover-sheet {
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+}
+.passport-cover-sheet .passport-book-cover {
+  flex: 1;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 26px 20px 22px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.passport-cover-crest-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0;
+}
+.passport-cover-country {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fbbf24;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
+}
+.passport-cover-sub {
+  font-size: 0.88rem;
+  letter-spacing: 3.5px;
+  font-weight: 800;
+  color: #fef08a;
+  text-transform: uppercase;
+}
+.passport-cover-badge {
+  margin: 8px auto;
+  display: inline-block;
+  padding: 3px 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+}
+.passport-cover-chip-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 14px 0 8px;
+}
+.passport-cover-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-top: 1px solid rgba(251, 191, 36, 0.35);
+  padding-top: 8px;
+  margin-top: auto;
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  color: #fef08a;
+  opacity: 0.85;
+}
+
+.passport-identity-sheet {
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+}
+.passport-identity-sheet .passport-id-page {
+  flex: 1;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px 14px;
+  box-sizing: border-box;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🚩 CUSTOM FLAG SELECT COMPONENT (VISA MODAL WITH VISUAL FLAGS)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.custom-flag-select {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+.custom-flag-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.custom-flag-select-trigger:hover {
+  border-color: #64748b;
+  background: #253348;
+}
+.custom-flag-select-trigger:focus {
+  border-color: #38bdf8;
+  outline: none;
+}
+.cfs-selected-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 24px;
+  font-size: 1.15rem;
+}
+.cfs-selected-flag img,
+.cfs-selected-flag svg {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.cfs-selected-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  color: #f1f5f9;
+}
+.cfs-arrow {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.custom-flag-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  background: #0f172a;
+  border: 1.5px solid #475569;
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cfsFadeIn 0.15s ease;
+  box-sizing: border-box;
+}
+@keyframes cfsFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.cfs-search-box {
+  padding: 6px 8px;
+  border-bottom: 1px solid #334155;
+  background: #1e293b;
+  flex-shrink: 0;
+}
+.cfs-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.82rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.cfs-search-input:focus {
+  border-color: #38bdf8;
+}
+.cfs-options-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 195px;
+  display: flex;
+  flex-direction: column;
+}
+.cfs-options-list::-webkit-scrollbar {
+  width: 6px;
+}
+.cfs-options-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+.cfs-option-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  transition: background 0.15s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.cfs-option-item:hover {
+  background: #1e293b;
+  color: #38bdf8;
+}
+.cfs-option-item.selected {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  font-weight: 700;
+}
+.cfs-option-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 22px;
+  font-size: 1.1rem;
+}
+.cfs-option-flag img,
+.cfs-option-flag svg {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.cfs-option-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
 

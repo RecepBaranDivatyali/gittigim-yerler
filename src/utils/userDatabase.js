@@ -263,4 +263,72 @@ export function isUsernameAvailable(username, currentUserId = null) {
   return false;
 }
 
+export function syncTripToBuddy(buddyUsername, placeId, visitData, currentUserProfile) {
+  if (!buddyUsername || !placeId) return;
+  try {
+    const cleanBuddy = buddyUsername.trim().toLowerCase().replace(/^@/, '');
+    if (!cleanBuddy) return;
+    const users = getAllCommunityTravelers();
+    let buddy = users.find(u => u.username.toLowerCase() === cleanBuddy);
+
+    if (!buddy) {
+      buddy = {
+        id: 'user_' + cleanBuddy,
+        username: cleanBuddy,
+        name: cleanBuddy,
+        avatar: '🧭',
+        bio: 'Gezgin yol arkadaşı 🎒',
+        homeCountry: 'TR',
+        stats: { worldCountryCount: 0, turkeyCount: 0, worldCityCount: 0 },
+        worldVisits: {},
+        turkeyVisits: {},
+        worldCities: []
+      };
+      users.push(buddy);
+    }
+
+    const currentUsername = currentUserProfile?.username
+      ? `@${currentUserProfile.username.trim().toLowerCase().replace(/^@/, '')}`
+      : '@gezgin';
+
+    if (placeId.startsWith('TR::')) {
+      const pId = placeId.replace('TR::', '');
+      if (!buddy.turkeyVisits) buddy.turkeyVisits = {};
+      buddy.turkeyVisits[pId] = {
+        status: 'visited',
+        entryDate: visitData?.entryDate || '',
+        entryTransport: visitData?.entryTransport || 'car',
+        buddies: [currentUsername]
+      };
+      if (!buddy.worldVisits) buddy.worldVisits = {};
+      buddy.worldVisits['TR'] = { status: 'visited', entryTransport: 'car' };
+    } else {
+      const cCode = placeId.includes('::') ? placeId.split('::')[0] : placeId;
+      if (!buddy.worldVisits) buddy.worldVisits = {};
+      buddy.worldVisits[cCode] = {
+        status: 'visited',
+        entryDate: visitData?.entryDate || '',
+        exitDate: visitData?.exitDate || '',
+        entryTransport: visitData?.entryTransport || 'flight',
+        buddies: [currentUsername]
+      };
+      if (placeId.includes('::')) {
+        buddy.worldVisits[placeId] = {
+          status: 'visited',
+          entryDate: visitData?.entryDate || '',
+          buddies: [currentUsername]
+        };
+      }
+    }
+
+    buddy.stats = buddy.stats || {};
+    buddy.stats.worldCountryCount = Object.keys(buddy.worldVisits || {}).filter(k => !k.includes('::') && buddy.worldVisits[k]?.status === 'visited').length;
+    buddy.stats.turkeyCount = Object.keys(buddy.turkeyVisits || {}).filter(k => buddy.turkeyVisits[k]?.status === 'visited').length;
+
+    localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify(users));
+  } catch (err) {
+    console.warn('syncTripToBuddy error:', err);
+  }
+}
+
 
