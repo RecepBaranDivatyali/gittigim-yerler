@@ -444,7 +444,14 @@ export function renderLoginPage(container, onLogin) {
 
       let profileUsername = '';
       if (authMode === 'register') {
-        profileUsername = sanitizeText(usernameVal.slice(0, 25), 25) || emailVal.split('@')[0];
+        const rawUser = usernameVal.trim();
+        profileUsername = sanitizeText(rawUser.slice(0, 25), 25) || emailVal.split('@')[0];
+        if (profileUsername.length < 3) {
+          alert(currentLang === 'tr' 
+            ? 'Kullanıcı adı en az 3 karakter olmalıdır.' 
+            : 'Username must be at least 3 characters.');
+          return;
+        }
         if (!isUsernameAvailable(profileUsername)) {
           alert(currentLang === 'tr' 
             ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 

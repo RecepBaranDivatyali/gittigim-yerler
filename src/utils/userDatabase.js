@@ -181,7 +181,7 @@ export function registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, 
 export function searchTravelersByUsername(query) {
   if (!query || typeof query !== 'string') return [];
   const cleanQ = query.trim().toLowerCase().replace(/^@/, '');
-  if (!cleanQ) return [];
+  if (!cleanQ || cleanQ.length < 3) return [];
 
   const all = getAllCommunityTravelers();
   return all.filter(u => {
@@ -193,6 +193,9 @@ export function searchTravelersByUsername(query) {
  * Searches travelers with instant local results plus background/live cloud query
  */
 export async function searchTravelersByUsernameAsync(query) {
+  const cleanQ = (query || '').trim().toLowerCase().replace(/^@/, '');
+  if (!cleanQ || cleanQ.length < 3) return [];
+
   const localResults = searchTravelersByUsername(query);
   if (!navigator.onLine) return localResults;
 
@@ -252,11 +255,12 @@ export async function getTravelerByUsernameAsync(username) {
 export function isUsernameAvailable(username, currentUserId = null) {
   if (!username || typeof username !== 'string') return false;
   const clean = username.trim().toLowerCase().replace(/^@/, '');
-  if (!clean) return false;
+  if (!clean || clean.length < 3) return false;
   const users = getAllCommunityTravelers();
   const existing = users.find(u => u.username.toLowerCase() === clean);
   if (!existing) return true;
   if (currentUserId && existing.id === currentUserId) return true;
   return false;
 }
+
 

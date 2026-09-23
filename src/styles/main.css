@@ -1136,11 +1136,23 @@ html, body, #app {
   height: var(--app-height, 100dvh);
 }
 
-.leaflet-container {
+#map-root .leaflet-container,
+#leaflet-map.leaflet-container,
+.leaflet-container:not(#duo-map-container) {
   width: 100% !important;
   height: 100% !important;
   touch-action: pan-x pan-y;
   -webkit-tap-highlight-color: transparent !important;
+}
+
+#duo-map-container,
+#duo-map-container.leaflet-container {
+  width: 100% !important;
+  height: 440px !important;
+  min-height: 440px !important;
+  max-height: 440px !important;
+  display: block !important;
+  position: relative !important;
 }
 
 /* Remove Leaflet focus outlines & disable costly transitions on map SVG paths for 60fps */
@@ -15334,13 +15346,109 @@ body[data-theme="natgeo_atlas"] .visa-banner-my-visas-btn:hover {
   .friend-search-item {
     gap: 8px;
     padding: 8px 10px;
+    flex-wrap: wrap;
+  }
+  .friend-search-user-info {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .friend-search-name-row {
+    max-width: 100%;
   }
   .friend-search-sub {
-    max-width: 140px;
+    max-width: 100%;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  .friend-search-actions {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
   }
   .btn-compare-traveler, .btn-add-traveler, .btn-friend-saved {
-    padding: 5px 8px;
-    font-size: 0.72rem;
+    flex: 1;
+    justify-content: center;
+    padding: 6px 10px;
+    font-size: 0.74rem;
   }
 }
+
+/* ─── Premium Biometric Passport 2.0 Identity Page & Cover ─── */
+.passport-cover-crest-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 6px 0 4px;
+}
+.passport-cover-crest-svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 10px rgba(250, 204, 21, 0.35));
+}
+.passport-cover-chip-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+}
+.passport-cover-chip-svg {
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.4));
+}
+.passport-id-security-crest {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  opacity: 0.045;
+  pointer-events: none;
+  z-index: 1;
+}
+.passport-photo-hologram {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 40%, rgba(56, 189, 248, 0.2) 60%, transparent 80%, rgba(250, 204, 21, 0.25) 100%);
+  pointer-events: none;
+  border-radius: 4px;
+  mix-blend-mode: overlay;
+}
+.passport-chip-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 3px;
+  padding: 1px 3px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+.passport-mrz-box {
+  margin-top: 10px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 8px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.passport-mrz-line {
+  font-family: 'OCR-B', 'Consolas', 'Courier New', monospace;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #0f172a;
+  white-space: nowrap;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
 

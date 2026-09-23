@@ -4311,7 +4311,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         scoreDisplay.textContent = currentRating > 0 ? `⭐ ${currentRating}/10` : '-';
       }
 
-      persistVisitDetails({ rating: currentRating });
+      persistVisitDetails({ rating: currentRating, hasCustomRating: currentRating > 0 });
     });
   });
 

@@ -31,6 +31,7 @@ import {
 import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
+import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -1053,7 +1054,20 @@ export function renderProfileView(container, onBack) {
     document.getElementById('settings-save-profile-btn')?.addEventListener('click', () => {
       const nameInput = document.getElementById('settings-edit-username');
       const bioInput = document.getElementById('settings-edit-bio');
-      const newName = sanitizeText(nameInput?.value || '', 20) || 'Gezgin';
+      const rawName = (nameInput?.value || '').trim();
+      if (!rawName || rawName.length < 3) {
+        alert(currentLang === 'tr'
+          ? 'Kullanıcı adı en az 3 karakter olmalıdır.'
+          : 'Username must be at least 3 characters.');
+        return;
+      }
+      const newName = sanitizeText(rawName, 20);
+      if (newName.length < 3) {
+        alert(currentLang === 'tr'
+          ? 'Kullanıcı adı en az 3 karakter olmalıdır.'
+          : 'Username must be at least 3 characters.');
+        return;
+      }
       const cleanCurrent = (userProfile.username || '').trim().toLowerCase();
       const cleanNew = newName.trim().toLowerCase();
       if (cleanNew !== cleanCurrent && !isUsernameAvailable(newName)) {
@@ -2126,22 +2140,15 @@ export function renderProfileView(container, onBack) {
         </div>
 
         <div class="passport-modal-body">
-          <!-- Passport Booklet Modern Swipe & Indicator Bar (User Request) -->
+          <!-- Passport Booklet Minimal Dot Indicator -->
           <div class="passport-booklet-nav">
-            <div class="booklet-page-pill">
-              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-prev" title="${currentLang === 'tr' ? 'Önceki Sayfa' : 'Previous Page'}">◀</button>
-              <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
-              <span class="booklet-pill-sep">•</span>
-              <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Biyometrik Kimlik' : 'Biometric ID'}</span>
-              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-next" title="${currentLang === 'tr' ? 'Sonraki Sayfa' : 'Next Page'}">▶</button>
-            </div>
             <div class="passport-dots-row" id="passport-dots-row">
               ${Array.from({ length: totalPages }).map((_, i) => `
                 <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
               `).join('')}
             </div>
             <div class="passport-swipe-hint">
-              <span>📖</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için okları tıklayın veya sürükleyin' : 'Swipe or click arrows to turn pages'}</span>
+              <span>📖</span> <span>${currentLang === 'tr' ? 'Sayfaları çevirmek için yana kaydırın veya noktalara dokunun' : 'Swipe left/right or tap dots to turn pages'}</span>
             </div>
           </div>
 
@@ -2152,27 +2159,54 @@ export function renderProfileView(container, onBack) {
 
                 <!-- SAYFA 1: Kapak ve Biyometrik Kimlik Sayfası -->
                 <div class="passport-page-sheet" data-page-index="0">
-                  <!-- Passport Cover Header — Enhanced Design -->
+                  <!-- Passport Cover Header — Authentic Gold Embossed Leather Design -->
                   <div class="passport-book-cover ${isYesil ? 'yesil' : 'bordo'}">
                     <div class="passport-cover-pattern"></div>
                     <div class="passport-cover-top-row">
                       <div class="passport-cover-stars">✦ ✦ ✦</div>
                     </div>
                     <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
-                    <div class="passport-cover-emblem">🇹🇷</div>
+
+                    <div class="passport-cover-crest-wrap">
+                      <svg viewBox="0 0 100 100" class="passport-cover-crest-svg" width="56" height="56">
+                        <defs>
+                          <filter id="goldShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.6"/>
+                          </filter>
+                        </defs>
+                        <!-- Crescent & Star (Ay-Yıldız) in Gold -->
+                        <path fill="#facc15" filter="url(#goldShadow)" d="M50 14 A36 36 0 1 0 78 78 A28 28 0 1 1 50 24 Z" />
+                        <polygon fill="#facc15" filter="url(#goldShadow)" points="68,40 71,48 80,48 73,53 76,61 68,56 60,61 63,53 56,48 65,48" />
+                      </svg>
+                    </div>
+
                     <div class="passport-cover-sub">PASAPORT</div>
-                    <div class="passport-cover-globe-row">🌍</div>
                     <div class="passport-cover-badge">${isYesil ? 'HUSUSİ DAMGALI (YEŞİL)' : 'UMUMA MAHSUS (BORDO)'}</div>
+
+                    <div class="passport-cover-chip-row">
+                      <svg viewBox="0 0 32 20" class="passport-cover-chip-svg" width="22" height="14">
+                        <rect x="1" y="1" width="30" height="18" rx="3" fill="none" stroke="#facc15" stroke-width="2"/>
+                        <line x1="1" y1="10" x2="31" y2="10" stroke="#facc15" stroke-width="2"/>
+                        <circle cx="16" cy="10" r="4.5" fill="#facc15"/>
+                      </svg>
+                    </div>
+
                     <div class="passport-cover-bottom-row">
                       <span>REPUBLIC OF TÜRKIYE</span>
                       <span>PASSPORT</span>
                     </div>
                   </div>
 
-                  <!-- Identity Page Pane — Enhanced Design -->
+                  <!-- Identity Page Pane — High Security Biometric Reproduction -->
                   <div class="passport-id-page">
+                    <!-- Background watermark crest -->
+                    <svg viewBox="0 0 100 100" class="passport-id-security-crest">
+                      <path fill="#0f172a" d="M50 14 A36 36 0 1 0 78 78 A28 28 0 1 1 50 24 Z" />
+                      <polygon fill="#0f172a" points="68,40 71,48 80,48 73,53 76,61 68,56 60,61 63,53 56,48 65,48" />
+                    </svg>
+
                     <div class="passport-id-header">
-                      <span class="id-title">${currentLang === 'tr' ? 'BİYOMETRİK KİMLİK SAYFASI' : 'BIOMETRIC IDENTITY PAGE'}</span>
+                      <span class="id-title">TÜRKİYE CUMHURİYETİ • BİYOMETRİK KİMLİK</span>
                       <span class="id-type">TUR / P</span>
                     </div>
 
@@ -2181,8 +2215,15 @@ export function renderProfileView(container, onBack) {
                         <div class="passport-photo-avatar">
                           ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
                         </div>
+                        <div class="passport-photo-hologram"></div>
+                        <div class="passport-chip-badge" title="Biometric Chip">
+                          <svg viewBox="0 0 24 16" width="16" height="10">
+                            <rect x="1" y="1" width="22" height="14" rx="2" fill="none" stroke="#facc15" stroke-width="1.5"/>
+                            <line x1="1" y1="8" x2="23" y2="8" stroke="#facc15" stroke-width="1.5"/>
+                            <circle cx="12" cy="8" r="3" fill="#facc15"/>
+                          </svg>
+                        </div>
                         <div class="passport-photo-watermark">GEZGİN</div>
-                        <div class="passport-chip-icon">💳</div>
                       </div>
 
                       <div class="passport-fields-grid">
@@ -2229,7 +2270,10 @@ export function renderProfileView(container, onBack) {
                       </div>
                     </div>
 
-                    <div class="passport-mrz-box">${escapeHtml(mrzLine1)}\n${escapeHtml(mrzLine2)}</div>
+                    <div class="passport-mrz-box">
+                      <div class="passport-mrz-line">${escapeHtml(mrzLine1)}</div>
+                      <div class="passport-mrz-line">${escapeHtml(mrzLine2)}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -2282,6 +2326,9 @@ export function renderProfileView(container, onBack) {
                   const visaUntilFmt = formatDate(visa.validUntil || '');
                   const issuingLabel = visa.issuingCountry || (visa.visaType === 'schengen' ? 'DEUTSCHLAND' : '');
                   const hologramColor = isExpired ? '#9ca3af' : vTypeInfo.color;
+
+                  const otherCountryObj = (visa.singleCountry ? WORLD_COUNTRIES.find(x => x.code === visa.singleCountry.toUpperCase()) : null) || null;
+                  const otherCountryName = otherCountryObj ? getCountryDisplayName(otherCountryObj) : (visa.customCountryName || visa.singleCountry || '');
 
                   // Enhanced thematic visa metadata for authentic reproduction
                   const visaMetadata = {
@@ -2376,22 +2423,22 @@ export function renderProfileView(container, onBack) {
                       flagSvg: `<svg viewBox="0 0 900 600" width="28" height="20" class="pv-header-flag-svg" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect fill="#fff" width="900" height="600"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>`
                     },
                     other: {
-                      countryCode: 'INT',
-                      docTypeEyebrow: 'OFFICIAL VISA • VİZE',
-                      docTitle: escapeHtml(vTypeInfo.title || 'INTERNATIONAL VISA'),
-                      consulate: issuingLabel || 'CONSULAR SECTION',
-                      validFor: escapeHtml(vTypeInfo.title || 'DESTINATION STATE'),
+                      countryCode: (visa.singleCountry || 'INT').toUpperCase().slice(0, 3),
+                      docTypeEyebrow: (otherCountryName ? `${otherCountryName.toUpperCase()} · ` : '') + 'OFFICIAL VISA • VİZE',
+                      docTitle: otherCountryName ? `${otherCountryName.toUpperCase()} VISA` : escapeHtml(vTypeInfo.title || 'INTERNATIONAL VISA'),
+                      consulate: otherCountryName ? `EMBASSY / CONSULATE OF ${otherCountryName.toUpperCase()}` : (issuingLabel || 'CONSULAR SECTION'),
+                      validFor: otherCountryName ? otherCountryName.toUpperCase() : escapeHtml(vTypeInfo.title || 'DESTINATION STATE'),
                       typeCode: 'V',
                       headerGrad: isExpired
                         ? 'linear-gradient(135deg, #4b5563 0%, #374151 100%)'
                         : 'linear-gradient(135deg, #1e2b37 0%, #34495e 50%, #151f28 100%)',
                       starsRing: '★ ★ ★',
-                      watermark: '🌍',
+                      watermark: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? otherCountryObj.flag : '🌍',
                       stampColor: '#1e293b',
-                      stampTop: 'CONSULAR OFFICE',
-                      stampCenter: '🏛️',
+                      stampTop: otherCountryName ? `${otherCountryName.toUpperCase()} EMBASSY` : 'CONSULAR OFFICE',
+                      stampCenter: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? otherCountryObj.flag : '🏛️',
                       stampBottom: 'VISA SECTION',
-                      flagSvg: `<span style="font-size:1.5rem;line-height:1;">🌍</span>`
+                      flagSvg: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? `<span style="font-size:1.6rem;line-height:1;">${otherCountryObj.flag}</span>` : `<span style="font-size:1.5rem;line-height:1;">🌍</span>`
                     }
                   };
                   const vMeta = visaMetadata[(visa.visaType || 'other').toLowerCase()] || visaMetadata.other;
@@ -2692,18 +2739,6 @@ export function renderProfileView(container, onBack) {
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="passport-actions-row">
-          <button type="button" id="btn-download-passport" class="passport-action-btn primary">
-            <span>📥</span> <span>${currentLang === 'tr' ? 'Bu Sayfayı İndir (PNG)' : 'Download Page (PNG)'}</span>
-          </button>
-          ${navigator.share ? `
-            <button type="button" id="btn-share-passport" class="passport-action-btn secondary">
-              <span>📲</span> <span>${t('sharePoster')}</span>
-            </button>
-          ` : ''}
-        </div>
       </div>
     `;
 
@@ -2979,6 +3014,14 @@ export function renderProfileView(container, onBack) {
       const evt = (existing, val) => existing === val ? ' selected' : '';
       const iopt = issuingOpts.map(([v,l]) => '<option value="' + v + '"' + evt(existingVisa?.issuingCountry, v) + '>' + l + '</option>').join('');
 
+      const allWorldSorted = WORLD_COUNTRIES.slice().sort((a, b) => getCountryDisplayName(a).localeCompare(getCountryDisplayName(b), lang === 'tr' ? 'tr' : 'en'));
+      const singleCountryOptions = '<option value="">' + (lang === 'tr' ? '— Ülke Seçin —' : '— Select Country —') + '</option>' +
+        allWorldSorted.map(c => {
+          const flagPrefix = (c.code === 'IL') ? '' : (c.flag ? c.flag + ' ' : '');
+          const isSel = (c.code === existingVisa?.singleCountry) ? 'selected' : '';
+          return '<option value="' + c.code + '" ' + isSel + '>' + flagPrefix + escapeHtml(getCountryDisplayName(c)) + ' (' + c.code + ')</option>';
+        }).join('');
+
       const typeOptions = [
         ['schengen','🇪🇺 Schengen'],['us','🇺🇸 ABD / USA (B1/B2)'],['uk','🇬🇧 İngiltere / UK'],
         ['canada','🇨🇦 Kanada'],['japan','🇯🇵 Japonya'],['australia','🇦🇺 Avustralya'],
@@ -3005,8 +3048,8 @@ export function renderProfileView(container, onBack) {
               '<select class="visa-form-select" id="vf-issuing">' + iopt + '</select>' +
             '</div>' +
             '<div class="visa-form-field" id="vf-single-country-wrap" style="display:none;">' +
-              '<label>' + (lang==='tr'?'Ülke Kodu (2 Harf, ör: JP)':'Country Code (2-letter, e.g. JP)') + '</label>' +
-              '<input type="text" class="visa-form-input" id="vf-single-country" maxlength="2" placeholder="JP" value="' + (existingVisa?.singleCountry||'') + '">' +
+              '<label>' + (lang==='tr'?'Ülke Seçin':'Select Country') + '</label>' +
+              '<select class="visa-form-select" id="vf-single-country">' + singleCountryOptions + '</select>' +
             '</div>' +
             '<div class="visa-form-field">' +
               '<label>' + (lang==='tr'?'Giriş Hakkı':'Entry Type') + '</label>' +
@@ -3094,17 +3137,22 @@ export function renderProfileView(container, onBack) {
           ? (parseInt(durInput.value) || 90)
           : parseInt(activeDurBtn?.dataset.dur || '90');
 
+        const selectedSingleCode = visaType === 'other' ? (formDialog.querySelector('#vf-single-country')?.value || '').toUpperCase() : '';
+        const foundSingleObj = WORLD_COUNTRIES.find(x => x.code === selectedSingleCode);
+        const customCName = foundSingleObj ? getCountryDisplayName(foundSingleObj) : '';
+
         const visaData = {
           ...(isEdit ? { id: existingVisa.id } : {}),
           visaType,
-          issuingCountry: visaType === 'schengen' ? (formDialog.querySelector('#vf-issuing')?.value || '') : '',
-          singleCountry: visaType === 'other' ? (formDialog.querySelector('#vf-single-country')?.value || '').toUpperCase() : '',
+          issuingCountry: visaType === 'schengen' ? (formDialog.querySelector('#vf-issuing')?.value || '') : (selectedSingleCode || ''),
+          singleCountry: selectedSingleCode,
+          customCountryName: customCName,
           entries: formDialog.querySelector('#vf-entries').value || 'mult',
           durationDays: durVal,
           validFrom: from,
           validUntil: until,
           visaNumber: formDialog.querySelector('#vf-visano').value ||
-            generateVisaNumber(visaType, formDialog.querySelector('#vf-issuing')?.value || '')
+            generateVisaNumber(visaType, formDialog.querySelector('#vf-issuing')?.value || selectedSingleCode || '')
         };
 
         saveUserVisa(visaData);
@@ -3951,16 +3999,30 @@ export function renderProfileView(container, onBack) {
                     const reviews = [];
                     Object.entries(myStorage.worldVisits || {}).forEach(([k, v]) => {
                       const cNote = cleanNote(v?.notes);
-                      if (v && (v.rating || cNote)) {
+                      const r = Number(v?.rating) || 0;
+                      const hasExplicitRating = r > 0 && (r !== 5 || cNote || v?.hasCustomRating);
+                      if (v && (hasExplicitRating || cNote)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: cNote });
+                        reviews.push({ 
+                          name: c ? getCountryDisplayName(c) : k, 
+                          flag: (k === 'IL') ? '' : (c?.flag || '🌍'), 
+                          rating: hasExplicitRating ? r : 0, 
+                          notes: cNote 
+                        });
                       }
                     });
                     Object.entries(myStorage.turkeyVisits || {}).forEach(([pid, v]) => {
                       const cNote = cleanNote(v?.notes);
-                      if (v && (v.rating || cNote)) {
+                      const r = Number(v?.rating) || 0;
+                      const hasExplicitRating = r > 0 && (r !== 5 || cNote || v?.hasCustomRating);
+                      if (v && (hasExplicitRating || cNote)) {
                         const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: cNote });
+                        reviews.push({ 
+                          name: p?.name || `İl ${pid}`, 
+                          flag: '🇹🇷', 
+                          rating: hasExplicitRating ? r : 0, 
+                          notes: cNote 
+                        });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Henüz puan veya not girmediniz.' : 'No reviews or notes yet.'}</span>`;
@@ -3985,16 +4047,30 @@ export function renderProfileView(container, onBack) {
                     const reviews = [];
                     Object.entries(safeWorldVisits).forEach(([k, v]) => {
                       const cNote = cleanNote(v?.notes);
-                      if (v && (v.rating || cNote)) {
+                      const r = Number(v?.rating) || 0;
+                      const hasExplicitRating = r > 0 && (r !== 5 || cNote || v?.hasCustomRating);
+                      if (v && (hasExplicitRating || cNote)) {
                         const c = WORLD_COUNTRIES.find(x => x.code === k);
-                        reviews.push({ name: c ? getCountryDisplayName(c) : k, flag: c?.flag || '🌍', rating: Number(v.rating) || 0, notes: cNote });
+                        reviews.push({ 
+                          name: c ? getCountryDisplayName(c) : k, 
+                          flag: (k === 'IL') ? '' : (c?.flag || '🌍'), 
+                          rating: hasExplicitRating ? r : 0, 
+                          notes: cNote 
+                        });
                       }
                     });
                     Object.entries(safeTurkeyVisits).forEach(([pid, v]) => {
                       const cNote = cleanNote(v?.notes);
-                      if (v && (v.rating || cNote)) {
+                      const r = Number(v?.rating) || 0;
+                      const hasExplicitRating = r > 0 && (r !== 5 || cNote || v?.hasCustomRating);
+                      if (v && (hasExplicitRating || cNote)) {
                         const p = TURKEY_PROVINCES.find(x => String(x.id) === String(pid));
-                        reviews.push({ name: p?.name || `İl ${pid}`, flag: '🇹🇷', rating: Number(v.rating) || 0, notes: cNote });
+                        reviews.push({ 
+                          name: p?.name || `İl ${pid}`, 
+                          flag: '🇹🇷', 
+                          rating: hasExplicitRating ? r : 0, 
+                          notes: cNote 
+                        });
                       }
                     });
                     if (reviews.length === 0) return `<span style="color:#64748b;font-size:0.85rem;">${currentLang === 'tr' ? 'Arkadaşının henüz yorumu yok.' : 'Friend has no reviews yet.'}</span>`;
@@ -4102,7 +4178,7 @@ export function renderProfileView(container, onBack) {
       // Subtab switching & Duo Map initialization
       let duoMapInstance = null;
 
-      function initDuoMap() {
+      async function initDuoMap() {
         if (duoMapInstance) {
           duoMapInstance.invalidateSize();
           return;
@@ -4123,82 +4199,84 @@ export function renderProfileView(container, onBack) {
         const baseUrl = import.meta.env.BASE_URL || '/';
         const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
         
-        fetch(`${cleanBase}data/world-countries.json`)
-          .then(r => r.json())
-          .then(geoData => {
-            if (!geoData || !geoData.features) return;
+        try {
+          const geoData = await fetchGeoDataWithCache(`${cleanBase}data/world-countries.json`, 'world-countries');
+          if (!geoData || !geoData.features) return;
 
-            const resolveCountryCode = (feature) => {
-              const p = feature?.properties || {};
-              const directCode = p['ISO3166-1-Alpha-2'] || p.ISO_A2 || p.iso_a2 || feature.id;
-              if (directCode && directCode !== '-99') return directCode;
-              const cName = p.name || p.NAME || p.admin || p.ADMIN;
-              if (cName) {
-                const found = WORLD_COUNTRIES.find(x => x.nameEn === cName || x.name === cName);
-                if (found) return found.code;
+          const resolveCountryCode = (feature) => {
+            const p = feature?.properties || {};
+            const directCode = p['ISO3166-1-Alpha-2'] || p.ISO_A2 || p.iso_a2 || feature.id;
+            if (directCode && directCode !== '-99') return directCode;
+            const cName = p.name || p.NAME || p.admin || p.ADMIN;
+            if (cName) {
+              const found = WORLD_COUNTRIES.find(x => x.nameEn === cName || x.name === cName);
+              if (found) return found.code;
+            }
+            return directCode || null;
+          };
+
+          const duoGeoLayer = L.geoJSON(geoData, {
+            style: (feature) => {
+              const code = resolveCountryCode(feature);
+              const isCommon = commonCountries.includes(code);
+              const isMine = onlyMyCountries.includes(code);
+              const isOther = onlyOtherCountries.includes(code);
+
+              if (isCommon) {
+                return { fillColor: '#f59e0b', fillOpacity: 0.85, color: '#d97706', weight: 1.5 };
+              } else if (isMine) {
+                return { fillColor: '#10b981', fillOpacity: 0.85, color: '#059669', weight: 1.5 };
+              } else if (isOther) {
+                return { fillColor: '#3b82f6', fillOpacity: 0.85, color: '#2563eb', weight: 1.5 };
+              } else {
+                return { fillColor: '#1e293b', fillOpacity: 0.5, color: '#334155', weight: 0.7 };
               }
-              return directCode || null;
-            };
+            },
+            onEachFeature: (feature, layer) => {
+              const code = resolveCountryCode(feature);
+              const cObj = WORLD_COUNTRIES.find(x => x.code === code);
+              const cName = cObj ? getCountryDisplayName(cObj) : (feature.properties?.name || code);
 
-            const duoGeoLayer = L.geoJSON(geoData, {
-              style: (feature) => {
-                const code = resolveCountryCode(feature);
-                const isCommon = commonCountries.includes(code);
-                const isMine = onlyMyCountries.includes(code);
-                const isOther = onlyOtherCountries.includes(code);
+              const isCommon = commonCountries.includes(code);
+              const isMine = onlyMyCountries.includes(code);
+              const isOther = onlyOtherCountries.includes(code);
 
-                if (isCommon) {
-                  return { fillColor: '#f59e0b', fillOpacity: 0.85, color: '#d97706', weight: 1.5 };
-                } else if (isMine) {
-                  return { fillColor: '#10b981', fillOpacity: 0.85, color: '#059669', weight: 1.5 };
-                } else if (isOther) {
-                  return { fillColor: '#3b82f6', fillOpacity: 0.85, color: '#2563eb', weight: 1.5 };
-                } else {
-                  return { fillColor: '#1e293b', fillOpacity: 0.5, color: '#334155', weight: 0.7 };
-                }
-              },
-              onEachFeature: (feature, layer) => {
-                const code = resolveCountryCode(feature);
-                const cObj = WORLD_COUNTRIES.find(x => x.code === code);
-                const cName = cObj ? getCountryDisplayName(cObj) : (feature.properties?.name || code);
-
-                const isCommon = commonCountries.includes(code);
-                const isMine = onlyMyCountries.includes(code);
-                const isOther = onlyOtherCountries.includes(code);
-
-                let statusBadge = `<span style="color:#94a3b8;">${currentLang === 'tr' ? 'Henüz ikiniz de gitmediniz' : 'Neither visited yet'}</span>`;
-                if (isCommon) {
-                  statusBadge = `<span style="color:#f59e0b;font-weight:700;">🤝 ${currentLang === 'tr' ? 'İkiniz de gezdiniz!' : 'Both of you visited!'}</span>`;
-                } else if (isMine) {
-                  statusBadge = `<span style="color:#10b981;font-weight:700;">⭐ ${currentLang === 'tr' ? 'Sadece Sen gezdin!' : 'Only you visited!'}</span>`;
-                } else if (isOther) {
-                  statusBadge = `<span style="color:#3b82f6;font-weight:700;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)} gezdi!` : 'Only friend visited!'}</span>`;
-                }
-
-                const flagIcon = (code === 'IL') ? '' : (cObj?.flag || '🌍');
-
-                layer.bindPopup(`
-                  <div style="font-family:inherit;padding:6px 8px;text-align:center;min-width:140px;">
-                    ${flagIcon ? `<div style="font-size:1.3rem;margin-bottom:2px;">${flagIcon}</div>` : ''}
-                    <div style="font-weight:800;color:#0f172a;font-size:0.95rem;">${escapeHtml(cName)}</div>
-                    <div style="margin-top:6px;font-size:0.8rem;">${statusBadge}</div>
-                  </div>
-                `);
-
-                layer.on('mouseover', function () {
-                  if (isCommon || isMine || isOther) {
-                    this.setStyle({ weight: 2.5, fillOpacity: 1 });
-                  }
-                });
-                layer.on('mouseout', function () {
-                  duoGeoLayer.resetStyle(this);
-                });
+              let statusBadge = `<span style="color:#94a3b8;">${currentLang === 'tr' ? 'Henüz ikiniz de gitmediniz' : 'Neither visited yet'}</span>`;
+              if (isCommon) {
+                statusBadge = `<span style="color:#f59e0b;font-weight:700;">🤝 ${currentLang === 'tr' ? 'İkiniz de gezdiniz!' : 'Both of you visited!'}</span>`;
+              } else if (isMine) {
+                statusBadge = `<span style="color:#10b981;font-weight:700;">⭐ ${currentLang === 'tr' ? 'Sadece Sen gezdin!' : 'Only you visited!'}</span>`;
+              } else if (isOther) {
+                statusBadge = `<span style="color:#3b82f6;font-weight:700;">🚀 ${currentLang === 'tr' ? `Sadece ${escapeHtml(safeProfile.username)} gezdi!` : 'Only friend visited!'}</span>`;
               }
-            }).addTo(duoMapInstance);
 
-            setTimeout(() => duoMapInstance && duoMapInstance.invalidateSize(), 150);
-          })
-          .catch(err => console.error('Duo Map load error', err));
+              const flagIcon = (code === 'IL') ? '' : (cObj?.flag || '🌍');
+
+              layer.bindPopup(`
+                <div style="font-family:inherit;padding:6px 8px;text-align:center;min-width:140px;">
+                  ${flagIcon ? `<div style="font-size:1.3rem;margin-bottom:2px;">${flagIcon}</div>` : ''}
+                  <div style="font-weight:800;color:#0f172a;font-size:0.95rem;">${escapeHtml(cName)}</div>
+                  <div style="margin-top:6px;font-size:0.8rem;">${statusBadge}</div>
+                </div>
+              `);
+
+              layer.on('mouseover', function () {
+                if (isCommon || isMine || isOther) {
+                  this.setStyle({ weight: 2.5, fillOpacity: 1 });
+                }
+              });
+              layer.on('mouseout', function () {
+                duoGeoLayer.resetStyle(this);
+              });
+            }
+          }).addTo(duoMapInstance);
+
+          duoMapInstance.invalidateSize();
+          setTimeout(() => duoMapInstance && duoMapInstance.invalidateSize(), 150);
+          setTimeout(() => duoMapInstance && duoMapInstance.invalidateSize(), 350);
+        } catch (err) {
+          console.error('Duo Map load error', err);
+        }
       }
 
       resultsArea.querySelectorAll('.compare-subtab').forEach(btn => {
@@ -4220,6 +4298,8 @@ export function renderProfileView(container, onBack) {
 
           if (sub === 'duomap') {
             setTimeout(initDuoMap, 50);
+            setTimeout(() => { if (duoMapInstance) duoMapInstance.invalidateSize(); }, 180);
+            setTimeout(() => { if (duoMapInstance) duoMapInstance.invalidateSize(); }, 400);
           }
         });
       });
@@ -4361,8 +4441,11 @@ export function renderProfileView(container, onBack) {
       const doSearch = async () => {
         const val = searchInput.value.trim();
         const cleanVal = val.replace(/^@+/, '').trim();
-        if (!cleanVal) {
-          renderSearchResults(getAllCommunityTravelers());
+        if (cleanVal.length < 3) {
+          if (searchResults) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+          }
           return;
         }
         // Immediate local search for instant 0ms feedback
@@ -4380,12 +4463,16 @@ export function renderProfileView(container, onBack) {
         }
       };
 
-      searchInput.addEventListener('focus', () => {
-        doSearch();
-      });
-
       searchInput.addEventListener('input', () => {
         if (searchTimeout) clearTimeout(searchTimeout);
+        const val = searchInput.value.trim().replace(/^@+/, '').trim();
+        if (val.length < 3) {
+          if (searchResults) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+          }
+          return;
+        }
         searchTimeout = setTimeout(() => {
           doSearch();
         }, 200);
