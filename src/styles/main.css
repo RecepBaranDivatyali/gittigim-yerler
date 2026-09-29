@@ -4247,6 +4247,20 @@ body[data-theme="light"] .floating-zoom-btn:hover {
   opacity: 0.25;
   cursor: not-allowed;
 }
+.bucket-delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  color: #ef4444;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: background 0.2s;
+}
+.bucket-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
 
 /* ── Airlines Tracker ── */
 .airlines-grid {
@@ -6483,6 +6497,31 @@ body[data-theme="light"] .fb-card-date {
   box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
 }
 
+.settings-secondary-btn {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  transition: background 0.2s ease;
+  text-decoration: none;
+}
+.settings-secondary-btn:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+body[data-theme="light"] .settings-secondary-btn {
+  background: rgba(51, 65, 85, 0.08);
+  border-color: rgba(51, 65, 85, 0.15);
+  color: #1e293b;
+}
+
 /* Theme Studio Grid */
 .settings-themes-grid {
   display: grid;
@@ -7131,6 +7170,7 @@ body[data-theme="light"] .fb-card-date {
   inset: 0;
   z-index: 100050;
   background: rgba(0, 0, 0, 0.75);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -12840,6 +12880,7 @@ body[data-theme="light"] .stamp-transport-select {
   align-items: center;
   justify-content: center;
   padding: 12px;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 .passport-visa-form-dialog {
@@ -15291,6 +15332,34 @@ body[data-theme="light"] .visa-banner-my-visas-btn:hover,
 body[data-theme="natgeo_atlas"] .visa-banner-my-visas-btn:hover {
   background: rgba(5, 150, 105, 0.24) !important;
 }
+
+/* Login page light theme */
+body[data-theme="light"] .login-overlay {
+  background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 50%, #dbeafe 100%);
+}
+body[data-theme="light"] .login-card {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(51, 65, 85, 0.15) !important;
+  color: #1e293b !important;
+}
+body[data-theme="light"] .login-title { color: #1e293b; }
+body[data-theme="light"] .login-subtitle { color: #64748b; }
+body[data-theme="light"] .input-group label { color: #374151; }
+body[data-theme="light"] .input-group input {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(51, 65, 85, 0.2);
+  color: #1e293b;
+}
+body[data-theme="light"] .input-group input::placeholder { color: #9ca3af; }
+body[data-theme="light"] .auth-divider { color: #6b7280; }
+body[data-theme="light"] .auth-divider::before,
+body[data-theme="light"] .auth-divider::after { background: rgba(51, 65, 85, 0.15); }
+body[data-theme="light"] .auth-tab-btn { background: rgba(241, 245, 249, 0.7); color: #374151; border-color: rgba(51,65,85,0.1); }
+body[data-theme="light"] .auth-tab-btn.active { background: rgba(255, 87, 34, 0.1); color: #ff5722; border-color: #ff5722; }
+body[data-theme="light"] .auth-checkbox-label { color: #374151; }
+body[data-theme="light"] .google-auth-btn { background: #ffffff; border-color: rgba(51, 65, 85, 0.2); color: #374151; }
+body[data-theme="light"] .login-note { color: #6b7280; }
+body[data-theme="light"] .auth-switch-prompt { color: #374151; }
 
 /* ─── Travel Poster Card Theme Adaptations ─── */
 .travel-poster-card.theme-light {

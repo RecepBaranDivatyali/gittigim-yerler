@@ -9,7 +9,10 @@ import {
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
-  updateProfile
+  updateProfile,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  setPersistence
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable } from '../utils/userDatabase.js';
@@ -93,7 +96,7 @@ export function renderLoginPage(container, onLogin) {
       try {
         worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
         turkeyVisits = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}');
-        worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_world_cities_v2') || '[]');
+        worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]');
       } catch {}
       registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, worldCities);
 
@@ -224,7 +227,10 @@ export function renderLoginPage(container, onLogin) {
 
             <div class="input-group">
               <label for="auth-password">${currentLang === 'tr' ? 'Şifre' : 'Password'}</label>
-              <input type="password" id="auth-password" placeholder="${authMode === 'register' ? (currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters') : '••••••••'}" value="${escapeHtml(passwordVal)}" autocomplete="${authMode === 'register' ? 'new-password' : 'current-password'}" required />
+              <div style="position:relative;">
+                <input type="password" id="auth-password" style="padding-right:44px;" placeholder="${authMode === 'register' ? (currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters') : '••••••••'}" value="${escapeHtml(passwordVal)}" autocomplete="${authMode === 'register' ? 'new-password' : 'current-password'}" required />
+                <button type="button" id="btn-toggle-password" title="Şifreyi Göster/Gizle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.1rem;padding:4px;line-height:1;">👁</button>
+              </div>
             </div>
 
             <!-- "Oturumum Açık Kalsın" Checkbox (User Request) -->
@@ -265,6 +271,15 @@ export function renderLoginPage(container, onLogin) {
 
     rememberCheckbox?.addEventListener('change', (e) => {
       rememberMe = e.target.checked;
+    });
+
+    container.querySelector('#btn-toggle-password')?.addEventListener('click', () => {
+      const pwdInput = container.querySelector('#auth-password');
+      if (!pwdInput) return;
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type = isHidden ? 'text' : 'password';
+      const btn = container.querySelector('#btn-toggle-password');
+      if (btn) btn.textContent = isHidden ? '🙈' : '👁';
     });
 
     // Migration banner butonları
@@ -352,6 +367,7 @@ export function renderLoginPage(container, onLogin) {
       }
 
       try {
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         const provider = new GoogleAuthProvider();
         // Force account selection so that Google asks which account to use instead of automatically picking one
         provider.setCustomParameters({ prompt: 'select_account' });
@@ -474,6 +490,7 @@ export function renderLoginPage(container, onLogin) {
       // Attempt real Firebase Auth in background
       if (navigator.onLine && auth) {
         try {
+          await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
           if (authMode === 'register') {
             const cred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
             if (cred.user) {
@@ -484,6 +501,20 @@ export function renderLoginPage(container, onLogin) {
           }
         } catch (fbErr) {
           console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
+          let msg = fbErr.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
+          if (fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/invalid-credential') {
+            msg = currentLang === 'tr' ? 'E-posta veya şifre hatalı. Lütfen kontrol edin.' : 'Incorrect email or password. Please check and try again.';
+          } else if (fbErr.code === 'auth/user-not-found') {
+            msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
+          } else if (fbErr.code === 'auth/email-already-in-use') {
+            msg = currentLang === 'tr' ? 'Bu e-posta adresi zaten kullanımda.' : 'This email is already registered.';
+          } else if (fbErr.code === 'auth/too-many-requests') {
+            msg = currentLang === 'tr' ? 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.' : 'Too many failed attempts. Please try again later.';
+          } else if (fbErr.code === 'auth/weak-password') {
+            msg = currentLang === 'tr' ? 'Şifre çok zayıf. En az 6 karakter kullanın.' : 'Password too weak. Use at least 6 characters.';
+          }
+          alert(msg);
+          return;
         }
       }
 
@@ -498,9 +529,20 @@ export function renderLoginPage(container, onLogin) {
     };
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        handleSubmit();
+        const submitBtn = container.querySelector('#auth-submit-btn');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = '0.6';
+          submitBtn.style.pointerEvents = 'none';
+        }
+        await handleSubmit();
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.style.pointerEvents = 'auto';
+        }
       });
     }
   }

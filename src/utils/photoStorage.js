@@ -267,3 +267,23 @@ export async function getTotalPhotoCount() {
     return 0;
   }
 }
+
+/**
+ * Deletes all photos stored in the database.
+ */
+export async function deleteAllPhotos() {
+  try {
+    const db = await getDB();
+    if (!db) return false;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.clear();
+      req.onsuccess = () => resolve(true);
+      req.onerror = (e) => { console.error('Error clearing photos:', e); resolve(false); };
+    });
+  } catch (err) {
+    console.error('Error in deleteAllPhotos:', err);
+    return false;
+  }
+}

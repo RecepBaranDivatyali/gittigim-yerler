@@ -109,16 +109,16 @@ export function getLocalDataPayload() {
   let homeCountry = 'TR';
 
   try {
-    worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
-    turkeyVisits = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}');
-    worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]');
-    userVisas = JSON.parse(localStorage.getItem('gittigim_yerler_user_visas_v1') || '[]');
-    userPlaces = JSON.parse(localStorage.getItem('gittigim_yerler_user_places_v1') || '{}');
-    notes = JSON.parse(localStorage.getItem('gittigim_yerler_country_notes_v1') || '{}');
-    ratings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}');
-    bucketRanks = JSON.parse(localStorage.getItem('gittigim_yerler_bucket_ranks_v1') || '[]');
-    airlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '[]');
-    aircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '[]');
+    try { worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}'); } catch { worldVisits = {}; }
+    try { turkeyVisits = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}'); } catch { turkeyVisits = {}; }
+    try { worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]'); } catch { worldCities = []; }
+    try { userVisas = JSON.parse(localStorage.getItem('gv_user_visas_v1') || '[]'); } catch { userVisas = []; }
+    try { userPlaces = JSON.parse(localStorage.getItem('gittigim_yerler_user_places_v1') || '{}'); } catch { userPlaces = {}; }
+    try { notes = JSON.parse(localStorage.getItem('gittigim_yerler_country_notes_v1') || '{}'); } catch { notes = {}; }
+    try { ratings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}'); } catch { ratings = {}; }
+    try { bucketRanks = JSON.parse(localStorage.getItem('gittigim_yerler_bucket_ranks_v1') || '[]'); } catch { bucketRanks = []; }
+    try { airlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '[]'); } catch { airlines = []; }
+    try { aircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '[]'); } catch { aircraft = []; }
     homeCountry = localStorage.getItem('gv_home_country') || 'TR';
 
     const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
@@ -259,28 +259,28 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       if (data.worldVisits && typeof data.worldVisits === 'object') {
         const localWorld = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
         const mergedWorld = sanitizeVisits({ ...data.worldVisits, ...localWorld });
-        localStorage.setItem('gittigim_yerler_world_v2', JSON.stringify(mergedWorld));
+        try { localStorage.setItem('gittigim_yerler_world_v2', JSON.stringify(mergedWorld)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (data.turkeyVisits && typeof data.turkeyVisits === 'object') {
         const localTR = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}');
         const mergedTR = sanitizeVisits({ ...data.turkeyVisits, ...localTR });
-        localStorage.setItem('gittigim_yerler_turkey_v2', JSON.stringify(mergedTR));
+        try { localStorage.setItem('gittigim_yerler_turkey_v2', JSON.stringify(mergedTR)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (Array.isArray(data.userVisas) && data.userVisas.length > 0) {
-        const localVisas = JSON.parse(localStorage.getItem('gittigim_yerler_user_visas_v1') || '[]');
+        const localVisas = JSON.parse(localStorage.getItem('gv_user_visas_v1') || '[]');
         const existingIds = new Set(localVisas.map(v => v.id));
         data.userVisas.forEach(v => {
           if (!existingIds.has(v.id)) localVisas.push(v);
         });
-        localStorage.setItem('gittigim_yerler_user_visas_v1', JSON.stringify(localVisas));
+        try { localStorage.setItem('gv_user_visas_v1', JSON.stringify(localVisas)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (data.userPlaces && typeof data.userPlaces === 'object') {
         const localPlaces = JSON.parse(localStorage.getItem('gittigim_yerler_user_places_v1') || '{}');
         const mergedPlaces = { ...data.userPlaces, ...localPlaces };
-        localStorage.setItem('gittigim_yerler_user_places_v1', JSON.stringify(mergedPlaces));
+        try { localStorage.setItem('gittigim_yerler_user_places_v1', JSON.stringify(mergedPlaces)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (data.notes && typeof data.notes === 'object') {
@@ -292,12 +292,12 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
             cleanedNotes[k] = mergedRaw[k];
           }
         }
-        localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(cleanedNotes));
+        try { localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(cleanedNotes)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (data.ratings && typeof data.ratings === 'object') {
         const localRatings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}');
-        localStorage.setItem('gittigim_yerler_country_ratings_v1', JSON.stringify({ ...data.ratings, ...localRatings }));
+        try { localStorage.setItem('gittigim_yerler_country_ratings_v1', JSON.stringify({ ...data.ratings, ...localRatings })); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       notifyStatus('synced');

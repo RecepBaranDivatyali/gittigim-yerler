@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
 import { calculateDemographicImpact } from '../data/worldDemographics.js';
-import { deletePhotosByTarget } from './photoStorage.js';
+import { deletePhotosByTarget, deleteAllPhotos } from './photoStorage.js';
 import { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 export { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
 
@@ -481,6 +481,10 @@ export function exportBackup() {
     userFeedbacks: getUserFeedbacks(),
     feedbackOverrides: getFeedbackStatusOverrides(),
     homeCountry: getHomeCountry(),
+    passportType: localStorage.getItem('gv_passport_type') || 'bordo',
+    upcomingTrip: (() => { try { const r = localStorage.getItem('gv_upcoming_trip'); return r ? JSON.parse(r) : null; } catch { return null; } })(),
+    userVisas: (() => { try { const r = localStorage.getItem('gv_user_visas_v1'); return r ? JSON.parse(r) : []; } catch { return []; } })(),
+    visaOverrides: (() => { try { const r = localStorage.getItem('gv_visa_overrides'); return r ? JSON.parse(r) : {}; } catch { return {}; } })(),
     exportedAt: new Date().toISOString()
   };
   const jsonStr = JSON.stringify(backupPayload, null, 2);
@@ -508,6 +512,7 @@ export function resetTravelData() {
   localStorage.removeItem(STORAGE_KEYS.USER_AIRCRAFT);
   localStorage.removeItem(STORAGE_KEYS.HOME_COUNTRY);
   unlockedCache = [];
+  deleteAllPhotos().catch(e => console.warn('Photo cleanup error:', e));
   notifyStateChange();
 }
 
@@ -529,6 +534,10 @@ export function importBackup(fileContent) {
     if (data.userFeedbacks) safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(data.userFeedbacks));
     if (data.feedbackOverrides) safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(data.feedbackOverrides));
     if (data.homeCountry) setHomeCountry(data.homeCountry);
+    if (data.passportType) safeSetItem('gv_passport_type', data.passportType);
+    if (data.upcomingTrip) safeSetItem('gv_upcoming_trip', JSON.stringify(data.upcomingTrip));
+    if (data.userVisas) safeSetItem('gv_user_visas_v1', JSON.stringify(data.userVisas));
+    if (data.visaOverrides) safeSetItem('gv_visa_overrides', JSON.stringify(data.visaOverrides));
     notifyStateChange();
     return true;
   } catch (e) {

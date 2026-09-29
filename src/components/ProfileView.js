@@ -11,7 +11,8 @@ import {
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount,
   getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
-  getCountryVisits, setCountryFeaturedVisit, cleanNote
+  getCountryVisits, setCountryFeaturedVisit, cleanNote,
+  exportBackup, importBackup
 } from '../utils/storage.js';
 import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
@@ -32,6 +33,16 @@ import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/s
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
+
+// Sanitize photo URL - only allow http/https URLs and data:image URLs
+function sanitizePhotoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed) || /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -219,7 +230,7 @@ export function renderProfileView(container, onBack) {
             <span class="poster-icon-emoji">📸</span>
           </button>
           <div class="profile-header">
-            <div class="profile-avatar">${profile.photoUrl ? `<img src="${profile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
+            <div class="profile-avatar">${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
                 <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
@@ -647,7 +658,7 @@ export function renderProfileView(container, onBack) {
           
           <div class="settings-profile-preview">
             <div class="settings-profile-avatar" id="settings-preview-avatar">
-              ${userProfile.photoUrl ? `<img src="${userProfile.photoUrl}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(userProfile.avatar || '🧭')}</span>` : escapeHtml(userProfile.avatar || '🧭')}
+              ${sanitizePhotoUrl(userProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(userProfile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(userProfile.avatar || '🧭')}</span>` : escapeHtml(userProfile.avatar || '🧭')}
             </div>
             <div class="settings-profile-info">
               <div class="settings-profile-name">
@@ -916,6 +927,23 @@ export function renderProfileView(container, onBack) {
             <button type="button" class="reset-colors-btn" id="settings-reset-colors-btn">
               <span>↺</span> <span>${t('resetColors')}</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Backup & Restore -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">💾 ${currentLang === 'tr' ? 'Veri Yedekleme' : 'Data Backup'}</h3>
+          </div>
+          <p class="settings-card-desc">${currentLang === 'tr' ? 'Tüm seyahat verilerinizi yedekleyin ve geri yükleyin.' : 'Backup and restore all your travel data.'}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" id="settings-export-backup-btn" class="settings-secondary-btn" style="flex:1;min-width:140px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:10px 16px;color:#f8fafc;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;">
+              <span>📥</span> <span>${currentLang === 'tr' ? 'Yedek Al' : 'Export Backup'}</span>
+            </button>
+            <label for="settings-import-backup-file" class="settings-secondary-btn" style="flex:1;min-width:140px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:10px 16px;color:#f8fafc;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;">
+              <span>📤</span> <span>${currentLang === 'tr' ? 'Yedek Yükle' : 'Restore Backup'}</span>
+            </label>
+            <input type="file" id="settings-import-backup-file" accept=".json" style="display:none;">
           </div>
         </div>
 
@@ -1232,6 +1260,26 @@ export function renderProfileView(container, onBack) {
       render();
     });
 
+    // Backup & Restore
+    document.getElementById('settings-export-backup-btn')?.addEventListener('click', () => {
+      exportBackup();
+    });
+
+    document.getElementById('settings-import-backup-file')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const success = importBackup(ev.target.result);
+        if (success) {
+          alert(currentLang === 'tr' ? 'Yedek başarıyla yüklendi! Sayfa yenileniyor...' : 'Backup restored successfully! Refreshing...');
+          setTimeout(() => location.reload(), 800);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // reset input
+    });
+
     // 7. Danger Zone - Reset Data
     document.getElementById('profile-reset-map-btn')?.addEventListener('click', () => {
       if (confirm(t('resetConfirm'))) {
@@ -1458,6 +1506,7 @@ export function renderProfileView(container, onBack) {
                     <div class="bucket-order-btns">
                       <button type="button" class="bucket-move-btn btn-up" data-idx="${index}" ${index === 0 ? 'disabled' : ''} title="Yukarı">▲</button>
                       <button type="button" class="bucket-move-btn btn-down" data-idx="${index}" ${index === bucketItems.length - 1 ? 'disabled' : ''} title="Aşağı">▼</button>
+                      <button type="button" class="bucket-delete-btn" data-id="${escapeHtml(item.id)}" title="${currentLang === 'tr' ? 'Listeden Çıkar' : 'Remove from List'}" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#ef4444;padding:4px 8px;cursor:pointer;font-size:0.9rem;">🗑</button>
                     </div>
                   </div>
                 `;
@@ -1487,6 +1536,21 @@ export function renderProfileView(container, onBack) {
         saveBucketRanks(newRanks);
 
         renderBucketTab(contentArea);
+      });
+    });
+    const deleteBtns = contentArea.querySelectorAll('.bucket-delete-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const itemId = btn.dataset.id;
+        if (!confirm(currentLang === 'tr' ? 'Bu yeri listeden çıkarmak istediğinizden emin misiniz?' : 'Remove this place from your bucket list?')) return;
+        // Remove from bucketItems array
+        const removeIdx = bucketItems.findIndex(b => b.id === itemId);
+        if (removeIdx !== -1) {
+          bucketItems.splice(removeIdx, 1);
+          const newRanks = bucketItems.map(b => b.id);
+          saveBucketRanks(newRanks);
+          renderBucketTab(contentArea);
+        }
       });
     });
   }
@@ -2213,7 +2277,7 @@ export function renderProfileView(container, onBack) {
                     <div class="passport-id-content">
                       <div class="passport-photo-frame">
                         <div class="passport-photo-avatar">
-                          ${profile.photoUrl ? `<img src="${profile.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
+                          ${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" alt="Passport Photo" />` : escapeHtml(profile.avatar || '🧭')}
                         </div>
                         <div class="passport-photo-hologram"></div>
                         <div class="passport-chip-badge" title="Biometric Chip">
@@ -3819,7 +3883,7 @@ export function renderProfileView(container, onBack) {
             <div class="saved-friends-chips-row">
               ${savedFriends.map(f => `
                 <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}">
-                  <span class="sf-avatar">${f.photoUrl ? `<img src="${f.photoUrl}" class="avatar-custom-img" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
+                  <span class="sf-avatar">${sanitizePhotoUrl(f.photoUrl) ? `<img src="${sanitizePhotoUrl(f.photoUrl)}" class="avatar-custom-img" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
                   <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
                   <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="Sil">&times;</button>
                 </div>
@@ -3913,7 +3977,7 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card" style="position:relative;">
           <button type="button" id="btn-close-compare" class="compare-close-btn" title="${currentLang === 'tr' ? 'Karşılaştırmayı Kapat' : 'Close Comparison'}">✕</button>
           <div class="profile-header">
-            <div class="profile-avatar">${safeProfile.photoUrl ? `<img src="${safeProfile.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(safeProfile.avatar || '✈️')}</div>
+            <div class="profile-avatar">${sanitizePhotoUrl(safeProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(safeProfile.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
@@ -4505,7 +4569,7 @@ export function renderProfileView(container, onBack) {
               <div class="friend-search-item" data-username="${escapeHtml(tr.username)}">
                 <div class="friend-search-user-info">
                   <div class="friend-search-avatar">
-                    ${tr.photoUrl ? `<img src="${tr.photoUrl}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
+                    ${sanitizePhotoUrl(tr.photoUrl) ? `<img src="${sanitizePhotoUrl(tr.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
                   </div>
                   <div class="friend-search-meta">
                     <div class="friend-search-name-row">
