@@ -8568,21 +8568,22 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
 }
 .booklet-turn-arrow-btn {
   background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
   border-radius: 99px;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.70rem;
+  font-size: 0.74rem;
   transition: all 0.2s ease;
   user-select: none;
 }
 .booklet-turn-arrow-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   transform: scale(1.1);
 }
 .booklet-pill-badge {
@@ -16224,6 +16225,49 @@ body[data-theme="light"] .auth-switch-prompt { color: #374151; }
   justify-content: center;
   align-items: center;
   margin: 14px 0 8px;
+}
+.passport-cover-sheet {
+  cursor: pointer;
+  user-select: none;
+}
+.passport-cover-open-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 8px;
+}
+.passport-cover-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(251, 191, 36, 0.22);
+  border: 1.5px solid rgba(251, 191, 36, 0.65);
+  color: #fbbf24;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+}
+.passport-cover-open-btn:hover {
+  background: rgba(251, 191, 36, 0.38);
+  border-color: #fbbf24;
+  color: #fff;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(251, 191, 36, 0.4);
+}
+.passport-cover-open-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+.cover-open-arrow {
+  font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+.passport-cover-open-btn:hover .cover-open-arrow {
+  transform: translateX(4px);
 }
 .passport-cover-bottom-row {
   display: flex;

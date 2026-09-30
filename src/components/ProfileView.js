@@ -2146,9 +2146,15 @@ export function renderProfileView(container, onBack) {
           <button class="passport-modal-close" id="passport-close-btn">&times;</button>
         </div>
 
-        <div class="passport-modal-body">
-          <!-- Passport Booklet Minimal Dot Indicator -->
+          <!-- Passport Booklet Minimal Header & Navigation -->
           <div class="passport-booklet-nav">
+            <div class="booklet-page-pill">
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-prev" aria-label="${currentLang === 'tr' ? 'Önceki Sayfa' : 'Previous Page'}">◀</button>
+              <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
+              <span class="booklet-pill-sep">•</span>
+              <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Pasaport Kapağı' : 'Passport Cover'}</span>
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-next" aria-label="${currentLang === 'tr' ? 'Sonraki Sayfa' : 'Next Page'}">▶</button>
+            </div>
             <div class="passport-dots-row" id="passport-dots-row">
               ${Array.from({ length: totalPages }).map((_, i) => `
                 <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
@@ -2193,6 +2199,13 @@ export function renderProfileView(container, onBack) {
                         <line x1="1" y1="10" x2="31" y2="10" stroke="#facc15" stroke-width="2"/>
                         <circle cx="16" cy="10" r="4.5" fill="#facc15"/>
                       </svg>
+                    </div>
+
+                    <div class="passport-cover-open-wrap">
+                      <button type="button" class="passport-cover-open-btn" id="btn-open-passport-book">
+                        <span>${currentLang === 'tr' ? 'Pasaportu Aç' : 'Open Passport'}</span>
+                        <span class="cover-open-arrow">➔</span>
+                      </button>
                     </div>
 
                     <div class="passport-cover-bottom-row">
@@ -2797,9 +2810,8 @@ export function renderProfileView(container, onBack) {
       if (nextBtn) nextBtn.style.opacity = currentPage === totalPages - 1 ? '0.35' : '1';
     }
 
-    if (initialPageIndex > 0) {
-      updatePageUI(currentPage, false);
-    }
+    // Always initialize UI state on mount
+    updatePageUI(currentPage, false);
 
     modal.querySelector('#passport-btn-prev')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2809,6 +2821,19 @@ export function renderProfileView(container, onBack) {
     modal.querySelector('#passport-btn-next')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (currentPage < totalPages - 1) updatePageUI(currentPage + 1);
+    });
+
+    // "Pasaportu Aç" action on cover sheet
+    modal.querySelector('#btn-open-passport-book')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      updatePageUI(1);
+    });
+
+    modal.querySelector('.passport-cover-sheet')?.addEventListener('click', (e) => {
+      if (stampTapMoved) return;
+      if (currentPage === 0 && !e.target.closest('#btn-open-passport-book')) {
+        updatePageUI(1);
+      }
     });
 
     dotBtns.forEach(dot => {
