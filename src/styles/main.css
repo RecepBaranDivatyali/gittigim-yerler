@@ -1155,6 +1155,10 @@ html, body, #app {
   position: relative !important;
 }
 
+#duo-map-container .leaflet-control-zoom {
+  display: none !important;
+}
+
 /* Remove Leaflet focus outlines & disable costly transitions on map SVG paths for 60fps */
 .leaflet-container *,
 .leaflet-interactive,

@@ -4376,7 +4376,7 @@ export function renderProfileView(container, onBack) {
           zoomDelta: 0.5,
           wheelPxPerZoomLevel: 60,
           wheelDebounceTime: 0,
-          zoomControl: true,
+          zoomControl: false,
           attributionControl: false
         });
 
