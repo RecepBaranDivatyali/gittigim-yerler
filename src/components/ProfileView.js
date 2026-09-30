@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import confetti from 'canvas-confetti';
 import { 
   getStorageData, calculateStats, resetTravelData, 
   getBucketRanks, saveBucketRanks, 
@@ -388,6 +389,235 @@ export function renderProfileView(container, onBack) {
     // Render and manage Upcoming Trip Countdown
     const countdownContainer = document.getElementById('trip-countdown-container');
 
+    function normalizeStr(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .toLocaleLowerCase('tr-TR')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    }
+
+    function findMatchedPlace(destString) {
+      if (!destString || typeof destString !== 'string') return null;
+      const rawNorm = normalizeStr(destString);
+      const parts = destString.split(/[,/\-–—|•]+/).map(p => normalizeStr(p)).filter(Boolean);
+      const searchTerms = [rawNorm, ...parts];
+
+      // 1. Turkey Provinces check
+      for (const term of searchTerms) {
+        if (!term || term.length < 2) continue;
+        const prov = TURKEY_PROVINCES.find(p => {
+          const pNorm = normalizeStr(p.name);
+          return pNorm === term || term.includes(pNorm) || (term.length >= 4 && pNorm.includes(term));
+        });
+        if (prov) {
+          return { type: 'turkey', id: prov.id, name: prov.name, display: `${prov.name} (Türkiye)` };
+        }
+      }
+
+      // Common Turkey regional aliases
+      if (rawNorm.includes('kapadokya') || rawNorm.includes('cappadocia')) {
+        const nev = TURKEY_PROVINCES.find(p => p.id === 50 || normalizeStr(p.name) === 'nevsehir');
+        if (nev) return { type: 'turkey', id: nev.id, name: nev.name, display: `${nev.name} (Kapadokya)` };
+      }
+      if (rawNorm.includes('bodrum') || rawNorm.includes('fethiye') || rawNorm.includes('marmaris')) {
+        const mug = TURKEY_PROVINCES.find(p => p.id === 48 || normalizeStr(p.name) === 'mugla');
+        if (mug) return { type: 'turkey', id: mug.id, name: mug.name, display: `${mug.name} (Muğla)` };
+      }
+      if (rawNorm.includes('alanya') || rawNorm.includes('kas') || rawNorm.includes('kemer')) {
+        const ant = TURKEY_PROVINCES.find(p => p.id === 7 || normalizeStr(p.name) === 'antalya');
+        if (ant) return { type: 'turkey', id: ant.id, name: ant.name, display: `${ant.name} (Antalya)` };
+      }
+
+      // 2. World Countries exact / containment
+      for (const term of searchTerms) {
+        if (!term || term.length < 2) continue;
+        const country = WORLD_COUNTRIES.find(c => {
+          const cTr = normalizeStr(c.name);
+          const cEn = normalizeStr(c.nameEn);
+          const cCode = (c.code || '').toLowerCase();
+          return cTr === term || cEn === term || cCode === term;
+        });
+        if (country) {
+          return { type: 'world', code: country.code, name: country.name, flag: country.flag || '🌍', display: `${country.flag || '🌍'} ${country.name}` };
+        }
+      }
+
+      // 3. Substring search for country
+      for (const term of searchTerms) {
+        if (!term || term.length < 3) continue;
+        const country = WORLD_COUNTRIES.find(c => {
+          const cTr = normalizeStr(c.name);
+          const cEn = normalizeStr(c.nameEn);
+          return (cTr && term.includes(cTr)) || (cEn && term.includes(cEn));
+        });
+        if (country) {
+          return { type: 'world', code: country.code, name: country.name, flag: country.flag || '🌍', display: `${country.flag || '🌍'} ${country.name}` };
+        }
+      }
+
+      // 4. Well-known international cities & aliases
+      const cityAliasMap = {
+        'paris': 'FR', 'nice': 'FR', 'lyon': 'FR', 'marseille': 'FR',
+        'roma': 'IT', 'rome': 'IT', 'milano': 'IT', 'milan': 'IT', 'venedik': 'IT', 'venice': 'IT', 'florensa': 'IT', 'florence': 'IT',
+        'berlin': 'DE', 'munih': 'DE', 'munich': 'DE', 'frankfurt': 'DE', 'koln': 'DE', 'cologne': 'DE', 'hamburg': 'DE',
+        'londra': 'GB', 'london': 'GB', 'edinburgh': 'GB', 'manchester': 'GB', 'liverpool': 'GB',
+        'madrid': 'ES', 'barcelona': 'ES', 'barselona': 'ES', 'sevilla': 'ES', 'valencia': 'ES',
+        'amsterdam': 'NL', 'rotterdam': 'NL',
+        'viyana': 'AT', 'vienna': 'AT', 'salzburg': 'AT',
+        'prag': 'CZ', 'prague': 'CZ',
+        'budapeste': 'HU', 'budapest': 'HU',
+        'atina': 'GR', 'athens': 'GR', 'selanik': 'GR', 'thessaloniki': 'GR', 'rodos': 'GR', 'santorini': 'GR', 'mykonos': 'GR', 'girit': 'GR',
+        'tokyo': 'JP', 'osaka': 'JP', 'kyoto': 'JP',
+        'seul': 'KR', 'seoul': 'KR',
+        'pekin': 'CN', 'beijing': 'CN', 'sanghay': 'CN', 'shanghai': 'CN', 'hong kong': 'HK',
+        'bangkok': 'TH', 'phuket': 'TH', 'pattaya': 'TH',
+        'bali': 'ID', 'jakarta': 'ID',
+        'singapur': 'SG', 'singapore': 'SG',
+        'kuala lumpur': 'MY',
+        'dubai': 'AE', 'abu dabi': 'AE', 'abu dhabi': 'AE', 'bae': 'AE', 'uae': 'AE',
+        'doha': 'QA',
+        'new york': 'US', 'los angeles': 'US', 'chicago': 'US', 'miami': 'US', 'san francisco': 'US', 'las vegas': 'US', 'abd': 'US', 'usa': 'US', 'amerika': 'US',
+        'toronto': 'CA', 'montreal': 'CA', 'vancouver': 'CA',
+        'kahire': 'EG', 'cairo': 'EG', 'sarm el seyh': 'EG', 'sharm el sheikh': 'EG',
+        'cape town': 'ZA', 'johannesburg': 'ZA',
+        'sydney': 'AU', 'melbourne': 'AU',
+        'buenos aires': 'AR',
+        'rio de janeiro': 'BR', 'rio': 'BR', 'sao paulo': 'BR',
+        'baku': 'AZ', 'bakü': 'AZ',
+        'tiflis': 'GE', 'tbilisi': 'GE', 'batum': 'GE', 'batumi': 'GE',
+        'saraybosna': 'BA', 'sarajevo': 'BA', 'mostar': 'BA',
+        'belgrad': 'RS', 'belgrade': 'RS',
+        'uskup': 'MK', 'skopje': 'MK', 'ohrid': 'MK',
+        'dublin': 'IE',
+        'varsova': 'PL', 'warsaw': 'PL', 'krakow': 'PL',
+        'kiev': 'UA', 'kyiv': 'UA', 'lviv': 'UA',
+        'tiran': 'AL', 'tirana': 'AL',
+        'podgorica': 'ME', 'kotor': 'ME', 'budva': 'ME',
+        'bruksel': 'BE', 'brussels': 'BE', 'bruges': 'BE',
+        'zurih': 'CH', 'zurich': 'CH', 'cenevre': 'CH', 'geneva': 'CH',
+        'lizbon': 'PT', 'lisbon': 'PT', 'porto': 'PT',
+        'kopenhag': 'DK', 'copenhagen': 'DK',
+        'stockholm': 'SE',
+        'oslo': 'NO',
+        'helsinki': 'FI',
+        'reykjavik': 'IS',
+        'kibris': 'CY', 'kktc': 'CY',
+        'taskent': 'UZ', 'tashkent': 'UZ', 'semerkant': 'UZ', 'samarkand': 'UZ',
+        'almati': 'KZ', 'almaty': 'KZ', 'astana': 'KZ'
+      };
+
+      for (const term of searchTerms) {
+        for (const [alias, code] of Object.entries(cityAliasMap)) {
+          if (term.includes(alias) || rawNorm.includes(alias)) {
+            const country = WORLD_COUNTRIES.find(c => c.code === code);
+            if (country) {
+              return { type: 'world', code: country.code, name: country.name, flag: country.flag || '🌍', display: `${country.flag || '🌍'} ${country.name}` };
+            }
+          }
+        }
+      }
+
+      return null;
+    }
+
+    function openTripStampPickerModal(trip) {
+      const modal = document.createElement('div');
+      modal.className = 'trip-modal-overlay';
+      modal.innerHTML = `
+        <div class="trip-modal-dialog">
+          <div class="trip-modal-top">
+            <h3>🛂 ${currentLang === 'tr' ? 'Hedefi Mühürle' : 'Stamp Destination'}</h3>
+            <button class="trip-modal-close" id="picker-modal-close-btn">&times;</button>
+          </div>
+          <div class="trip-modal-body">
+            <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:10px;">
+              ${currentLang === 'tr' 
+                ? `<b>"${escapeHtml(trip.destination)}"</b> rotası için haritanda mühürlenecek ülke veya ili seç:` 
+                : `Select the country or province to stamp for <b>"${escapeHtml(trip.destination)}"</b>:`}
+            </p>
+            <input type="text" id="trip-picker-search" class="trip-form-input" placeholder="${currentLang === 'tr' ? 'Ülke veya şehir ara...' : 'Search country or city...'}" autofocus>
+            <div class="trip-picker-list" id="trip-picker-results"></div>
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+              <button type="button" id="btn-picker-archive-only" class="trip-arrived-btn new" style="padding:7px 12px;font-size:0.75rem;">
+                ${currentLang === 'tr' ? 'Yalnızca Seyahati Bitir (Mühürsüz)' : 'Complete Trip Without Stamping'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      const close = () => modal.remove();
+      modal.querySelector('#picker-modal-close-btn').addEventListener('click', close);
+      modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+      const searchInput = modal.querySelector('#trip-picker-search');
+      const resultsContainer = modal.querySelector('#trip-picker-results');
+
+      function filterResults(query) {
+        const qNorm = normalizeStr(query);
+        const matches = [];
+
+        // Check Turkey
+        for (const p of TURKEY_PROVINCES) {
+          if (!qNorm || normalizeStr(p.name).includes(qNorm)) {
+            matches.push({ type: 'turkey', id: p.id, title: p.name, sub: 'Türkiye İli' });
+            if (matches.length >= 8) break;
+          }
+        }
+        // Check World
+        for (const c of WORLD_COUNTRIES) {
+          if (!qNorm || normalizeStr(c.name).includes(qNorm) || normalizeStr(c.nameEn).includes(qNorm) || (c.code || '').toLowerCase().includes(qNorm)) {
+            matches.push({ type: 'world', code: c.code, title: `${c.flag || '🌍'} ${c.name}`, sub: c.nameEn });
+            if (matches.length >= 25) break;
+          }
+        }
+
+        if (matches.length === 0) {
+          resultsContainer.innerHTML = `<div style="text-align:center;padding:16px;color:#64748b;font-size:0.8rem;">${currentLang === 'tr' ? 'Sonuç bulunamadı' : 'No matches found'}</div>`;
+          return;
+        }
+
+        resultsContainer.innerHTML = matches.map((m, idx) => `
+          <div class="trip-picker-item" data-idx="${idx}">
+            <span>${escapeHtml(m.title)}</span>
+            <span class="trip-picker-tag">${escapeHtml(m.sub)}</span>
+          </div>
+        `).join('');
+
+        resultsContainer.querySelectorAll('.trip-picker-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const item = matches[Number(el.dataset.idx)];
+            if (!item) return;
+            if (item.type === 'turkey') {
+              saveTurkeyVisit(item.id, 'visited', { entryTransport: trip.transport || 'car', notes: trip.notes || '' });
+            } else {
+              saveWorldVisit(item.code, 'visited', { entryTransport: trip.transport || 'flight', notes: trip.notes || '' });
+            }
+            deleteUpcomingTrip();
+            try {
+              confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+            } catch {}
+            close();
+            render(true);
+          });
+        });
+      }
+
+      searchInput.value = trip.destination || '';
+      filterResults(searchInput.value);
+      searchInput.addEventListener('input', (e) => filterResults(e.target.value));
+
+      modal.querySelector('#btn-picker-archive-only')?.addEventListener('click', () => {
+        deleteUpcomingTrip();
+        close();
+        renderTripCountdown();
+      });
+    }
+
     function renderTripCountdown() {
       clearActiveTimers();
       if (!countdownContainer) return;
@@ -413,7 +643,118 @@ export function renderProfileView(container, onBack) {
       }
 
       const transIcon = transportIcons[upcomingTrip.transport] || '✈️';
+      const targetMs = new Date(upcomingTrip.date).getTime();
+      const nowMs = Date.now();
+      const isArrived = (targetMs - nowMs) <= 0;
 
+      if (isArrived) {
+        const matchedPlace = findMatchedPlace(upcomingTrip.destination);
+
+        countdownContainer.innerHTML = `
+          <div class="trip-countdown-card active arrived">
+            <div class="trip-countdown-header">
+              <div class="trip-countdown-badge arrived-badge">
+                <span class="arrived-pulse-dot"></span>
+                🎉 ${currentLang === 'tr' ? 'SEYAHAT ZAMANI GELDİ!' : 'TIME TO TRAVEL!'}
+              </div>
+              <div class="trip-countdown-actions">
+                <button type="button" class="trip-action-icon-btn" id="btn-edit-trip" title="${currentLang === 'tr' ? 'Düzenle' : 'Edit'}">✏️</button>
+                <button type="button" class="trip-action-icon-btn del" id="btn-del-trip" title="${currentLang === 'tr' ? 'Sil' : 'Delete'}">🗑️</button>
+              </div>
+            </div>
+
+            <div class="trip-arrived-content">
+              <div class="trip-arrived-hero">
+                <div class="trip-arrived-icon-wrap">
+                  <span class="trip-arrived-main-icon">${transIcon}</span>
+                  <span class="trip-arrived-sparkle">✨</span>
+                </div>
+                <div class="trip-arrived-details">
+                  <div class="trip-arrived-title">${escapeHtml(upcomingTrip.destination || 'Seyahat')}</div>
+                  <div class="trip-arrived-sub">
+                    ${currentLang === 'tr' 
+                      ? 'İyi yolculuklar! Bu rotayı şimdi haritana ve pasaportuna mühürleyebilirsin.' 
+                      : 'Have a wonderful journey! You can now stamp this route to your map & passport.'}
+                  </div>
+                  ${matchedPlace ? `
+                    <div class="trip-arrived-detected-pill">
+                      <span>🎯</span>
+                      <span>${currentLang === 'tr' ? 'Eşleşen Rota:' : 'Matched:'} <b>${escapeHtml(matchedPlace.display)}</b></span>
+                    </div>
+                  ` : ''}
+                  ${upcomingTrip.notes ? `<div class="trip-target-meta" style="margin-top:4px;">📅 ${new Date(upcomingTrip.date).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US')} • <i>"${escapeHtml(upcomingTrip.notes)}"</i></div>` : ''}
+                </div>
+              </div>
+
+              <div class="trip-arrived-actions">
+                <button type="button" class="trip-arrived-btn stamp" id="btn-trip-mark-visited">
+                  <span>🛂</span>
+                  <span>
+                    ${matchedPlace 
+                      ? (currentLang === 'tr' ? `${matchedPlace.name} Ziyaretini Mühürle` : `Stamp ${matchedPlace.name} Visited`)
+                      : (currentLang === 'tr' ? 'Haritada ve Pasaportta Mühürle' : 'Stamp on Map & Passport')
+                    }
+                  </span>
+                </button>
+                <button type="button" class="trip-arrived-btn new" id="btn-trip-plan-next">
+                  <span>✈️</span>
+                  <span>${currentLang === 'tr' ? 'Yeni Seyahat Planla' : 'Plan Next Trip'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('btn-edit-trip')?.addEventListener('click', () => openTripModal(upcomingTrip));
+        document.getElementById('btn-del-trip')?.addEventListener('click', () => {
+          if (confirm(currentLang === 'tr' ? 'Bu seyahat kaydını kaldırmak istediğine emin misin?' : 'Delete this trip record?')) {
+            deleteUpcomingTrip();
+            renderTripCountdown();
+          }
+        });
+        document.getElementById('btn-trip-plan-next')?.addEventListener('click', () => {
+          openTripModal();
+        });
+
+        document.getElementById('btn-trip-mark-visited')?.addEventListener('click', () => {
+          if (matchedPlace) {
+            if (matchedPlace.type === 'turkey') {
+              saveTurkeyVisit(matchedPlace.id, 'visited', { entryTransport: upcomingTrip.transport || 'car', notes: upcomingTrip.notes || '' });
+            } else {
+              saveWorldVisit(matchedPlace.code, 'visited', { entryTransport: upcomingTrip.transport || 'flight', notes: upcomingTrip.notes || '' });
+            }
+            deleteUpcomingTrip();
+            try {
+              confetti({
+                particleCount: 110,
+                spread: 85,
+                origin: { y: 0.55 },
+                colors: ['#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#ffffff']
+              });
+            } catch {}
+
+            countdownContainer.innerHTML = `
+              <div class="trip-countdown-card arrived-success">
+                <div class="trip-success-sparkle">🎉</div>
+                <div>
+                  <div class="trip-success-title">${escapeHtml(matchedPlace.name)} ${currentLang === 'tr' ? 'Pasaportuna ve Haritana Mühürlendi!' : 'Stamped onto Map & Passport!'}</div>
+                  <div class="trip-success-sub">${currentLang === 'tr' ? 'Harika anılar dileriz! İstatistiklerin ve rozetlerin güncellendi.' : 'Wishing you great memories! Your stats and stamps have updated.'}</div>
+                </div>
+              </div>
+            `;
+
+            setTimeout(() => {
+              render(true);
+            }, 1800);
+          } else {
+            openTripStampPickerModal(upcomingTrip);
+          }
+        });
+
+        return;
+      }
+
+      // Countdown still in the future:
       countdownContainer.innerHTML = `
         <div class="trip-countdown-card active">
           <div class="trip-countdown-header">
@@ -468,13 +809,15 @@ export function renderProfileView(container, onBack) {
         const diff = targetMs - nowMs;
 
         if (diff <= 0) {
-          const elDays = document.getElementById('cd-days');
-          if (elDays) {
-            elDays.textContent = '00';
-            document.getElementById('cd-hours').textContent = '00';
-            document.getElementById('cd-mins').textContent = '00';
-            document.getElementById('cd-secs').textContent = '00';
-          }
+          clearActiveTimers();
+          try {
+            confetti({
+              particleCount: 90,
+              spread: 80,
+              origin: { y: 0.6 }
+            });
+          } catch {}
+          renderTripCountdown();
           return;
         }
 
@@ -3490,7 +3833,7 @@ export function renderProfileView(container, onBack) {
           if (!isNaN(vIdx)) {
             setCountryFeaturedVisit(cCode, vIdx);
             try {
-              import('canvas-confetti').then(m => m.default({ particleCount: 40, spread: 50, origin: { y: 0.6 } }));
+              confetti({ particleCount: 40, spread: 50, origin: { y: 0.6 } });
             } catch {}
             closeZoom();
             closeModal();
