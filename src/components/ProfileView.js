@@ -200,27 +200,20 @@ export function renderProfileView(container, onBack) {
       homeSubdivisionLabel = `${homeFlagHtml} ${label}`;
     }
 
-    const shareData = {
-      profile,
-      worldVisits: storageData.worldVisits,
-      turkeyVisits: storageData.turkeyVisits,
-      worldCities: storageData.worldCities,
-      homeCountry: currentHomeCountry
-    };
-    const shareCode = btoa(encodeURIComponent(JSON.stringify(shareData)));
-
     const currentPassportType = getPassportType();
     const isYesilPassport = currentPassportType === 'yesil';
 
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
-          <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
-            <span class="poster-icon-emoji">📸</span>
-          </button>
-          <button type="button" id="btn-trigger-wrapped" class="profile-compact-poster-btn" title="Wrapped 2026" style="margin-left:4px;">
-            <span class="poster-icon-emoji">🎉</span>
-          </button>
+          <div class="profile-top-actions">
+            <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
+              <span class="poster-icon-emoji">📸</span>
+            </button>
+            <button type="button" id="btn-trigger-wrapped" class="profile-compact-poster-btn" title="Wrapped 2026">
+              <span class="poster-icon-emoji">🎉</span>
+            </button>
+          </div>
           <div class="profile-header">
             <div class="profile-avatar">${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
@@ -234,11 +227,6 @@ export function renderProfileView(container, onBack) {
                   </button>
                 </div>
               </div>
-              <button type="button" class="profile-share-code-btn" id="btn-copy-share-code" title="${currentLang === 'tr' ? 'Arkadaş Kodunu Kopyala' : 'Copy Friend Code'}" style="display:flex;align-items:center;gap:6px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;padding:5px 10px;color:#94a3b8;font-size:0.76rem;cursor:pointer;margin-top:4px;">
-                <span>🔗</span>
-                <span id="share-code-display" style="font-family:monospace;font-size:0.7rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shareCode.slice(0, 12)}...</span>
-                <span>📋</span>
-              </button>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
           </div>
@@ -247,7 +235,7 @@ export function renderProfileView(container, onBack) {
           <div class="profile-passport-full-row">
             <button id="btn-trigger-passport" class="profile-hero-passport-btn ${isYesilPassport ? 'yesil' : 'bordo'}" title="${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Passport'}">
               <div class="passport-hero-badge-icon">
-                <span class="hero-emblem-flag">🇹🇷</span>
+                <span class="hero-emblem-flag">${getCountryFlagHtml('TR', '🇹🇷', { width: 24, height: 16 })}</span>
                 <span class="hero-p-chip">${isYesilPassport ? 'YEŞİL' : 'BORDO'}</span>
               </div>
               <div class="passport-hero-info">
@@ -308,31 +296,6 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
       openPosterModal();
-    });
-
-    document.getElementById('btn-copy-share-code')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(shareCode);
-        const btn = document.getElementById('btn-copy-share-code');
-        if (btn) {
-          const originalText = btn.querySelector('span:last-child').textContent;
-          btn.querySelector('span:last-child').textContent = currentLang === 'tr' ? '✓ Kopyalandı!' : '✓ Copied!';
-          btn.style.color = '#22c55e';
-          setTimeout(() => {
-            if (btn) { btn.querySelector('span:last-child').textContent = originalText; btn.style.color = ''; }
-          }, 2000);
-        }
-      } catch {
-        // fallback
-        const ta = document.createElement('textarea');
-        ta.value = shareCode;
-        ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        alert(currentLang === 'tr' ? 'Arkadaş kodu kopyalandı!' : 'Friend code copied!');
-      }
     });
 
     document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
@@ -958,23 +921,6 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
-        <!-- Backup & Restore -->
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <h3 class="settings-card-title">💾 ${currentLang === 'tr' ? 'Veri Yedekleme' : 'Data Backup'}</h3>
-          </div>
-          <p class="settings-card-desc">${currentLang === 'tr' ? 'Tüm seyahat verilerinizi yedekleyin ve geri yükleyin.' : 'Backup and restore all your travel data.'}</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button type="button" id="settings-export-backup-btn" class="settings-secondary-btn" style="flex:1;min-width:140px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:10px 16px;color:#f8fafc;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;">
-              <span>📥</span> <span>${currentLang === 'tr' ? 'Yedek Al' : 'Export Backup'}</span>
-            </button>
-            <label for="settings-import-backup-file" class="settings-secondary-btn" style="flex:1;min-width:140px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:10px 16px;color:#f8fafc;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;">
-              <span>📤</span> <span>${currentLang === 'tr' ? 'Yedek Yükle' : 'Restore Backup'}</span>
-            </label>
-            <input type="file" id="settings-import-backup-file" accept=".json" style="display:none;">
-          </div>
-        </div>
-
         <!-- 7. Danger Zone -->
         <div class="settings-card settings-danger-card">
           <div class="settings-card-header">
@@ -1286,26 +1232,6 @@ export function renderProfileView(container, onBack) {
       setStatusColor('wishlist', '#8b5cf6');
       alert(t('colorsReset'));
       render();
-    });
-
-    // Backup & Restore
-    document.getElementById('settings-export-backup-btn')?.addEventListener('click', () => {
-      exportBackup();
-    });
-
-    document.getElementById('settings-import-backup-file')?.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const success = importBackup(ev.target.result);
-        if (success) {
-          alert(currentLang === 'tr' ? 'Yedek başarıyla yüklendi! Sayfa yenileniyor...' : 'Backup restored successfully! Refreshing...');
-          setTimeout(() => location.reload(), 800);
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = ''; // reset input
     });
 
     // 7. Danger Zone - Reset Data
@@ -2911,14 +2837,16 @@ export function renderProfileView(container, onBack) {
     let currentDeltaX = 0;
     let isHorizontalDrag = null;
     let activePointerId = null;
+    let stampTapMoved = false;
 
     const onPointerDown = (e) => {
       if (totalPages <= 1) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       // Do not initiate drag or capture pointer if user tapped an interactive element
-      if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn, .passport-stamp-cell, .stamp-multiplier-badge')) {
+      if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn')) {
         return;
       }
+      stampTapMoved = false;
       isDragging = true;
       activePointerId = e.pointerId;
       startX = e.clientX;
@@ -2938,6 +2866,10 @@ export function renderProfileView(container, onBack) {
       if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
+
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        stampTapMoved = true;
+      }
 
       if (isHorizontalDrag === null) {
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
@@ -3536,6 +3468,10 @@ export function renderProfileView(container, onBack) {
     modal.querySelectorAll('.passport-stamp-cell').forEach(cell => {
       cell.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (stampTapMoved) {
+          stampTapMoved = false;
+          return;
+        }
         const cCode = cell.dataset.ccode;
         if (cCode) {
           openStampZoomModal(cCode);
@@ -3905,17 +3841,31 @@ export function renderProfileView(container, onBack) {
         ${savedFriends.length > 0 ? `
           <div class="saved-friends-panel" id="saved-friends-panel">
             <div class="saved-friends-header">
-              <span>${t('savedFriends')}</span>
-              <span class="saved-friends-count">(${savedFriends.length})</span>
+              <div class="sf-header-title">
+                <span class="sf-icon">👥</span>
+                <span class="sf-title-text">${t('savedFriends')}</span>
+                <span class="saved-friends-count">${savedFriends.length}</span>
+              </div>
+              <span class="sf-header-hint">${currentLang === 'tr' ? 'Kıyaslamak için dokun' : 'Tap to compare'}</span>
             </div>
             <div class="saved-friends-chips-row">
-              ${savedFriends.map(f => `
-                <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}">
-                  <span class="sf-avatar">${sanitizePhotoUrl(f.photoUrl) ? `<img src="${sanitizePhotoUrl(f.photoUrl)}" class="avatar-custom-img" style="width:20px;height:20px;border-radius:50%;object-fit:cover;" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
-                  <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
-                  <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="Sil">&times;</button>
+              ${savedFriends.map(f => {
+                const worldCount = Object.keys(f.data?.worldVisits || {}).filter(k => !k.includes('::') && f.data?.worldVisits[k]?.status === 'visited').length;
+                return `
+                <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}" title="${currentLang === 'tr' ? 'Bu arkadaşla haritanı kıyasla' : 'Compare with this friend'}">
+                  <div class="sf-avatar-wrap">
+                    <span class="sf-avatar">${sanitizePhotoUrl(f.photoUrl) ? `<img src="${sanitizePhotoUrl(f.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
+                  </div>
+                  <div class="sf-info">
+                    <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
+                    ${worldCount > 0 ? `<span class="sf-sub">${worldCount} ${currentLang === 'tr' ? 'ülke' : 'countries'}</span>` : ''}
+                  </div>
+                  <div class="sf-action-tag">
+                    <span>⚔️</span>
+                  </div>
+                  <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="${currentLang === 'tr' ? 'Listeden Kaldır' : 'Remove'}">✕</button>
                 </div>
-              `).join('')}
+              `;}).join('')}
             </div>
           </div>
         ` : ''}
