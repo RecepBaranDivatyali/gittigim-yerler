@@ -1890,7 +1890,7 @@ svg, g, path {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding-right: 40px;
+  padding-right: 52px;
 }
 
 .profile-user-title-row {
@@ -1909,17 +1909,10 @@ svg, g, path {
   min-width: 0;
 }
 
-.profile-top-actions {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 5;
-}
-
 .profile-compact-poster-btn {
+  position: absolute;
+  top: 16px;
+  right: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1936,6 +1929,7 @@ svg, g, path {
   font-family: inherit;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 .profile-compact-poster-btn:hover {
   background: rgba(255, 255, 255, 0.2);
@@ -8932,25 +8926,26 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
 .passport-stamps-grid-2x2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px 8px;
   flex: 1;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-bottom: 4px;
+  padding: 10px 4px 12px;
+  box-sizing: border-box;
 }
 .passport-stamp-cell {
   background: rgba(255, 255, 255, 0.75);
   border: 1px dashed rgba(148, 163, 184, 0.5);
   border-radius: 8px;
-  padding: 6px 4px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 125px;
+  min-height: 155px;
   position: relative;
   min-width: 0;
   box-sizing: border-box;
+  gap: 6px;
+  cursor: pointer;
 }
 .stamp-seal-item {
   width: 100%;
@@ -8971,6 +8966,7 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   border: 2px solid var(--stamp-ink, #b91c1c);
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 .stamp-seal-item:hover {
   transform: scale(1.04) !important;
@@ -8992,31 +8988,35 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
 /* ── Distinct Airbnb Geometric Shapes ── */
 /* 1. Arch Temple (Athens / Greece style) */
 .stamp-seal-item.arch_temple {
-  border-radius: 40px 40px 6px 6px;
+  border-radius: 36px 36px 6px 6px;
   border-width: 2.5px;
 }
 .stamp-seal-item.arch_temple .stamp-seal-inner-frame {
-  border-radius: 36px 36px 4px 4px;
+  border-radius: 32px 32px 4px 4px;
   border-style: solid;
   border-width: 1px;
 }
 
 /* 2. Hex Pointed (Alanya / Turkey badge style) */
 .stamp-seal-item.hex_pointed {
-  border-radius: 10px;
-  clip-path: polygon(50% 0%, 100% 12%, 100% 88%, 50% 100%, 0% 88%, 0% 12%);
-  padding: 7px 5px;
+  border-radius: 18px 4px 18px 4px;
+  border-width: 2.2px;
+  padding: 6px 5px;
 }
 .stamp-seal-item.hex_pointed .stamp-seal-inner-frame {
+  border-radius: 14px 2px 14px 2px;
   border-style: dashed;
 }
 
 /* 3. Octagon Seal (8-sided geometric consular seal) */
 .stamp-seal-item.octagon_seal {
-  clip-path: polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%);
-  padding: 7px 4px;
+  border-radius: 14px;
+  border-width: 3.5px;
+  border-style: double;
+  padding: 6px 4px;
 }
 .stamp-seal-item.octagon_seal .stamp-seal-inner-frame {
+  border-radius: 10px;
   border-style: dotted;
   border-width: 1.5px;
 }
@@ -9030,9 +9030,13 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
 
 /* 5. Diamond Badge */
 .stamp-seal-item.diamond_badge {
-  border-radius: 10px;
-  clip-path: polygon(12% 0%, 88% 0%, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0% 88%, 0% 12%);
+  border-radius: 20px 4px 20px 4px;
   border-width: 2.2px;
+  padding: 6px 5px;
+}
+.stamp-seal-item.diamond_badge .stamp-seal-inner-frame {
+  border-radius: 16px 2px 16px 2px;
+  border-style: dashed;
 }
 
 /* 6. Pill Stadium */

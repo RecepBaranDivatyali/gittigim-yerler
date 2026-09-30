@@ -206,14 +206,9 @@ export function renderProfileView(container, onBack) {
     contentArea.innerHTML = `
       <div class="profile-main">
         <div class="profile-card">
-          <div class="profile-top-actions">
-            <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
-              <span class="poster-icon-emoji">📸</span>
-            </button>
-            <button type="button" id="btn-trigger-wrapped" class="profile-compact-poster-btn" title="Wrapped 2026">
-              <span class="poster-icon-emoji">🎉</span>
-            </button>
-          </div>
+          <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
+            <span class="poster-icon-emoji">📸</span>
+          </button>
           <div class="profile-header">
             <div class="profile-avatar">${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
@@ -298,11 +293,6 @@ export function renderProfileView(container, onBack) {
       openPosterModal();
     });
 
-    document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
-      if (typeof openWrappedModal === 'function') {
-        openWrappedModal();
-      }
-    });
 
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
@@ -2842,7 +2832,7 @@ export function renderProfileView(container, onBack) {
     const onPointerDown = (e) => {
       if (totalPages <= 1) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      // Do not initiate drag or capture pointer if user tapped an interactive element
+      // Do not initiate drag or capture pointer if user tapped an interactive control
       if (e.target.closest('button, a, input, select, textarea, [role="button"], .passport-add-visa-btn, .passport-visa-edit-btn, .passport-visa-delete-btn, .passport-dot-btn, .booklet-turn-arrow-btn, .passport-action-btn')) {
         return;
       }
@@ -2853,13 +2843,6 @@ export function renderProfileView(container, onBack) {
       startY = e.clientY;
       currentDeltaX = 0;
       isHorizontalDrag = null;
-
-      try {
-        viewport.setPointerCapture(e.pointerId);
-      } catch {}
-
-      if (track) track.style.transition = 'none';
-      if (viewport) viewport.classList.add('is-dragging');
     };
 
     const onPointerMove = (e) => {
@@ -2867,13 +2850,20 @@ export function renderProfileView(container, onBack) {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
         stampTapMoved = true;
       }
 
       if (isHorizontalDrag === null) {
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
           isHorizontalDrag = Math.abs(dx) >= Math.abs(dy);
+          if (isHorizontalDrag) {
+            try {
+              viewport.setPointerCapture(activePointerId);
+            } catch {}
+            if (track) track.style.transition = 'none';
+            if (viewport) viewport.classList.add('is-dragging');
+          }
         }
       }
 
@@ -2921,6 +2911,10 @@ export function renderProfileView(container, onBack) {
       updatePageUI(targetPage, true);
       currentDeltaX = 0;
       isHorizontalDrag = null;
+
+      if (stampTapMoved) {
+        setTimeout(() => { stampTapMoved = false; }, 120);
+      }
     };
 
     viewport?.addEventListener('pointerdown', onPointerDown);
@@ -3326,6 +3320,7 @@ export function renderProfileView(container, onBack) {
 
     // ─── 🔍 Zoom-In Stamp Modal & Multi-Stamp Picker ───
     function openStampZoomModal(cCode) {
+      if (document.querySelector('.passport-stamps-zoom-overlay')) return;
       const country = WORLD_COUNTRIES.find(c => c.code === cCode) || { code: cCode, name: cCode, flag: '🌍' };
       const cName = getCountryDisplayName(country);
       const visits = getCountryVisits(cCode);
@@ -3467,16 +3462,21 @@ export function renderProfileView(container, onBack) {
 
     modal.querySelectorAll('.passport-stamp-cell').forEach(cell => {
       cell.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (stampTapMoved) {
-          stampTapMoved = false;
-          return;
-        }
+        if (stampTapMoved) return;
         const cCode = cell.dataset.ccode;
         if (cCode) {
           openStampZoomModal(cCode);
         }
       });
+    });
+
+    // Delegated stamp click fallback for child SVG and frames
+    modal.addEventListener('click', (e) => {
+      if (stampTapMoved) return;
+      const cell = e.target.closest('.passport-stamp-cell');
+      if (cell && cell.dataset.ccode) {
+        openStampZoomModal(cell.dataset.ccode);
+      }
     });
 
     // Direct click bindings for visa buttons to guarantee immediate response
