@@ -11,8 +11,10 @@ import {
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount,
   getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
-  getCountryVisits, setCountryFeaturedVisit, cleanNote
+  getCountryVisits, setCountryFeaturedVisit, cleanNote,
+  saveWorldVisit, saveTurkeyVisit
 } from '../utils/storage.js';
+import { auth } from '../services/firebase.js';
 import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { TRAVEL_CHALLENGES, calculateChallengesProgress } from '../data/challengesData.js';
@@ -105,8 +107,13 @@ export function renderProfileView(container, onBack) {
 
     const logoutBtn = document.getElementById('profile-logout');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
+      logoutBtn.addEventListener('click', async () => {
         if (confirm(t('logoutConfirm'))) {
+          try {
+            if (auth) await auth.signOut();
+          } catch (e) {
+            console.warn('Firebase signOut error:', e);
+          }
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
           sessionStorage.removeItem('gv_logged_in');
@@ -1486,14 +1493,23 @@ export function renderProfileView(container, onBack) {
       btn.addEventListener('click', () => {
         const itemId = btn.dataset.id;
         if (!confirm(currentLang === 'tr' ? 'Bu yeri listeden çıkarmak istediğinizden emin misiniz?' : 'Remove this place from your bucket list?')) return;
-        // Remove from bucketItems array
+        
+        // Persist status change to unvisited so it doesn't reappear on reload
+        if (itemId.startsWith('TR::')) {
+          const pid = itemId.replace('TR::', '');
+          saveTurkeyVisit(pid, 'unvisited');
+        } else {
+          saveWorldVisit(itemId, 'unvisited');
+        }
+
+        // Remove from bucketItems array and saved ranks
         const removeIdx = bucketItems.findIndex(b => b.id === itemId);
         if (removeIdx !== -1) {
           bucketItems.splice(removeIdx, 1);
           const newRanks = bucketItems.map(b => b.id);
           saveBucketRanks(newRanks);
-          renderBucketTab(contentArea);
         }
+        renderBucketTab(contentArea);
       });
     });
   }

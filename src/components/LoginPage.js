@@ -12,7 +12,8 @@ import {
   updateProfile,
   browserLocalPersistence,
   browserSessionPersistence,
-  setPersistence
+  setPersistence,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable } from '../utils/userDatabase.js';
@@ -234,12 +235,17 @@ export function renderLoginPage(container, onLogin) {
               </div>
             </div>
 
-            <!-- "Oturumum Açık Kalsın" Checkbox (User Request) -->
-            <div class="auth-checkbox-row">
+            <!-- "Oturumum Açık Kalsın" Checkbox & Şifremi Unuttum -->
+            <div class="auth-checkbox-row" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
               <label class="auth-checkbox-label">
                 <input type="checkbox" id="auth-remember-me" ${rememberMe ? 'checked' : ''} />
                 <span>${currentLang === 'tr' ? 'Oturumum açık kalsın' : 'Keep me signed in'}</span>
               </label>
+              ${authMode === 'login' ? `
+                <button type="button" id="btn-forgot-password" style="background:none;border:none;color:#60a5fa;font-size:0.8rem;cursor:pointer;padding:0;text-decoration:underline;">
+                  ${currentLang === 'tr' ? 'Şifremi Unuttum' : 'Forgot Password?'}
+                </button>
+              ` : ''}
             </div>
 
             <button type="submit" id="auth-submit-btn" class="login-btn" style="margin-top:6px;">
@@ -327,6 +333,37 @@ export function renderLoginPage(container, onLogin) {
       syncFormState();
       authMode = 'login';
       render();
+    });
+
+    container.querySelector('#btn-forgot-password')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      syncFormState();
+      const emailInput = container.querySelector('#auth-email');
+      const email = (emailInput?.value || emailVal || '').trim();
+      if (!email || !email.includes('@')) {
+        alert(currentLang === 'tr' ? 'Lütfen önce geçerli bir e-posta adresi yazın.' : 'Please enter a valid email address first.');
+        emailInput?.focus();
+        return;
+      }
+      if (!navigator.onLine) {
+        alert(currentLang === 'tr' ? 'Şifre sıfırlama işlemi için internet bağlantısı gereklidir.' : 'Internet connection is required for password reset.');
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert(currentLang === 'tr' 
+          ? `Şifre sıfırlama bağlantısı ${email} adresinize gönderildi. Lütfen gelen kutunuzu (ve spam/gereksiz klasörünü) kontrol edin.` 
+          : `Password reset link has been sent to ${email}. Please check your inbox and spam folder.`);
+      } catch (err) {
+        console.warn('Password reset error:', err);
+        let msg = currentLang === 'tr' ? 'Şifre sıfırlama e-postası gönderilemedi.' : 'Failed to send password reset email.';
+        if (err?.code === 'auth/user-not-found') {
+          msg = currentLang === 'tr' ? 'Bu e-posta adresiyle kayıtlı bir hesap bulunamadı.' : 'No user found with this email address.';
+        } else if (err?.code === 'auth/invalid-email') {
+          msg = currentLang === 'tr' ? 'Geçersiz e-posta formatı.' : 'Invalid email format.';
+        }
+        alert(msg);
+      }
     });
 
     container.querySelector('#login-lang-toggle')?.addEventListener('click', () => {
