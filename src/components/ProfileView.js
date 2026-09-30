@@ -222,7 +222,6 @@ export function renderProfileView(container, onBack) {
               <div class="profile-user-title-row">
                 <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
                 <div class="profile-title-badges">
-                  <span class="profile-card-label">${currentLang === 'tr' ? 'GEZGİN KARTI' : 'TRAVELER CARD'}</span>
                   <button type="button" class="profile-cloud-sync-pill" id="profile-cloud-sync-pill" title="${currentLang === 'tr' ? 'Bulut Senkronizasyonu - Tıkla ve Eşitle' : 'Cloud Sync - Click to Sync'}">
                     <span class="cloud-sync-dot"></span>
                     <span class="cloud-sync-text">${currentLang === 'tr' ? 'Eşitlendi' : 'Synced'}</span>
