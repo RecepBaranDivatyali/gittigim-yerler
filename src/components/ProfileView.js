@@ -11,8 +11,7 @@ import {
   getUpcomingTrip, saveUpcomingTrip, deleteUpcomingTrip,
   getAllSavedPlaces, getTotalPlacesCount,
   getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
-  getCountryVisits, setCountryFeaturedVisit, cleanNote,
-  exportBackup, importBackup
+  getCountryVisits, setCountryFeaturedVisit, cleanNote
 } from '../utils/storage.js';
 import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
