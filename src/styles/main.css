@@ -16194,5 +16194,69 @@ body[data-theme="light"] .auth-switch-prompt { color: #374151; }
   white-space: nowrap;
 }
 
+/* ─── Missing theme overrides: popup + profile overlay ────────────────── */
+/* Ocean */
+body[data-theme="ocean"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="ocean"] .map-status-popup {
+  background: rgba(12, 25, 41, 0.97) !important;
+  border-color: rgba(42, 90, 140, 0.45) !important;
+  color: #e0f0ff !important;
+}
+body[data-theme="ocean"] .profile-overlay { background: #0c1929; color: #e0f0ff; }
+
+/* Emerald */
+body[data-theme="emerald"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="emerald"] .map-status-popup {
+  background: rgba(10, 31, 10, 0.97) !important;
+  border-color: rgba(45, 107, 45, 0.45) !important;
+  color: #d4f5d4 !important;
+}
+body[data-theme="emerald"] .profile-overlay { background: #0a1f0a; color: #d4f5d4; }
+
+/* Vintage */
+body[data-theme="vintage"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="vintage"] .map-status-popup {
+  background: rgba(44, 24, 16, 0.97) !important;
+  border-color: rgba(107, 82, 64, 0.45) !important;
+  color: #f5e6d0 !important;
+}
+body[data-theme="vintage"] .profile-overlay { background: #2c1810; color: #f5e6d0; }
+
+/* Midnight Gold */
+body[data-theme="midnight_gold"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="midnight_gold"] .map-status-popup {
+  background: rgba(10, 10, 20, 0.97) !important;
+  border-color: rgba(212, 175, 55, 0.35) !important;
+  color: #f5e6c0 !important;
+}
+body[data-theme="midnight_gold"] .profile-overlay { background: #0a0a14; color: #f5e6c0; }
+
+/* Cyberpunk */
+body[data-theme="cyberpunk"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="cyberpunk"] .map-status-popup {
+  background: rgba(7, 5, 20, 0.97) !important;
+  border-color: rgba(0, 240, 255, 0.4) !important;
+  color: #00f0ff !important;
+}
+body[data-theme="cyberpunk"] .profile-overlay { background: #070514; color: #00f0ff; }
+
+/* Nordic Frost */
+body[data-theme="nordic_frost"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="nordic_frost"] .map-status-popup {
+  background: rgba(20, 30, 50, 0.97) !important;
+  border-color: rgba(100, 160, 220, 0.35) !important;
+  color: #daeeff !important;
+}
+body[data-theme="nordic_frost"] .profile-overlay { background: #141e32; color: #daeeff; }
+
+/* Natgeo Atlas popup override (was missing) */
+body[data-theme="natgeo_atlas"] .clean-status-popup .leaflet-popup-content-wrapper,
+body[data-theme="natgeo_atlas"] .map-status-popup {
+  background: rgba(247, 238, 225, 0.98) !important;
+  border-color: rgba(140, 112, 82, 0.35) !important;
+  color: #2b2118 !important;
+}
+
+
 
 

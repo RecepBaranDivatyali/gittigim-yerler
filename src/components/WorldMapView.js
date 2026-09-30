@@ -988,8 +988,8 @@ export function renderWorldMapView(container, options = {}) {
             <div class="search-item" data-idx="${idx}">
               <span class="search-item-flag">${m.flag}</span>
               <div class="search-item-info">
-                <span class="search-item-title">${m.name}${m.altName && m.altName !== m.name ? ` <span style="opacity:0.6;font-size:0.8em;">(${m.altName})</span>` : ''}</span>
-                <span class="search-item-sub">${m.sub}</span>
+                <span class="search-item-title">${escapeHtml(m.name)}${m.altName && m.altName !== m.name ? ` <span style="opacity:0.6;font-size:0.8em;">(${escapeHtml(m.altName)})</span>` : ''}</span>
+                <span class="search-item-sub">${escapeHtml(m.sub || '')}</span>
               </div>
             </div>
           `).join('');
@@ -1905,7 +1905,7 @@ function initMap(container) {
           countryLayersByCode[c.code] = layer;
         }
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 200)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
             if (map) {
@@ -1998,7 +1998,7 @@ function initMap(container) {
         const prov = TURKEY_PROVINCES.find(p => p.id === id) || { id, name: f.properties?.name || 'İl' };
         // Province name is rendered cleanly on map via provinceLabelsLayer
         layer.on('click', e => {
-          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
+          if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 200)) {
             _popupClosedOnPointerDown = false;
             closeActivePopup();
             L.DomEvent.stopPropagation(e);
@@ -3092,7 +3092,7 @@ function attachRegionLayer(code, data) {
       const display = getLocalizedName(raw, code);
       // Region name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 200)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
@@ -3232,7 +3232,7 @@ function attachSubregionLayer(code, data) {
       const display = getLocalizedName(raw, code);
       // City name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
-        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 400)) {
+        if (activeStatusPopup || _popupClosedOnPointerDown || (Date.now() - lastPopupClosedAt < 200)) {
           _popupClosedOnPointerDown = false;
           closeActivePopup();
           L.DomEvent.stopPropagation(e);
@@ -4455,6 +4455,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       saveNote();
     }
   });
+  content.querySelector('#popup-note-input')?.addEventListener('blur', saveNote);
 
   // Status buttons click handler
   content.querySelectorAll('.map-status-btn[data-val]').forEach(btn => {

@@ -229,6 +229,9 @@ export function renderProfileView(container, onBack) {
           <button type="button" id="btn-trigger-poster" class="profile-compact-poster-btn" title="${t('createPoster')}">
             <span class="poster-icon-emoji">📸</span>
           </button>
+          <button type="button" id="btn-trigger-wrapped" class="profile-compact-poster-btn" title="Wrapped 2026" style="margin-left:4px;">
+            <span class="poster-icon-emoji">🎉</span>
+          </button>
           <div class="profile-header">
             <div class="profile-avatar">${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
@@ -242,6 +245,11 @@ export function renderProfileView(container, onBack) {
                   </button>
                 </div>
               </div>
+              <button type="button" class="profile-share-code-btn" id="btn-copy-share-code" title="${currentLang === 'tr' ? 'Arkadaş Kodunu Kopyala' : 'Copy Friend Code'}" style="display:flex;align-items:center;gap:6px;background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;padding:5px 10px;color:#94a3b8;font-size:0.76rem;cursor:pointer;margin-top:4px;">
+                <span>🔗</span>
+                <span id="share-code-display" style="font-family:monospace;font-size:0.7rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shareCode.slice(0, 12)}...</span>
+                <span>📋</span>
+              </button>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
             </div>
           </div>
@@ -311,6 +319,37 @@ export function renderProfileView(container, onBack) {
 
     document.getElementById('btn-trigger-poster')?.addEventListener('click', () => {
       openPosterModal();
+    });
+
+    document.getElementById('btn-copy-share-code')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareCode);
+        const btn = document.getElementById('btn-copy-share-code');
+        if (btn) {
+          const originalText = btn.querySelector('span:last-child').textContent;
+          btn.querySelector('span:last-child').textContent = currentLang === 'tr' ? '✓ Kopyalandı!' : '✓ Copied!';
+          btn.style.color = '#22c55e';
+          setTimeout(() => {
+            if (btn) { btn.querySelector('span:last-child').textContent = originalText; btn.style.color = ''; }
+          }, 2000);
+        }
+      } catch {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = shareCode;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert(currentLang === 'tr' ? 'Arkadaş kodu kopyalandı!' : 'Friend code copied!');
+      }
+    });
+
+    document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
+      if (typeof openWrappedModal === 'function') {
+        openWrappedModal();
+      }
     });
 
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
@@ -2578,8 +2617,8 @@ export function renderProfileView(container, onBack) {
                         <div class="pv-body">
                           <div class="pv-photo-col">
                             <div class="pv-photo-box">
-                              ${profile.photoUrl 
-                                ? `<img src="${profile.photoUrl}" alt="" class="pv-photo-img"/>`
+                              ${sanitizePhotoUrl(profile.photoUrl) 
+                                ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" alt="" class="pv-photo-img"/>`
                                 : `<div class="pv-avatar-fallback">${escapeHtml(profile.avatar || '🧭')}</div>`
                               }
                               <div class="pv-photo-label">PHOTO / FOTOĞRAF</div>

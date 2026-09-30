@@ -72,6 +72,7 @@ export function renderLoginPage(container, onLogin) {
   let emailVal = '';
   let passwordVal = '';
   let usernameVal = '';
+  let _isSubmitting = false;
 
 
   function saveAndCompleteLogin(profile, remember) {
@@ -214,7 +215,7 @@ export function renderLoginPage(container, onLogin) {
                 <div class="avatar-label">${t('selectAvatar')}</div>
                 <div class="avatar-grid" id="login-avatar-grid">
                   ${ALLOWED_AVATARS.map((emoji) => `
-                    <button type="button" class="avatar-btn ${emoji === selectedAvatar ? 'selected' : ''}" data-emoji="${emoji}" aria-label="Avatar ${emoji}">${emoji}</button>
+                    <button type="button" class="avatar-btn ${emoji === selectedAvatar ? 'selected' : ''}" data-emoji="${emoji}" tabindex="-1" aria-label="Avatar ${emoji}">${emoji}</button>
                   `).join('')}
                 </div>
               </div>
@@ -229,7 +230,7 @@ export function renderLoginPage(container, onLogin) {
               <label for="auth-password">${currentLang === 'tr' ? 'Şifre' : 'Password'}</label>
               <div style="position:relative;">
                 <input type="password" id="auth-password" style="padding-right:44px;" placeholder="${authMode === 'register' ? (currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters') : '••••••••'}" value="${escapeHtml(passwordVal)}" autocomplete="${authMode === 'register' ? 'new-password' : 'current-password'}" required />
-                <button type="button" id="btn-toggle-password" title="Şifreyi Göster/Gizle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.1rem;padding:4px;line-height:1;">👁</button>
+                <button type="button" id="btn-toggle-password" tabindex="-1" title="Şifreyi Göster/Gizle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.1rem;padding:4px;line-height:1;">👁</button>
               </div>
             </div>
 
@@ -443,89 +444,95 @@ export function renderLoginPage(container, onLogin) {
     // Form submission with Firebase Auth
     const form = container.querySelector('#auth-main-form');
     const handleSubmit = async () => {
-      syncFormState();
+      if (_isSubmitting) return;
+      _isSubmitting = true;
+      try {
+        syncFormState();
 
-      if (!emailVal || !emailVal.includes('@')) {
-        alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');
-        return;
-      }
-
-      if (!passwordVal || passwordVal.length < 4) {
-        alert(currentLang === 'tr' ? 'Lütfen şifrenizi girin (en az 4 karakter).' : 'Please enter password (min 4 chars).');
-        return;
-      }
-
-      let profileUsername = '';
-      if (authMode === 'register') {
-        const rawUser = usernameVal.trim();
-        profileUsername = sanitizeText(rawUser.slice(0, 25), 25) || emailVal.split('@')[0];
-        if (profileUsername.length < 3) {
-          alert(currentLang === 'tr' 
-            ? 'Kullanıcı adı en az 3 karakter olmalıdır.' 
-            : 'Username must be at least 3 characters.');
+        if (!emailVal || !emailVal.includes('@')) {
+          alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');
           return;
         }
-        if (!isUsernameAvailable(profileUsername)) {
-          alert(currentLang === 'tr' 
-            ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 
-            : `Username "${profileUsername}" is already taken. Please choose another.`);
+
+        if (!passwordVal || passwordVal.length < 4) {
+          alert(currentLang === 'tr' ? 'Lütfen şifrenizi girin (en az 4 karakter).' : 'Please enter password (min 4 chars).');
           return;
         }
-      } else {
-        // In login mode, use stored profile if available or derive from email
-        let existingName = emailVal.split('@')[0];
-        try {
-          const stored = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
-          if (stored) {
-            const p = JSON.parse(stored);
-            if (p?.username) existingName = p.username;
+
+        let profileUsername = '';
+        if (authMode === 'register') {
+          const rawUser = usernameVal.trim();
+          profileUsername = sanitizeText(rawUser.slice(0, 25), 25) || emailVal.split('@')[0];
+          if (profileUsername.length < 3) {
+            alert(currentLang === 'tr' 
+              ? 'Kullanıcı adı en az 3 karakter olmalıdır.' 
+              : 'Username must be at least 3 characters.');
+            return;
           }
-        } catch {}
-        profileUsername = existingName;
-      }
-
-      // Capitalize clean display name
-      const formattedName = profileUsername.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-      // Attempt real Firebase Auth in background
-      if (navigator.onLine && auth) {
-        try {
-          await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-          if (authMode === 'register') {
-            const cred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
-            if (cred.user) {
-              await updateProfile(cred.user, { displayName: formattedName }).catch(() => {});
+          if (!isUsernameAvailable(profileUsername)) {
+            alert(currentLang === 'tr' 
+              ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 
+              : `Username "${profileUsername}" is already taken. Please choose another.`);
+            return;
+          }
+        } else {
+          // In login mode, use stored profile if available or derive from email
+          let existingName = emailVal.split('@')[0];
+          try {
+            const stored = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+            if (stored) {
+              const p = JSON.parse(stored);
+              if (p?.username) existingName = p.username;
             }
-          } else {
-            await signInWithEmailAndPassword(auth, emailVal, passwordVal);
-          }
-        } catch (fbErr) {
-          console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
-          let msg = fbErr.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
-          if (fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/invalid-credential') {
-            msg = currentLang === 'tr' ? 'E-posta veya şifre hatalı. Lütfen kontrol edin.' : 'Incorrect email or password. Please check and try again.';
-          } else if (fbErr.code === 'auth/user-not-found') {
-            msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
-          } else if (fbErr.code === 'auth/email-already-in-use') {
-            msg = currentLang === 'tr' ? 'Bu e-posta adresi zaten kullanımda.' : 'This email is already registered.';
-          } else if (fbErr.code === 'auth/too-many-requests') {
-            msg = currentLang === 'tr' ? 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.' : 'Too many failed attempts. Please try again later.';
-          } else if (fbErr.code === 'auth/weak-password') {
-            msg = currentLang === 'tr' ? 'Şifre çok zayıf. En az 6 karakter kullanın.' : 'Password too weak. Use at least 6 characters.';
-          }
-          alert(msg);
-          return;
+          } catch {}
+          profileUsername = existingName;
         }
+
+        // Capitalize clean display name
+        const formattedName = profileUsername.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        // Attempt real Firebase Auth in background
+        if (navigator.onLine && auth) {
+          try {
+            await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+            if (authMode === 'register') {
+              const cred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
+              if (cred.user) {
+                await updateProfile(cred.user, { displayName: formattedName }).catch(() => {});
+              }
+            } else {
+              await signInWithEmailAndPassword(auth, emailVal, passwordVal);
+            }
+          } catch (fbErr) {
+            console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
+            let msg = fbErr.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
+            if (fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/invalid-credential') {
+              msg = currentLang === 'tr' ? 'E-posta veya şifre hatalı. Lütfen kontrol edin.' : 'Incorrect email or password. Please check and try again.';
+            } else if (fbErr.code === 'auth/user-not-found') {
+              msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
+            } else if (fbErr.code === 'auth/email-already-in-use') {
+              msg = currentLang === 'tr' ? 'Bu e-posta adresi zaten kullanımda.' : 'This email is already registered.';
+            } else if (fbErr.code === 'auth/too-many-requests') {
+              msg = currentLang === 'tr' ? 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.' : 'Too many failed attempts. Please try again later.';
+            } else if (fbErr.code === 'auth/weak-password') {
+              msg = currentLang === 'tr' ? 'Şifre çok zayıf. En az 6 karakter kullanın.' : 'Password too weak. Use at least 6 characters.';
+            }
+            alert(msg);
+            return;
+          }
+        }
+
+        const profile = {
+          username: formattedName,
+          email: emailVal,
+          avatar: selectedAvatar,
+          createdAt: new Date().toISOString()
+        };
+
+        saveAndCompleteLogin(profile, rememberMe);
+      } finally {
+        _isSubmitting = false;
       }
-
-      const profile = {
-        username: formattedName,
-        email: emailVal,
-        avatar: selectedAvatar,
-        createdAt: new Date().toISOString()
-      };
-
-      saveAndCompleteLogin(profile, rememberMe);
     };
 
     if (form) {

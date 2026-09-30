@@ -406,7 +406,7 @@ export function calculateStats() {
 
   // Turkey stats
   const turkeyVisitedIds = Object.keys(turkeyVisits).filter(id => turkeyVisits[id].status === 'visited');
-  const turkeyTargetIds = Object.keys(turkeyVisits).filter(id => turkeyVisits[id].status === 'target');
+  const turkeyTargetIds = Object.keys(turkeyVisits).filter(id => turkeyVisits[id].status === 'planned' || turkeyVisits[id].status === 'wishlist' || turkeyVisits[id].status === 'target');
   const turkeyCount = turkeyVisitedIds.length;
   const turkeyPercentage = ((turkeyCount / 81) * 100).toFixed(1);
 
@@ -420,7 +420,7 @@ export function calculateStats() {
 
   // World stats
   const worldVisitedCodes = Object.keys(worldVisits).filter(code => !code.includes('::') && worldVisits[code]?.status === 'visited');
-  const worldTargetCodes = Object.keys(worldVisits).filter(code => !code.includes('::') && (worldVisits[code]?.status === 'planned' || worldVisits[code]?.status === 'target'));
+  const worldTargetCodes = Object.keys(worldVisits).filter(code => !code.includes('::') && (worldVisits[code]?.status === 'planned' || worldVisits[code]?.status === 'wishlist' || worldVisits[code]?.status === 'target'));
   
   // Include Turkey in worldVisitedCodes if at least 1 Turkish province is visited
   if (turkeyCount > 0 && !worldVisitedCodes.includes('TR')) {
