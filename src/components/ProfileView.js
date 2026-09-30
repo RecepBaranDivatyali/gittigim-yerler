@@ -4242,9 +4242,6 @@ export function renderProfileView(container, onBack) {
                     <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
                     ${worldCount > 0 ? `<span class="sf-sub">${worldCount} ${currentLang === 'tr' ? 'ülke' : 'countries'}</span>` : ''}
                   </div>
-                  <div class="sf-action-tag">
-                    <span>⚔️</span>
-                  </div>
                   <button type="button" class="sf-del-btn" data-id="${escapeHtml(f.id)}" title="${currentLang === 'tr' ? 'Listeden Kaldır' : 'Remove'}">✕</button>
                 </div>
               `;}).join('')}
@@ -4875,6 +4872,8 @@ export function renderProfileView(container, onBack) {
     contentArea.querySelectorAll('.saved-friend-chip').forEach(chip => {
       chip.addEventListener('click', (e) => {
         if (e.target.closest('.sf-del-btn')) return;
+        contentArea.querySelectorAll('.saved-friend-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
         const fid = chip.dataset.id;
         const friend = savedFriends.find(f => f.id === fid);
         if (friend && friend.data) {
