@@ -209,17 +209,6 @@ export function renderProfileView(container, onBack) {
     };
     const shareCode = btoa(encodeURIComponent(JSON.stringify(shareData)));
 
-    registerOrUpdateCurrentUser({
-      username: profile.username || 'Gezgin',
-      avatar: profile.avatar || '🧭',
-      photoUrl: profile.photoUrl || null,
-      bio: profile.bio || '',
-      homeCountry: currentHomeCountry,
-      worldVisits: storageData.worldVisits,
-      turkeyVisits: storageData.turkeyVisits,
-      worldCities: storageData.worldCities
-    });
-
     const currentPassportType = getPassportType();
     const isYesilPassport = currentPassportType === 'yesil';
 

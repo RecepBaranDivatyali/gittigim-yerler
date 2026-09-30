@@ -1217,6 +1217,40 @@ svg, g, path {
   white-space: nowrap;
 }
 
+.map-profile-sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+}
+.map-profile-sync-dot.sync-synced {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+}
+.map-profile-sync-dot.sync-syncing {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.9);
+  animation: map-pulse-sync 0.8s infinite alternate;
+}
+.map-profile-sync-dot.sync-offline {
+  background: #64748b;
+  box-shadow: none;
+  opacity: 0.6;
+}
+.map-profile-sync-dot.sync-error {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+@keyframes map-pulse-sync {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
 /* ─── Map Legend (Inside Top-Right Group) ─────────────────── */
 #map-legend.floating-legend {
   position: relative;
