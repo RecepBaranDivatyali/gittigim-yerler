@@ -1530,8 +1530,8 @@ export function renderProfileView(container, onBack) {
             </div>
           </div>
 
-          <!-- Top Aviation Stats Grid -->
-          <div class="profile-stats" style="margin-bottom:20px;">
+          <!-- Top Aviation Stats Grid (Single Row - 3 Columns) -->
+          <div class="aviation-stats-grid">
             <div class="pstat">
               <span class="pstat-num" style="color:#10b981;">${flownAirlinesCount} / ${ALL_AIRLINES.length}</span>
               <span class="pstat-lbl">${currentLang === 'tr' ? 'Uçulan Havayolu' : 'Flown Airlines'}</span>

@@ -4614,6 +4614,79 @@ body[data-theme="light"] .floating-zoom-btn:hover {
   color: #ffffff;
 }
 
+/* ── Aviation Top Stats (Always 3 columns in a single row) ── */
+.aviation-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.aviation-stats-grid .pstat {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.aviation-stats-grid .pstat-num {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.aviation-stats-grid .pstat-lbl {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (max-width: 480px) {
+  .aviation-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px;
+  }
+  .aviation-stats-grid .pstat {
+    padding: 10px 4px;
+    border-radius: 11px;
+  }
+  .aviation-stats-grid .pstat-num {
+    font-size: 1.05rem;
+  }
+  .aviation-stats-grid .pstat-lbl {
+    font-size: 0.65rem;
+    margin-top: 3px;
+  }
+}
+
+@media (max-width: 360px) {
+  .aviation-stats-grid {
+    gap: 4px;
+  }
+  .aviation-stats-grid .pstat {
+    padding: 8px 2px;
+  }
+  .aviation-stats-grid .pstat-num {
+    font-size: 0.92rem;
+  }
+  .aviation-stats-grid .pstat-lbl {
+    font-size: 0.58rem;
+  }
+}
+
 /* ── Aviation Subtabs (Full-width 50%-50% split) ── */
 .aviation-subtabs-row {
   display: grid;
