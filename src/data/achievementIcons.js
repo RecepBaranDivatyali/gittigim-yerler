@@ -35,7 +35,7 @@ export const ACHIEVEMENT_SVGS = {
   // Suitcase
   world_3: svg('world_3', 'world', `<rect x="16" y="24" width="32" height="24" rx="4"/><path d="M24 24v-6a4 4 0 014-4h8a4 4 0 014 4v6"/><path d="M16 34h32"/>`),
   // Airplane
-  world_5: svg('world_5', 'world', `<path d="M32 14l-6 18h-14l6 4-2 14 16-10 16 10-2-14 6-4h-14z" fill="url(#grad-world_5)" stroke-width="3"/>`),
+  world_5: svg('world_5', 'world', `<path d="M32 10v44M22 28l10-8 10 8" stroke-width="4"/><path d="M18 30l14-4 14 4" fill="url(#grad-world_5)"/><path d="M26 48l6-4 6 4"/>`),
   // Folded map
   world_10: svg('world_10', 'world', `<path d="M12 18l14-6 12 6 14-6v34l-14 6-12-6-14 6V18z"/><path d="M26 12v34M38 18v34"/>`),
   // Passport book
@@ -65,25 +65,25 @@ export const ACHIEVEMENT_SVGS = {
   // Pagoda temple
   asia_1: svg('asia_1', 'continent', `<path d="M32 10l-18 10h36zM32 20l-14 8h28zM32 28l-10 6h20z"/><path d="M26 34v18h12V34"/><rect x="30" y="38" width="4" height="14"/>`),
   // Camel
-  asia_3: svg('asia_3', 'continent', `<path d="M14 46h6v-8c0-4 2-8 6-10l4-6c2-2 4 0 4 2v4c2-4 6-6 8-4l2 4c0-4 4-8 6-4v8c2 2 2 6 0 8v6h6" stroke-width="3.5"/><path d="M14 50h40"/>`),
-  // Dragon
-  asia_5: svg('asia_5', 'continent', `<path d="M12 28c4-8 12-12 20-8 4-4 10-2 12 4l4 2c0 4-2 6-6 6l-4 4c-2 6-8 8-14 6-6 2-14-2-14-10z" stroke-width="3.5"/><circle cx="40" cy="24" r="2" fill="url(#grad-asia_5)"/><path d="M12 28l-4 4M8 24l-2 2M46 32l6 2"/>`),
+  asia_3: svg('asia_3', 'continent', `<path d="M12 48h4v-10c0-4 2-6 4-8l2-6c0-2 2-4 4-2v-4c2-6 6-4 6 0l4-2c2-2 4 0 4 4v12c0 4 2 6 4 6h4" stroke-width="3.5"/><path d="M12 52h44"/>`),
+  // Dragon serpent
+  asia_5: svg('asia_5', 'continent', `<path d="M14 20c6-4 14-4 18 2 4 6 10 6 14 0" stroke-width="4"/><path d="M14 20c-4 8 0 16 8 18s16 0 20-6c4-6 10-4 12 2" stroke-width="4"/><circle cx="14" cy="20" r="3" fill="url(#grad-asia_5)"/><path d="M10 16l4 4M10 24l4-4"/>`),
   // Torii gate
   asia_10: svg('asia_10', 'continent', `<path d="M8 18c8-4 16-6 24-6s16 2 24 6"/><path d="M14 18v4h36v-4"/><path d="M20 22v30M44 22v30"/><path d="M14 32h36"/>`),
   // Lion face
-  africa_1: svg('africa_1', 'continent', `<circle cx="32" cy="34" r="14"/><path d="M18 34c-6-2-8-8-6-14M46 34c6-2 8-8 6-14M22 20c0-6 4-10 10-10M42 20c0-6-4-10-10-10"/><circle cx="27" cy="32" r="2" fill="url(#grad-africa_1)"/><circle cx="37" cy="32" r="2" fill="url(#grad-africa_1)"/><path d="M30 38c2 2 4 0 4 0"/>`),
+  africa_1: svg('africa_1', 'continent', `<circle cx="32" cy="34" r="12"/><circle cx="32" cy="34" r="20" stroke-dasharray="5 5"/><circle cx="27" cy="31" r="2" fill="url(#grad-africa_1)"/><circle cx="37" cy="31" r="2" fill="url(#grad-africa_1)"/><path d="M28 38c2 2 6 2 8 0"/><path d="M32 34v3"/>`),
   // Desert dunes with sun
   africa_3: svg('africa_3', 'continent', `<circle cx="48" cy="16" r="6" fill="url(#grad-africa_3)"/><path d="M4 48c10-14 18-14 28 0M28 48c8-10 16-10 32 0"/>`),
   // Elephant
-  africa_5: svg('africa_5', 'continent', `<path d="M20 24c-6 0-10 4-10 10v6l6 2v8h6v-8h20v8h6v-8l4-4v-4c0-10-8-16-18-16h-2c-4 0-8 2-10 4l-2 4z" stroke-width="3.5"/><path d="M10 34l-4 8"/><circle cx="22" cy="30" r="2" fill="url(#grad-africa_5)"/>`),
+  africa_5: svg('africa_5', 'continent', `<circle cx="32" cy="28" r="14"/><path d="M18 28l-6 14"/><path d="M22 42v8M30 42v8M38 42v8M44 42v8"/><path d="M18 42h30"/><circle cx="38" cy="24" r="2" fill="url(#grad-africa_5)"/><path d="M46 28c2 0 4 2 4 4v6"/>`),
   // Statue of Liberty torch
-  americas_1: svg('americas_1', 'continent', `<path d="M32 52V24"/><path d="M24 52h16"/><path d="M26 36h12"/><path d="M28 24l4-14 4 14"/><path d="M30 10l2-4 2 4" fill="url(#grad-americas_1)"/><path d="M26 10h12" stroke-width="2"/>`),
+  americas_1: svg('americas_1', 'continent', `<path d="M32 52V22"/><path d="M24 52h16"/><path d="M24 36h16"/><rect x="28" y="10" width="8" height="12" rx="4" fill="url(#grad-americas_1)"/><path d="M32 10v-4"/><path d="M28 8l-2-4M36 8l2-4M32 6v-4"/>`),
   // Palm tree
   americas_3: svg('americas_3', 'continent', `<path d="M32 28v24"/><path d="M28 52h8"/><path d="M32 28c-4-10-16-12-20-8M32 28c4-10 16-12 20-8M32 28c-8-8-8-18-4-22M32 28c8-8 8-18 4-22M32 28c-12-4-18-2-20 2M32 28c12-4 18-2 20 2"/>`),
   // Llama
-  americas_5: svg('americas_5', 'continent', `<path d="M20 44v6M28 44v6M38 44v6M44 44v6"/><path d="M16 44h32c0-6-4-12-8-14v-8c0-2 2-6 2-10 0-4-4-4-6-2l-2 6h-4l-2-6c-2-2-6-2-6 2 0 4 2 8 2 10v8c-4 2-8 8-8 14z" stroke-width="3"/>`),
+  americas_5: svg('americas_5', 'continent', `<path d="M20 48v-16h24v16"/><path d="M20 32c0-4-2-14 0-18l6 6h12l6-6c2 4 0 14 0 18"/><path d="M24 48v-8M28 48v-8M36 48v-8M40 48v-8"/><circle cx="28" cy="16" r="2" fill="url(#grad-americas_5)"/>`),
   // Kangaroo
-  oceania_1: svg('oceania_1', 'continent', `<path d="M40 18c0-4-4-6-6-4l-2 6-4-2c-4 0-6 4-6 8v10c-4 2-6 4-6 8h8l4-6h8l-2 6h8c0-4-2-6-4-8" stroke-width="3.5"/><path d="M42 46c4-2 8 0 10 2"/><circle cx="34" cy="18" r="2" fill="url(#grad-oceania_1)"/>`),
+  oceania_1: svg('oceania_1', 'continent', `<path d="M22 44v6M30 44v6"/><path d="M18 44h16c0-8-2-12 0-18 2-4 6-8 6-14 0-4-4-6-6-4l-4 8-6-2c-4 0-6 4-6 10v20z" stroke-width="3"/><path d="M40 44c4 0 8 2 12 4"/><circle cx="32" cy="16" r="2" fill="url(#grad-oceania_1)"/>`),
   // Surfboard with wave
   oceania_2: svg('oceania_2', 'continent', `<path d="M8 40c8-8 16-8 24 0s16 8 24 0"/><path d="M36 8l-8 36 6 2 8-36z" fill="url(#grad-oceania_2)" stroke-width="2.5"/><path d="M8 48c8-6 16-6 24 0s16 6 24 0" stroke-width="2"/>`),
   // Half-half globe
@@ -94,8 +94,8 @@ export const ACHIEVEMENT_SVGS = {
   four_continents: svg('four_continents', 'continent', `<circle cx="32" cy="32" r="22"/><path d="M32 10v44M10 32h44"/><circle cx="22" cy="22" r="4" fill="url(#grad-four_continents)"/><circle cx="42" cy="42" r="4" fill="url(#grad-four_continents)"/>`),
   // Medal with star
   five_continents: svg('five_continents', 'continent', `<circle cx="32" cy="36" r="18"/><path d="M24 10l8 10 8-10"/><path d="M32 28l3 8 8 1-6 5 2 8-7-5-7 5 2-8-6-5 8-1z" fill="url(#grad-five_continents)"/>`),
-  // Galaxy spiral
-  six_continents: svg('six_continents', 'continent', `<circle cx="32" cy="32" r="4" fill="url(#grad-six_continents)"/><path d="M36 32c0-6-6-10-12-8s-8 10-4 14 12 6 18 2 8-14 2-20-16-8-22-2-6 16 2 22 20 8 26 0"/>`),
+  // Galaxy spiral — all continents
+  six_continents: svg('six_continents', 'continent', `<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="6" fill="url(#grad-six_continents)"/><path d="M32 10v6M32 48v6M10 32h6M48 32h6"/>`),
 
   // ═══ TURKEY — red gradient ═══════════════════════════════════════
   // Turkish crescent & star flag
@@ -160,8 +160,8 @@ export const ACHIEVEMENT_SVGS = {
   turkish_fleet_master: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="grad-tfm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs><path d="M12 40l32-14 8 6-40 16z" fill="url(#grad-tfm)" stroke="url(#grad-tfm)" stroke-width="2"/><circle cx="38" cy="22" r="10" fill="#e30a17"/><path d="M40 16a5 5 0 100 12 4 4 0 110-12z" fill="#fff"/><path d="M44 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#fff"/></svg>`,
   // Star
   star_collector: svg('star_collector', 'aviation', `<path d="M32 10l7 18h18l-14 11 5 17-16-11-16 11 5-17L7 28h18z" fill="url(#grad-star_collector)" stroke-width="2.5"/>`),
-  // Spiral
-  skyteam_rider: svg('skyteam_rider', 'aviation', `<path d="M32 32c0-4 4-8 8-8s8 4 8 8-4 8-8 8-8-4-8-8c0-8-8-16-16-16s-16 8-16 16 8 16 16 16 16-8 16-16"/>`),
+  // SkyTeam swirl
+  skyteam_rider: svg('skyteam_rider', 'aviation', `<circle cx="32" cy="32" r="20"/><path d="M32 16c8 0 14 6 14 14" stroke-width="4"/><path d="M32 16c-4 4-4 12 0 16" stroke-width="4"/><circle cx="32" cy="32" r="4" fill="url(#grad-skyteam_rider)"/>`),
   // Diamond gem in circle
   oneworld_flyer: svg('oneworld_flyer', 'aviation', `<circle cx="32" cy="32" r="20"/><path d="M32 14l14 18-14 18-14-18z" fill="url(#grad-oneworld_flyer)"/>`),
   // Whale (big plane)
@@ -175,7 +175,7 @@ export const ACHIEVEMENT_SVGS = {
   // Lightning bolt
   lowcost_adventurer: svg('lowcost_adventurer', 'aviation', `<path d="M36 8L18 34h12l-6 22 22-28H34z" fill="url(#grad-lowcost_adventurer)" stroke-width="2.5"/>`),
   // Fleur-de-lis
-  quad_jet_legend: svg('quad_jet_legend', 'aviation', `<path d="M32 8c-2 10-8 14-8 22 0 6 4 10 8 10s8-4 8-10c0-8-6-12-8-22z" fill="url(#grad-quad_jet_legend)"/><path d="M32 40c-8-4-16-2-18 4 4 4 10 4 14 0M32 40c8-4 16-2 18 4-4 4-10 4-14 0"/><path d="M28 52h8"/>`),
+  quad_jet_legend: svg('quad_jet_legend', 'aviation', `<path d="M32 8c0 12-6 16-6 24 0 4 2 6 6 6s6-2 6-6c0-8-6-12-6-24z" fill="url(#grad-quad_jet_legend)"/><path d="M26 38c-6 0-10-4-10-10 4 2 8 6 10 10M38 38c6 0 10-4 10-10-4 2-8 6-10 10"/><path d="M26 50h12"/><path d="M32 38v12"/>`),
 
   // ═══ SPECIAL — emerald gradient ══════════════════════════════════
   // Calendar
@@ -187,7 +187,7 @@ export const ACHIEVEMENT_SVGS = {
   // Shooting star
   big_dreamer: svg('big_dreamer', 'special', `<path d="M48 12L16 44" stroke-width="3"/><path d="M48 12l4 2-2 4M48 12l-6-2M48 12l2-6"/><path d="M16 44l-3 6h6l-3 6h6" fill="url(#grad-big_dreamer)"/><path d="M36 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="url(#grad-big_dreamer)"/><path d="M24 28l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="url(#grad-big_dreamer)"/>`),
   // Handshake
-  neighbor: svg('neighbor', 'special', `<path d="M8 28h10l6-6 8 4 8-4 6 6h10"/><path d="M8 28v14h10l14 8 14-8h10V28"/><path d="M22 42l10 6 10-6"/>`),
+  neighbor: svg('neighbor', 'special', `<path d="M8 28h12l4-4h4l8 8 8-4h12"/><path d="M8 28v12l12 4 6-4"/><path d="M56 28v12l-12 4-6-4"/><path d="M28 24l8 8"/>`),
   // Violin
   balkan_tour: svg('balkan_tour', 'special', `<path d="M24 14c0-4 16-4 16 0v8c-4 4-4 8 0 12v8c0 4-16 4-16 0v-8c4-4 4-8 0-12V14z"/><path d="M32 14v28"/><path d="M26 30h12"/>`),
   // Sailboat
@@ -199,7 +199,7 @@ export const ACHIEVEMENT_SVGS = {
   // Lantern
   far_east: svg('far_east', 'special', `<path d="M28 10h8"/><path d="M32 10v6"/><ellipse cx="32" cy="30" rx="12" ry="14" fill="url(#grad-far_east)"/><path d="M20 30h24"/><path d="M22 38h20"/><path d="M28 44h8v4h-8z"/><path d="M30 48v4M34 48v4"/>`),
   // Wolf head
-  turkic_world: svg('turkic_world', 'special', `<path d="M18 12l6 16v12l8 8 8-8V28l6-16" stroke-width="3.5"/><path d="M18 12c-4 8-6 16 0 20M46 12c4 8 6 16 0 20"/><circle cx="27" cy="30" r="2" fill="url(#grad-turkic_world)"/><circle cx="37" cy="30" r="2" fill="url(#grad-turkic_world)"/><path d="M29 36c3 2 6 0 6 0"/>`),
+  turkic_world: svg('turkic_world', 'special', `<path d="M16 14l8 18v14l8 8 8-8V32l8-18" stroke-width="3.5"/><path d="M24 32l-6 4M40 32l6 4"/><circle cx="28" cy="34" r="2.5" fill="url(#grad-turkic_world)"/><circle cx="36" cy="34" r="2.5" fill="url(#grad-turkic_world)"/><path d="M30 40l2 2 2-2"/>`),
 
   // ═══ COMMUNITY — pink gradient ═══════════════════════════════════
   // Envelope with letter
