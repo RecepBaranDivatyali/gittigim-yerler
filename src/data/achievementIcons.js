@@ -19,7 +19,7 @@ const getGrad = (id, cat) => {
 };
 
 const createSvg = (id, cat, paths) => `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="url(#grad-${id})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="url(#grad-${id})" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
   ${getGrad(id, cat)}
   ${paths}
 </svg>
