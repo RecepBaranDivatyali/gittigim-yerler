@@ -14,6 +14,7 @@ import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
+import { onNotificationsChange, getPendingNotifications, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
 
 export function isCurrentUserSuperAdmin() {
   try {
@@ -178,6 +179,8 @@ let subregionLayers = {};
 let subregionCache = {};
 const inFlightRegions = {};
 const inFlightSubregions = {};
+const MAX_MOUNTED_REGIONS = 24;
+const mountedRegionsLRU = new Set(); // Tracks mounted country codes in order of recency
 
 const KNOWN_SUBREGION_PARENTS = {
   'DE::Freiburg': 'Baden-Württemberg',
@@ -584,6 +587,7 @@ export function renderWorldMapView(container, options = {}) {
   applyTheme(getTheme());
 
   let unsubSync = null;
+  let unsubNotifs = null;
   let activeDocListeners = [];
   function addDocListener(type, fn) {
     document.addEventListener(type, fn);
@@ -668,12 +672,16 @@ export function renderWorldMapView(container, options = {}) {
           </div>
         </div>
 
-        <!-- Floating Profile Button (top-left) -->
+        <!-- Floating Profile Button & Notifications (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
             <span class="floating-profile-avatar">${escapeHtml(userAvatar)}</span>
             <span class="floating-profile-name">${escapeHtml(userName)}</span>
             <span id="map-profile-sync-dot" class="map-profile-sync-dot" title="Bulut Eşitlendi"></span>
+          </button>
+          <button type="button" id="btn-open-notifications" class="floating-notif-btn" aria-label="Bildirimler" title="${currentLang === 'tr' ? 'Seyahat Davetleri & Bildirimler' : 'Trip Invites & Notifications'}">
+            <span class="notif-bell-icon">🔔</span>
+            <span id="notif-unread-badge" class="notif-unread-badge" style="display:none;">0</span>
           </button>
         </div>
 
@@ -720,6 +728,21 @@ export function renderWorldMapView(container, options = {}) {
           <button id="btn-open-feedback" class="floating-feedback-btn" aria-label="${t('feedbackBtn')}">
             <span>💬</span> <span class="feedback-btn-text">${t('feedbackBtn')}</span>
           </button>
+        </div>
+
+        <!-- Trip Invitations & Notifications Modal (Hidden by default) -->
+        <div id="notifications-modal" class="notifications-modal-overlay" style="display:none;">
+          <div class="notifications-modal-card">
+            <div class="notifications-modal-header">
+              <div class="notif-modal-title-row">
+                <span class="notif-modal-icon">🔔</span>
+                <h3>${currentLang === 'tr' ? 'Seyahat Davetleri & Bildirimler' : 'Trip Invitations & Notifications'}</h3>
+                <span id="notif-modal-pending-count" class="notif-pill-count">0</span>
+              </div>
+              <button type="button" id="btn-close-notifications" class="feedback-close-btn">&times;</button>
+            </div>
+            <div id="notifications-modal-list" class="notifications-modal-list"></div>
+          </div>
         </div>
 
         <!-- Feedback Modal (Hidden by default) -->
@@ -1195,6 +1218,170 @@ export function renderWorldMapView(container, options = {}) {
       unsubSync = onSyncStatusChange(updateMapSyncDot);
     }
 
+
+    // ─── 🔔 Notifications & Trip Invitations Handling ─────────────────────────
+    const openNotifBtn = container.querySelector('#btn-open-notifications');
+    const notifModal = container.querySelector('#notifications-modal');
+    const closeNotifBtn = container.querySelector('#btn-close-notifications');
+    const notifBadge = container.querySelector('#notif-unread-badge');
+    const notifListEl = container.querySelector('#notifications-modal-list');
+    const notifCountPill = container.querySelector('#notif-modal-pending-count');
+
+    function updateNotificationsUI() {
+      const currentLang = getLanguage();
+      const currentUsername = userName || '';
+      const pending = getPendingNotifications(currentUsername);
+
+      if (notifBadge) {
+        if (pending.length > 0) {
+          notifBadge.textContent = pending.length;
+          notifBadge.style.display = 'flex';
+        } else {
+          notifBadge.style.display = 'none';
+        }
+      }
+
+      if (notifCountPill) {
+        notifCountPill.textContent = pending.length;
+      }
+
+      if (notifListEl) {
+        if (pending.length === 0) {
+          notifListEl.innerHTML = `
+            <div class="notif-empty-state">
+              <div class="empty-icon">🏖️</div>
+              <div style="font-weight:700;margin-bottom:4px;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? 'Yeni Seyahat Daveti Yok' : 'No New Trip Invites'}</div>
+              <div style="font-size:0.8rem;opacity:0.75;color:var(--theme-text-muted, #94a3b8);">${currentLang === 'tr' ? 'Arkadaşlarınız sizi bir geziye etiketlediğinde onayınız için burada görünecek.' : 'When travel buddies tag you in a trip, it will show up here for your approval.'}</div>
+            </div>
+          `;
+          return;
+        }
+
+        notifListEl.innerHTML = pending.map(n => {
+          let flag = '📍';
+          let placeDisplay = n.placeName || n.placeId;
+          let subDisplay = '';
+
+          if (n.placeId) {
+            if (n.placeId.startsWith('TR::') || (/^\d{1,2}$/.test(n.placeId) && parseInt(n.placeId, 10) >= 1 && parseInt(n.placeId, 10) <= 81)) {
+              const pId = n.placeId.startsWith('TR::') ? n.placeId.replace('TR::', '') : n.placeId;
+              const prov = TURKEY_PROVINCES.find(p => String(p.id).padStart(2, '0') === String(pId).padStart(2, '0'));
+              flag = '🇹🇷';
+              placeDisplay = prov ? prov.name : `İl #${pId}`;
+              subDisplay = 'Türkiye';
+            } else if (n.placeId.length === 2 && !n.placeId.includes('::')) {
+              const cObj = WORLD_COUNTRIES.find(c => c.code.toUpperCase() === n.placeId.toUpperCase());
+              if (cObj) {
+                flag = (cObj.code === 'IL') ? '' : (cObj.flag || '🌍');
+                placeDisplay = getCountryDisplayName(cObj);
+              }
+            } else if (n.placeId.includes('::')) {
+              const parts = n.placeId.split('::');
+              const cObj = WORLD_COUNTRIES.find(c => c.code.toUpperCase() === parts[0].toUpperCase());
+              flag = (cObj && cObj.code !== 'IL') ? (cObj.flag || '📍') : '📍';
+              placeDisplay = parts[1];
+              subDisplay = cObj ? getCountryDisplayName(cObj) : parts[0];
+            }
+          }
+
+          const transportIcon = n.visitData?.entryTransport === 'flight' ? '✈️ Uçuş' :
+                                (n.visitData?.entryTransport === 'car' ? '🚗 Kara Yolu' :
+                                (n.visitData?.entryTransport === 'train' ? '🚂 Tren' :
+                                (n.visitData?.entryTransport === 'ship' ? '🚢 Deniz Yolu' : '🚶 Yürüyüş')));
+
+          return `
+            <div class="trip-invitation-card" data-id="${escapeHtml(n.id)}">
+              <div class="trip-invite-header">
+                <div class="trip-invite-user">
+                  <div class="trip-invite-avatar">${escapeHtml(n.fromAvatar || '🧭')}</div>
+                  <div>
+                    <div class="trip-invite-user-name">${escapeHtml(n.fromName || n.fromUsername)}</div>
+                    <div style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);">${escapeHtml(n.fromUsername)}</div>
+                  </div>
+                </div>
+                <span class="trip-invite-badge">Seyahat Daveti</span>
+              </div>
+              <div class="trip-invite-place-banner">
+                <span class="trip-invite-flag">${flag}</span>
+                <div>
+                  <div class="trip-invite-place-name">${escapeHtml(placeDisplay)}</div>
+                  ${subDisplay ? `<div class="trip-invite-sub">${escapeHtml(subDisplay)}</div>` : ''}
+                </div>
+              </div>
+              <div class="trip-invite-meta">
+                ${n.visitData?.entryDate ? `<span>📅 ${escapeHtml(n.visitData.entryDate)}</span>` : ''}
+                <span>${transportIcon}</span>
+              </div>
+              ${n.visitData?.notes ? `
+                <div class="trip-invite-note">"${escapeHtml(n.visitData.notes)}"</div>
+              ` : ''}
+              <div class="trip-invite-actions">
+                <button type="button" class="btn-accept-invite" data-id="${escapeHtml(n.id)}">
+                  ✓ ${currentLang === 'tr' ? 'Onayla & Haritama Ekle' : 'Accept & Add to Map'}
+                </button>
+                <button type="button" class="btn-decline-invite" data-id="${escapeHtml(n.id)}">
+                  ✕ ${currentLang === 'tr' ? 'Reddet' : 'Decline'}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Wire accept & decline buttons
+        notifListEl.querySelectorAll('.btn-accept-invite').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            btn.disabled = true;
+            btn.textContent = '⏳ ...';
+            try {
+              await acceptTripInvitation(id);
+              triggerConfetti();
+              // Re-style map layers immediately so new visit appears instantly
+              if (countriesLayer) countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+              if (turkeyLayer) turkeyLayer.eachLayer(l => l.setStyle(provinceStyle(l.feature?.properties?.number)));
+              refreshStats();
+              updateNotificationsUI();
+            } catch (err) {
+              console.warn('Accept invite error:', err);
+            }
+          });
+        });
+
+        notifListEl.querySelectorAll('.btn-decline-invite').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            btn.disabled = true;
+            try {
+              await declineTripInvitation(id);
+              updateNotificationsUI();
+            } catch (err) {
+              console.warn('Decline invite error:', err);
+            }
+          });
+        });
+      }
+    }
+
+    if (openNotifBtn && notifModal) {
+      openNotifBtn.addEventListener('click', () => {
+        updateNotificationsUI();
+        notifModal.style.display = 'flex';
+      });
+      closeNotifBtn?.addEventListener('click', () => {
+        notifModal.style.display = 'none';
+      });
+      notifModal.addEventListener('click', (e) => {
+        if (e.target === notifModal) notifModal.style.display = 'none';
+      });
+    }
+
+    // Subscribe to notification changes
+    unsubNotifs = onNotificationsChange(updateNotificationsUI);
+    // Initial fetch from cloud & UI update
+    if (userName) {
+      fetchCloudNotifications(userName).then(updateNotificationsUI).catch(() => {});
+    }
+    updateNotificationsUI();
 
     // Feedback modal handling
     const openFeedbackBtn = container.querySelector('#btn-open-feedback');
@@ -1750,6 +1937,7 @@ export function renderWorldMapView(container, options = {}) {
     if (typeof unsubLang === 'function') unsubLang();
     if (typeof unsubTheme === 'function') unsubTheme();
     if (typeof unsubSync === 'function') unsubSync();
+    if (typeof unsubNotifs === 'function') unsubNotifs();
     if (_labelUpdateTimer) { clearTimeout(_labelUpdateTimer); _labelUpdateTimer = null; }
     if (window.__leafletMapInstance === map) window.__leafletMapInstance = null;
     if (promotedLabelMarker && promotedLabelMarker._icon && promotedLabelParent) {
@@ -2965,23 +3153,13 @@ function onViewChange() {
 
   const visibleCodes = getVisibleCountries();
 
-  // ── World region layers (Level 2) ──────────────────────────────────────────
+  // ── World region layers (Level 2) with LRU Pool (prevents churn & unmounting lag) ──
   if (zoom >= REGION_ZOOM) {
-    // Top 12 visible countries nearest to screen center get region layers mounted (prevents lag)
-    const targetCodes = visibleCodes.slice(0, 12);
-    const targetSet = new Set(targetCodes);
+    const visibleSet = new Set(visibleCodes);
+    // Up to 18 visible countries prioritized from center outwards
+    const targetCodes = visibleCodes.slice(0, 18);
 
-    // Evict off-screen or non-priority region layers from the SVG DOM to keep memory tiny & 60fps
-    Object.entries(regionLayers).forEach(([code, layer]) => {
-      if (layer && map.hasLayer(layer) && !targetSet.has(code)) {
-        map.removeLayer(layer);
-        bordersNeedUpdate = true;
-        if (countryLayersByCode[code]) {
-          countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
-        }
-      }
-    });
-
+    // 1. Mount visible countries and update LRU recency
     for (const code of targetCodes) {
       if (code !== 'TR') {
         if (regionLayers[code]) {
@@ -2992,20 +3170,64 @@ function onViewChange() {
               countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
             }
           }
+          // Move to most-recently-used in LRU set
+          mountedRegionsLRU.delete(code);
+          mountedRegionsLRU.add(code);
         } else {
-          // Asynchronously trigger load without blocking: mounts immediately once loaded if still in view
+          // Asynchronously trigger load without blocking
           loadRegionData(code);
         }
       }
     }
+
+    // Refresh LRU recency for any other currently mounted layers that are still visible
+    for (const code of visibleCodes) {
+      if (mountedRegionsLRU.has(code)) {
+        mountedRegionsLRU.delete(code);
+        mountedRegionsLRU.add(code);
+      }
+    }
+
+    // 2. LRU Eviction: Only evict if total mounted exceeds MAX_MOUNTED_REGIONS (24)
+    // AND only evict countries that are completely off-screen, furthest from viewport center!
+    if (mountedRegionsLRU.size > MAX_MOUNTED_REGIONS) {
+      const offScreenMounted = Array.from(mountedRegionsLRU).filter(c => !visibleSet.has(c));
+      const mapCenter = map.getCenter();
+
+      // Sort furthest away from center first
+      offScreenMounted.sort((a, b) => {
+        const cA = COUNTRY_CENTROIDS[a] || (countryLayersByCode[a]?._cachedBounds ? [countryLayersByCode[a]._cachedBounds.getCenter().lat, countryLayersByCode[a]._cachedBounds.getCenter().lng] : null);
+        const cB = COUNTRY_CENTROIDS[b] || (countryLayersByCode[b]?._cachedBounds ? [countryLayersByCode[b]._cachedBounds.getCenter().lat, countryLayersByCode[b]._cachedBounds.getCenter().lng] : null);
+        if (!cA || !cB) return 0;
+        const distA = Math.hypot(cA[0] - mapCenter.lat, cA[1] - mapCenter.lng);
+        const distB = Math.hypot(cB[0] - mapCenter.lat, cB[1] - mapCenter.lng);
+        return distB - distA; // furthest first
+      });
+
+      const excess = mountedRegionsLRU.size - MAX_MOUNTED_REGIONS;
+      const toEvict = offScreenMounted.slice(0, excess);
+
+      for (const code of toEvict) {
+        const layer = regionLayers[code];
+        if (layer && map.hasLayer(layer)) {
+          map.removeLayer(layer);
+          bordersNeedUpdate = true;
+          if (countryLayersByCode[code]) {
+            countryLayersByCode[code].setStyle(countryStyle(countryByCode.get(code)));
+          }
+        }
+        mountedRegionsLRU.delete(code);
+      }
+    }
   } else {
-    // ZOOM OUT — remove ALL region layers from map instantly
+    // ZOOM OUT — remove ALL region layers from map instantly and reset LRU
     Object.entries(regionLayers).forEach(([code, layer]) => {
       if (layer && map.hasLayer(layer)) {
         map.removeLayer(layer);
         bordersNeedUpdate = true;
       }
     });
+    mountedRegionsLRU.clear();
     if (countriesLayer) {
       countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
     }
@@ -3172,12 +3394,16 @@ function attachRegionLayer(code, data) {
   });
   stateBordersLayers[code] = stateBorder;
 
-  // Validate state before mounting: user must still be at zoom >= REGION_ZOOM and country must still be visible!
+  // Validate state before mounting: user must still be at zoom >= REGION_ZOOM
   if (map && map.getZoom() >= REGION_ZOOM) {
-    const visibleNow = new Set(getVisibleCountries().slice(0, 12));
-    if (visibleNow.has(code)) {
-      layer.addTo(map);
-      if (map.getZoom() >= SUBREGION_ZOOM) {
+    const visibleNow = new Set(getVisibleCountries());
+    if (visibleNow.has(code) || mountedRegionsLRU.size < MAX_MOUNTED_REGIONS) {
+      if (!map.hasLayer(layer)) {
+        layer.addTo(map);
+        mountedRegionsLRU.delete(code);
+        mountedRegionsLRU.add(code);
+      }
+      if (map.getZoom() >= SUBREGION_ZOOM && stateBorder && !map.hasLayer(stateBorder)) {
         stateBorder.addTo(map);
       }
       if (countryLayersByCode[code]) {
@@ -4140,9 +4366,11 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           v.buddies.forEach(b => {
             if (b && typeof b === 'string') {
               syncTripToBuddy(b, id, {
+                placeName: title,
                 entryDate: v.entryDate,
                 exitDate: v.exitDate,
-                entryTransport: v.entryTransport
+                entryTransport: v.entryTransport,
+                notes: v.notes || ''
               }, curProfile);
             }
           });
@@ -4226,6 +4454,11 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   fileInput?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const origHtml = uploadBtn ? uploadBtn.innerHTML : '';
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span>⏳ Fotoğraf İşleniyor...</span>';
+    }
     try {
       const saved = await savePhoto(id, file);
       if (saved) {
@@ -4234,8 +4467,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       }
     } catch (err) {
       console.error('Photo upload failed:', err);
+    } finally {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origHtml;
+      }
+      fileInput.value = '';
     }
-    fileInput.value = '';
   });
 
   // ─── 📝 Journal Mood & Notes Logic ───

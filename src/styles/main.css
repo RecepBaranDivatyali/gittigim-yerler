@@ -12641,30 +12641,36 @@ body[data-theme="light"] .stamp-transport-select {
 .photo-lightbox-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.92);
+  background: rgba(0, 0, 0, 0.88);
   z-index: 13500;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   animation: fadeIn 0.2s ease-out;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .photo-lightbox-content {
   position: relative;
-  max-width: 90vw;
-  max-height: 85vh;
+  max-width: 620px;
+  width: 94vw;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  background: var(--theme-ui-bg, rgba(15, 23, 42, 0.96));
+  border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.15));
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
 }
 .photo-lightbox-close {
   position: absolute;
-  top: -36px;
-  right: -4px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 99px;
   color: #fff;
   width: 32px;
@@ -12674,27 +12680,101 @@ body[data-theme="light"] .stamp-transport-select {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+.photo-lightbox-close:hover {
+  background: rgba(239, 68, 68, 0.8);
+  transform: scale(1.05);
+}
+.photo-lightbox-img-wrap {
+  width: 100%;
+  max-height: 56vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 .photo-lightbox-img {
   max-width: 100%;
-  max-height: 75vh;
+  max-height: 56vh;
   object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+  display: block;
 }
 .photo-lightbox-footer {
-  margin-top: 10px;
-  text-align: center;
-  color: #fff;
+  padding: 16px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--theme-ui-bg, rgba(15, 23, 42, 0.96));
+}
+.photo-lightbox-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.photo-lightbox-place {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.photo-lightbox-flag {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.photo-lightbox-titles {
+  display: flex;
+  flex-direction: column;
 }
 .photo-lightbox-title {
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--theme-text-main, #f8fafc);
+}
+.photo-lightbox-sub {
+  font-size: 0.78rem;
+  color: var(--theme-text-muted, #94a3b8);
+}
+.photo-lightbox-actions {
+  display: flex;
+  align-items: center;
+}
+.photo-lightbox-del-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.photo-lightbox-del-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+  border-color: rgba(239, 68, 68, 0.5);
 }
 .photo-lightbox-caption {
-  font-size: 0.82rem;
-  color: #cbd5e1;
-  margin-top: 2px;
+  font-size: 0.86rem;
+  color: var(--theme-text-main, #e2e8f0);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #38bdf8;
+  font-style: italic;
+}
+.photo-lightbox-date {
+  font-size: 0.76rem;
+  color: var(--theme-text-muted, #94a3b8);
 }
 
 /* ─── 📸 Profile Photo Memories Showcase ───────────────────────────────── */
@@ -12705,6 +12785,7 @@ body[data-theme="light"] .stamp-transport-select {
   padding: 20px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 .photo-showcase-header {
   display: flex;
@@ -12733,9 +12814,9 @@ body[data-theme="light"] .stamp-transport-select {
 }
 .photo-showcase-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 8px;
-  max-height: 240px;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 10px;
+  max-height: 280px;
   overflow-y: auto;
   padding: 2px;
 }
@@ -12743,40 +12824,63 @@ body[data-theme="light"] .stamp-transport-select {
   grid-column: 1 / -1;
   text-align: center;
   color: var(--theme-text-muted, #94a3b8);
-  padding: 20px 10px;
+  padding: 24px 12px;
   font-size: 0.85rem;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
 }
 .photo-showcase-item {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background: #000;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  background: #0a0f1d;
 }
 .photo-showcase-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  border-color: rgba(56, 189, 248, 0.5);
 }
 .photo-showcase-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.photo-showcase-item:hover img {
+  transform: scale(1.08);
+}
+.photo-showcase-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 55%, transparent 100%);
+  pointer-events: none;
 }
 .photo-showcase-tag {
-  position: absolute;
-  bottom: 0;
-  inset-inline: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px;
   color: #fff;
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 12px 4px 3px 4px;
-  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  width: 100%;
+  box-sizing: border-box;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.photo-showcase-flag {
+  font-size: 0.92rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.photo-showcase-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -17258,13 +17362,378 @@ body[data-theme="nordic_frost"] .map-status-popup {
 }
 body[data-theme="nordic_frost"] .profile-overlay { background: #141e32; color: #daeeff; }
 
-/* Natgeo Atlas popup override (was missing) */
+/* Natgeo Atlas popup override */
 body[data-theme="natgeo_atlas"] .clean-status-popup .leaflet-popup-content-wrapper,
 body[data-theme="natgeo_atlas"] .map-status-popup {
   background: rgba(247, 238, 225, 0.98) !important;
   border-color: rgba(140, 112, 82, 0.35) !important;
   color: #2b2118 !important;
 }
+
+/* ─── 🔔 Travel Buddy Notifications Bell & Modal ───────────────────────── */
+.floating-notif-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--theme-ui-bg, rgba(15, 23, 42, 0.92));
+  border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.15));
+  color: var(--theme-text-main, #f8fafc);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.floating-notif-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.notif-bell-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.notif-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+  border: 2px solid #0f172a;
+  animation: pulseNotifBadge 2s infinite ease-in-out;
+}
+@keyframes pulseNotifBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); box-shadow: 0 0 14px rgba(239, 68, 68, 0.9); }
+}
+
+/* Notifications Modal Overlay */
+.notifications-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 12500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+.notifications-modal-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--theme-ui-bg, rgba(15, 23, 42, 0.96));
+  border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.15));
+  border-radius: 22px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  overflow: hidden;
+}
+.notifications-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-glass, rgba(255, 255, 255, 0.08));
+}
+.notif-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.notif-modal-icon {
+  font-size: 1.25rem;
+}
+.notif-modal-title-row h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--theme-text-main, #f8fafc);
+}
+.notif-pill-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.notifications-modal-list {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.notif-empty-state {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--theme-text-muted, #94a3b8);
+}
+.notif-empty-state .empty-icon {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+/* Trip Invite Card */
+.trip-invitation-card {
+  background: var(--theme-card-bg, rgba(30, 41, 59, 0.7));
+  border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.trip-invitation-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.trip-invite-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.trip-invite-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trip-invite-avatar {
+  font-size: 1.25rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+}
+.trip-invite-user-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--theme-text-main, #f8fafc);
+}
+.trip-invite-badge {
+  font-size: 0.68rem;
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 99px;
+  padding: 2px 7px;
+  font-weight: 600;
+}
+.trip-invite-place-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.trip-invite-flag {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.trip-invite-place-name {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--theme-text-main, #f8fafc);
+}
+.trip-invite-sub {
+  font-size: 0.76rem;
+  color: var(--theme-text-muted, #94a3b8);
+}
+.trip-invite-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--theme-text-muted, #94a3b8);
+}
+.trip-invite-note {
+  font-size: 0.8rem;
+  color: var(--theme-text-main, #e2e8f0);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border-left: 3px solid #38bdf8;
+  font-style: italic;
+}
+.trip-invite-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.btn-accept-invite {
+  flex: 1;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btn-accept-invite:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+}
+.btn-decline-invite {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--theme-text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-decline-invite:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ─── 🎨 Theme Perfection Overrides ─────────────────────────────────────── */
+/* Light Theme */
+body[data-theme="light"] .profile-overlay { background: #f8fafc !important; color: #0f172a !important; }
+body[data-theme="light"] .profile-topbar { border-bottom-color: rgba(0, 0, 0, 0.08) !important; }
+body[data-theme="light"] .profile-back-btn { background: rgba(0, 0, 0, 0.06) !important; color: #334155 !important; }
+body[data-theme="light"] .profile-card,
+body[data-theme="light"] .settings-card,
+body[data-theme="light"] .profile-photo-showcase-card,
+body[data-theme="light"] .trip-invitation-card,
+body[data-theme="light"] .compare-input-card {
+  background: #ffffff !important;
+  border-color: rgba(203, 213, 225, 0.85) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+body[data-theme="light"] .notifications-modal-card {
+  background: #ffffff !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+}
+body[data-theme="light"] .trip-invite-place-banner {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+body[data-theme="light"] .trip-invite-note {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+body[data-theme="light"] .photo-lightbox-content {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+}
+body[data-theme="light"] .photo-lightbox-footer {
+  background: #ffffff !important;
+}
+body[data-theme="light"] .photo-lightbox-title {
+  color: #0f172a !important;
+}
+body[data-theme="light"] .photo-lightbox-caption {
+  color: #334155 !important;
+  background: #f1f5f9 !important;
+}
+body[data-theme="light"] .notif-unread-badge {
+  border-color: #ffffff;
+}
+
+/* NatGeo Atlas Theme */
+body[data-theme="natgeo_atlas"] .profile-overlay { background: #ede1cf !important; color: #2b2118 !important; }
+body[data-theme="natgeo_atlas"] .profile-topbar { border-bottom-color: rgba(140, 112, 82, 0.25) !important; }
+body[data-theme="natgeo_atlas"] .profile-back-btn { background: rgba(140, 112, 82, 0.15) !important; color: #451a03 !important; }
+body[data-theme="natgeo_atlas"] .ptabs-bar { background: rgba(237, 225, 207, 0.9) !important; border-color: rgba(140, 112, 82, 0.3) !important; }
+body[data-theme="natgeo_atlas"] .ptab { color: #664d33 !important; }
+body[data-theme="natgeo_atlas"] .ptab.active { background: #fdf8f2 !important; color: #b45309 !important; box-shadow: 0 2px 8px rgba(140, 112, 82, 0.15) !important; }
+body[data-theme="natgeo_atlas"] .profile-card,
+body[data-theme="natgeo_atlas"] .settings-card,
+body[data-theme="natgeo_atlas"] .profile-photo-showcase-card,
+body[data-theme="natgeo_atlas"] .trip-invitation-card,
+body[data-theme="natgeo_atlas"] .compare-input-card {
+  background: rgba(253, 248, 242, 0.96) !important;
+  border-color: rgba(140, 112, 82, 0.3) !important;
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .profile-username,
+body[data-theme="natgeo_atlas"] .settings-title,
+body[data-theme="natgeo_atlas"] .photo-showcase-title {
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .profile-bio,
+body[data-theme="natgeo_atlas"] .pstat-lbl,
+body[data-theme="natgeo_atlas"] .setting-label {
+  color: #664d33 !important;
+}
+body[data-theme="natgeo_atlas"] .pstat {
+  background: #f7eee1 !important;
+  border-color: rgba(140, 112, 82, 0.3) !important;
+}
+body[data-theme="natgeo_atlas"] .pstat-num {
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .notifications-modal-card {
+  background: #fdf8f2 !important;
+  border-color: rgba(140, 112, 82, 0.35) !important;
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .trip-invite-place-banner {
+  background: #ede1cf !important;
+  border-color: rgba(140, 112, 82, 0.25) !important;
+}
+body[data-theme="natgeo_atlas"] .trip-invite-note {
+  background: #ede1cf !important;
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .photo-lightbox-content {
+  background: #fdf8f2 !important;
+  border-color: rgba(140, 112, 82, 0.35) !important;
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .photo-lightbox-footer {
+  background: #fdf8f2 !important;
+}
+body[data-theme="natgeo_atlas"] .photo-lightbox-title {
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .photo-lightbox-caption {
+  color: #451a03 !important;
+  background: #ede1cf !important;
+}
+
 
 
 

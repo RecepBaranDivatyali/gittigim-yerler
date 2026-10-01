@@ -589,7 +589,7 @@ export function checkAndNotifyAchievements(storageData, baseStats) {
   }
 }
 
-function notifyStateChange() {
+export function notifyStateChange() {
   const sData = getStorageData();
   const sStats = calculateStats();
   checkAndNotifyAchievements(sData, sStats);

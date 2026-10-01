@@ -348,6 +348,24 @@ export function applyTheme(themeId) {
     themeCardBg = 'rgba(16, 8, 36, 0.85)';
     borderGlass = 'rgba(0, 240, 255, 0.25)';
     themeCardBorder = 'rgba(0, 240, 255, 0.3)';
+  } else if (cfg.id === 'ocean') {
+    bgDark = '#08121e';
+    bgCard = 'rgba(12, 25, 41, 0.9)';
+    themeCardBg = 'rgba(10, 20, 35, 0.88)';
+    borderGlass = 'rgba(42, 90, 140, 0.35)';
+    themeCardBorder = 'rgba(42, 90, 140, 0.4)';
+  } else if (cfg.id === 'emerald') {
+    bgDark = '#061706';
+    bgCard = 'rgba(10, 31, 10, 0.9)';
+    themeCardBg = 'rgba(8, 24, 8, 0.88)';
+    borderGlass = 'rgba(45, 107, 45, 0.35)';
+    themeCardBorder = 'rgba(45, 107, 45, 0.4)';
+  } else if (cfg.id === 'midnight_gold') {
+    bgDark = '#090a10';
+    bgCard = 'rgba(15, 17, 28, 0.94)';
+    themeCardBg = 'rgba(12, 14, 23, 0.9)';
+    borderGlass = 'rgba(212, 175, 55, 0.3)';
+    themeCardBorder = 'rgba(212, 175, 55, 0.35)';
   }
 
   root.style.setProperty('--bg-dark', bgDark);

@@ -43,14 +43,50 @@ function getDB() {
  * Resizes and compresses an image file or dataURL using HTML5 canvas.
  * Max dimension 1200px, quality 0.82 JPEG to keep storage fast and lightweight.
  */
-export function compressImage(fileOrDataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.82) {
+export async function compressImage(fileOrDataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.82) {
+  // Method A: Fast hardware-accelerated off-thread decoding via createImageBitmap
+  if (typeof createImageBitmap !== 'undefined' && (fileOrDataUrl instanceof Blob || fileOrDataUrl instanceof File)) {
+    try {
+      const bitmap = await createImageBitmap(fileOrDataUrl);
+      let width = bitmap.width;
+      let height = bitmap.height;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width / height > maxWidth / maxHeight) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        bitmap.close();
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        return { dataUrl, width, height };
+      }
+      bitmap.close();
+    } catch (bitmapErr) {
+      console.warn('createImageBitmap fallback to URL object:', bitmapErr);
+    }
+  }
+
+  // Method B: High-performance URL.createObjectURL (avoids huge base64 memory spikes of FileReader)
   return new Promise((resolve, reject) => {
     const img = new Image();
+    let objectUrl = null;
 
     const process = () => {
       try {
-        let width = img.width;
-        let height = img.height;
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
 
         if (width > maxWidth || height > maxHeight) {
           if (width / height > maxWidth / maxHeight) {
@@ -65,7 +101,7 @@ export function compressImage(fileOrDataUrl, maxWidth = 1200, maxHeight = 1200, 
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false });
 
         if (!ctx) {
           resolve({ dataUrl: img.src, width: img.width, height: img.height });
@@ -74,29 +110,25 @@ export function compressImage(fileOrDataUrl, maxWidth = 1200, maxHeight = 1200, 
 
         ctx.drawImage(img, 0, 0, width, height);
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve({
-          dataUrl,
-          width,
-          height
-        });
+        resolve({ dataUrl, width, height });
       } catch (err) {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
         console.warn('Canvas compression fallback:', err);
         resolve(typeof fileOrDataUrl === 'string' ? { dataUrl: fileOrDataUrl, width: 800, height: 600 } : null);
       }
     };
 
     img.onload = process;
-    img.onerror = () => reject(new Error('Failed to load image for compression'));
+    img.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image for compression'));
+    };
 
     if (typeof fileOrDataUrl === 'string') {
       img.src = fileOrDataUrl;
     } else if (fileOrDataUrl instanceof Blob || fileOrDataUrl instanceof File) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(fileOrDataUrl);
+      objectUrl = URL.createObjectURL(fileOrDataUrl);
+      img.src = objectUrl;
     } else {
       reject(new Error('Invalid image input'));
     }

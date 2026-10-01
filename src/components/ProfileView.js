@@ -16,7 +16,7 @@ import {
   saveWorldVisit, saveTurkeyVisit
 } from '../utils/storage.js';
 import { auth } from '../services/firebase.js';
-import { getAllPhotos, getTotalPhotoCount } from '../utils/photoStorage.js';
+import { getAllPhotos, getTotalPhotoCount, deletePhoto } from '../utils/photoStorage.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getEarnedAchievements } from '../data/achievements.js';
 import { TRAVEL_CHALLENGES, calculateChallengesProgress } from '../data/challengesData.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
@@ -46,6 +46,43 @@ function sanitizePhotoUrl(url) {
   }
   return null;
 }
+
+// Friendly Place Name helper for Photo Album & Showcase
+function getFriendlyPlaceName(targetId) {
+  if (!targetId) return { name: 'Seyahat Hatırası', flag: '📸', sub: '' };
+
+  // Turkey province: "TR::34" or "34"
+  if (targetId.startsWith('TR::') || (/^\d{1,2}$/.test(targetId) && parseInt(targetId, 10) >= 1 && parseInt(targetId, 10) <= 81)) {
+    const pId = targetId.startsWith('TR::') ? targetId.replace('TR::', '') : targetId;
+    const prov = TURKEY_PROVINCES.find(p => String(p.id).padStart(2, '0') === String(pId).padStart(2, '0'));
+    if (prov) return { name: prov.name, flag: '🇹🇷', sub: 'Türkiye' };
+    return { name: `İl #${pId}`, flag: '🇹🇷', sub: 'Türkiye' };
+  }
+
+  // Country: "TR", "FR", "DE"
+  if (targetId.length === 2 && !targetId.includes('::')) {
+    const cObj = WORLD_COUNTRIES.find(c => c.code.toUpperCase() === targetId.toUpperCase());
+    if (cObj) {
+      const flag = (cObj.code === 'IL') ? '' : (cObj.flag || '🌍');
+      return { name: getCountryDisplayName(cObj), flag, sub: '' };
+    }
+    return { name: targetId, flag: '🌍', sub: '' };
+  }
+
+  // City or Subregion: "FR::Paris" or "US::New York"
+  if (targetId.includes('::')) {
+    const parts = targetId.split('::');
+    const cCode = parts[0];
+    const place = parts[1];
+    const cObj = WORLD_COUNTRIES.find(c => c.code.toUpperCase() === cCode.toUpperCase());
+    const flag = (cObj && cObj.code !== 'IL') ? (cObj.flag || '📍') : '📍';
+    const cName = cObj ? getCountryDisplayName(cObj) : cCode;
+    return { name: place, flag, sub: cName };
+  }
+
+  return { name: targetId, flag: '📍', sub: '' };
+}
+
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -365,50 +402,102 @@ export function renderProfileView(container, onBack) {
     }
 
     // Fetch photos for profile showcase & counter
-    getAllPhotos(24).then(photos => {
-      const pCountEl = document.getElementById('profile-stat-photos');
-      const sCountEl = document.getElementById('photo-showcase-count');
-      const gridEl = document.getElementById('photo-showcase-grid');
-      if (pCountEl) pCountEl.textContent = photos.length;
-      if (sCountEl) sCountEl.textContent = `${photos.length} ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}`;
+    function refreshPhotoShowcase() {
+      getAllPhotos(36).then(photos => {
+        const pCountEl = document.getElementById('profile-stat-photos');
+        const sCountEl = document.getElementById('photo-showcase-count');
+        const gridEl = document.getElementById('photo-showcase-grid');
+        if (pCountEl) pCountEl.textContent = photos.length;
+        if (sCountEl) sCountEl.textContent = `${photos.length} ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}`;
 
-      if (gridEl && photos.length > 0) {
-        gridEl.innerHTML = photos.map(p => `
-          <div class="photo-showcase-item" data-id="${p.id}" title="${escapeHtml(p.caption || p.targetId || '')}">
-            <img src="${p.dataUrl}" alt="Memory" loading="lazy" />
-            <div class="photo-showcase-tag">${escapeHtml(p.targetId ? (p.targetId.includes('::') ? p.targetId.split('::')[1] : p.targetId) : '')}</div>
-          </div>
-        `).join('');
+        if (!gridEl) return;
+        if (photos.length === 0) {
+          gridEl.innerHTML = `
+            <div class="photo-showcase-empty">
+              <div style="font-size:1.8rem;margin-bottom:6px;">📸</div>
+              <div>${currentLang === 'tr' ? 'Henüz fotoğraf eklenmedi.' : 'No photos added yet.'}</div>
+              <div style="font-size:0.75rem;opacity:0.7;margin-top:4px;">${currentLang === 'tr' ? 'Haritada bir yere tıklayıp gezi damgası eklerken fotoğraf yükleyebilirsiniz.' : 'Click a place on the map to add photos with travel stamps.'}</div>
+            </div>
+          `;
+          return;
+        }
+
+        gridEl.innerHTML = photos.map(p => {
+          const friendly = getFriendlyPlaceName(p.targetId);
+          return `
+            <div class="photo-showcase-item" data-id="${p.id}">
+              <img src="${p.dataUrl}" alt="${escapeHtml(friendly.name)}" loading="lazy" />
+              <div class="photo-showcase-overlay">
+                <div class="photo-showcase-tag">
+                  <span class="photo-showcase-flag">${friendly.flag}</span>
+                  <span class="photo-showcase-name">${escapeHtml(friendly.name)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
 
         gridEl.querySelectorAll('.photo-showcase-item').forEach(item => {
           item.addEventListener('click', () => {
             const photoId = item.dataset.id;
             const photoObj = photos.find(p => p.id === photoId);
-            if (photoObj) {
-              const placeTitle = photoObj.targetId ? (photoObj.targetId.includes('::') ? photoObj.targetId.split('::')[1] : photoObj.targetId) : 'Seyahat Hatırası';
-              const existing = document.getElementById('photo-lightbox-modal');
-              if (existing) existing.remove();
-              const modal = document.createElement('div');
-              modal.id = 'photo-lightbox-modal';
-              modal.className = 'photo-lightbox-overlay';
-              modal.innerHTML = `
-                <div class="photo-lightbox-content">
-                  <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
-                  <img src="${photoObj.dataUrl}" class="photo-lightbox-img" alt="Memory Photo" />
-                  <div class="photo-lightbox-footer">
-                    <div class="photo-lightbox-title">${escapeHtml(placeTitle)}</div>
-                    ${photoObj.caption ? `<div class="photo-lightbox-caption">${escapeHtml(photoObj.caption)}</div>` : ''}
-                  </div>
+            if (!photoObj) return;
+            const friendly = getFriendlyPlaceName(photoObj.targetId);
+            const existing = document.getElementById('photo-lightbox-modal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'photo-lightbox-modal';
+            modal.className = 'photo-lightbox-overlay';
+            modal.innerHTML = `
+              <div class="photo-lightbox-content">
+                <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
+                <div class="photo-lightbox-img-wrap">
+                  <img src="${photoObj.dataUrl}" class="photo-lightbox-img" alt="${escapeHtml(friendly.name)}" />
                 </div>
-              `;
-              document.body.appendChild(modal);
-              modal.querySelector('#btn-close-lightbox')?.addEventListener('click', () => modal.remove());
-              modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-            }
+                <div class="photo-lightbox-footer">
+                  <div class="photo-lightbox-header-row">
+                    <div class="photo-lightbox-place">
+                      <span class="photo-lightbox-flag">${friendly.flag}</span>
+                      <div class="photo-lightbox-titles">
+                        <div class="photo-lightbox-title">${escapeHtml(friendly.name)}</div>
+                        ${friendly.sub ? `<div class="photo-lightbox-sub">${escapeHtml(friendly.sub)}</div>` : ''}
+                      </div>
+                    </div>
+                    <div class="photo-lightbox-actions">
+                      <button type="button" class="photo-lightbox-del-btn" id="btn-del-lightbox-photo" title="${currentLang === 'tr' ? 'Fotoğrafı Sil' : 'Delete Photo'}">
+                        🗑️ <span>${currentLang === 'tr' ? 'Sil' : 'Delete'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  ${photoObj.caption ? `<div class="photo-lightbox-caption">${escapeHtml(photoObj.caption)}</div>` : ''}
+                  ${photoObj.createdAt ? `<div class="photo-lightbox-date">📅 ${new Date(photoObj.createdAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</div>` : ''}
+                </div>
+              </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('#btn-close-lightbox')?.addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+            modal.querySelector('#btn-del-lightbox-photo')?.addEventListener('click', async () => {
+              const confirmMsg = currentLang === 'tr' 
+                ? 'Bu fotoğrafı seyahat albümünüzden silmek istediğinize emin misiniz?' 
+                : 'Are you sure you want to delete this photo from your travel album?';
+              if (confirm(confirmMsg)) {
+                try {
+                  await deletePhoto(photoObj.id);
+                  modal.remove();
+                  refreshPhotoShowcase();
+                } catch (delErr) {
+                  console.warn('Photo deletion error:', delErr);
+                }
+              }
+            });
           });
         });
-      }
-    }).catch(err => console.warn('Could not load profile photos', err));
+      }).catch(err => console.warn('Could not load profile photos', err));
+    }
+    refreshPhotoShowcase();
 
     // Render and manage Upcoming Trip Countdown
     const countdownContainer = document.getElementById('trip-countdown-container');
@@ -4287,7 +4376,7 @@ export function renderProfileView(container, onBack) {
               
               <div class="friend-search-input-wrap">
                 <span class="friend-search-icon">🔍</span>
-                <input type="text" id="friend-search-input" class="friend-search-input" placeholder="${currentLang === 'tr' ? 'Kullanıcı adı yazın (örn: atlas_mert, selin...)' : 'Type username (e.g. atlas_mert, selin...)'}" autocomplete="off" />
+                <input type="text" id="friend-search-input" class="friend-search-input" placeholder="${currentLang === 'tr' ? 'Kullanıcı adı yazın (örn: @ahmet, @merve...)' : 'Type username (e.g. @alex, @sam)...'}" autocomplete="off" />
               </div>
 
               <!-- Live search / suggestions dropdown -->

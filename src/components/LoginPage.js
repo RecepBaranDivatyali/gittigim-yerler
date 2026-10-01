@@ -208,7 +208,7 @@ export function renderLoginPage(container, onLogin) {
             ${authMode === 'register' ? `
               <div class="input-group">
                 <label for="auth-username">${currentLang === 'tr' ? 'Gezgin Adı / Kullanıcı Adı' : 'Traveler Name / Username'}</label>
-                <input type="text" id="auth-username" maxlength="25" placeholder="${currentLang === 'tr' ? 'Örn: atlas_mert, selin...' : 'e.g. atlas_mert'}" value="${sanitizeText(usernameVal, 25)}" autocomplete="name" required />
+                <input type="text" id="auth-username" maxlength="25" placeholder="${currentLang === 'tr' ? 'Örn: gezgin_mert, seyahatsever...' : 'e.g. globetrotter'}" value="${sanitizeText(usernameVal, 25)}" autocomplete="name" required />
               </div>
 
               <!-- Avatar Selection for Registration -->

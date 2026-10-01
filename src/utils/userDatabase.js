@@ -1,125 +1,27 @@
 // userDatabase.js - Offline-First Community Traveler Database & Accounts
 // Supports username-based friend search, 1-click comparison, and offline synchronization
 import { searchCloudTravelers, getCloudTravelerProfile, queueCloudSync } from '../services/syncService.js';
+import { sendTripInvitation } from './notificationSystem.js';
 
 const COMMUNITY_USERS_KEY = 'gv_community_travelers';
 const CURRENT_ACCOUNT_KEY = 'gv_account';
 
-// Pre-seeded verified traveler profiles so user can immediately test username search
-const SEED_TRAVELERS = [
-  {
-    id: 'user_atlas_mert',
-    username: 'atlas_mert',
-    name: 'Mert Yılmaz',
-    avatar: '🧭',
-    bio: '42 ülke gezdim, sıradaki hedef Asya! 🌍✈️',
-    homeCountry: 'TR',
-    stats: { worldCountryCount: 42, turkeyCount: 38, worldCityCount: 84 },
-    worldVisits: {
-      'TR': { status: 'visited', rating: 10, entryDate: '2020-01-01', entryTransport: 'car', notes: 'Memleket' },
-      'DE': { status: 'visited', rating: 9, entryDate: '2023-04-12', entryTransport: 'flight', notes: 'Berlin ve Münih harika' },
-      'FR': { status: 'visited', rating: 9, entryDate: '2022-06-18', entryTransport: 'flight', notes: 'Paris sanat dolu' },
-      'IT': { status: 'visited', rating: 10, entryDate: '2023-09-05', entryTransport: 'flight', notes: 'Roma ve Floransa mutfağı' },
-      'ES': { status: 'visited', rating: 9, entryDate: '2023-08-20', entryTransport: 'flight', notes: 'Barselona mimarisi' },
-      'GR': { status: 'visited', rating: 9, entryDate: '2022-07-14', entryTransport: 'ship', notes: 'Ege adaları ve Atina' },
-      'NL': { status: 'visited', rating: 8, entryDate: '2023-05-01', entryTransport: 'flight', notes: 'Kanallar ve bisiklet turu' },
-      'AT': { status: 'visited', rating: 8, entryDate: '2022-12-25', entryTransport: 'train', notes: 'Viyana kış pazarları' },
-      'CH': { status: 'visited', rating: 10, entryDate: '2023-01-10', entryTransport: 'train', notes: 'Alpler manzarası nefes kesici' },
-      'JP': { status: 'visited', rating: 10, entryDate: '2024-03-22', entryTransport: 'flight', notes: 'Tokyo ve Kyoto kiraz çiçekleri' },
-      'US': { status: 'visited', rating: 9, entryDate: '2023-11-10', entryTransport: 'flight', notes: 'New York ve San Francisco' },
-      'GB': { status: 'visited', rating: 8, entryDate: '2022-10-15', entryTransport: 'flight', notes: 'Londra müzeleri' },
-      'PT': { status: 'visited', rating: 9, entryDate: '2023-09-18', entryTransport: 'flight', notes: 'Lizbon ve Porto pastel de nata' },
-      'SE': { status: 'visited', rating: 8, entryDate: '2021-08-04', entryTransport: 'flight', notes: 'Stockholm adaları' },
-      'NO': { status: 'visited', rating: 10, entryDate: '2022-08-12', entryTransport: 'flight', notes: 'Fiyortlar muazzam' }
-    },
-    turkeyVisits: {
-      '34': { status: 'visited', rating: 10, notes: 'İstanbul' },
-      '06': { status: 'visited', rating: 9, notes: 'Ankara' },
-      '35': { status: 'visited', rating: 10, notes: 'İzmir' },
-      '07': { status: 'visited', rating: 9, notes: 'Antalya' },
-      '48': { status: 'visited', rating: 10, notes: 'Muğla' }
-    },
-    worldCities: [
-      { countryCode: 'FR', cityName: 'Paris' },
-      { countryCode: 'IT', cityName: 'Roma' },
-      { countryCode: 'JP', cityName: 'Tokyo' },
-      { countryCode: 'US', cityName: 'New York' },
-      { countryCode: 'DE', cityName: 'Berlin' }
-    ]
-  },
-  {
-    id: 'user_selin_yollarda',
-    username: 'selin_yollarda',
-    name: 'Selin Doğan',
-    avatar: '✈️',
-    bio: 'Balkanlar ve Akdeniz aşığı gezgin 🎒🌅',
-    homeCountry: 'TR',
-    stats: { worldCountryCount: 28, turkeyCount: 45, worldCityCount: 56 },
-    worldVisits: {
-      'TR': { status: 'visited', rating: 10, notes: 'Evim' },
-      'GR': { status: 'visited', rating: 10, notes: 'Selanik ve Rodos' },
-      'BG': { status: 'visited', rating: 8, notes: 'Sofya ve Plovdiv' },
-      'MK': { status: 'visited', rating: 9, notes: 'Üsküp ve Ohri Gölü' },
-      'AL': { status: 'visited', rating: 8, notes: 'Tiran ve Saranda' },
-      'ME': { status: 'visited', rating: 10, notes: 'Kotor Körfezi büyüleyici' },
-      'BA': { status: 'visited', rating: 10, notes: 'Saraybosna ve Mostar Köprüsü' },
-      'HR': { status: 'visited', rating: 9, notes: 'Dubrovnik ve Split' },
-      'RS': { status: 'visited', rating: 8, notes: 'Belgrad' },
-      'IT': { status: 'visited', rating: 10, notes: 'Venedik ve Milano' },
-      'ES': { status: 'visited', rating: 9, notes: 'Madrid ve Sevilla' }
-    },
-    turkeyVisits: {
-      '34': { status: 'visited', rating: 10 },
-      '35': { status: 'visited', rating: 10 },
-      '07': { status: 'visited', rating: 9 },
-      '48': { status: 'visited', rating: 10 },
-      '26': { status: 'visited', rating: 9 }
-    },
-    worldCities: [
-      { countryCode: 'ME', cityName: 'Kotor' },
-      { countryCode: 'BA', cityName: 'Saraybosna' },
-      { countryCode: 'HR', cityName: 'Dubrovnik' },
-      { countryCode: 'IT', cityName: 'Venedik' }
-    ]
-  },
-  {
-    id: 'user_bora_explorer',
-    username: 'bora_explorer',
-    name: 'Bora Aksoy',
-    avatar: '🚀',
-    bio: 'Dağlar, doğa ve kamp rotaları 🏕️🌲',
-    homeCountry: 'TR',
-    stats: { worldCountryCount: 19, turkeyCount: 52, worldCityCount: 41 },
-    worldVisits: {
-      'TR': { status: 'visited', rating: 10 },
-      'GE': { status: 'visited', rating: 9, notes: 'Tiflis ve Kazbek Dağı' },
-      'AZ': { status: 'visited', rating: 9, notes: 'Bakü ve Şeki' },
-      'KZ': { status: 'visited', rating: 8, notes: 'Almatı doğası' },
-      'KG': { status: 'visited', rating: 9, notes: 'Issık Göl' },
-      'UZ': { status: 'visited', rating: 10, notes: 'Semerkant ve Buhara' },
-      'IR': { status: 'visited', rating: 9, notes: 'İsfahan ve Şiraz' },
-      'IS': { status: 'visited', rating: 10, notes: 'İzlanda şelaleleri' }
-    },
-    turkeyVisits: {
-      '34': { status: 'visited', rating: 10 },
-      '53': { status: 'visited', rating: 10, notes: 'Rize yaylaları' },
-      '61': { status: 'visited', rating: 9, notes: 'Trabzon' },
-      '08': { status: 'visited', rating: 10, notes: 'Artvin Karagöl' },
-      '50': { status: 'visited', rating: 10, notes: 'Kapadokya' }
-    },
-    worldCities: [
-      { countryCode: 'GE', cityName: 'Tiflis' },
-      { countryCode: 'UZ', cityName: 'Semerkant' },
-      { countryCode: 'IS', cityName: 'Reykjavik' }
-    ]
-  }
-];
+// No mock/fake seed travelers — only genuine registered traveler profiles
+const SEED_TRAVELERS = [];
 
 export function initCommunityDatabase() {
   try {
     const raw = localStorage.getItem(COMMUNITY_USERS_KEY);
-    if (!raw) {
-      localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify(SEED_TRAVELERS));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Clean out legacy mock accounts if still present in user storage
+        const deadIds = new Set(['user_atlas_mert', 'user_selin_yollarda', 'user_bora_explorer', 'atlas_mert', 'selin_yollarda', 'bora_explorer']);
+        const cleaned = parsed.filter(u => !deadIds.has(u.id) && !deadIds.has(u.username?.toLowerCase()));
+        localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify(cleaned));
+      }
+    } else {
+      localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify([]));
     }
   } catch (e) {
     console.warn('Community DB init error', e);
@@ -131,9 +33,9 @@ export function getAllCommunityTravelers() {
     initCommunityDatabase();
     const raw = localStorage.getItem(COMMUNITY_USERS_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : SEED_TRAVELERS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return SEED_TRAVELERS;
+    return [];
   }
 }
 
@@ -263,69 +165,20 @@ export function isUsernameAvailable(username, currentUserId = null) {
   return false;
 }
 
-export function syncTripToBuddy(buddyUsername, placeId, visitData, currentUserProfile) {
+export async function syncTripToBuddy(buddyUsername, placeId, visitData, currentUserProfile) {
   if (!buddyUsername || !placeId) return;
   try {
     const cleanBuddy = buddyUsername.trim().toLowerCase().replace(/^@/, '');
     if (!cleanBuddy) return;
-    const users = getAllCommunityTravelers();
-    let buddy = users.find(u => u.username.toLowerCase() === cleanBuddy);
 
-    if (!buddy) {
-      buddy = {
-        id: 'user_' + cleanBuddy,
-        username: cleanBuddy,
-        name: cleanBuddy,
-        avatar: '🧭',
-        bio: 'Gezgin yol arkadaşı 🎒',
-        homeCountry: 'TR',
-        stats: { worldCountryCount: 0, turkeyCount: 0, worldCityCount: 0 },
-        worldVisits: {},
-        turkeyVisits: {},
-        worldCities: []
-      };
-      users.push(buddy);
-    }
-
-    const currentUsername = currentUserProfile?.username
-      ? `@${currentUserProfile.username.trim().toLowerCase().replace(/^@/, '')}`
-      : '@gezgin';
-
-    if (placeId.startsWith('TR::')) {
-      const pId = placeId.replace('TR::', '');
-      if (!buddy.turkeyVisits) buddy.turkeyVisits = {};
-      buddy.turkeyVisits[pId] = {
-        status: 'visited',
-        entryDate: visitData?.entryDate || '',
-        entryTransport: visitData?.entryTransport || 'car',
-        buddies: [currentUsername]
-      };
-      if (!buddy.worldVisits) buddy.worldVisits = {};
-      buddy.worldVisits['TR'] = { status: 'visited', entryTransport: 'car' };
-    } else {
-      const cCode = placeId.includes('::') ? placeId.split('::')[0] : placeId;
-      if (!buddy.worldVisits) buddy.worldVisits = {};
-      buddy.worldVisits[cCode] = {
-        status: 'visited',
-        entryDate: visitData?.entryDate || '',
-        exitDate: visitData?.exitDate || '',
-        entryTransport: visitData?.entryTransport || 'flight',
-        buddies: [currentUsername]
-      };
-      if (placeId.includes('::')) {
-        buddy.worldVisits[placeId] = {
-          status: 'visited',
-          entryDate: visitData?.entryDate || '',
-          buddies: [currentUsername]
-        };
-      }
-    }
-
-    buddy.stats = buddy.stats || {};
-    buddy.stats.worldCountryCount = Object.keys(buddy.worldVisits || {}).filter(k => !k.includes('::') && buddy.worldVisits[k]?.status === 'visited').length;
-    buddy.stats.turkeyCount = Object.keys(buddy.turkeyVisits || {}).filter(k => buddy.turkeyVisits[k]?.status === 'visited').length;
-
-    localStorage.setItem(COMMUNITY_USERS_KEY, JSON.stringify(users));
+    // Dispatch official pending notification for the buddy so they can review and approve it
+    await sendTripInvitation({
+      fromProfile: currentUserProfile,
+      toUsername: cleanBuddy,
+      placeId,
+      placeName: visitData?.placeName || placeId,
+      visitData
+    });
   } catch (err) {
     console.warn('syncTripToBuddy error:', err);
   }
