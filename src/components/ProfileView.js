@@ -1747,6 +1747,7 @@ export function renderProfileView(container, onBack) {
             ${challengesList.map(ch => {
               const title = currentLang === 'en' ? (ch.titleEn || ch.title) : ch.title;
               const desc = currentLang === 'en' ? (ch.descEn || ch.desc) : ch.desc;
+              const badge = currentLang === 'en' ? (ch.badgeEn || ch.badge) : ch.badge;
               return `
                 <div class="challenge-card ${ch.isCompleted ? 'completed' : ''}">
                   <div class="challenge-card-top">
@@ -1754,7 +1755,7 @@ export function renderProfileView(container, onBack) {
                     <div class="challenge-title-info">
                       <div class="challenge-card-title">${escapeHtml(title)}</div>
                       <div class="challenge-badge-tag ${ch.isCompleted ? 'earned' : 'locked'}">
-                        ${ch.isCompleted ? `<span>🎉 ${escapeHtml(ch.badge)}</span>` : `<span>🔒 ${escapeHtml(ch.badge)}</span>`}
+                        ${ch.isCompleted ? `<span>🎉 ${escapeHtml(badge)}</span>` : `<span>🔒 ${escapeHtml(badge)}</span>`}
                       </div>
                     </div>
                   </div>
@@ -2046,8 +2047,8 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-title-wrap">
                       <span class="alliance-icon">${alliance.icon}</span>
                       <div>
-                        <div class="alliance-name">${alliance.name}</div>
-                        <div class="alliance-sub">${alliance.desc}</div>
+                        <div class="alliance-name">${escapeHtml(currentLang === 'en' ? (alliance.nameEn || alliance.name) : alliance.name)}</div>
+                        <div class="alliance-sub">${escapeHtml(currentLang === 'en' ? (alliance.descEn || alliance.desc) : alliance.desc)}</div>
                       </div>
                     </div>
                   </div>
@@ -2113,8 +2114,8 @@ export function renderProfileView(container, onBack) {
                     <div class="alliance-title-wrap">
                       <span class="alliance-icon">${family.icon}</span>
                       <div>
-                        <div class="alliance-name">${family.name}</div>
-                        <div class="alliance-sub">${family.desc}</div>
+                        <div class="alliance-name">${escapeHtml(currentLang === 'en' ? (family.nameEn || family.name) : family.name)}</div>
+                        <div class="alliance-sub">${escapeHtml(currentLang === 'en' ? (family.descEn || family.desc) : family.desc)}</div>
                       </div>
                     </div>
                   </div>

@@ -636,37 +636,37 @@ export function renderWorldMapView(container, options = {}) {
               <div class="visa-banner-left">
                 <span class="visa-banner-icon">🛂</span>
                 <div class="visa-passport-switcher" id="visa-passport-switcher">
-                  <button type="button" class="visa-ptype-btn active" data-ptype="bordo">📕 Bordo</button>
-                  <button type="button" class="visa-ptype-btn" data-ptype="yesil">📗 Yeşil</button>
+                  <button type="button" class="visa-ptype-btn active" data-ptype="bordo">📕 ${t('passportBordo')}</button>
+                  <button type="button" class="visa-ptype-btn" data-ptype="yesil">📗 ${t('passportYesil')}</button>
                 </div>
               </div>
-              <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode" title="Vize Haritasından Çık">
-                <span>✕</span> <span>Haritama Dön</span>
+              <button type="button" id="btn-exit-visa-mode" class="btn-exit-visa-mode" title="${t('exitVisaMode')}">
+                <span>✕</span> <span>${t('exitVisaMode')}</span>
               </button>
             </div>
             <div class="visa-banner-chips-row">
               <div class="visa-mode-chip free">
                 <span class="chip-dot"></span>
-                <span class="chip-label">Vizesiz</span>
+                <span class="chip-label">${t('visaFree')}</span>
               </div>
               <div class="visa-mode-chip req">
                 <span class="chip-dot"></span>
-                <span class="chip-label">Vize</span>
+                <span class="chip-label">${t('visaReq')}</span>
               </div>
               <div class="visa-mode-chip voa">
                 <span class="chip-dot"></span>
-                <span class="chip-label">Kapıda Vize</span>
+                <span class="chip-label">${t('visaVoa')}</span>
               </div>
               <div class="visa-mode-chip evisa">
                 <span class="chip-dot"></span>
-                <span class="chip-label">e-Vize</span>
+                <span class="chip-label">${t('visaEvisa')}</span>
               </div>
               <div class="visa-mode-chip personal-visa">
                 <span class="chip-dot" style="background:#00e676;"></span>
-                <span class="chip-label">Vizem Var</span>
+                <span class="chip-label">${t('myVisa')}</span>
               </div>
               <button type="button" id="btn-visa-banner-my-visas" class="visa-banner-my-visas-btn">
-                📋 <span id="visa-banner-count-label">Vizelerim</span>
+                📋 <span id="visa-banner-count-label">${t('myVisas')}</span>
               </button>
             </div>
           </div>
@@ -697,8 +697,8 @@ export function renderWorldMapView(container, options = {}) {
 
         <!-- Floating Top-Right: Visa Mode Button & Travel Legend -->
         <div class="floating-top-right-group">
-          <button type="button" id="btn-toggle-visa-mode" class="floating-visa-mode-btn" title="Vize Haritası Modu">
-            <span>🛂</span> <span class="visa-btn-lbl">Vize Modu</span>
+          <button type="button" id="btn-toggle-visa-mode" class="floating-visa-mode-btn" title="${t('visaMode')}">
+            <span>🛂</span> <span class="visa-btn-lbl">${t('visaMode')}</span>
           </button>
           <div id="map-legend" class="floating-legend" title="${t('legend') || 'Lejant'}">
           <div class="legend-items-list">
@@ -907,7 +907,7 @@ export function renderWorldMapView(container, options = {}) {
           id: `${city.countryCode}::${city.nameEn}`,
           name: primary,
           altName: secondary,
-          sub: `${countryName} (Şehir/Başkent)`,
+          sub: `${countryName} (${currentLang === 'tr' ? 'Şehir/Başkent' : 'City/Capital'})`,
           flag: getFlagHtml(city.countryCode),
           coords: [city.lat, city.lng],
           countryCode: city.countryCode
@@ -923,7 +923,7 @@ export function renderWorldMapView(container, options = {}) {
           id: `${r.countryCode}::${r.name}`,
           name: localizedName,
           altName: r.name !== localizedName ? r.name : '',
-          sub: `${countryName} (Bölge/Eyalet)`,
+          sub: `${countryName} (${currentLang === 'tr' ? 'Bölge/Eyalet' : 'Region/State'})`,
           flag: getFlagHtml(r.countryCode),
           coords: (r.lat && r.lng) ? [r.lat, r.lng] : (COUNTRY_CENTROIDS[r.countryCode] || null),
           countryCode: r.countryCode
@@ -1119,17 +1119,17 @@ export function renderWorldMapView(container, options = {}) {
         }
       });
       const chipFree = container.querySelector('.visa-mode-chip.free .chip-label');
-      if (chipFree) chipFree.textContent = `Vizesiz (${counts.vizesiz})`;
+      if (chipFree) chipFree.textContent = `${t('visaFree')} (${counts.vizesiz})`;
       const chipReq = container.querySelector('.visa-mode-chip.req .chip-label');
-      if (chipReq) chipReq.textContent = `Vize (${counts.vize})`;
+      if (chipReq) chipReq.textContent = `${t('visaReq')} (${counts.vize})`;
       const chipVoa = container.querySelector('.visa-mode-chip.voa .chip-label');
-      if (chipVoa) chipVoa.textContent = `Kapıda Vize (${counts.kapida_vize})`;
+      if (chipVoa) chipVoa.textContent = `${t('visaVoa')} (${counts.kapida_vize})`;
       const chipEvisa = container.querySelector('.visa-mode-chip.evisa .chip-label');
-      if (chipEvisa) chipEvisa.textContent = `e-Vize (${counts.e_vize})`;
+      if (chipEvisa) chipEvisa.textContent = `${t('visaEvisa')} (${counts.e_vize})`;
 
       const chipMyVisa = container.querySelector('.visa-mode-chip.personal-visa .chip-label');
       if (chipMyVisa) {
-        chipMyVisa.textContent = coveredCount > 0 ? `Vizem Var (${coveredCount})` : 'Vizem Var';
+        chipMyVisa.textContent = coveredCount > 0 ? `${t('myVisa')} (${coveredCount})` : t('myVisa');
       }
       try { updateVisaBannerMyVisas(); } catch {}
     }
@@ -1179,7 +1179,7 @@ export function renderWorldMapView(container, options = {}) {
     const updateVisaBannerMyVisas = () => {
       const activeCount = getActiveVisas().length;
       const countLabel = container.querySelector('#visa-banner-count-label');
-      if (countLabel) countLabel.textContent = `Vizelerim${activeCount > 0 ? ' (' + activeCount + ' Aktif)' : ''}`;
+      if (countLabel) countLabel.textContent = `${t('myVisas')}${activeCount > 0 ? ' (' + activeCount + ' ' + (getLanguage() === 'tr' ? 'Aktif' : 'Active') + ')' : ''}`;
     };
     updateVisaBannerMyVisas();
     visaMyBtn?.addEventListener('click', (e) => {
@@ -1284,10 +1284,10 @@ export function renderWorldMapView(container, options = {}) {
             }
           }
 
-          const transportIcon = n.visitData?.entryTransport === 'flight' ? '✈️ Uçuş' :
-                                (n.visitData?.entryTransport === 'car' ? '🚗 Kara Yolu' :
-                                (n.visitData?.entryTransport === 'train' ? '🚂 Tren' :
-                                (n.visitData?.entryTransport === 'ship' ? '🚢 Deniz Yolu' : '🚶 Yürüyüş')));
+          const transportIcon = n.visitData?.entryTransport === 'flight' ? (currentLang === 'tr' ? '✈️ Uçuş' : '✈️ Flight') :
+                                (n.visitData?.entryTransport === 'car' ? (currentLang === 'tr' ? '🚗 Kara Yolu' : '🚗 Road Trip') :
+                                (n.visitData?.entryTransport === 'train' ? (currentLang === 'tr' ? '🚂 Tren' : '🚂 Train') :
+                                (n.visitData?.entryTransport === 'ship' ? (currentLang === 'tr' ? '🚢 Deniz Yolu' : '🚢 By Sea') : (currentLang === 'tr' ? '🚶 Yürüyüş' : '🚶 Walking'))));
 
           return `
             <div class="trip-invitation-card" data-id="${escapeHtml(n.id)}">
@@ -1299,7 +1299,7 @@ export function renderWorldMapView(container, options = {}) {
                     <div style="font-size:0.75rem;color:var(--theme-text-muted,#94a3b8);">${escapeHtml(n.fromUsername)}</div>
                   </div>
                 </div>
-                <span class="trip-invite-badge">Seyahat Daveti</span>
+                <span class="trip-invite-badge">${t('tripInvite')}</span>
               </div>
               <div class="trip-invite-place-banner">
                 <span class="trip-invite-flag">${flag}</span>
@@ -3498,7 +3498,7 @@ function attachSubregionLayer(code, data) {
     pane: 'citiesPane',
     style: f => subregionStyle(f.properties?.name, code),
     onEachFeature: (f, l) => {
-      const raw = f.properties?.name || 'Şehir';
+      const raw = f.properties?.name || (getLanguage() === 'tr' ? 'Şehir' : 'City');
       const display = getLocalizedName(raw, code);
       // City name is rendered cleanly on map via provinceLabelsLayer
       l.on('click', e => {
@@ -3752,20 +3752,20 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   let popupVisaBadgeHtml = '';
   if (personalVisa) {
-    const vType = (personalVisa.visaType || 'Vize').toUpperCase();
+    const vType = (personalVisa.visaType || (currentLang === 'tr' ? 'Vize' : 'Visa')).toUpperCase();
     const vEntries = personalVisa.entries === 'mult' ? 'MULT' : (personalVisa.entries === '2' ? '02' : '01');
     const vUntil = personalVisa.validUntil || '';
-    popupVisaBadgeHtml = `<span class="popup-visa-inline-badge valid-personal-visa" title="Kişisel Aktif Vize: ${escapeHtml(vType)} ${escapeHtml(vEntries)}${vUntil ? ' · Son Gün: ' + escapeHtml(vUntil) : ''}">🛂 Aktif Vize: ${escapeHtml(vType)} ${escapeHtml(vEntries)}${vUntil ? ' (' + escapeHtml(vUntil) + ')' : ''}</span>`;
+    popupVisaBadgeHtml = `<span class="popup-visa-inline-badge valid-personal-visa" title="${currentLang === 'tr' ? 'Kişisel Aktif Vize' : 'Personal Active Visa'}: ${escapeHtml(vType)} ${escapeHtml(vEntries)}${vUntil ? ' · ' + (currentLang === 'tr' ? 'Son Gün: ' : 'Expires: ') + escapeHtml(vUntil) : ''}">🛂 ${currentLang === 'tr' ? 'Aktif Vize:' : 'Active Visa:'} ${escapeHtml(vType)} ${escapeHtml(vEntries)}${vUntil ? ' (' + escapeHtml(vUntil) + ')' : ''}</span>`;
   } else if (visaBadge) {
     popupVisaBadgeHtml = `<span class="popup-visa-inline-badge ${visaBadge.status}" title="${escapeHtml(visaBadge.label)}${visaBadge.days ? ' · ' + escapeHtml(visaBadge.days) : ''}">${visaBadge.icon} ${escapeHtml(visaBadge.label)}</span>`;
   }
 
   const transportIcons = {
-    flight: '✈️ Uçak',
-    train: '🚆 Tren',
-    car: '🚗 Şahsi Araba',
-    bus: '🚌 Otobüs',
-    ship: '🚢 Gemi'
+    flight: t('transportFlight'),
+    train: t('transportTrain'),
+    car: t('transportCar'),
+    bus: t('transportBus'),
+    ship: t('transportShip')
   };
 
   content.innerHTML = `
@@ -3793,28 +3793,28 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
     <!-- 🎛️ Segmented Action Hub Tabs (Always accessible when guide exists, full suite when visited) -->
     <div class="popup-action-hub-tabs" id="popup-action-hub-tabs" style="display: ${(currentStatus === 'visited' || guide) ? 'flex' : 'none'};">
-      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? 'has-data' : ''}" data-drawer="stamp" title="Ziyaret Tarihleri & Pasaport Damgaları" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? 'has-data' : ''}" data-drawer="stamp" title="${currentLang === 'tr' ? 'Ziyaret Tarihleri & Pasaport Damgaları' : 'Visit Dates & Passport Stamps'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">📅</span>
-        <span class="hub-btn-label">Tarih</span>
+        <span class="hub-btn-label">${t('drawerStamp')}</span>
         ${(currentEntryDate || currentExitDate || currentVisits.length > 0) ? `<span class="hub-btn-dot emerald"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="Seyahat Günlüğü & Fotoğraflar" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn ${(currentJournal?.text || currentJournal?.mood) ? 'has-data' : ''}" data-drawer="journal" title="${currentLang === 'tr' ? 'Seyahat Günlüğü & Fotoğraflar' : 'Travel Journal & Photos'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">📸</span>
-        <span class="hub-btn-label">Günlük</span>
+        <span class="hub-btn-label">${t('drawerJournal')}</span>
         ${(currentJournal?.text || currentJournal?.mood) ? `<span class="hub-btn-dot pink"></span>` : ''}
       </button>
-      <button type="button" class="popup-hub-btn ${currentPlaces.length > 0 ? 'has-data' : ''}" data-drawer="places" title="Mekanlar & Restoranlar" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn ${currentPlaces.length > 0 ? 'has-data' : ''}" data-drawer="places" title="${currentLang === 'tr' ? 'Mekanlar & Restoranlar' : 'Places & Spots'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">🍽️</span>
-        <span class="hub-btn-label">Mekanlar${currentPlaces.length > 0 ? ` (${currentPlaces.length})` : ''}</span>
+        <span class="hub-btn-label">${t('drawerPlaces')}${currentPlaces.length > 0 ? ` (${currentPlaces.length})` : ''}</span>
       </button>
-      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="Puan & Not" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="${currentLang === 'tr' ? 'Puan & Not' : 'Rating & Notes'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
         <span class="hub-btn-icon">⭐</span>
-        <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : 'Puan'}</span>
+        <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : t('drawerReview')}</span>
       </button>
       ${guide ? `
-        <button type="button" class="popup-hub-btn" data-drawer="guide" title="Rehber & Bilgi" style="display: flex;">
+        <button type="button" class="popup-hub-btn" data-drawer="guide" title="${currentLang === 'tr' ? 'Rehber & Bilgi' : 'Guide & Info'}" style="display: flex;">
           <span class="hub-btn-icon">🧳</span>
-          <span class="hub-btn-label">Rehber</span>
+          <span class="hub-btn-label">${t('drawerGuide')}</span>
         </button>
       ` : ''}
     </div>
@@ -3825,10 +3825,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <!-- Çoklu Ziyaret Seçici (Ferah İki Satırlı Tasarım) -->
       <div class="stamp-visits-manager-inline" id="stamp-visits-manager">
         <div class="stamp-visits-top-row">
-          <span class="stamp-visits-inline-label">✈️ SEYAHATLER:</span>
+          <span class="stamp-visits-inline-label">${t('tripsCount')}</span>
           <div class="stamp-visits-actions-inline">
-            <button type="button" id="btn-add-new-visit" class="stamp-visit-add-inline-btn" title="Yeni Seyahat Ekle">➕ Ekle</button>
-            <button type="button" id="btn-delete-active-visit" class="stamp-visit-del-inline-btn" title="Bu Seyahati Sil" style="display:none;">🗑️ Sil</button>
+            <button type="button" id="btn-add-new-visit" class="stamp-visit-add-inline-btn" title="${currentLang === 'tr' ? 'Yeni Seyahat Ekle' : 'Add New Trip'}">${t('addTrip')}</button>
+            <button type="button" id="btn-delete-active-visit" class="stamp-visit-del-inline-btn" title="${currentLang === 'tr' ? 'Bu Seyahati Sil' : 'Delete This Trip'}" style="display:none;">${t('deleteTrip')}</button>
           </div>
         </div>
         <div class="stamp-visits-inline-scroll" id="stamp-visits-tabs-container"></div>
@@ -3840,16 +3840,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <div class="stamp-date-col entry-col">
           <div class="stamp-date-col-header">
             <span class="stamp-dot-pill green"></span>
-            <span class="stamp-col-heading">GİRİŞ (ENTRY)</span>
+            <span class="stamp-col-heading">${t('entryStamp')}</span>
           </div>
           <div class="stamp-col-inputs">
             <input type="date" id="popup-stamp-entry-date" class="stamp-date-field compact" value="${currentEntryDate}" />
             <select id="popup-stamp-entry-transport" class="stamp-transport-select compact">
-              <option value="flight" ${currentEntryTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
-              <option value="train" ${currentEntryTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
-              <option value="car" ${currentEntryTransport === 'car' ? 'selected' : ''}>🚗 Araba</option>
-              <option value="bus" ${currentEntryTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
-              <option value="ship" ${currentEntryTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+              <option value="flight" ${currentEntryTransport === 'flight' ? 'selected' : ''}>${t('transportFlight')}</option>
+              <option value="train" ${currentEntryTransport === 'train' ? 'selected' : ''}>${t('transportTrain')}</option>
+              <option value="car" ${currentEntryTransport === 'car' ? 'selected' : ''}>${t('transportCar')}</option>
+              <option value="bus" ${currentEntryTransport === 'bus' ? 'selected' : ''}>${t('transportBus')}</option>
+              <option value="ship" ${currentEntryTransport === 'ship' ? 'selected' : ''}>${t('transportShip')}</option>
             </select>
           </div>
         </div>
@@ -3858,16 +3858,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <div class="stamp-date-col exit-col">
           <div class="stamp-date-col-header">
             <span class="stamp-dot-pill red"></span>
-            <span class="stamp-col-heading">ÇIKIŞ (EXIT)</span>
+            <span class="stamp-col-heading">${t('exitStamp')}</span>
           </div>
           <div class="stamp-col-inputs">
             <input type="date" id="popup-stamp-exit-date" class="stamp-date-field compact" value="${currentExitDate}" />
             <select id="popup-stamp-exit-transport" class="stamp-transport-select compact">
-              <option value="flight" ${currentExitTransport === 'flight' ? 'selected' : ''}>✈️ Uçak</option>
-              <option value="train" ${currentExitTransport === 'train' ? 'selected' : ''}>🚆 Tren</option>
-              <option value="car" ${currentExitTransport === 'car' ? 'selected' : ''}>🚗 Araba</option>
-              <option value="bus" ${currentExitTransport === 'bus' ? 'selected' : ''}>🚌 Otobüs</option>
-              <option value="ship" ${currentExitTransport === 'ship' ? 'selected' : ''}>🚢 Gemi</option>
+              <option value="flight" ${currentExitTransport === 'flight' ? 'selected' : ''}>${t('transportFlight')}</option>
+              <option value="train" ${currentExitTransport === 'train' ? 'selected' : ''}>${t('transportTrain')}</option>
+              <option value="car" ${currentExitTransport === 'car' ? 'selected' : ''}>${t('transportCar')}</option>
+              <option value="bus" ${currentExitTransport === 'bus' ? 'selected' : ''}>${t('transportBus')}</option>
+              <option value="ship" ${currentExitTransport === 'ship' ? 'selected' : ''}>${t('transportShip')}</option>
             </select>
           </div>
         </div>
@@ -3878,10 +3878,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <div class="stamp-buddies-input-row">
           <span class="stamp-buddies-icon">👥</span>
           <div class="buddy-input-autocomplete-wrap">
-            <input type="text" id="popup-buddy-input" class="stamp-buddy-input compact" placeholder="@kullanıcı adı ara ve seç..." autocomplete="off" maxlength="30" />
+            <input type="text" id="popup-buddy-input" class="stamp-buddy-input compact" placeholder="${t('searchBuddies')}" autocomplete="off" maxlength="30" />
             <div id="popup-buddy-suggestions" class="buddy-suggestions-popover" style="display:none;"></div>
           </div>
-          <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn compact">+ Ekle</button>
+          <button type="button" id="popup-buddy-add-btn" class="stamp-buddy-add-btn compact">${t('addBuddy')}</button>
         </div>
         <div class="stamp-buddies-chips-row" id="popup-buddies-chips">
           ${currentBuddies.map(b => `<span class="buddy-chip">${escapeHtml(b)} <button type="button" class="del-buddy" data-name="${escapeHtml(b)}">&times;</button></span>`).join('')}
@@ -3889,21 +3889,21 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       </div>
 
       <button type="button" id="btn-save-stamp-data" class="stamp-save-btn compact">
-        <span>💾 Bilgileri Kaydet</span>
+        <span>${t('saveDetails')}</span>
       </button>
     </div>
 
     <!-- 📸 Seyahat Günlüğü & Fotoğraflar Çekmecesi -->
     <div class="map-status-journal-drawer" id="map-status-journal-drawer" style="display: none;">
       <div class="journal-drawer-header">
-        <span class="journal-drawer-title">📸 Seyahat Anıları & Günlük</span>
+        <span class="journal-drawer-title">${t('memoriesJournal')}</span>
       </div>
 
       <!-- Mood Seçimi -->
       <div class="journal-mood-section">
-        <div class="journal-section-label">HİS & SEYAHAT MODU:</div>
+        <div class="journal-section-label">${t('moodSection')}</div>
         <div class="journal-moods-row" id="journal-moods-row">
-          ${['😍 Harika', '🎉 Eğlenceli', '☕ Huzurlu', '🥾 Maceralı', '🏖️ Dinlendirici', '🍷 Keyifli'].map(m => {
+          ${(currentLang === 'tr' ? ['😍 Harika', '🎉 Eğlenceli', '☕ Huzurlu', '🥾 Maceralı', '🏖️ Dinlendirici', '🍷 Keyifli'] : ['😍 Amazing', '🎉 Fun', '☕ Peaceful', '🥾 Adventurous', '🏖️ Relaxing', '🍷 Joyful']).map(m => {
             const moodVal = m.split(' ')[0];
             const isSel = (currentJournal?.mood || '') === moodVal;
             return `<button type="button" class="journal-mood-btn ${isSel ? 'active' : ''}" data-mood="${moodVal}">${m}</button>`;
@@ -3914,23 +3914,23 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <!-- Fotoğraflar Galerisi -->
       <div class="journal-photos-section">
         <div class="journal-photos-top-row">
-          <span class="journal-section-label">FOTOĞRAFLAR (<span id="journal-photo-count">0</span>):</span>
+          <span class="journal-section-label">${currentLang === 'tr' ? 'FOTOĞRAFLAR' : 'PHOTOS'} (<span id="journal-photo-count">0</span>):</span>
           <button type="button" class="journal-upload-trigger" id="journal-upload-btn">
-            <span>➕ Fotoğraf Yükle</span>
+            <span>${t('uploadPhoto')}</span>
           </button>
           <input type="file" id="journal-file-input" accept="image/*" style="display:none;" />
         </div>
         <div class="journal-photos-grid" id="journal-photos-grid">
-          <div class="journal-photo-loading">Fotoğraflar yükleniyor...</div>
+          <div class="journal-photo-loading">${t('loadingPhotos')}</div>
         </div>
       </div>
 
       <!-- Günlük Notu / Anı Yazısı -->
       <div class="journal-text-section">
-        <div class="journal-section-label">GÜNLÜK NOTUNUZ:</div>
-        <textarea id="journal-text-input" class="journal-textarea" placeholder="Bu seyahatten unutulmaz bir anı, his veya tavsiye yazın..." rows="3">${escapeHtml(cleanNote(currentJournal?.text || currentNotes || ''))}</textarea>
+        <div class="journal-section-label">${t('journalNote')}</div>
+        <textarea id="journal-text-input" class="journal-textarea" placeholder="${t('journalPlaceholder')}" rows="3">${escapeHtml(cleanNote(currentJournal?.text || currentNotes || ''))}</textarea>
         <button type="button" id="btn-save-journal" class="journal-save-btn">
-          <span>💾 Günlüğü Kaydet</span>
+          <span>${t('saveJournal')}</span>
         </button>
       </div>
     </div>
@@ -3938,30 +3938,30 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     <!-- 🍽️ Mekan / Kafe / Restoran Çekmecesi -->
     <div class="map-status-places-drawer" id="map-status-places-drawer" style="display: none;">
       <div class="places-drawer-header">
-        <span class="places-drawer-title">🍽️ Keşfedilen Mekanlar & Rota Durakları</span>
+        <span class="places-drawer-title">${t('discoveredPlaces')}</span>
       </div>
 
       <!-- Yeni Mekan Ekleme Formu -->
       <div class="places-add-form">
         <div class="place-categories-row" id="place-categories-row">
-          <button type="button" class="place-cat-btn active" data-cat="restaurant">🍽️ Restoran</button>
-          <button type="button" class="place-cat-btn" data-cat="cafe">☕ Kafe</button>
-          <button type="button" class="place-cat-btn" data-cat="museum">🏛️ Müze</button>
-          <button type="button" class="place-cat-btn" data-cat="nature">🏖️ Doğa/Plaj</button>
-          <button type="button" class="place-cat-btn" data-cat="shopping">🛍️ Alışveriş</button>
-          <button type="button" class="place-cat-btn" data-cat="hotel">🏨 Otel</button>
+          <button type="button" class="place-cat-btn active" data-cat="restaurant">${t('catRestaurant')}</button>
+          <button type="button" class="place-cat-btn" data-cat="cafe">${t('catCafe')}</button>
+          <button type="button" class="place-cat-btn" data-cat="museum">${t('catMuseum')}</button>
+          <button type="button" class="place-cat-btn" data-cat="nature">${t('catNature')}</button>
+          <button type="button" class="place-cat-btn" data-cat="shopping">${t('catShopping')}</button>
+          <button type="button" class="place-cat-btn" data-cat="hotel">${t('catHotel')}</button>
         </div>
 
         <div class="place-inputs-row">
-          <input type="text" id="place-name-input" class="place-input full-width" placeholder="Mekan adı (Örn: Café de Flore)..." maxlength="50" />
+          <input type="text" id="place-name-input" class="place-input full-width" placeholder="${t('placeNamePlaceholder')}" maxlength="50" />
         </div>
 
         <div class="place-notes-row">
-          <input type="text" id="place-note-input" class="place-input full-width" placeholder="Gurme/ziyaret notu (Örn: Kruvasanı ve kahvesi şahane!)..." maxlength="100" />
+          <input type="text" id="place-note-input" class="place-input full-width" placeholder="${t('placeNotePlaceholder')}" maxlength="100" />
         </div>
 
         <div class="place-bottom-row">
-          <div class="place-star-rating-box" title="Mekan Puanı">
+          <div class="place-star-rating-box" title="${currentLang === 'tr' ? 'Mekan Puanı' : 'Place Rating'}">
             <div class="place-stars-row" id="place-stars-row">
               ${[1, 2, 3, 4, 5].map(s => `
                 <span class="place-star filled" data-score="${s}" title="${s}/5">★</span>
@@ -3969,7 +3969,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
             </div>
             <span class="place-stars-score" id="place-stars-score">5/5</span>
           </div>
-          <button type="button" id="btn-add-place" class="place-add-btn">+ Ekle</button>
+          <button type="button" id="btn-add-place" class="place-add-btn">${t('addBuddy')}</button>
         </div>
       </div>
 
@@ -3982,25 +3982,25 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <div class="map-status-guide-drawer" id="map-status-guide-drawer" style="display: none;">
         <div class="guide-grid-info">
           <div class="guide-item">
-            <span class="guide-lbl">🔌 Priz Tipi:</span>
+            <span class="guide-lbl">${t('plugType')}</span>
             <span class="guide-val">${escapeHtml(guide.plug)}</span>
           </div>
           <div class="guide-item">
-            <span class="guide-lbl">💵 Para Birimi:</span>
+            <span class="guide-lbl">${t('currency')}</span>
             <span class="guide-val">${escapeHtml(guide.cur)}</span>
           </div>
           <div class="guide-item">
-            <span class="guide-lbl">🚨 Acil Durum:</span>
+            <span class="guide-lbl">${t('emergency')}</span>
             <span class="guide-val">${escapeHtml(guide.em)}</span>
           </div>
         </div>
         <div class="guide-recommendations">
           <div class="guide-rec-box">
-            <span class="guide-rec-title">🍽️ Meşhur 3 Lezzet:</span>
+            <span class="guide-rec-title">${t('topFoods')}</span>
             <span class="guide-rec-text">${escapeHtml(guide.foods.join(', '))}</span>
           </div>
           <div class="guide-rec-box">
-            <span class="guide-rec-title">📍 Görülmesi Gereken 3 Yer:</span>
+            <span class="guide-rec-title">${t('topSights')}</span>
             <span class="guide-rec-text">${escapeHtml(guide.spots.join(', '))}</span>
           </div>
         </div>

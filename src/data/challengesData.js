@@ -6,6 +6,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Balkan Dream',
     icon: '🏛️',
     badge: '🎖️ Balkan Fatihi',
+    badgeEn: '🎖️ Balkan Conqueror',
     desc: 'Balkan yarımadasının zengin tarihini, lezzetlerini ve doğasını keşfet.',
     descEn: 'Explore the rich history, cuisine, and nature of the Balkan peninsula.',
     countries: ['TR', 'GR', 'BG', 'MK', 'AL', 'ME', 'BA', 'RS', 'XK', 'HR', 'RO']
@@ -16,6 +17,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Nordic Escapade',
     icon: '❄️',
     badge: '👑 Kuzey Yıldızı',
+    badgeEn: '👑 North Star',
     desc: 'Fiyortlar, kuzey ışıkları ve masalsı İskandinav coğrafyası.',
     descEn: 'Fjords, northern lights, and magical Scandinavian landscapes.',
     countries: ['NO', 'SE', 'FI', 'DK', 'IS']
@@ -26,6 +28,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Central Europe Classics',
     icon: '🏰',
     badge: '🏰 Şatolar Efendisi',
+    badgeEn: '🏰 Lord of Castles',
     desc: 'Tarihi kaleler, klasik müzik ve gotik mimarinin kalbi.',
     descEn: 'Historic castles, classical music, and gothic architecture.',
     countries: ['DE', 'AT', 'CH', 'CZ', 'PL', 'HU', 'SK']
@@ -36,6 +39,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Mediterranean Charm',
     icon: '🌊',
     badge: '☀️ Akdeniz Korsanı',
+    badgeEn: '☀️ Mediterranean Corsair',
     desc: 'Turkuaz koylar, zeytin ağaçları ve güney sahilleri.',
     descEn: 'Turquoise bays, olive groves, and sunny southern coastlines.',
     countries: ['ES', 'IT', 'FR', 'PT', 'GR', 'MT', 'CY']
@@ -46,6 +50,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Caucasus & Silk Road',
     icon: '🐫',
     badge: '🧭 Kervan Başı',
+    badgeEn: '🧭 Caravan Leader',
     desc: 'Tarihi İpek Yolu kervan rotaları ve görkemli Kafkas dağları.',
     descEn: 'Historic Silk Road caravan routes and majestic Caucasus peaks.',
     countries: ['AZ', 'GE', 'AM', 'UZ', 'KZ', 'KG', 'TM']
@@ -56,6 +61,7 @@ export const TRAVEL_CHALLENGES = [
     titleEn: 'Far East Asia',
     icon: '🏮',
     badge: '🐉 Doğu Ejderhası',
+    badgeEn: '🐉 Eastern Dragon',
     desc: 'Kadim tapınaklar, neon şehirler ve büyüleyici Doğu kültürü.',
     descEn: 'Ancient temples, neon cities, and captivating Eastern culture.',
     countries: ['JP', 'KR', 'CN', 'TW', 'VN', 'TH', 'SG', 'MY', 'ID']

@@ -9,8 +9,10 @@ export const AIRLINE_ALLIANCES = [
     name: 'Star Alliance',
     icon: '⭐',
     badge: 'Dünyanın En Büyüğü',
+    badgeEn: 'World\'s Largest',
     color: '#f59e0b',
     desc: '1997 yılında kurulan, THY ve Lufthansa öncülüğündeki en büyük küresel havacılık ittifakı.',
+    descEn: 'Founded in 1997, the largest global aviation alliance led by Turkish Airlines and Lufthansa.',
     airlines: [
       { id: 'thy', code: 'TK', name: 'Türk Hava Yolları', country: 'Türkiye', flag: '🇹🇷', hub: 'IST' },
       { id: 'lufthansa', code: 'LH', name: 'Lufthansa', country: 'Almanya', flag: '🇩🇪', hub: 'FRA' },
@@ -41,8 +43,10 @@ export const AIRLINE_ALLIANCES = [
     name: 'SkyTeam',
     icon: '✈️',
     badge: 'Kıta Aşırı Ortaklık',
+    badgeEn: 'Transcontinental Network',
     color: '#3b82f6',
     desc: 'Air France, KLM ve Delta öncülüğünde kurulan prestijli küresel havayolu ağı.',
+    descEn: 'Prestigious global airline alliance pioneered by Air France, KLM, and Delta.',
     airlines: [
       { id: 'airfrance', code: 'AF', name: 'Air France', country: 'Fransa', flag: '🇫🇷', hub: 'CDG' },
       { id: 'klm', code: 'KL', name: 'KLM Royal Dutch', country: 'Hollanda', flag: '🇳🇱', hub: 'AMS' },
@@ -67,8 +71,10 @@ export const AIRLINE_ALLIANCES = [
     name: 'Oneworld',
     icon: '🌐',
     badge: 'Birinci Sınıf İttifak',
+    badgeEn: 'First-Class Alliance',
     color: '#10b981',
     desc: 'British Airways, American Airlines ve Qatar Airways ile kıtaları birbirine bağlayan birlik.',
+    descEn: 'Connecting continents with British Airways, American Airlines, and Qatar Airways.',
     airlines: [
       { id: 'british', code: 'BA', name: 'British Airways', country: 'İngiltere', flag: '🇬🇧', hub: 'LHR' },
       { id: 'american', code: 'AA', name: 'American Airlines', country: 'ABD', flag: '🇺🇸', hub: 'DFW' },
@@ -88,10 +94,13 @@ export const AIRLINE_ALLIANCES = [
   {
     id: 'turkish_carriers',
     name: 'Türk Taşıyıcıları',
+    nameEn: 'Turkish Carriers',
     icon: '🇹🇷',
     badge: 'Milli Filomuz',
+    badgeEn: 'National Fleet',
     color: '#ef4444',
     desc: 'Türkiye merkezli uçuş yapan, yurt içi ve yurt dışı hatların vazgeçilmez yerli havayolları.',
+    descEn: 'Essential domestic and flag carrier airlines operating from Türkiye.',
     airlines: [
       { id: 'thy', code: 'TK', name: 'Türk Hava Yolları', country: 'Türkiye', flag: '🇹🇷', hub: 'IST' },
       { id: 'pegasus', code: 'PC', name: 'Pegasus Hava Yolları', country: 'Türkiye', flag: '🇹🇷', hub: 'SAW' },
@@ -106,10 +115,13 @@ export const AIRLINE_ALLIANCES = [
   {
     id: 'gulf_luxury',
     name: 'Körfez & Lüks Devleri',
+    nameEn: 'Gulf & Luxury Carriers',
     icon: '💎',
     badge: '7 Yıldızlı Hizmet',
+    badgeEn: '7-Star Service',
     color: '#8b5cf6',
     desc: 'Dünyanın en lüks uçak içi hizmetlerine ve geniş gövde filolarına sahip Körfez devleri.',
+    descEn: 'World-renowned Gulf luxury airlines famous for premier cabins and long-haul widebodies.',
     airlines: [
       { id: 'emirates', code: 'EK', name: 'Emirates', country: 'BAE', flag: '🇦🇪', hub: 'DXB' },
       { id: 'qatar', code: 'QR', name: 'Qatar Airways', country: 'Katar', flag: '🇶🇦', hub: 'DOH' },
@@ -126,10 +138,13 @@ export const AIRLINE_ALLIANCES = [
   {
     id: 'europe_lowcost',
     name: 'Avrupa Düşük Maliyetli (Low-Cost)',
+    nameEn: 'European Low-Cost',
     icon: '⚡',
     badge: 'Ekonomik Gezgin',
+    badgeEn: 'Budget Flyer',
     color: '#eab308',
     desc: 'Avrupa şehirleri arasında uygun fiyatlı seyahatin ve sırt çantalı gezginlerin tercihi.',
+    descEn: 'Affordable point-to-point European flyers favored by budget backpackers.',
     airlines: [
       { id: 'ryanair', code: 'FR', name: 'Ryanair', country: 'İrlanda', flag: '🇮🇪', hub: 'DUB' },
       { id: 'easyjet', code: 'U2', name: 'easyJet', country: 'İngiltere', flag: '🇬🇧', hub: 'LGW' },
@@ -163,28 +178,37 @@ export const AIRCRAFT_FAMILIES = [
   {
     id: 'boeing',
     name: 'Boeing Ailesi',
+    nameEn: 'Boeing Family',
     icon: '🇺🇸',
     badge: 'Amerikan Havacılık Devi',
+    badgeEn: 'American Aviation Giant',
     color: '#3b82f6',
     desc: "1960'lardan günümüze gökyüzüne hükmeden efsanevi Amerikan jet ailesi.",
+    descEn: 'Legendary American commercial jetliner family dominating global skies since the 1960s.',
     models: ['b737', 'b777', 'b787', 'b747', 'b757', 'b767', 'b777x']
   },
   {
     id: 'airbus',
     name: 'Airbus Ailesi',
+    nameEn: 'Airbus Family',
     icon: '🇪🇺',
     badge: 'Avrupa Mühendisliği',
+    badgeEn: 'European Engineering',
     color: '#ef4444',
     desc: 'Fly-by-wire teknolojisinin ve modern geniş gövdelerin öncüsü Avrupa filosu.',
+    descEn: 'Pioneer of fly-by-wire innovations and modern wide-body jetliners built in Europe.',
     models: ['a320', 'a321xlr', 'a330', 'a350', 'a380', 'a220', 'a340']
   },
   {
     id: 'regional',
     name: 'Bölgesel & Özel Filo',
+    nameEn: 'Regional & Specialty Fleet',
     icon: '🛩️',
     badge: 'Özel & Bölgesel Jetler',
+    badgeEn: 'Regional & Specialty Jets',
     color: '#10b981',
     desc: 'Bölgesel hatların çevik jetleri, turboprop pervaneliler ve süpersonik efsaneler.',
+    descEn: 'Agile regional feeder jets, efficient turboprops, and supersonic icons.',
     models: ['e_jets', 'atr72', 'crj', 'c919', 'private_jet', 'concorde']
   }
 ];

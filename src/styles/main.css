@@ -2756,6 +2756,10 @@ body[data-theme="light"] .medal-spotlight-desc {
 
   .stats-label {
     font-size: 0.66rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
   }
 
   .stats-icon {
@@ -11842,6 +11846,9 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   font-size: 0.65rem;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .popup-hub-btn:hover {
   background: rgba(255, 255, 255, 0.08);
