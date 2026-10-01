@@ -1,11 +1,16 @@
 import './styles/main.css';
-import { renderWorldMapView } from './components/WorldMapView.js';
+import { renderWorldMapView, preloadMapGeoData } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks, initFeedbackSync } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
 import { initPhoneSimulator } from './components/PhoneSimulator.js';
+
+// Preload GeoJSON map data immediately on app launch for instant 0ms map rendering
+try {
+  preloadMapGeoData();
+} catch {}
 
 // Listen for PWA installation prompt globally
 if (typeof window !== 'undefined') {
@@ -58,12 +63,12 @@ function initApp() {
   // Auto-sync offline feedbacks & archive flush whenever app boots or device regains internet connection
   initFeedbackSync();
 
-  appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:#0f172a;';
+  appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);';
 
   // Dedicated permanent Map container - Never wiped or reloaded between profile views
   const mapContainer = document.createElement('div');
   mapContainer.id = 'map-app-root';
-  mapContainer.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:hidden;';
+  mapContainer.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);';
   appContainer.appendChild(mapContainer);
 
   // Dedicated Profile overlay container - Opens and closes instantly (0ms)

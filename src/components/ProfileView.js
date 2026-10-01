@@ -35,6 +35,7 @@ import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/s
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
+import { renderMedalTokenHtml, attachMedalSpotlightListeners } from '../utils/medalDesigns.js';
 
 // Sanitize photo URL - only allow http/https URLs and data:image URLs
 function sanitizePhotoUrl(url) {
@@ -264,12 +265,27 @@ export function renderProfileView(container, onBack) {
             <div class="pstat"><span class="pstat-num" style="color:#06b6d4">${currentLang === 'tr' ? '%' + (baseStats.landAreaPercent || 0) : (baseStats.landAreaPercent || 0) + '%'}</span><span class="pstat-lbl">🌐 ${currentLang === 'tr' ? 'Karasal Alan' : 'Land Area'}</span></div>
             <div class="pstat"><span class="pstat-num" style="color:#a855f7">${currentLang === 'tr' ? '%' + (baseStats.populationPercent || 0) : (baseStats.populationPercent || 0) + '%'}</span><span class="pstat-lbl">👥 ${currentLang === 'tr' ? 'Dünya Nüfusu' : 'World Population'}</span></div>
           </div>
-          ${earnedMedals.length > 0 ? `
-            <div class="profile-badges-header" style="font-size:0.85rem;color:var(--theme-text-muted, #94a3b8);font-weight:600;margin-bottom:8px;">${currentLang === 'tr' ? 'Kazanılan Rozetler' : 'Earned Badges'} (${earnedMedals.length})</div>
-            <div class="profile-badges">
-              ${earnedMedals.map(m => `<span class="badge-icon" title="${m.title} - ${m.desc}">${m.icon}</span>`).join('')}
+        </div>
+
+        <!-- 🎖️ 3D Hatıra Madalyaları Vitrini Card -->
+        <div class="profile-medals-showcase-card">
+          <div class="profile-medals-topbar">
+            <div class="medals-title-wrap">
+              <span class="medals-title-icon">🎖️</span>
+              <span class="medals-title-text">${currentLang === 'tr' ? 'Kazanılan Hatıra Madalyaları' : 'Earned Commemorative Medals'}</span>
+              <span class="medals-count-badge">${earnedMedals.length} / ${ACHIEVEMENTS.length}</span>
             </div>
-          ` : `<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek madalya topla!' : 'No medals earned yet. Mark places on the map to earn medals!'}</div>`}
+            <span class="medals-hint-text">${currentLang === 'tr' ? 'Detay için tıkla' : 'Click to inspect'}</span>
+          </div>
+          ${earnedMedals.length > 0 ? `
+            <div class="profile-medals-tray">
+              ${earnedMedals.map(m => renderMedalTokenHtml(m, { size: 'md' })).join('')}
+            </div>
+          ` : `
+            <div style="color:#64748b;font-size:0.85rem;padding:16px;background:rgba(10,15,29,0.5);border-radius:12px;border:1px dashed rgba(255,255,255,0.1);text-align:center;">
+              ${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek 3D koleksiyon madalyalarını topla!' : 'No medals earned yet. Mark places on the map to collect 3D commemorative medals!'}
+            </div>
+          `}
         </div>
 
         <!-- 📸 Seyahat Albümü & Fotoğraf Vitrini Card -->
@@ -303,6 +319,9 @@ export function renderProfileView(container, onBack) {
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
     });
+
+    // 🎖️ 3D Hatıra Madalyaları Spotlight Modalı
+    attachMedalSpotlightListeners(contentArea, earnedMedals, currentLang);
 
     // Cloud Sync Pill Logic
     const syncPill = document.getElementById('profile-cloud-sync-pill');
@@ -1695,11 +1714,11 @@ export function renderProfileView(container, onBack) {
               const title = currentLang === 'en' ? (ach.titleEn || ach.title) : ach.title;
               const desc = currentLang === 'en' ? (ach.descEn || ach.desc) : ach.desc;
               return `
-                <div class="ach-card ${isEarned ? 'earned' : 'locked'}">
+                <div class="ach-card ${isEarned ? 'earned' : 'locked'}" data-medal-id="${escapeHtml(ach.id)}" data-medal-locked="${isEarned ? '0' : '1'}" tabindex="0" role="button" aria-label="${escapeHtml(title)}">
                   ${isEarned ? '<div class="ach-check">✓</div>' : '<div class="ach-lock">🔒</div>'}
-                  <div class="ach-icon">${ach.icon}</div>
-                  <div class="ach-name">${title}</div>
-                  <div class="ach-desc">${desc}</div>
+                  <div class="ach-icon">${renderMedalTokenHtml(ach, { size: 'lg', isLocked: !isEarned })}</div>
+                  <div class="ach-name">${escapeHtml(title)}</div>
+                  <div class="ach-desc">${escapeHtml(desc)}</div>
                 </div>
               `;
             }).join('')}
@@ -1710,6 +1729,9 @@ export function renderProfileView(container, onBack) {
 
     html += `</div>`;
     contentArea.innerHTML = html;
+
+    // 🎖️ 3D Hatıra Madalyaları Spotlight Modalı
+    attachMedalSpotlightListeners(contentArea, achievements, currentLang);
   }
 
 

@@ -293,6 +293,28 @@ let promotedLabelParent = null;
 let cachedWorldCountriesData = null;
 let cachedTurkeyProvincesData = null;
 
+export function preloadMapGeoData() {
+  try {
+    const baseUrl = import.meta.env.BASE_URL || './';
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+    if (!cachedWorldCountriesData) {
+      fetchGeoDataWithCache(`${cleanBase}data/world-countries.json`, 'world-countries').then(d => {
+        if (d && d.features) cachedWorldCountriesData = d;
+      }).catch(() => {});
+    }
+    if (!cachedTurkeyProvincesData) {
+      fetchGeoDataWithCache(`${cleanBase}data/turkey-provinces.json`, 'turkey-provinces').then(d => {
+        if (d && d.features) cachedTurkeyProvincesData = d;
+      }).catch(() => {});
+    }
+  } catch {}
+}
+
+// Immediately trigger background preload so data is in memory before user touches map
+try {
+  preloadMapGeoData();
+} catch {}
+
 function showPopupBackdrop(feature = null, currentStatus = 'unvisited', displayName = '', latlng = null, id = '', type = '', countryCode = '') {
   const mapContainer = map?.getContainer();
   if (mapContainer) {
@@ -762,11 +784,11 @@ export function renderWorldMapView(container, options = {}) {
           </div>
         </div>
 
-        <!-- Loading indicator -->
-        <div id="map-loading" style="position:absolute;inset:0;display:${countriesLayer ? 'none' : 'flex'};align-items:center;justify-content:center;z-index:9000;pointer-events:none;">
+        <!-- Loading indicator (Instantly hidden when preloaded) -->
+        <div id="map-loading" style="position:absolute;inset:0;display:${(countriesLayer || cachedWorldCountriesData) ? 'none' : 'flex'};align-items:center;justify-content:center;z-index:9000;pointer-events:none;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);">
           <div style="text-align:center;color:#94a3b8;font-size:0.9rem;">
-            <div style="font-size:2rem;margin-bottom:8px;animation:spin 2s linear infinite;">🌍</div>
-            <div>${t('loading')}</div>
+            <div style="font-size:2.2rem;margin-bottom:8px;animation:spin 2s linear infinite;">🌍</div>
+            <div style="font-weight:600;letter-spacing:0.5px;">${t('loading')}</div>
           </div>
         </div>
       </div>
@@ -1850,8 +1872,8 @@ function initMap(container) {
     }
   }, true);
 
-  // Optimized SVG renderer buffer: 0.2 padding keeps SVG canvas compact and eliminates GPU stalls
-  mapRenderer = L.svg({ padding: 0.2 });
+  // Generous SVG renderer buffer (padding: 1.5): eliminates the black gap/void during drag, pan and pinch-zoom
+  mapRenderer = L.svg({ padding: 1.5 });
 
   map.createPane('countriesPane');
   map.getPane('countriesPane').style.zIndex = 410;
@@ -1866,13 +1888,13 @@ function initMap(container) {
   map.createPane('stateBordersPane');
   map.getPane('stateBordersPane').style.zIndex = 440;
   map.getPane('stateBordersPane').style.pointerEvents = 'none';
-  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 0.2 });
+  stateBordersRenderer = L.svg({ pane: 'stateBordersPane', padding: 1.5 });
 
   // Prominent Country Borders Pane: Level 1 & Level 2 bold country borders, always above states and cities!
   map.createPane('countryBordersPane');
   map.getPane('countryBordersPane').style.zIndex = 450;
   map.getPane('countryBordersPane').style.pointerEvents = 'none';
-  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 0.2 });
+  countryBordersRenderer = L.svg({ pane: 'countryBordersPane', padding: 1.5 });
 
   map.createPane('labelsPane');
   map.getPane('labelsPane').style.zIndex = 460;
@@ -1888,7 +1910,7 @@ function initMap(container) {
   if (ppPane) {
     ppPane.classList.add('no-blur-pane');
   }
-  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 0.2 });
+  activeFeatureRenderer = L.svg({ pane: 'activeFeaturePane', padding: 1.5 });
 
   countryLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);
   provinceLabelsLayer = L.layerGroup([], { pane: 'labelsPane' }).addTo(map);

@@ -37,7 +37,7 @@ export const ACHIEVEMENTS = [
   { id: 'world_10', title: 'Dünya Yolcusu', desc: '10 farklı ülkeyi ziyaret et', icon: '🗺️', category: 'world', check: s => s.worldCountryCount >= 10 },
   { id: 'world_15', title: 'Pasaport Avcısı', desc: '15 farklı ülkeyi ziyaret et', icon: '🛂', category: 'world', check: s => s.worldCountryCount >= 15 },
   { id: 'world_25', title: 'Deneyimli Gezgin', desc: '25 farklı ülkeyi ziyaret et', icon: '🧭', category: 'world', check: s => s.worldCountryCount >= 25 },
-  { id: 'world_40', title: 'Küresel Kâşif', desc: '40 farklı ülkeyi ziyaret et', icon: '🚀', category: 'world', check: s => s.worldCountryCount >= 40 },
+  { id: 'world_40', title: 'Küresel Kâşif', desc: '40 farklı ülkeyi ziyaret et', icon: '🛰️', category: 'world', check: s => s.worldCountryCount >= 40 },
   { id: 'world_50', title: 'Yarısına Ulaştın!', desc: '50 farklı ülkeyi ziyaret et', icon: '🏆', category: 'world', check: s => s.worldCountryCount >= 50 },
   { id: 'world_75', title: 'Dünya Çapında', desc: '75 farklı ülkeyi ziyaret et', icon: '🌐', category: 'world', check: s => s.worldCountryCount >= 75 },
   { id: 'world_100', title: 'Yüzler Kulübü', desc: '100 farklı ülkeyi ziyaret et', icon: '💯', category: 'world', check: s => s.worldCountryCount >= 100 },
@@ -47,12 +47,12 @@ export const ACHIEVEMENTS = [
   { id: 'europe_1', title: 'Avrupa Kapısı', desc: 'Avrupa\'da 1 ülkeyi ziyaret et', icon: '🇪🇺', category: 'continent', check: s => getContinentCount(s, 'europe') >= 1 },
   { id: 'europe_3', title: 'Avrupa Turisti', desc: 'Avrupa\'da 3 ülkeyi ziyaret et', icon: '🏰', category: 'continent', check: s => getContinentCount(s, 'europe') >= 3 },
   { id: 'europe_5', title: 'Avrupa Kâşifi', desc: 'Avrupa\'da 5 ülkeyi ziyaret et', icon: '🗼', category: 'continent', check: s => getContinentCount(s, 'europe') >= 5 },
-  { id: 'europe_10', title: 'Avrupa Ustası', desc: 'Avrupa\'da 10 ülkeyi ziyaret et', icon: '👑', category: 'continent', check: s => getContinentCount(s, 'europe') >= 10 },
-  { id: 'europe_20', title: 'Avrupa Fatihi', desc: 'Avrupa\'da 20 ülkeyi ziyaret et', icon: '🏛️', category: 'continent', check: s => getContinentCount(s, 'europe') >= 20 },
+  { id: 'europe_10', title: 'Avrupa Ustası', desc: 'Avrupa\'da 10 ülkeyi ziyaret et', icon: '🏛️', category: 'continent', check: s => getContinentCount(s, 'europe') >= 10 },
+  { id: 'europe_20', title: 'Avrupa Fatihi', desc: 'Avrupa\'da 20 ülkeyi ziyaret et', icon: '👑', category: 'continent', check: s => getContinentCount(s, 'europe') >= 20 },
   
   // Asya
   { id: 'asia_1', title: 'Asya Kapısı', desc: 'Asya\'da 1 ülkeyi ziyaret et', icon: '🏯', category: 'continent', check: s => getContinentCount(s, 'asia') >= 1 },
-  { id: 'asia_3', title: 'İpek Yolu Yolcusu', desc: 'Asya\'da 3 ülkeyi ziyaret et', icon: '🏮', category: 'continent', check: s => getContinentCount(s, 'asia') >= 3 },
+  { id: 'asia_3', title: 'İpek Yolu Yolcusu', desc: 'Asya\'da 3 ülkeyi ziyaret et', icon: '🐫', category: 'continent', check: s => getContinentCount(s, 'asia') >= 3 },
   { id: 'asia_5', title: 'Asya Kâşifi', desc: 'Asya\'da 5 ülkeyi ziyaret et', icon: '🐉', category: 'continent', check: s => getContinentCount(s, 'asia') >= 5 },
   { id: 'asia_10', title: 'Doğu Rüzgârı', desc: 'Asya\'da 10 ülkeyi ziyaret et', icon: '⛩️', category: 'continent', check: s => getContinentCount(s, 'asia') >= 10 },
 
@@ -71,11 +71,11 @@ export const ACHIEVEMENTS = [
   { id: 'oceania_2', title: 'Pasifik Kâşifi', desc: 'Okyanusya\'da 2 ülkeyi ziyaret et', icon: '🏄', category: 'continent', check: s => getContinentCount(s, 'oceania') >= 2 },
 
   // Kıta Kombinasyonları
-  { id: 'two_continents', title: 'İki Kıta', desc: '2 farklı kıtada en az 1\'er ülke gez', icon: '🌐', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 2 },
+  { id: 'two_continents', title: 'İki Kıta', desc: '2 farklı kıtada en az 1\'er ülke gez', icon: '🌓', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 2 },
   { id: 'three_continents', title: 'Üç Kıta', desc: '3 farklı kıtada en az 1\'er ülke gez', icon: '🌏', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 3 },
-  { id: 'four_continents', title: 'Dört Kıta', desc: '4 farklı kıtada en az 1\'er ülke gez', icon: '🌍', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 4 },
+  { id: 'four_continents', title: 'Dört Kıta', desc: '4 farklı kıtada en az 1\'er ülke gez', icon: '🌎', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 4 },
   { id: 'five_continents', title: 'Beş Kıta Efsanesi', desc: '5 farklı kıtada en az 1\'er ülke gez', icon: '🏅', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 5 },
-  { id: 'six_continents', title: 'Küresel Bütünlük', desc: 'Tüm 6 kıtada en az 1\'er ülke gez', icon: '🌟', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 6 },
+  { id: 'six_continents', title: 'Küresel Bütünlük', desc: 'Tüm 6 kıtada en az 1\'er ülke gez', icon: '🌌', category: 'continent', check: s => Object.values(s.continentCounts || {}).filter(v => v > 0).length >= 6 },
 
   // ─── ANADOLU & TÜRKİYE ──────────────────────────────────────────
   { id: 'turkey_first', title: 'Anadolu\'ya İlk Adım', desc: 'Türkiye\'de ilk ilini ziyaret et', icon: '🇹🇷', category: 'turkey', check: s => s.turkeyCount >= 1 },
@@ -84,7 +84,7 @@ export const ACHIEVEMENTS = [
   { id: 'turkey_20', title: 'Türkiye Yolcusu', desc: 'Türkiye\'de 20 il ziyaret et', icon: '🎒', category: 'turkey', check: s => s.turkeyCount >= 20 },
   { id: 'turkey_40', title: 'Yarım Türkiye', desc: 'Türkiye\'de 40 il ziyaret et', icon: '🦅', category: 'turkey', check: s => s.turkeyCount >= 40 },
   { id: 'turkey_60', title: 'Anadolu Fatihi', desc: 'Türkiye\'de 60 il ziyaret et', icon: '🏔️', category: 'turkey', check: s => s.turkeyCount >= 60 },
-  { id: 'turkey_all', title: '81\'de 81 Türkiye Ustası', desc: 'Türkiye\'nin tüm 81 ilini tamamla', icon: '🏆', category: 'turkey', check: s => s.turkeyCount >= 81 },
+  { id: 'turkey_all', title: '81\'de 81 Türkiye Ustası', desc: 'Türkiye\'nin tüm 81 ilini tamamla', icon: '🥇', category: 'turkey', check: s => s.turkeyCount >= 81 },
   
   // Türkiye Bölgeleri
   { id: 'all_7_regions', title: '7 Bölge Gezgini', desc: 'Türkiye\'nin 7 coğrafi bölgesinden de en az 1\'er il gez', icon: '🌈', category: 'turkey', check: s => Object.values(s.regionCounts || {}).filter(v => v > 0).length >= 7 },
@@ -94,33 +94,33 @@ export const ACHIEVEMENTS = [
   { id: 'region_karadeniz', title: 'Karadeniz Ruhu', desc: 'Karadeniz Bölgesi\'nin tüm 18 ilini tamamla', icon: '🌲', category: 'turkey', check: s => getRegionCount(s, 'karadeniz') >= 18 },
   { id: 'region_ic_anadolu', title: 'Bozkırın Kalbi', desc: 'İç Anadolu Bölgesi\'nin tüm 13 ilini tamamla', icon: '🌾', category: 'turkey', check: s => getRegionCount(s, 'ic_anadolu') >= 13 },
   { id: 'region_dogu_anadolu', title: 'Doğu Zirveleri', desc: 'Doğu Anadolu Bölgesi\'nin tüm 14 ilini tamamla', icon: '⛰️', category: 'turkey', check: s => getRegionCount(s, 'dogu_anadolu') >= 14 },
-  { id: 'region_guneydogu', title: 'Güneydoğu Masalı', desc: 'Güneydoğu Anadolu\'nun tüm 9 ilini tamamla', icon: '🏰', category: 'turkey', check: s => getRegionCount(s, 'guneydogu_anadolu') >= 9 },
+  { id: 'region_guneydogu', title: 'Güneydoğu Masalı', desc: 'Güneydoğu Anadolu\'nun tüm 9 ilini tamamla', icon: '🗿', category: 'turkey', check: s => getRegionCount(s, 'guneydogu_anadolu') >= 9 },
 
   // ─── ŞEHİR & EYALET AVCISI ─────────────────────────────────────
   { id: 'city_first', title: 'İlk Şehir', desc: 'Herhangi bir ülkede 1 şehir/bölge işaretle', icon: '🏙️', category: 'city', check: s => s.worldCityCount >= 1 },
-  { id: 'city_3', title: 'Şehir Meraklısı', desc: 'Toplam 3 farklı şehir/bölge gez', icon: '🚗', category: 'city', check: s => s.worldCityCount >= 3 },
+  { id: 'city_3', title: 'Şehir Meraklısı', desc: 'Toplam 3 farklı şehir/bölge gez', icon: '🚖', category: 'city', check: s => s.worldCityCount >= 3 },
   { id: 'city_5', title: 'Şehir Gezgini', desc: 'Toplam 5 farklı şehir/bölge gez', icon: '🏘️', category: 'city', check: s => s.worldCityCount >= 5 },
   { id: 'city_10', title: 'Metropol Avcısı', desc: 'Toplam 10 farklı şehir/bölge gez', icon: '🌇', category: 'city', check: s => s.worldCityCount >= 10 },
-  { id: 'city_20', title: 'Şehir Avcısı', desc: 'Toplam 20 farklı şehir/bölge gez', icon: '🦅', category: 'city', check: s => s.worldCityCount >= 20 },
+  { id: 'city_20', title: 'Şehir Avcısı', desc: 'Toplam 20 farklı şehir/bölge gez', icon: '🎯', category: 'city', check: s => s.worldCityCount >= 20 },
   { id: 'city_35', title: 'Büyük Şehir Kâşifi', desc: 'Toplam 35 farklı şehir/bölge gez', icon: '🌆', category: 'city', check: s => s.worldCityCount >= 35 },
   { id: 'city_50', title: 'Şehir Efsanesi', desc: 'Toplam 50 farklı şehir/bölge gez', icon: '🌃', category: 'city', check: s => s.worldCityCount >= 50 },
-  { id: 'city_100', title: 'Yüzyılın Şehirlisi', desc: 'Toplam 100 farklı şehir/bölge gez', icon: '👑', category: 'city', check: s => s.worldCityCount >= 100 },
+  { id: 'city_100', title: 'Yüzyılın Şehirlisi', desc: 'Toplam 100 farklı şehir/bölge gez', icon: '💎', category: 'city', check: s => s.worldCityCount >= 100 },
   { id: 'city_3_in_one', title: 'Ülke Uzmanı', desc: 'Aynı ülkede 3+ farklı şehir/bölge gez', icon: '📍', category: 'city', check: s => s.maxCitiesInOneCountry >= 3 },
-  { id: 'city_5_in_one', title: 'Bölge Âlimi', desc: 'Aynı ülkede 5+ farklı şehir/bölge gez', icon: '🗺️', category: 'city', check: s => s.maxCitiesInOneCountry >= 5 },
+  { id: 'city_5_in_one', title: 'Bölge Âlimi', desc: 'Aynı ülkede 5+ farklı şehir/bölge gez', icon: '🔎', category: 'city', check: s => s.maxCitiesInOneCountry >= 5 },
   { id: 'city_10_in_one', title: 'Yerel Gibi Yaşa', desc: 'Aynı ülkede 10+ şehir/bölge gez', icon: '🏡', category: 'city', check: s => s.maxCitiesInOneCountry >= 10 },
 
   // ─── HAVACILIK & FİLO ─────────────────────────────────────────
-  { id: 'first_flight', title: 'Kanatlanış', desc: 'Binilen ilk havayolunu işaretle', icon: '✈️', category: 'aviation', check: s => (s.flownAirlines || []).length >= 1 },
-  { id: 'turkish_fleet_master', title: 'Göklerin Hakimi', desc: "Türkiye'nin yerli havayollarının en az 3'üyle uç", icon: '🇹🇷', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'pegasus', 'sunexpress', 'ajet', 'corendon', 'freebird', 'tailwind', 'southwind'].includes(id)).length >= 3 },
-  { id: 'star_collector', title: 'Star Alliance Koleksiyoneri', desc: 'Star Alliance üyesi en az 3 farklı havayoluyla uç', icon: '🌟', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'lufthansa', 'united', 'singapore', 'swiss', 'austrian', 'ana', 'aircanada', 'sas', 'tap', 'aegean', 'lot', 'brussels', 'airindia', 'egyptair', 'eva', 'airchina', 'thai', 'airnewzealand', 'asiana', 'copa', 'avianca'].includes(id)).length >= 3 },
-  { id: 'skyteam_rider', title: 'SkyTeam Yolcusu', desc: 'SkyTeam üyesi bir havayoluyla uç', icon: '🌐', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['airfrance', 'klm', 'delta', 'koreanair', 'saudia', 'virgin', 'aeromexico', 'ita', 'chinaeastern', 'vietnam', 'garuda', 'aireuropa', 'tarom', 'mea'].includes(id)) },
-  { id: 'oneworld_flyer', title: 'oneworld Gezgini', desc: 'oneworld üyesi bir havayoluyla uç', icon: '🦅', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['british', 'qatar', 'american', 'cathay', 'finnair', 'iberia', 'jal', 'qantas', 'malaysia', 'royaljordanian', 'royalairmaroc', 'alaska', 'srilankan'].includes(id)) },
-  { id: 'sky_giant', title: 'Gökyüzü Devi', desc: 'A380 veya B747 ile uçuş yap', icon: '🐘', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a380' || id === 'b747') },
+  { id: 'first_flight', title: 'Kanatlanış', desc: 'Binilen ilk havayolunu işaretle', icon: '🛫', category: 'aviation', check: s => (s.flownAirlines || []).length >= 1 },
+  { id: 'turkish_fleet_master', title: 'Göklerin Hakimi', desc: "Türkiye'nin yerli havayollarının en az 3'üyle uç", icon: '🛩️', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'pegasus', 'sunexpress', 'ajet', 'corendon', 'freebird', 'tailwind', 'southwind'].includes(id)).length >= 3 },
+  { id: 'star_collector', title: 'Star Alliance Koleksiyoneri', desc: 'Star Alliance üyesi en az 3 farklı havayoluyla uç', icon: '⭐', category: 'aviation', check: s => (s.flownAirlines || []).filter(id => ['thy', 'lufthansa', 'united', 'singapore', 'swiss', 'austrian', 'ana', 'aircanada', 'sas', 'tap', 'aegean', 'lot', 'brussels', 'airindia', 'egyptair', 'eva', 'airchina', 'thai', 'airnewzealand', 'asiana', 'copa', 'avianca'].includes(id)).length >= 3 },
+  { id: 'skyteam_rider', title: 'SkyTeam Yolcusu', desc: 'SkyTeam üyesi bir havayoluyla uç', icon: '🌀', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['airfrance', 'klm', 'delta', 'koreanair', 'saudia', 'virgin', 'aeromexico', 'ita', 'chinaeastern', 'vietnam', 'garuda', 'aireuropa', 'tarom', 'mea'].includes(id)) },
+  { id: 'oneworld_flyer', title: 'oneworld Gezgini', desc: 'oneworld üyesi bir havayoluyla uç', icon: '💠', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['british', 'qatar', 'american', 'cathay', 'finnair', 'iberia', 'jal', 'qantas', 'malaysia', 'royaljordanian', 'royalairmaroc', 'alaska', 'srilankan'].includes(id)) },
+  { id: 'sky_giant', title: 'Gökyüzü Devi', desc: 'A380 veya B747 ile uçuş yap', icon: '🐋', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a380' || id === 'b747') },
   { id: 'modern_fleet', title: 'Yeni Nesil Filo', desc: 'B787 Dreamliner veya A350 ile uçuş yap', icon: '🚀', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'b787' || id === 'a350') },
-  { id: 'fleet_collector', title: 'Hangar Koleksiyoneri', desc: 'En az 4 farklı uçak modelini koleksiyonuna ekle', icon: '🛫', category: 'aviation', check: s => (s.flownAircraft || []).length >= 4 },
+  { id: 'fleet_collector', title: 'Hangar Koleksiyoneri', desc: 'En az 4 farklı uçak modelini koleksiyonuna ekle', icon: '🛬', category: 'aviation', check: s => (s.flownAircraft || []).length >= 4 },
   { id: 'frequent_flyer', title: 'Sadık Yolcu', desc: '5 veya daha fazla farklı havayolu ile uç', icon: '🎫', category: 'aviation', check: s => (s.flownAirlines || []).length >= 5 },
   { id: 'lowcost_adventurer', title: 'Sırt Çantalı Gezgin', desc: 'Ryanair, Wizz Air veya easyJet gibi bir indirimli havayoluyla uç', icon: '⚡', category: 'aviation', check: s => (s.flownAirlines || []).some(id => ['ryanair', 'easyjet', 'wizzair', 'vueling', 'eurowings', 'norwegian', 'transavia', 'volotea'].includes(id)) },
-  { id: 'quad_jet_legend', title: 'Dört Motorlu Efsane', desc: 'A340 veya B747 gibi dört motorlu bir gökyüzü deviyle uç', icon: '👑', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a340' || id === 'b747') },
+  { id: 'quad_jet_legend', title: 'Dört Motorlu Efsane', desc: 'A340 veya B747 gibi dört motorlu bir gökyüzü deviyle uç', icon: '⚜️', category: 'aviation', check: s => (s.flownAircraft || []).some(id => id === 'a340' || id === 'b747') },
 
   // ─── ÖZEL & TEMATİK ROTALAR ───────────────────────────────────
   { id: 'planner', title: 'Planlı Gezgin', desc: '5+ yeri "Planlanıyor" olarak işaretle', icon: '📅', category: 'special', check: s => (s.worldPlannedCount || s.worldTargetCount || 0) >= 5 },
@@ -139,7 +139,7 @@ export const ACHIEVEMENTS = [
   { id: 'first_feedback', title: 'İlk Ses', desc: 'Uygulamayı geliştirmek için ilk geri bildirimini paylaş', icon: '📮', category: 'community', check: s => (s.feedbackCount || 0) >= 1 },
   { id: 'bug_hunter', title: 'Hata Avcısı', desc: 'Uygulamanın gelişmesi için en az 1 hata (bug) bildirimi yap', icon: '🐞', category: 'community', check: s => (s.bugReportCount || 0) >= 1 },
   { id: 'feature_contributor', title: 'Fikir Mimarı', desc: 'Geliştiriciye 3 veya daha fazla öneri/fikir gönder', icon: '💡', category: 'community', check: s => (s.suggestionCount || 0) >= 3 },
-  { id: 'issue_resolved', title: 'Sorun Çözücü', desc: 'Bildirdiğin bir öneri veya hatanın çözülmesini sağla', icon: '🏆', category: 'community', check: s => (s.resolvedFeedbackCount || 0) >= 1 },
+  { id: 'issue_resolved', title: 'Sorun Çözücü', desc: 'Bildirdiğin bir öneri veya hatanın çözülmesini sağla', icon: '🛠️', category: 'community', check: s => (s.resolvedFeedbackCount || 0) >= 1 },
 ];
 
 export function computeAchievementStats(storageData, baseStats) {
