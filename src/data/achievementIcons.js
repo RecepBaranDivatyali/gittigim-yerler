@@ -1,3 +1,6 @@
+// achievementIcons.js — Premium SVG vector icons for achievement badges
+// Each icon is a clean, recognizable inline SVG with gradient fills
+
 const getGrad = (id, cat) => {
   const colors = {
     world: { p: '#3b82f6', l: '#60a5fa', d: '#1e40af' },
@@ -18,7 +21,7 @@ const getGrad = (id, cat) => {
   </defs>`;
 };
 
-const createSvg = (id, cat, paths) => `
+const svg = (id, cat, paths) => `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="url(#grad-${id})" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
   ${getGrad(id, cat)}
   ${paths}
@@ -26,101 +29,185 @@ const createSvg = (id, cat, paths) => `
 `.trim();
 
 export const ACHIEVEMENT_SVGS = {
-  // WORLD
-  first_country: createSvg('first_country', 'world', `<circle cx="32" cy="32" r="22" stroke-width="4"/><path d="M32 12c-5.5 0-10 4.5-10 10 0 7 10 18 10 18s10-11 10-18c0-5.5-4.5-10-10-10zm0 14a4 4 0 110-8 4 4 0 010 8z" fill="url(#grad-first_country)"/>`),
-  world_3: createSvg('world_3', 'world', `<rect x="14" y="24" width="36" height="26" rx="4" stroke-width="4"/><path d="M24 24v-6a4 4 0 014-4h8a4 4 0 014 4v6M20 24v26M44 24v26"/>`),
-  world_5: createSvg('world_5', 'world', `<path d="M22 42l26-22-6-6-22 26z" fill="url(#grad-world_5)"/><path d="M22 42L12 40l6-12M48 20l4 8-12 6M10 52h44" stroke-width="4"/>`),
-  world_10: createSvg('world_10', 'world', `<path d="M14 18l12-6 12 6 12-6v34l-12 6-12-6-12 6V18zM26 12v34M38 18v34" stroke-width="4"/>`),
-  world_15: createSvg('world_15', 'world', `<rect x="18" y="12" width="28" height="40" rx="3" stroke-width="4"/><circle cx="32" cy="30" r="6"/><path d="M24 42h16M28 48h8"/>`),
-  world_25: createSvg('world_25', 'world', `<circle cx="32" cy="32" r="24" stroke-width="4"/><path d="M32 16l4 12 12 4-12 4-4 12-4-12-12-4 12-4 4-12z" fill="url(#grad-world_25)"/>`),
-  world_40: createSvg('world_40', 'world', `<circle cx="32" cy="32" r="14" stroke-width="4"/><path d="M12 52c16-16 24-24 40-40" stroke-width="4" stroke-dasharray="6 6"/><rect x="42" y="14" width="8" height="8" transform="rotate(45 46 18)" fill="url(#grad-world_40)"/>`),
-  world_50: createSvg('world_50', 'world', `<path d="M16 16h32v12c0 10-8 16-16 16s-16-6-16-16V16z" stroke-width="4"/><path d="M26 56h12M32 44v12M16 20H8v6c0 4 3 6 8 6M48 20h8v6c0 4-3 6-8 6"/>`),
-  world_75: createSvg('world_75', 'world', `<circle cx="32" cy="32" r="22" stroke-width="4"/><path d="M32 10c6 0 10 10 10 22s-4 22-10 22-10-10-10-22 4-22 10-22z"/><path d="M10 32h44"/>`),
-  world_100: createSvg('world_100', 'world', `<path d="M16 48c-4-8-4-18 0-26M48 48c4-8 4-18 0-26" stroke-width="4"/><text x="32" y="38" font-size="20" font-weight="bold" text-anchor="middle" fill="url(#grad-world_100)" stroke="none">100</text>`),
+  // ═══ WORLD — blue gradient ═══════════════════════════════════════
+  // Globe with pin marker
+  first_country: svg('first_country', 'world', `<circle cx="32" cy="32" r="20"/><ellipse cx="32" cy="32" rx="8" ry="20"/><path d="M12 32h40M14 22h36M14 42h36"/>`),
+  // Suitcase
+  world_3: svg('world_3', 'world', `<rect x="16" y="24" width="32" height="24" rx="4"/><path d="M24 24v-6a4 4 0 014-4h8a4 4 0 014 4v6"/><path d="M16 34h32"/>`),
+  // Airplane
+  world_5: svg('world_5', 'world', `<path d="M32 14l-6 18h-14l6 4-2 14 16-10 16 10-2-14 6-4h-14z" fill="url(#grad-world_5)" stroke-width="3"/>`),
+  // Folded map
+  world_10: svg('world_10', 'world', `<path d="M12 18l14-6 12 6 14-6v34l-14 6-12-6-14 6V18z"/><path d="M26 12v34M38 18v34"/>`),
+  // Passport book
+  world_15: svg('world_15', 'world', `<rect x="18" y="10" width="28" height="44" rx="4"/><circle cx="32" cy="30" r="8"/><path d="M24 44h16M26 48h12"/>`),
+  // Compass rose
+  world_25: svg('world_25', 'world', `<circle cx="32" cy="32" r="22"/><path d="M32 10v8M32 46v8M10 32h8M46 32h8"/><path d="M32 22l4 10 10-4-10 4 4 10-4-10-10 4 10-4z" fill="url(#grad-world_25)"/>`),
+  // Satellite orbiting
+  world_40: svg('world_40', 'world', `<circle cx="32" cy="32" r="14"/><ellipse cx="32" cy="32" rx="28" ry="10" transform="rotate(-30 32 32)"/><circle cx="50" cy="18" r="4" fill="url(#grad-world_40)"/>`),
+  // Trophy cup
+  world_50: svg('world_50', 'world', `<path d="M20 16h24v10c0 8-5 14-12 14s-12-6-12-14V16z"/><path d="M20 20h-6v6c0 4 3 7 6 7M44 20h6v6c0 4-3 7-6 7"/><path d="M28 40v6h8v-6M24 52h16"/>`),
+  // Globe with meridians
+  world_75: svg('world_75', 'world', `<circle cx="32" cy="32" r="22"/><ellipse cx="32" cy="32" rx="10" ry="22"/><path d="M10 32h44M12 22h40M12 42h40"/>`),
+  // 100 with laurel
+  world_100: svg('world_100', 'world', `<path d="M10 42c4-20 8-28 14-30M54 42c-4-20-8-28-14-30"/><path d="M10 42c2 4 6 8 10 10M54 42c-2 4-6 8-10 10"/><text x="32" y="38" font-size="18" font-weight="800" text-anchor="middle" fill="url(#grad-world_100)" stroke="none">100</text>`),
 
-  // CONTINENT
-  europe_1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#1e3a8a" /><g fill="#facc15"><circle cx="32" cy="10" r="2.5"/><circle cx="32" cy="54" r="2.5"/><circle cx="10" cy="32" r="2.5"/><circle cx="54" cy="32" r="2.5"/><circle cx="21" cy="13" r="2.5"/><circle cx="43" cy="13" r="2.5"/><circle cx="21" cy="51" r="2.5"/><circle cx="43" cy="51" r="2.5"/><circle cx="13" cy="21" r="2.5"/><circle cx="13" cy="43" r="2.5"/><circle cx="51" cy="21" r="2.5"/><circle cx="51" cy="43" r="2.5"/></g></svg>`,
-  europe_3: createSvg('europe_3', 'continent', `<path d="M20 24v28h24V24l-4-4v-8h-4v8h-8v-8h-4v8l-4 4z" stroke-width="4"/><rect x="28" y="36" width="8" height="16"/>`),
-  europe_5: createSvg('europe_5', 'continent', `<path d="M24 52h16M32 12l-8 40h16zM26 32h12M28 22h8" stroke-width="4"/>`),
-  europe_10: createSvg('europe_10', 'continent', `<path d="M16 16h32M18 16v32M27 16v32M37 16v32M46 16v32M14 48h36M12 54h40" stroke-width="4"/>`),
-  europe_20: createSvg('europe_20', 'continent', `<path d="M14 44l-4-24 12 8 10-16 10 16 12-8-4 24z" stroke-width="4"/><path d="M14 48h36M16 54h32"/>`),
-  asia_1: createSvg('asia_1', 'continent', `<path d="M32 12l-16 8h32zM24 20v8M40 20v8M32 28l-20 8h40zM20 36v12M44 36v12M32 48l-24 8h48z" stroke-width="3"/>`),
-  asia_3: createSvg('asia_3', 'continent', `<path d="M16 44v4M22 44v4M40 44v4M46 44v4M16 44c0-8-4-12-4-12 0-8 6-10 10-4 4-8 12-10 16-4 4 0 8 4 8 12h4s2 4-2 8M16 44h30" stroke-width="4"/>`),
-  asia_5: createSvg('asia_5', 'continent', `<path d="M12 32c10-10 20-10 30 0s10 20 0 30" stroke-width="4"/><circle cx="42" cy="22" r="4"/><path d="M46 22l6-6M38 18l-4-8M24 24l-6-6"/>`),
-  asia_10: createSvg('asia_10', 'continent', `<path d="M16 20v32M48 20v32M10 24h44M12 34h40M16 20c0-6 16-8 16-8s16 2 16 8" stroke-width="4"/>`),
-  africa_1: createSvg('africa_1', 'continent', `<circle cx="32" cy="32" r="16" stroke-width="4"/><path d="M16 32c0 8 16 20 16 20s16-12 16-20M24 24h16M32 16v8" stroke-width="4"/>`),
-  africa_3: createSvg('africa_3', 'continent', `<path d="M8 48c8-12 16-12 24 0M24 48c10-16 22-16 32 0" stroke-width="4"/><circle cx="32" cy="24" r="8"/>`),
-  africa_5: createSvg('africa_5', 'continent', `<path d="M48 44v8M36 44v8M24 44v8M16 44v8M48 32c0-8-10-12-16-12s-16 4-16 12c-8 0-10 8-10 16M48 32c8 0 10 8 10 16M32 32v12" stroke-width="4"/>`),
-  americas_1: createSvg('americas_1', 'continent', `<path d="M32 16v16M24 24l8 8M40 24l-8 8M32 32v16M24 48h16" stroke-width="4"/><path d="M32 16l-4-8h8z" fill="url(#grad-americas_1)"/>`),
-  americas_3: createSvg('americas_3', 'continent', `<path d="M32 52c-4-12-4-24 0-36M32 16c-8 0-16 8-16 8s8-4 16 0M32 16c8 0 16 8 16 8s-8-4-16 0M32 24c-12 0-20 12-20 12s12-4 20 0M32 24c12 0 20 12 20 12s-12-4-20 0" stroke-width="4"/>`),
-  americas_5: createSvg('americas_5', 'continent', `<path d="M40 24c0-6-6-8-12-8s-8 4-8 4v16l-8 8v8h8v-8l8-4h4v12h8V36h4v-8h-4z" stroke-width="4"/>`),
-  oceania_1: createSvg('oceania_1', 'continent', `<path d="M16 48l8-8c4-4 8-4 12 0l4 4M24 40c0-8 8-12 16-12l8-8M40 28l8 8" stroke-width="4"/>`),
-  oceania_2: createSvg('oceania_2', 'continent', `<path d="M16 48c16-16 32-16 40 0M16 48c0-8 8-16 16-16" stroke-width="4"/><path d="M24 24l16-16 8 8-16 16z" fill="url(#grad-oceania_2)"/>`),
-  two_continents: createSvg('two_continents', 'continent', `<circle cx="32" cy="32" r="22" stroke-width="4"/><path d="M32 10v44c12 0 22-10 22-22S44 10 32 10z" fill="url(#grad-two_continents)"/>`),
-  three_continents: createSvg('three_continents', 'continent', `<circle cx="32" cy="32" r="22" stroke-width="4"/><path d="M40 20c-8 8-8 16 0 24M24 20c8 8 8 16 0 24" stroke-width="4"/>`),
-  four_continents: createSvg('four_continents', 'continent', `<circle cx="32" cy="32" r="22" stroke-width="4"/><path d="M20 24c8 0 16 8 16 16M44 24c-8 0-16 8-16 16" stroke-width="4"/>`),
-  five_continents: createSvg('five_continents', 'continent', `<circle cx="32" cy="36" r="16" stroke-width="4"/><path d="M24 12l8 8 8-8" stroke-width="4"/><path d="M32 28l3 8 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z" fill="url(#grad-five_continents)"/>`),
-  six_continents: createSvg('six_continents', 'continent', `<path d="M32 16c12 0 16 8 16 16s-8 16-16 16-16-8-16-16 4-16 16-16zM32 24c4 0 8 4 8 8s-4 8-8 8-8-4-8-8 4-8 8-8z" stroke-width="4"/>`),
+  // ═══ CONTINENT — purple gradient ═════════════════════════════════
+  // EU flag
+  europe_1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#1e3a8a"/><g fill="#facc15">${[0,30,60,90,120,150,180,210,240,270,300,330].map(a=>`<circle cx="${32+18*Math.cos(a*Math.PI/180)}" cy="${32-18*Math.sin(a*Math.PI/180)}" r="2.5"/>`).join('')}</g></svg>`,
+  // Castle tower
+  europe_3: svg('europe_3', 'continent', `<path d="M18 52V28h4v-6h4v6h12v-6h4v6h4v24H18z"/><rect x="28" y="38" width="8" height="14" rx="4"/><path d="M18 22h4M26 22h4M34 22h4M42 22h4"/>`),
+  // Eiffel tower
+  europe_5: svg('europe_5', 'continent', `<path d="M32 8l-12 44h24L32 8z"/><path d="M22 34h20M26 24h12M24 44h16"/><path d="M20 52l2-8M44 52l-2-8"/>`),
+  // Greek column
+  europe_10: svg('europe_10', 'continent', `<rect x="14" y="10" width="36" height="6" rx="2"/><rect x="14" y="48" width="36" height="6" rx="2"/><path d="M20 16v32M28 16v32M36 16v32M44 16v32"/>`),
+  // Royal crown
+  europe_20: svg('europe_20', 'continent', `<path d="M12 42l6-20 14 10 14-10 6 20H12z" fill="url(#grad-europe_20)"/><path d="M12 42h40M14 48h36"/><circle cx="18" cy="22" r="3"/><circle cx="32" cy="18" r="3"/><circle cx="46" cy="22" r="3"/>`),
+  // Pagoda temple
+  asia_1: svg('asia_1', 'continent', `<path d="M32 10l-18 10h36zM32 20l-14 8h28zM32 28l-10 6h20z"/><path d="M26 34v18h12V34"/><rect x="30" y="38" width="4" height="14"/>`),
+  // Camel
+  asia_3: svg('asia_3', 'continent', `<path d="M14 46h6v-8c0-4 2-8 6-10l4-6c2-2 4 0 4 2v4c2-4 6-6 8-4l2 4c0-4 4-8 6-4v8c2 2 2 6 0 8v6h6" stroke-width="3.5"/><path d="M14 50h40"/>`),
+  // Dragon
+  asia_5: svg('asia_5', 'continent', `<path d="M12 28c4-8 12-12 20-8 4-4 10-2 12 4l4 2c0 4-2 6-6 6l-4 4c-2 6-8 8-14 6-6 2-14-2-14-10z" stroke-width="3.5"/><circle cx="40" cy="24" r="2" fill="url(#grad-asia_5)"/><path d="M12 28l-4 4M8 24l-2 2M46 32l6 2"/>`),
+  // Torii gate
+  asia_10: svg('asia_10', 'continent', `<path d="M8 18c8-4 16-6 24-6s16 2 24 6"/><path d="M14 18v4h36v-4"/><path d="M20 22v30M44 22v30"/><path d="M14 32h36"/>`),
+  // Lion face
+  africa_1: svg('africa_1', 'continent', `<circle cx="32" cy="34" r="14"/><path d="M18 34c-6-2-8-8-6-14M46 34c6-2 8-8 6-14M22 20c0-6 4-10 10-10M42 20c0-6-4-10-10-10"/><circle cx="27" cy="32" r="2" fill="url(#grad-africa_1)"/><circle cx="37" cy="32" r="2" fill="url(#grad-africa_1)"/><path d="M30 38c2 2 4 0 4 0"/>`),
+  // Desert dunes with sun
+  africa_3: svg('africa_3', 'continent', `<circle cx="48" cy="16" r="6" fill="url(#grad-africa_3)"/><path d="M4 48c10-14 18-14 28 0M28 48c8-10 16-10 32 0"/>`),
+  // Elephant
+  africa_5: svg('africa_5', 'continent', `<path d="M20 24c-6 0-10 4-10 10v6l6 2v8h6v-8h20v8h6v-8l4-4v-4c0-10-8-16-18-16h-2c-4 0-8 2-10 4l-2 4z" stroke-width="3.5"/><path d="M10 34l-4 8"/><circle cx="22" cy="30" r="2" fill="url(#grad-africa_5)"/>`),
+  // Statue of Liberty torch
+  americas_1: svg('americas_1', 'continent', `<path d="M32 52V24"/><path d="M24 52h16"/><path d="M26 36h12"/><path d="M28 24l4-14 4 14"/><path d="M30 10l2-4 2 4" fill="url(#grad-americas_1)"/><path d="M26 10h12" stroke-width="2"/>`),
+  // Palm tree
+  americas_3: svg('americas_3', 'continent', `<path d="M32 28v24"/><path d="M28 52h8"/><path d="M32 28c-4-10-16-12-20-8M32 28c4-10 16-12 20-8M32 28c-8-8-8-18-4-22M32 28c8-8 8-18 4-22M32 28c-12-4-18-2-20 2M32 28c12-4 18-2 20 2"/>`),
+  // Llama
+  americas_5: svg('americas_5', 'continent', `<path d="M20 44v6M28 44v6M38 44v6M44 44v6"/><path d="M16 44h32c0-6-4-12-8-14v-8c0-2 2-6 2-10 0-4-4-4-6-2l-2 6h-4l-2-6c-2-2-6-2-6 2 0 4 2 8 2 10v8c-4 2-8 8-8 14z" stroke-width="3"/>`),
+  // Kangaroo
+  oceania_1: svg('oceania_1', 'continent', `<path d="M40 18c0-4-4-6-6-4l-2 6-4-2c-4 0-6 4-6 8v10c-4 2-6 4-6 8h8l4-6h8l-2 6h8c0-4-2-6-4-8" stroke-width="3.5"/><path d="M42 46c4-2 8 0 10 2"/><circle cx="34" cy="18" r="2" fill="url(#grad-oceania_1)"/>`),
+  // Surfboard with wave
+  oceania_2: svg('oceania_2', 'continent', `<path d="M8 40c8-8 16-8 24 0s16 8 24 0"/><path d="M36 8l-8 36 6 2 8-36z" fill="url(#grad-oceania_2)" stroke-width="2.5"/><path d="M8 48c8-6 16-6 24 0s16 6 24 0" stroke-width="2"/>`),
+  // Half-half globe
+  two_continents: svg('two_continents', 'continent', `<circle cx="32" cy="32" r="22"/><path d="M32 10v44" stroke-dasharray="4 3"/><path d="M32 10a22 22 0 010 44" fill="url(#grad-two_continents)"/>`),
+  // Globe with 3 sections
+  three_continents: svg('three_continents', 'continent', `<circle cx="32" cy="32" r="22"/><path d="M32 10l-12 38M32 10l12 38M10 36h44"/>`),
+  // Globe 4 sections
+  four_continents: svg('four_continents', 'continent', `<circle cx="32" cy="32" r="22"/><path d="M32 10v44M10 32h44"/><circle cx="22" cy="22" r="4" fill="url(#grad-four_continents)"/><circle cx="42" cy="42" r="4" fill="url(#grad-four_continents)"/>`),
+  // Medal with star
+  five_continents: svg('five_continents', 'continent', `<circle cx="32" cy="36" r="18"/><path d="M24 10l8 10 8-10"/><path d="M32 28l3 8 8 1-6 5 2 8-7-5-7 5 2-8-6-5 8-1z" fill="url(#grad-five_continents)"/>`),
+  // Galaxy spiral
+  six_continents: svg('six_continents', 'continent', `<circle cx="32" cy="32" r="4" fill="url(#grad-six_continents)"/><path d="M36 32c0-6-6-10-12-8s-8 10-4 14 12 6 18 2 8-14 2-20-16-8-22-2-6 16 2 22 20 8 26 0"/>`),
 
-  // TURKEY
-  turkey_first: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#ef4444" /><path d="M38 18a14 14 0 100 28 12 12 0 110-28zm6 13l-4 3 1.5 4-4-3-4 3 1.5-4-4-3h5l1.5-4 1.5 4h5z" fill="#fff" /></svg>`,
-  turkey_5: createSvg('turkey_5', 'turkey', `<path d="M12 40l6-16h28l6 16v8H12v-8z" stroke-width="4"/><circle cx="20" cy="40" r="4"/><circle cx="44" cy="40" r="4"/><path d="M22 28h20" stroke-width="4"/>`),
-  turkey_10: createSvg('turkey_10', 'turkey', `<path d="M16 48v-16c0-8 16-16 16-16s16 8 16 16v16" stroke-width="4"/><path d="M12 48h40M48 20v28M46 16h4M32 16V8M30 8h4" stroke-width="4"/>`),
-  turkey_20: createSvg('turkey_20', 'turkey', `<rect x="20" y="20" width="24" height="32" rx="6" stroke-width="4"/><path d="M24 20v-4c0-4 16-4 16 0v4M20 32h24M24 32v20M40 32v20" stroke-width="4"/>`),
-  turkey_40: createSvg('turkey_40', 'turkey', `<path d="M32 24c0-8 8-12 8-12s4 4 4 12c0 8-12 12-12 12s-12-4-12-12c0-8 4-12 4-12s8 4 8 12z" fill="url(#grad-turkey_40)"/><path d="M32 36l-16 12M32 36l16 12M16 24l-8 8M48 24l8 8" stroke-width="4"/>`),
-  turkey_60: createSvg('turkey_60', 'turkey', `<path d="M12 48l12-24 8 8 12-16 8 32H12z" stroke-width="4"/><path d="M24 24l4 8 4-4M44 32l-4 8-4-4" stroke-width="4"/>`),
-  turkey_all: createSvg('turkey_all', 'turkey', `<circle cx="32" cy="36" r="16" stroke-width="4"/><path d="M24 12l8 8 8-8M24 12v8l8 8 8-8v-8" stroke-width="4"/><text x="32" y="42" font-size="16" font-weight="bold" text-anchor="middle" fill="url(#grad-turkey_all)" stroke="none">1</text>`),
-  all_7_regions: createSvg('all_7_regions', 'turkey', `<path d="M12 48c0-12 10-24 20-24s20 12 20 24" stroke-width="8" stroke="url(#grad-all_7_regions)" stroke-linecap="round"/><path d="M20 48c0-8 6-16 12-16s12 8 12 16" stroke-width="8" stroke="#f87171" stroke-linecap="round"/>`),
-  region_marmara: createSvg('region_marmara', 'turkey', `<path d="M12 36c4-4 8-4 12 0s8 4 12 0 8-4 12 0M12 48c4-4 8-4 12 0s8 4 12 0 8-4 12 0" stroke-width="4"/>`),
-  region_ege: createSvg('region_ege', 'turkey', `<path d="M16 32h32c0-8-8-16-16-16s-16 8-16 16z" fill="url(#grad-region_ege)"/><path d="M32 32v20M24 32v4M40 32v4" stroke-width="4"/>`),
-  region_akdeniz: createSvg('region_akdeniz', 'turkey', `<circle cx="32" cy="32" r="12" stroke-width="4"/><path d="M32 12v4M32 48v4M12 32h4M48 32h4M18 18l4 4M42 42l4 4M18 46l4-4M42 22l4-4" stroke-width="4"/>`),
-  region_karadeniz: createSvg('region_karadeniz', 'turkey', `<path d="M32 12L16 28h8l-8 12h12v12h8V40h12l-8-12h8L32 12z" stroke-width="4" stroke-linejoin="round"/>`),
-  region_ic_anadolu: createSvg('region_ic_anadolu', 'turkey', `<path d="M24 48V24c0-8 8-12 12-4M32 48V28c0-6 6-8 8-2M40 48v-12c0-4 4-6 6-2" stroke-width="4"/><path d="M24 24l-4 4M32 28l-4 4M40 36l-4 4" stroke-width="4"/>`),
-  region_dogu_anadolu: createSvg('region_dogu_anadolu', 'turkey', `<path d="M10 48l14-24 10 12 12-16 8 28H10z" stroke-width="4"/><path d="M24 24l6 10M46 20l-6 12" stroke-width="4"/>`),
-  region_guneydogu: createSvg('region_guneydogu', 'turkey', `<path d="M24 16h16v32H24z" stroke-width="4"/><path d="M20 28h24M28 16v32M36 16v32" stroke-width="4"/>`),
+  // ═══ TURKEY — red gradient ═══════════════════════════════════════
+  // Turkish crescent & star flag
+  turkey_first: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#e30a17"/><path d="M36 18a14 14 0 100 28 10 10 0 110-28z" fill="#fff"/><path d="M42 28l2 6 6 0-5 4 2 6-5-4-5 4 2-6-5-4 6 0z" fill="#fff"/></svg>`,
+  // Car on road
+  turkey_5: svg('turkey_5', 'turkey', `<rect x="14" y="28" width="36" height="16" rx="8"/><path d="M22 28l4-10h12l4 10"/><circle cx="22" cy="44" r="5"/><circle cx="42" cy="44" r="5"/><path d="M8 50h48"/>`),
+  // Mosque
+  turkey_10: svg('turkey_10', 'turkey', `<path d="M16 44c0-12 16-20 16-20s16 8 16 20"/><path d="M12 44h40M12 50h40"/><path d="M48 44V24l4-8"/><circle cx="32" cy="24" r="4" fill="url(#grad-turkey_10)"/>`),
+  // Backpack
+  turkey_20: svg('turkey_20', 'turkey', `<rect x="20" y="22" width="24" height="28" rx="6"/><path d="M26 22v-6c0-3 4-6 6-6s6 3 6 6v6"/><path d="M20 34h24"/><rect x="28" y="34" width="8" height="8" rx="2"/>`),
+  // Eagle wings
+  turkey_40: svg('turkey_40', 'turkey', `<path d="M32 22c-4-6-14-10-22-8 4 6 10 12 18 14zM32 22c4-6 14-10 22-8-4 6-10 12-18 14z" fill="url(#grad-turkey_40)"/><path d="M32 22v16"/><path d="M24 44l8-6 8 6"/><path d="M28 44v8M36 44v8"/>`),
+  // Mountain peak
+  turkey_60: svg('turkey_60', 'turkey', `<path d="M8 52l16-32 8 10 8-10 16 32H8z"/><path d="M24 20l-4 6M40 20l4 6"/><path d="M28 36h8" fill="url(#grad-turkey_60)"/>`),
+  // Gold medal #1
+  turkey_all: svg('turkey_all', 'turkey', `<circle cx="32" cy="36" r="16"/><path d="M24 10l8 10 8-10"/><path d="M24 10h16" stroke-width="2"/><text x="32" y="42" font-size="18" font-weight="800" text-anchor="middle" fill="url(#grad-turkey_all)" stroke="none">1</text>`),
+  // Rainbow arc
+  all_7_regions: svg('all_7_regions', 'turkey', `<path d="M8 48a24 24 0 0148 0" stroke-width="3" stroke="#ef4444"/><path d="M12 48a20 20 0 0140 0" stroke-width="3" stroke="#f59e0b"/><path d="M16 48a16 16 0 0132 0" stroke-width="3" stroke="#22c55e"/><path d="M20 48a12 12 0 0124 0" stroke-width="3" stroke="#3b82f6"/><path d="M24 48a8 8 0 0116 0" stroke-width="3" stroke="#8b5cf6" />`),
+  // Wave
+  region_marmara: svg('region_marmara', 'turkey', `<path d="M6 28c6-6 12-6 18 0s12 6 18 0 12-6 18 0"/><path d="M6 40c6-6 12-6 18 0s12 6 18 0 12-6 18 0"/>`),
+  // Beach umbrella
+  region_ege: svg('region_ege', 'turkey', `<path d="M32 18v34"/><path d="M12 28c0-12 20-20 20-20s20 8 20 20" fill="url(#grad-region_ege)"/><path d="M22 28c0-6 10-12 10-12s10 6 10 12"/><path d="M40 52c4-4 8-2 10 0"/>`),
+  // Sun with rays
+  region_akdeniz: svg('region_akdeniz', 'turkey', `<circle cx="32" cy="32" r="10" fill="url(#grad-region_akdeniz)"/><path d="M32 12v8M32 44v8M12 32h8M44 32h8M18 18l6 6M40 40l6 6M18 46l6-6M40 24l6-6"/>`),
+  // Pine tree
+  region_karadeniz: svg('region_karadeniz', 'turkey', `<path d="M32 8l-14 18h8l-10 14h10l-8 12h28l-8-12h10l-10-14h8z" fill="url(#grad-region_karadeniz)"/><rect x="30" y="52" width="4" height="6"/>`),
+  // Wheat stalks
+  region_ic_anadolu: svg('region_ic_anadolu', 'turkey', `<path d="M22 52V30l-6-4 6-2V18l-6-4 6-2V8M32 52V34l-6-4 6-2V22l-6-4 6-2V12M42 52V30l6-4-6-2V18l6-4-6-2V8"/>`),
+  // Mountain range
+  region_dogu_anadolu: svg('region_dogu_anadolu', 'turkey', `<path d="M4 52l14-28 8 10 10-18 8 12 6-8 10 16v16H4z"/><path d="M30 18l6 10"/>`),
+  // Ancient pillar
+  region_guneydogu: svg('region_guneydogu', 'turkey', `<rect x="14" y="8" width="36" height="8" rx="3"/><rect x="14" y="48" width="36" height="8" rx="3"/><path d="M22 16v32M32 16v32M42 16v32"/>`),
 
-  // CITY
-  city_first: createSvg('city_first', 'city', `<path d="M12 48V32h8v-8h10v-8h10v16h8v16H12z" stroke-width="4"/>`),
-  city_3: createSvg('city_3', 'city', `<path d="M16 36l4-12h24l4 12v12H16V36z" stroke-width="4"/><path d="M26 24v-4h12v4M22 36h20" stroke-width="4"/><circle cx="24" cy="48" r="4"/><circle cx="40" cy="48" r="4"/>`),
-  city_5: createSvg('city_5', 'city', `<path d="M12 32l8-8 8 8v16H12V32zM36 32l8-8 8 8v16H36V32z" stroke-width="4"/><path d="M28 40h8" stroke-width="4"/>`),
-  city_10: createSvg('city_10', 'city', `<path d="M16 48V24h12v-8h16v32" stroke-width="4"/><circle cx="32" cy="32" r="8" fill="url(#grad-city_10)"/>`),
-  city_20: createSvg('city_20', 'city', `<circle cx="32" cy="32" r="20" stroke-width="4"/><circle cx="32" cy="32" r="10" stroke-width="4"/><circle cx="32" cy="32" r="2" fill="url(#grad-city_20)"/><path d="M32 12v-4M32 56v-4M12 32H8M56 32h-4" stroke-width="4"/>`),
-  city_35: createSvg('city_35', 'city', `<path d="M16 48V20h12v-8h16v36H16z" stroke-width="4"/><rect x="20" y="28" width="4" height="4" fill="url(#grad-city_35)"/><rect x="20" y="36" width="4" height="4" fill="url(#grad-city_35)"/><rect x="36" y="20" width="4" height="4" fill="url(#grad-city_35)"/><rect x="36" y="28" width="4" height="4" fill="url(#grad-city_35)"/>`),
-  city_50: createSvg('city_50', 'city', `<path d="M16 48V20h12v-8h16v36" stroke-width="4"/><path d="M20 12l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="url(#grad-city_50)"/><path d="M48 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="url(#grad-city_50)"/>`),
-  city_100: createSvg('city_100', 'city', `<path d="M32 52L12 28l8-12h24l8 12-20 24z" stroke-width="4"/><path d="M12 28h40M20 16l4 12-12-12M44 16l-4 12 12-12M32 52l-8-24M32 52l8-24" stroke-width="4"/>`),
-  city_3_in_one: createSvg('city_3_in_one', 'city', `<path d="M32 12c-8 0-14 6-14 14 0 10 14 26 14 26s14-16 14-26c0-8-6-14-14-14z" stroke-width="4"/><circle cx="32" cy="26" r="4" fill="url(#grad-city_3_in_one)"/>`),
-  city_5_in_one: createSvg('city_5_in_one', 'city', `<circle cx="28" cy="28" r="12" stroke-width="4"/><path d="M36 36l12 12" stroke-width="6"/><path d="M24 28c0-4 4-8 8-8" stroke-width="4"/>`),
-  city_10_in_one: createSvg('city_10_in_one', 'city', `<path d="M16 32l16-16 16 16v16H16V32z" stroke-width="4"/><path d="M32 30c-2-2-6-2-6 2 0 4 6 8 6 8s6-4 6-8c0-4-4-4-6-2z" fill="url(#grad-city_10_in_one)"/>`),
+  // ═══ CITY — amber/gold gradient ══════════════════════════════════
+  // City skyline
+  city_first: svg('city_first', 'city', `<path d="M8 52V36h8V28h8v-8h6v-6h4v6h6v8h8v8h8v16H8z"/><rect x="18" y="36" width="4" height="4" fill="url(#grad-city_first)"/><rect x="30" y="24" width="4" height="4" fill="url(#grad-city_first)"/><rect x="42" y="36" width="4" height="4" fill="url(#grad-city_first)"/>`),
+  // Taxi
+  city_3: svg('city_3', 'city', `<path d="M14 38h36v8H14z" rx="2"/><path d="M20 38l4-10h16l4 10"/><circle cx="20" cy="46" r="4"/><circle cx="44" cy="46" r="4"/><rect x="26" y="24" width="12" height="4" rx="2" fill="url(#grad-city_3)"/>`),
+  // Houses
+  city_5: svg('city_5', 'city', `<path d="M8 34l12-12 12 12v18H8V34z"/><path d="M32 30l12-12 12 12v22H32V30z"/><rect x="16" y="40" width="6" height="12" rx="1"/><rect x="40" y="38" width="6" height="14" rx="1"/>`),
+  // Sunset over buildings
+  city_10: svg('city_10', 'city', `<circle cx="32" cy="30" r="10" fill="url(#grad-city_10)"/><path d="M8 52V36h10v-8h10v-4h8v4h10v8h10v16H8z"/>`),
+  // Target bullseye
+  city_20: svg('city_20', 'city', `<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="6"/><circle cx="32" cy="32" r="2" fill="url(#grad-city_20)"/>`),
+  // Night city
+  city_35: svg('city_35', 'city', `<path d="M8 52V32h10v-8h8v-10h12v10h8v8h10v20H8z"/><rect x="14" y="36" width="4" height="4" fill="url(#grad-city_35)"/><rect x="22" y="28" width="4" height="4" fill="url(#grad-city_35)"/><rect x="34" y="20" width="4" height="4" fill="url(#grad-city_35)"/><rect x="44" y="28" width="4" height="4" fill="url(#grad-city_35)"/>`),
+  // City + stars
+  city_50: svg('city_50', 'city', `<path d="M12 52V34h10v-10h8v-8h4v8h8v10h10v18H12z"/><path d="M16 10l1 3h3l-2 2 1 3-3-2-3 2 1-3-2-2h3z" fill="url(#grad-city_50)"/><path d="M50 14l1 2h2l-2 1 1 2-2-1-2 1 1-2-2-1h2z" fill="url(#grad-city_50)"/>`),
+  // Diamond gem
+  city_100: svg('city_100', 'city', `<path d="M16 22h32l-16 32z"/><path d="M16 22l8-10h16l8 10"/><path d="M24 12l8 10 8-10M16 22l16 8 16-8"/>`),
+  // Location pin
+  city_3_in_one: svg('city_3_in_one', 'city', `<path d="M32 10c-10 0-18 8-18 18 0 14 18 28 18 28s18-14 18-28c0-10-8-18-18-18z"/><circle cx="32" cy="28" r="6" fill="url(#grad-city_3_in_one)"/>`),
+  // Magnifying glass
+  city_5_in_one: svg('city_5_in_one', 'city', `<circle cx="28" cy="28" r="14"/><path d="M38 38l14 14" stroke-width="5"/><circle cx="28" cy="28" r="6" fill="url(#grad-city_5_in_one)"/>`),
+  // House with heart
+  city_10_in_one: svg('city_10_in_one', 'city', `<path d="M8 30l24-20 24 20v22H8V30z"/><path d="M32 32c-2-4-8-4-8 0 0 6 8 12 8 12s8-6 8-12c0-4-6-4-8 0z" fill="url(#grad-city_10_in_one)"/>`),
 
-  // AVIATION
-  first_flight: createSvg('first_flight', 'aviation', `<path d="M16 40l28-16 8 4-36 20z" fill="url(#grad-first_flight)"/><path d="M12 52h40" stroke-width="4"/>`),
-  turkish_fleet_master: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="url(#grad-turkish_fleet_master)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${getGrad('turkish_fleet_master', 'aviation')}<path d="M16 36l28-8 8 8-36 12z" stroke-width="4"/><circle cx="36" cy="24" r="10" fill="#ef4444" stroke="none"/><path d="M38 19a4.5 4.5 0 100 10 4 4 0 110-10zm2 4.5l-1 1 .5 1.5-1.5-1-1.5 1 .5-1.5-1-1 1.5-.5.5-1.5.5 1.5 1.5.5z" fill="#fff" stroke="none"/></svg>`,
-  star_collector: createSvg('star_collector', 'aviation', `<path d="M32 12l6 16h16l-12 10 4 16-14-10-14 10 4-16-12-10h16z" stroke-width="4" stroke-linejoin="round"/>`),
-  skyteam_rider: createSvg('skyteam_rider', 'aviation', `<path d="M32 12c-12 0-20 8-20 20s8 20 20 20 20-8 20-20c0-8-4-12-8-12s-8 4-8 8" stroke-width="4"/>`),
-  oneworld_flyer: createSvg('oneworld_flyer', 'aviation', `<circle cx="32" cy="32" r="20" stroke-width="4"/><path d="M32 16l12 16-12 16-12-16z" fill="url(#grad-oneworld_flyer)"/>`),
-  sky_giant: createSvg('sky_giant', 'aviation', `<path d="M12 36c0-12 12-16 24-16s20 8 20 16-12 16-24 16c-8 0-20-8-20-16z" stroke-width="4"/><path d="M20 36h12" stroke-width="4"/>`),
-  modern_fleet: createSvg('modern_fleet', 'aviation', `<path d="M32 12c4 8 8 16 8 24v12h-16V36c0-8 4-16 8-24z" stroke-width="4"/><path d="M24 48l-8 8M40 48l8 8M32 48v8" stroke-width="4"/>`),
-  fleet_collector: createSvg('fleet_collector', 'aviation', `<path d="M16 24l28 16 8-4-36-20z" fill="url(#grad-fleet_collector)"/><path d="M12 48h40" stroke-width="4"/>`),
-  frequent_flyer: createSvg('frequent_flyer', 'aviation', `<rect x="12" y="20" width="40" height="24" rx="4" stroke-width="4"/><path d="M40 20v24" stroke-width="4" stroke-dasharray="4 4"/><circle cx="24" cy="32" r="4" fill="url(#grad-frequent_flyer)"/>`),
-  lowcost_adventurer: createSvg('lowcost_adventurer', 'aviation', `<path d="M36 12L20 36h12l-4 16 16-24H32l4-16z" stroke-width="4" stroke-linejoin="round"/>`),
-  quad_jet_legend: createSvg('quad_jet_legend', 'aviation', `<path d="M32 12c-4 12-12 16-12 24s8 8 12 0c4 8 12 8 12 0s-8-12-12-24z" stroke-width="4"/>`),
+  // ═══ AVIATION — sky blue gradient ════════════════════════════════
+  // Airplane taking off
+  first_flight: svg('first_flight', 'aviation', `<path d="M28 14l-16 22h12l-4 16h4l12-18 16 6 4-4-24-14z" fill="url(#grad-first_flight)" stroke-width="2.5"/><path d="M8 56h48"/>`),
+  // Turkish crescent on wing
+  turkish_fleet_master: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="grad-tfm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs><path d="M12 40l32-14 8 6-40 16z" fill="url(#grad-tfm)" stroke="url(#grad-tfm)" stroke-width="2"/><circle cx="38" cy="22" r="10" fill="#e30a17"/><path d="M40 16a5 5 0 100 12 4 4 0 110-12z" fill="#fff"/><path d="M44 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#fff"/></svg>`,
+  // Star
+  star_collector: svg('star_collector', 'aviation', `<path d="M32 10l7 18h18l-14 11 5 17-16-11-16 11 5-17L7 28h18z" fill="url(#grad-star_collector)" stroke-width="2.5"/>`),
+  // Spiral
+  skyteam_rider: svg('skyteam_rider', 'aviation', `<path d="M32 32c0-4 4-8 8-8s8 4 8 8-4 8-8 8-8-4-8-8c0-8-8-16-16-16s-16 8-16 16 8 16 16 16 16-8 16-16"/>`),
+  // Diamond gem in circle
+  oneworld_flyer: svg('oneworld_flyer', 'aviation', `<circle cx="32" cy="32" r="20"/><path d="M32 14l14 18-14 18-14-18z" fill="url(#grad-oneworld_flyer)"/>`),
+  // Whale (big plane)
+  sky_giant: svg('sky_giant', 'aviation', `<path d="M8 32c0-10 10-16 24-16s24 6 24 16-10 16-24 16S8 42 8 32z"/><circle cx="46" cy="28" r="3" fill="url(#grad-sky_giant)"/><path d="M8 32l-4-6M8 36l-4 6"/>`),
+  // Rocket
+  modern_fleet: svg('modern_fleet', 'aviation', `<path d="M32 8c-6 10-8 20-8 28h16c0-8-2-18-8-28z"/><path d="M24 36l-8 10h8M40 36l8 10h-8"/><circle cx="32" cy="28" r="4" fill="url(#grad-modern_fleet)"/><path d="M28 48h8v6h-8z"/>`),
+  // Plane landing
+  fleet_collector: svg('fleet_collector', 'aviation', `<path d="M8 24l32 14 12-4-40-16z" fill="url(#grad-fleet_collector)" stroke-width="2.5"/><path d="M8 52h48"/><path d="M42 34l-2 18"/>`),
+  // Boarding pass
+  frequent_flyer: svg('frequent_flyer', 'aviation', `<rect x="10" y="18" width="44" height="28" rx="4"/><path d="M38 18v28" stroke-dasharray="4 4"/><circle cx="24" cy="32" r="6" fill="url(#grad-frequent_flyer)"/><path d="M44 28h6M44 32h6M44 36h6"/>`),
+  // Lightning bolt
+  lowcost_adventurer: svg('lowcost_adventurer', 'aviation', `<path d="M36 8L18 34h12l-6 22 22-28H34z" fill="url(#grad-lowcost_adventurer)" stroke-width="2.5"/>`),
+  // Fleur-de-lis
+  quad_jet_legend: svg('quad_jet_legend', 'aviation', `<path d="M32 8c-2 10-8 14-8 22 0 6 4 10 8 10s8-4 8-10c0-8-6-12-8-22z" fill="url(#grad-quad_jet_legend)"/><path d="M32 40c-8-4-16-2-18 4 4 4 10 4 14 0M32 40c8-4 16-2 18 4-4 4-10 4-14 0"/><path d="M28 52h8"/>`),
 
-  // SPECIAL
-  planner: createSvg('planner', 'special', `<rect x="16" y="16" width="32" height="36" rx="4" stroke-width="4"/><path d="M16 28h32M24 12v8M40 12v8" stroke-width="4"/>`),
-  big_planner: createSvg('big_planner', 'special', `<rect x="16" y="16" width="32" height="36" rx="4" stroke-width="4"/><path d="M16 28h32M24 12v8M40 12v8" stroke-width="4"/><path d="M24 40l4 4 8-8" stroke-width="4"/>`),
-  dreamer: createSvg('dreamer', 'special', `<path d="M44 40c4 0 8-4 8-8s-4-8-8-8c0-8-12-12-20-8-6-4-12 0-12 8 0 4 4 8 8 8" stroke-width="4" fill="none"/><circle cx="16" cy="48" r="3"/><circle cx="24" cy="52" r="2"/>`),
-  big_dreamer: createSvg('big_dreamer', 'special', `<path d="M48 16L24 40l-8-2-2-8 24-24z" stroke-width="4"/><path d="M16 48l-4 4M24 52l-2 6M12 40l-6 2" stroke-width="4"/>`),
-  neighbor: createSvg('neighbor', 'special', `<path d="M16 32l12-12 20 20-12 12z" stroke-width="4"/><path d="M28 20l12 12M32 24l8 8M36 28l4 4" stroke-width="4"/>`),
-  balkan_tour: createSvg('balkan_tour', 'special', `<path d="M24 16c0-6 16-6 16 0v24c0 10-16 10-16 0V16z" stroke-width="4"/><path d="M28 16v24M36 16v24M24 32h16" stroke-width="2"/>`),
-  mediterranean: createSvg('mediterranean', 'special', `<path d="M32 12v32M32 16l16 12-16 12" stroke-width="4"/><path d="M16 48h32c0 4-8 4-16 4s-16 0-16-4z" fill="url(#grad-mediterranean)"/>`),
-  g20: createSvg('g20', 'special', `<rect x="16" y="24" width="32" height="24" rx="4" stroke-width="4"/><path d="M24 24v-6c0-3 2-6 8-6s8 3 8 6v6" stroke-width="4"/>`),
-  nordic: createSvg('nordic', 'special', `<path d="M32 12v40M12 32h40M20 20l24 24M20 44l24-24" stroke-width="4"/><path d="M32 16l4 4M32 48l-4-4M16 32l4-4M48 32l-4 4" stroke-width="4"/>`),
-  far_east: createSvg('far_east', 'special', `<rect x="20" y="20" width="24" height="28" rx="8" stroke-width="4"/><path d="M20 28h24M20 40h24M32 12v8M32 48v8" stroke-width="4"/>`),
-  turkic_world: createSvg('turkic_world', 'special', `<path d="M40 24c-8 0-16 8-16 16h16c0-8 8-16 16-16-4-8-12-8-16 0z" fill="url(#grad-turkic_world)"/><path d="M24 40c0-12 12-16 16-24-8 0-20 4-24 16l8 8z" stroke-width="4"/>`),
+  // ═══ SPECIAL — emerald gradient ══════════════════════════════════
+  // Calendar
+  planner: svg('planner', 'special', `<rect x="12" y="16" width="40" height="36" rx="4"/><path d="M12 28h40"/><path d="M22 10v12M42 10v12"/><path d="M22 36h6M22 42h6M36 36h6M36 42h6"/>`),
+  // Calendar with check
+  big_planner: svg('big_planner', 'special', `<rect x="12" y="16" width="40" height="36" rx="4"/><path d="M12 28h40M22 10v12M42 10v12"/><path d="M24 38l6 6 12-12" stroke-width="4"/>`),
+  // Dream cloud
+  dreamer: svg('dreamer', 'special', `<circle cx="32" cy="28" r="12"/><circle cx="20" cy="32" r="8"/><circle cx="44" cy="32" r="8"/><circle cx="26" cy="22" r="6"/><circle cx="38" cy="22" r="6"/><circle cx="18" cy="48" r="3"/><circle cx="12" cy="54" r="2"/>`),
+  // Shooting star
+  big_dreamer: svg('big_dreamer', 'special', `<path d="M48 12L16 44" stroke-width="3"/><path d="M48 12l4 2-2 4M48 12l-6-2M48 12l2-6"/><path d="M16 44l-3 6h6l-3 6h6" fill="url(#grad-big_dreamer)"/><path d="M36 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="url(#grad-big_dreamer)"/><path d="M24 28l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="url(#grad-big_dreamer)"/>`),
+  // Handshake
+  neighbor: svg('neighbor', 'special', `<path d="M8 28h10l6-6 8 4 8-4 6 6h10"/><path d="M8 28v14h10l14 8 14-8h10V28"/><path d="M22 42l10 6 10-6"/>`),
+  // Violin
+  balkan_tour: svg('balkan_tour', 'special', `<path d="M24 14c0-4 16-4 16 0v8c-4 4-4 8 0 12v8c0 4-16 4-16 0v-8c4-4 4-8 0-12V14z"/><path d="M32 14v28"/><path d="M26 30h12"/>`),
+  // Sailboat
+  mediterranean: svg('mediterranean', 'special', `<path d="M32 12v32"/><path d="M32 14l18 20H32z" fill="url(#grad-mediterranean)"/><path d="M32 18l-12 16h12"/><path d="M8 48c8-4 16-4 24 0s16 4 24 0"/>`),
+  // Briefcase
+  g20: svg('g20', 'special', `<rect x="12" y="24" width="40" height="24" rx="4"/><path d="M24 24v-8c0-2 2-4 4-4h8c2 0 4 2 4 4v8"/><path d="M12 36h40"/><rect x="28" y="32" width="8" height="8" rx="2"/>`),
+  // Snowflake
+  nordic: svg('nordic', 'special', `<path d="M32 8v48M8 32h48M14 14l36 36M14 50l36-36"/><path d="M32 16l-4 4M32 16l4 4M32 48l-4-4M32 48l4-4M16 32l4-4M16 32l4 4M48 32l-4-4M48 32l-4 4"/>`),
+  // Lantern
+  far_east: svg('far_east', 'special', `<path d="M28 10h8"/><path d="M32 10v6"/><ellipse cx="32" cy="30" rx="12" ry="14" fill="url(#grad-far_east)"/><path d="M20 30h24"/><path d="M22 38h20"/><path d="M28 44h8v4h-8z"/><path d="M30 48v4M34 48v4"/>`),
+  // Wolf head
+  turkic_world: svg('turkic_world', 'special', `<path d="M18 12l6 16v12l8 8 8-8V28l6-16" stroke-width="3.5"/><path d="M18 12c-4 8-6 16 0 20M46 12c4 8 6 16 0 20"/><circle cx="27" cy="30" r="2" fill="url(#grad-turkic_world)"/><circle cx="37" cy="30" r="2" fill="url(#grad-turkic_world)"/><path d="M29 36c3 2 6 0 6 0"/>`),
 
-  // COMMUNITY
-  first_feedback: createSvg('first_feedback', 'community', `<rect x="16" y="24" width="32" height="24" rx="4" stroke-width="4"/><path d="M16 28l16 12 16-12" stroke-width="4"/>`),
-  bug_hunter: createSvg('bug_hunter', 'community', `<rect x="24" y="20" width="16" height="24" rx="8" stroke-width="4"/><path d="M24 28h16M24 36h16M32 20v24" stroke-width="4"/><path d="M20 24l-4-4M20 32h-4M20 40l-4 4M44 24l4-4M44 32h4M44 40l4 4" stroke-width="4"/>`),
-  feature_contributor: createSvg('feature_contributor', 'community', `<circle cx="32" cy="28" r="12" stroke-width="4"/><path d="M26 36l2 12h8l2-12" stroke-width="4"/><path d="M28 52h8" stroke-width="4"/>`),
-  issue_resolved: createSvg('issue_resolved', 'community', `<path d="M20 44l16-16c4 4 12 4 16 0-4-4-4-12 0-16-4 4-12 4-16 0L20 28c-4-4-12 4-8 8s4 8 8 8z" stroke-width="4"/>`)
+  // ═══ COMMUNITY — pink gradient ═══════════════════════════════════
+  // Envelope with letter
+  first_feedback: svg('first_feedback', 'community', `<rect x="10" y="20" width="44" height="28" rx="4"/><path d="M10 24l22 14 22-14"/><path d="M10 44l14-10M54 44l-14-10"/>`),
+  // Bug/beetle
+  bug_hunter: svg('bug_hunter', 'community', `<ellipse cx="32" cy="34" rx="10" ry="14"/><circle cx="32" cy="18" r="6"/><path d="M32 24v24"/><path d="M22 34h20"/><path d="M18 24l-6-6M46 24l6-6M16 34h-6M48 34h6M18 44l-6 6M46 44l6 6"/>`),
+  // Lightbulb
+  feature_contributor: svg('feature_contributor', 'community', `<path d="M24 38c-6-4-10-10-10-18 0-10 8-14 18-14s18 4 18 14c0 8-4 14-10 18"/><path d="M24 38v6c0 4 4 6 8 6s8-2 8-6v-6"/><path d="M26 44h12M26 48h12"/><path d="M32 20v8M26 22l4 6M38 22l-4 6"/>`),
+  // Wrench
+  issue_resolved: svg('issue_resolved', 'community', `<path d="M18 46l20-20c-2-6 0-12 6-16l-6 6 4 4 6-6c-4 6-10 8-16 6L12 40c-2 2-2 6 0 8s6 2 8-2z" fill="url(#grad-issue_resolved)" stroke-width="2.5"/><circle cx="14" cy="44" r="2" fill="url(#grad-issue_resolved)"/>`)
 };
