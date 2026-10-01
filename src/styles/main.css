@@ -2147,13 +2147,19 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
 }
 
 .medal-svg-coin-flag {
-  width: 72%;
-  height: 72%;
+  width: 78%;
+  height: 78%;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.medal-svg-coin-flag svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .medal-svg-icon {

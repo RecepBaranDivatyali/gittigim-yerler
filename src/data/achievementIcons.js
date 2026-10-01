@@ -99,7 +99,7 @@ export const ACHIEVEMENT_SVGS = {
 
   // ═══ TURKEY — red gradient ═══════════════════════════════════════
   // Turkish crescent & star flag
-  turkey_first: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#e30a17"/><path d="M36 18a14 14 0 100 28 10 10 0 110-28z" fill="#fff"/><path d="M42 28l2 6 6 0-5 4 2 6-5-4-5 4 2-6-5-4 6 0z" fill="#fff"/></svg>`,
+  turkey_first: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#e30a17"/><circle cx="26" cy="32" r="15" fill="#ffffff"/><circle cx="30.5" cy="32" r="12" fill="#e30a17"/><polygon points="40.2,24.9 43.5,29.0 48.6,27.6 45.7,32.0 48.6,36.4 43.5,35.0 40.2,39.1 39.9,33.9 35.0,32.0 39.9,30.1" fill="#ffffff"/></svg>`,
   // Car on road
   turkey_5: svg('turkey_5', 'turkey', `<rect x="14" y="28" width="36" height="16" rx="8"/><path d="M22 28l4-10h12l4 10"/><circle cx="22" cy="44" r="5"/><circle cx="42" cy="44" r="5"/><path d="M8 50h48"/>`),
   // Mosque
@@ -156,8 +156,8 @@ export const ACHIEVEMENT_SVGS = {
   // ═══ AVIATION — sky blue gradient ════════════════════════════════
   // Airplane taking off
   first_flight: svg('first_flight', 'aviation', `<path d="M28 14l-16 22h12l-4 16h4l12-18 16 6 4-4-24-14z" fill="url(#grad-first_flight)" stroke-width="2.5"/><path d="M8 56h48"/>`),
-  // Turkish crescent on wing
-  turkish_fleet_master: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="grad-tfm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs><path d="M12 40l32-14 8 6-40 16z" fill="url(#grad-tfm)" stroke="url(#grad-tfm)" stroke-width="2"/><circle cx="38" cy="22" r="10" fill="#e30a17"/><path d="M40 16a5 5 0 100 12 4 4 0 110-12z" fill="#fff"/><path d="M44 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#fff"/></svg>`,
+  // Turkish crescent on wing / Pilot wings with TR roundel
+  turkish_fleet_master: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="grad-wings" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs><path d="M22 28C14 26 6 22 2 18c6 10 14 14 20 16z" fill="url(#grad-wings)"/><path d="M22 34c-6-1-12-4-16-8 4 7 10 10 16 11z" fill="url(#grad-wings)"/><path d="M42 28C50 26 58 22 62 18c-6 10-14 14-20 16z" fill="url(#grad-wings)"/><path d="M42 34c6-1 12-4 16-8-4 7-10 10-16 11z" fill="url(#grad-wings)"/><circle cx="32" cy="32" r="14" fill="#e30a17" stroke="#ffffff" stroke-width="1.5"/><circle cx="29" cy="32" r="7" fill="#ffffff"/><circle cx="31.2" cy="32" r="5.6" fill="#e30a17"/><polygon points="35.8,28.6 37.4,30.6 39.8,29.9 38.4,32.0 39.8,34.1 37.4,33.4 35.8,35.4 35.7,33.0 33.3,32.0 35.7,31.0" fill="#ffffff"/></svg>`,
   // Star
   star_collector: svg('star_collector', 'aviation', `<path d="M32 10l7 18h18l-14 11 5 17-16-11-16 11 5-17L7 28h18z" fill="url(#grad-star_collector)" stroke-width="2.5"/>`),
   // SkyTeam swirl

@@ -28,6 +28,9 @@ export function renderMedalEmblemContent(ach, size = 'md') {
   // Use premium SVG icon if available, fallback to emoji
   const svg = ACHIEVEMENT_SVGS[ach.id];
   if (svg) {
+    if (ach.id === 'turkey_first' || ach.id === 'europe_1') {
+      return `<div class="medal-svg-coin-flag">${svg}</div>`;
+    }
     return `<div class="medal-svg-icon">${svg}</div>`;
   }
   return `<span class="medal-core-icon">${ach.icon || '🏅'}</span>`;
