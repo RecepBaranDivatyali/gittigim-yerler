@@ -3,15 +3,15 @@
 
 const getGrad = (id, cat) => {
   const colors = {
-    world: { p: '#3b82f6', l: '#60a5fa', d: '#1e40af' },
-    continent: { p: '#8b5cf6', l: '#a78bfa', d: '#5b21b6' },
-    turkey: { p: '#ef4444', l: '#f87171', d: '#b91c1c' },
-    city: { p: '#f59e0b', l: '#fbbf24', d: '#b45309' },
-    aviation: { p: '#0ea5e9', l: '#38bdf8', d: '#0369a1' },
-    special: { p: '#10b981', l: '#34d399', d: '#047857' },
-    community: { p: '#ec4899', l: '#f472b6', d: '#be185d' }
+    world: { l: '#ffffff', p: '#60a5fa', d: '#38bdf8' },
+    continent: { l: '#ffffff', p: '#c084fc', d: '#a855f7' },
+    turkey: { l: '#ffffff', p: '#fb7185', d: '#f43f5e' },
+    city: { l: '#ffffff', p: '#fbbf24', d: '#f59e0b' },
+    aviation: { l: '#ffffff', p: '#38bdf8', d: '#0ea5e9' },
+    special: { l: '#ffffff', p: '#34d399', d: '#10b981' },
+    community: { l: '#ffffff', p: '#f472b6', d: '#ec4899' }
   };
-  const c = colors[cat];
+  const c = colors[cat] || colors.world;
   return `<defs>
     <linearGradient id="grad-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${c.l}" />

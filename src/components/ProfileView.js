@@ -269,13 +269,15 @@ export function renderProfileView(container, onBack) {
 
         <!-- 🎖️ 3D Hatıra Madalyaları Vitrini Card -->
         <div class="profile-medals-showcase-card">
-          <div class="profile-medals-topbar">
+          <div class="profile-medals-topbar" id="profile-medals-topbar" style="cursor:pointer;" title="${currentLang === 'tr' ? 'Tüm koleksiyonu incelemek için tıkla' : 'Click to inspect full collection'}">
             <div class="medals-title-wrap">
               <span class="medals-title-icon">🎖️</span>
-              <span class="medals-title-text">${currentLang === 'tr' ? 'Kazanılan Hatıra Madalyaları' : 'Earned Commemorative Medals'}</span>
-              <span class="medals-count-badge">${earnedMedals.length} / ${ACHIEVEMENTS.length}</span>
+              <div class="medals-title-text-group">
+                <span class="medals-title-text">${currentLang === 'tr' ? 'Kazanılan Hatıra Madalyaları' : 'Earned Commemorative Medals'}</span>
+                <span class="medals-hint-text">${currentLang === 'tr' ? 'Tüm koleksiyonu incelemek için tıkla &rsaquo;' : 'Click to inspect full collection &rsaquo;'}</span>
+              </div>
             </div>
-            <span class="medals-hint-text">${currentLang === 'tr' ? 'Detay için tıkla' : 'Click to inspect'}</span>
+            <span class="medals-count-badge">${earnedMedals.length} / ${ACHIEVEMENTS.length}</span>
           </div>
           ${earnedMedals.length > 0 ? `
             <div class="profile-medals-tray">
@@ -322,6 +324,10 @@ export function renderProfileView(container, onBack) {
 
     // 🎖️ 3D Hatıra Madalyaları Spotlight Modalı
     attachMedalSpotlightListeners(contentArea, earnedMedals, currentLang);
+
+    contentArea.querySelector('#profile-medals-topbar')?.addEventListener('click', () => {
+      container.querySelector('.ptab[data-tab="medals"]')?.click();
+    });
 
     // Cloud Sync Pill Logic
     const syncPill = document.getElementById('profile-cloud-sync-pill');
