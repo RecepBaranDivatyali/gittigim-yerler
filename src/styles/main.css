@@ -2171,6 +2171,25 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
+.medal-svg-icon {
+  width: 60%;
+  height: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.medal-svg-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.medal-core-icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
 .medal-token:hover {
   transform: translateY(-3px) scale(1.12);
   z-index: 5;

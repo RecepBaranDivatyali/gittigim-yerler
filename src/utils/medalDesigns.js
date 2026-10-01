@@ -1,11 +1,6 @@
 // medalDesigns.js - 3D Commemorative Medal Tokens & Spotlight Modal
 import { escapeHtml } from './security.js';
-
-// Circular SVG Flag Medallions (eliminates plain text "TR" / "EU" on Windows)
-export const MEDAL_SVG_FLAGS = {
-  TR: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="border-radius:50%;display:block;"><circle cx="32" cy="32" r="32" fill="#e30a17"/><path fill="#fff" d="M38.5 32c0 7.2-5.8 13-13 13s-13-5.8-13-13 5.8-13 13-13c2.7 0 5.2.8 7.3 2.3-4.8 1.1-8.3 5.4-8.3 10.7s3.5 9.6 8.3 10.7c-2.1 1.5-4.6 2.3-7.3 2.3z"/><polygon fill="#fff" points="43.5,27.5 44.7,30.8 48.2,30.8 45.4,32.8 46.5,36.1 43.5,34.1 40.5,36.1 41.6,32.8 38.8,30.8 42.3,30.8"/></svg>`,
-  EU: `<svg viewBox="0 0 64 64" width="100%" height="100%" style="border-radius:50%;display:block;"><circle cx="32" cy="32" r="32" fill="#003399"/><g fill="#ffcc00"><circle cx="32" cy="9" r="2.8"/><circle cx="32" cy="55" r="2.8"/><circle cx="9" cy="32" r="2.8"/><circle cx="55" cy="32" r="2.8"/><circle cx="15.7" cy="20.3" r="2.8"/><circle cx="48.3" cy="43.7" r="2.8"/><circle cx="20.3" cy="15.7" r="2.8"/><circle cx="43.7" cy="48.3" r="2.8"/><circle cx="15.7" cy="43.7" r="2.8"/><circle cx="48.3" cy="20.3" r="2.8"/><circle cx="20.3" cy="48.3" r="2.8"/><circle cx="43.7" cy="15.7" r="2.8"/></g></svg>`
-};
+import { ACHIEVEMENT_SVGS } from '../data/achievementIcons.js';
 
 // Highest legendary tier achievements get gold border & ambient shine
 const GOLD_LEGEND_IDS = new Set([
@@ -29,12 +24,11 @@ export function getMedalTierClass(ach) {
 }
 
 export function renderMedalEmblemContent(ach, size = 'md') {
-  if (!ach) return '🏅';
-  if (ach.id === 'turkey_first' || ach.id === 'turkish_fleet_master') {
-    return `<div class="medal-svg-coin-flag">${MEDAL_SVG_FLAGS.TR}</div>`;
-  }
-  if (ach.id === 'europe_1') {
-    return `<div class="medal-svg-coin-flag">${MEDAL_SVG_FLAGS.EU}</div>`;
+  if (!ach) return '<span class="medal-core-icon">🏅</span>';
+  // Use premium SVG icon if available, fallback to emoji
+  const svg = ACHIEVEMENT_SVGS[ach.id];
+  if (svg) {
+    return `<div class="medal-svg-icon">${svg}</div>`;
   }
   return `<span class="medal-core-icon">${ach.icon || '🏅'}</span>`;
 }
