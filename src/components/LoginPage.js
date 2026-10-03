@@ -27,6 +27,25 @@ const ALLOWED_AVATARS = [
   '🧳', '📸', '🏄', '🧗', '🚵', '🎿', '⛵', '🛰️', '🪂'
 ];
 
+/**
+ * Huawei/HMS cihaz tespiti.
+ * Huawei cihazlarda Google Play Services yoktur → Google Sign-In çalışmaz.
+ */
+function isHuaweiDevice() {
+  try {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (ua.includes('huawei') || ua.includes('honor') || ua.includes('hmscore') || ua.includes('hms')) return true;
+    if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform() === 'android') {
+      if (typeof window.HMSPushKit !== 'undefined' || typeof window.HMS !== 'undefined') return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+const HUAWEI_DEVICE = isHuaweiDevice();
+
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
   try {
@@ -187,7 +206,8 @@ export function renderLoginPage(container, onLogin) {
             </button>
           </div>
 
-          <!-- Official Google Single Sign-On Button -->
+          <!-- Official Google Single Sign-On Button — Huawei cihazlarda gizlenir (GMS yok) -->
+          ${!HUAWEI_DEVICE ? `
           <button type="button" class="google-auth-btn" id="btn-google-auth">
             <svg class="google-icon-svg" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -202,6 +222,7 @@ export function renderLoginPage(container, onLogin) {
           <div class="auth-divider">
             <span>${currentLang === 'tr' ? 'veya e-posta ile' : 'or with email'}</span>
           </div>
+          ` : ''}
 
           <!-- Email/Password Auth Form -->
           <form id="auth-main-form" class="login-form" onsubmit="return false;">
