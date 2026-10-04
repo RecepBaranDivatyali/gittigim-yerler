@@ -41,10 +41,30 @@ export function getAllNotifications() {
   try {
     const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Filter out any demo/test notifications
+    return parsed.filter(n => !n.id || !n.id.startsWith('demo_'));
   } catch {
     return [];
   }
+}
+
+/**
+ * Permanently purge all demo notifications from local storage
+ */
+export function purgeDemoNotifications() {
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed.filter(n => !n.id || !n.id.startsWith('demo_'));
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(cleaned));
+        emitChange();
+      }
+    }
+  } catch {}
 }
 
 /**
@@ -218,30 +238,3 @@ export async function fetchCloudNotifications(currentUsername) {
   }
 }
 
-/**
- * Create a demo/example notification for testing purposes
- */
-export function createDemoNotification() {
-  const demoNotif = {
-    id: 'demo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
-    type: 'trip_tagged',
-    fromUsername: '@gezgin_ahmet',
-    fromName: 'Ahmet Yılmaz',
-    fromAvatar: '🧳',
-    fromPhotoUrl: null,
-    targetUser: 'all',
-    placeId: 'IT',
-    placeName: 'İtalya',
-    visitData: {
-      entryDate: '2026-09-28',
-      exitDate: '2026-10-03',
-      entryTransport: 'flight',
-      notes: 'Roma & Floransa turu harikaydı! Colosseum\'u mutlaka görmelisin 🏛️'
-    },
-    status: 'pending',
-    createdAt: new Date().toISOString()
-  };
-
-  saveLocalNotification(demoNotif);
-  return demoNotif;
-}

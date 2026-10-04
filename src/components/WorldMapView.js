@@ -14,7 +14,7 @@ import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
-import { onNotificationsChange, getPendingNotifications, getAllNotifications, createDemoNotification, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
+import { onNotificationsChange, getPendingNotifications, getAllNotifications, purgeDemoNotifications, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
 
 export function isCurrentUserSuperAdmin() {
   try {
@@ -1258,15 +1258,8 @@ export function renderWorldMapView(container, options = {}) {
               <div class="empty-icon">🏖️</div>
               <div style="font-weight:700;margin-bottom:4px;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? 'Yeni Seyahat Daveti Yok' : 'No New Trip Invites'}</div>
               <div style="font-size:0.8rem;opacity:0.75;color:var(--theme-text-muted, #94a3b8);">${currentLang === 'tr' ? 'Arkadaşlarınız sizi bir geziye etiketlediğinde onayınız için burada görünecek.' : 'When travel buddies tag you in a trip, it will show up here for your approval.'}</div>
-              <button type="button" id="btn-create-demo-invite" class="trip-invite-demo-btn" style="margin-top:14px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;padding:8px 16px;border-radius:12px;font-weight:700;font-size:0.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
-                <span>✨</span> ${currentLang === 'tr' ? 'Örnek Seyahat Daveti Oluştur' : 'Create Sample Trip Invite'}
-              </button>
             </div>
           `;
-          notifListEl.querySelector('#btn-create-demo-invite')?.addEventListener('click', () => {
-            createDemoNotification();
-            updateNotificationsUI();
-          });
           return;
         }
 
@@ -1416,10 +1409,8 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
-    // Auto-create a realistic example trip invitation if there are no pending notifications
-    if (getPendingNotifications(userName).length === 0) {
-      createDemoNotification();
-    }
+    // Ensure only genuine real notifications are present
+    purgeDemoNotifications();
 
     // Subscribe to notification changes
     unsubNotifs = onNotificationsChange(updateNotificationsUI);
