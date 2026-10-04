@@ -5900,22 +5900,22 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     white-space: nowrap;
   }
   .floating-notif-btn {
-    height: 32px;
-    width: 32px;
-    min-width: 32px;
+    height: 28px;
+    width: 28px;
+    min-width: 28px;
     padding: 0;
     border-radius: 50%;
   }
   .floating-notif-btn .notif-bell-svg {
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
   }
   .floating-notif-btn .notif-unread-badge {
-    top: -3px;
-    right: -3px;
-    min-width: 15px;
-    height: 15px;
-    font-size: 0.6rem;
+    top: -2px;
+    right: -2px;
+    min-width: 13px;
+    height: 13px;
+    font-size: 0.55rem;
   }
   .floating-poster-btn {
     height: 32px;
@@ -17404,14 +17404,15 @@ body[data-theme="natgeo_atlas"] .map-status-popup {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   border-radius: 50%;
   background: rgba(15, 23, 42, 0.94);
   border: 1.5px solid rgba(251, 191, 36, 0.35);
   color: #fbbf24;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(251, 191, 36, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(251, 191, 36, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -17439,21 +17440,21 @@ body[data-theme="natgeo_atlas"] .map-status-popup {
   25% { transform: rotate(0deg); }
 }
 .notif-bell-svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   stroke: currentColor;
   display: block;
 }
 .notif-unread-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -4px;
+  right: -4px;
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
-  font-size: 0.65rem;
+  font-size: 0.60rem;
   font-weight: 800;
-  min-width: 18px;
-  height: 18px;
+  min-width: 15px;
+  height: 15px;
   border-radius: 99px;
   display: flex;
   align-items: center;
