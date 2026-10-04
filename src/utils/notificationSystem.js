@@ -130,7 +130,7 @@ export async function sendTripInvitation({ fromProfile, toUsername, placeId, pla
 export async function acceptTripInvitation(notificationId) {
   const all = getAllNotifications();
   const notif = all.find(n => n.id === notificationId);
-  if (!notif) return false;
+  if (!notif) return null;
 
   notif.status = 'accepted';
   notif.handledAt = new Date().toISOString();
@@ -160,8 +160,8 @@ export async function acceptTripInvitation(notificationId) {
     });
   }
 
-  // Update cloud doc if online
-  if (navigator.onLine && db) {
+  // Update cloud doc if online (skip demo invitations)
+  if (navigator.onLine && db && !notificationId.startsWith('demo_')) {
     try {
       const inviteRef = doc(db, 'trip_invitations', notificationId);
       await updateDoc(inviteRef, { status: 'accepted', handledAt: notif.handledAt });
@@ -171,7 +171,7 @@ export async function acceptTripInvitation(notificationId) {
   }
 
   notifyStateChange();
-  return true;
+  return notif;
 }
 
 /**
@@ -186,7 +186,7 @@ export async function declineTripInvitation(notificationId) {
   notif.handledAt = new Date().toISOString();
   saveLocalNotification(notif);
 
-  if (navigator.onLine && db) {
+  if (navigator.onLine && db && !notificationId.startsWith('demo_')) {
     try {
       const inviteRef = doc(db, 'trip_invitations', notificationId);
       await updateDoc(inviteRef, { status: 'declined', handledAt: notif.handledAt });
