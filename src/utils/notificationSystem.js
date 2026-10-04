@@ -217,3 +217,31 @@ export async function fetchCloudNotifications(currentUsername) {
     console.warn('fetchCloudNotifications error:', err);
   }
 }
+
+/**
+ * Create a demo/example notification for testing purposes
+ */
+export function createDemoNotification() {
+  const demoNotif = {
+    id: 'demo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+    type: 'trip_tagged',
+    fromUsername: '@gezgin_ahmet',
+    fromName: 'Ahmet Yılmaz',
+    fromAvatar: '🧳',
+    fromPhotoUrl: null,
+    targetUser: 'all',
+    placeId: 'IT',
+    placeName: 'İtalya',
+    visitData: {
+      entryDate: '2026-09-28',
+      exitDate: '2026-10-03',
+      entryTransport: 'flight',
+      notes: 'Roma & Floransa turu harikaydı! Colosseum\'u mutlaka görmelisin 🏛️'
+    },
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  saveLocalNotification(demoNotif);
+  return demoNotif;
+}

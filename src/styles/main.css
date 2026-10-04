@@ -1178,6 +1178,9 @@ svg, g, path {
   left: max(14px, env(safe-area-inset-left));
   z-index: 2000;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .floating-profile-btn {
@@ -5891,10 +5894,28 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     gap: 6px;
   }
   .floating-profile-name {
-    max-width: 85px;
+    max-width: 75px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .floating-notif-btn {
+    height: 32px;
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .floating-notif-btn .notif-bell-svg {
+    width: 15px;
+    height: 15px;
+  }
+  .floating-notif-btn .notif-unread-badge {
+    top: -3px;
+    right: -3px;
+    min-width: 15px;
+    height: 15px;
+    font-size: 0.6rem;
   }
   .floating-poster-btn {
     height: 32px;
@@ -17385,33 +17406,51 @@ body[data-theme="natgeo_atlas"] .map-status-popup {
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  background: var(--theme-ui-bg, rgba(15, 23, 42, 0.92));
-  border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.15));
-  color: var(--theme-text-main, #f8fafc);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(251, 191, 36, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: all 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
 }
 .floating-notif-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 10px 28px rgba(251, 191, 36, 0.3);
+  border-color: rgba(251, 191, 36, 0.8);
+  background: rgba(251, 191, 36, 0.15);
+  color: #fef08a;
 }
-.notif-bell-icon {
-  font-size: 1.15rem;
-  line-height: 1;
+.floating-notif-btn:active {
+  transform: scale(0.93);
+}
+.floating-notif-btn.has-unread .notif-bell-svg {
+  animation: bellSwing 2.5s ease-in-out infinite;
+}
+@keyframes bellSwing {
+  0%, 100% { transform: rotate(0deg); }
+  5% { transform: rotate(14deg); }
+  10% { transform: rotate(-12deg); }
+  15% { transform: rotate(9deg); }
+  20% { transform: rotate(-5deg); }
+  25% { transform: rotate(0deg); }
+}
+.notif-bell-svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  display: block;
 }
 .notif-unread-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #ef4444;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
   min-width: 18px;
   height: 18px;
@@ -17420,13 +17459,13 @@ body[data-theme="natgeo_atlas"] .map-status-popup {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
-  border: 2px solid #0f172a;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  border: 2px solid rgba(15, 23, 42, 0.95);
   animation: pulseNotifBadge 2s infinite ease-in-out;
 }
 @keyframes pulseNotifBadge {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.18); box-shadow: 0 0 14px rgba(239, 68, 68, 0.9); }
+  50% { transform: scale(1.15); box-shadow: 0 0 12px rgba(239, 68, 68, 0.8); }
 }
 
 /* Notifications Modal Overlay */

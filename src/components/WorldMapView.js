@@ -14,7 +14,7 @@ import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
-import { onNotificationsChange, getPendingNotifications, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
+import { onNotificationsChange, getPendingNotifications, getAllNotifications, createDemoNotification, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
 
 export function isCurrentUserSuperAdmin() {
   try {
@@ -179,7 +179,7 @@ let subregionLayers = {};
 let subregionCache = {};
 const inFlightRegions = {};
 const inFlightSubregions = {};
-const MAX_MOUNTED_REGIONS = 24;
+const MAX_MOUNTED_REGIONS = 10;
 const mountedRegionsLRU = new Set(); // Tracks mounted country codes in order of recency
 
 const KNOWN_SUBREGION_PARENTS = {
@@ -680,7 +680,10 @@ export function renderWorldMapView(container, options = {}) {
             <span id="map-profile-sync-dot" class="map-profile-sync-dot" title="Bulut Eşitlendi"></span>
           </button>
           <button type="button" id="btn-open-notifications" class="floating-notif-btn" aria-label="Bildirimler" title="${currentLang === 'tr' ? 'Seyahat Davetleri & Bildirimler' : 'Trip Invites & Notifications'}">
-            <span class="notif-bell-icon">🔔</span>
+            <svg class="notif-bell-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
             <span id="notif-unread-badge" class="notif-unread-badge" style="display:none;">0</span>
           </button>
         </div>
@@ -1236,8 +1239,10 @@ export function renderWorldMapView(container, options = {}) {
         if (pending.length > 0) {
           notifBadge.textContent = pending.length;
           notifBadge.style.display = 'flex';
+          openNotifBtn?.classList.add('has-unread');
         } else {
           notifBadge.style.display = 'none';
+          openNotifBtn?.classList.remove('has-unread');
         }
       }
 
@@ -1252,8 +1257,15 @@ export function renderWorldMapView(container, options = {}) {
               <div class="empty-icon">🏖️</div>
               <div style="font-weight:700;margin-bottom:4px;color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? 'Yeni Seyahat Daveti Yok' : 'No New Trip Invites'}</div>
               <div style="font-size:0.8rem;opacity:0.75;color:var(--theme-text-muted, #94a3b8);">${currentLang === 'tr' ? 'Arkadaşlarınız sizi bir geziye etiketlediğinde onayınız için burada görünecek.' : 'When travel buddies tag you in a trip, it will show up here for your approval.'}</div>
+              <button type="button" id="btn-create-demo-invite" class="trip-invite-demo-btn" style="margin-top:14px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;padding:8px 16px;border-radius:12px;font-weight:700;font-size:0.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                <span>✨</span> ${currentLang === 'tr' ? 'Örnek Seyahat Daveti Oluştur' : 'Create Sample Trip Invite'}
+              </button>
             </div>
           `;
+          notifListEl.querySelector('#btn-create-demo-invite')?.addEventListener('click', () => {
+            createDemoNotification();
+            updateNotificationsUI();
+          });
           return;
         }
 
@@ -1373,6 +1385,11 @@ export function renderWorldMapView(container, options = {}) {
       notifModal.addEventListener('click', (e) => {
         if (e.target === notifModal) notifModal.style.display = 'none';
       });
+    }
+
+    // Auto-create a realistic example trip invitation if there are no pending notifications
+    if (getPendingNotifications(userName).length === 0) {
+      createDemoNotification();
     }
 
     // Subscribe to notification changes
@@ -2495,7 +2512,7 @@ function scheduleLabelUpdate() {
   _labelUpdateTimer = setTimeout(() => {
     updateCountryLabels();
     updateProvinceLabels();
-  }, 120);
+  }, 160);
 }
 
 function updateCountryLabels() {
@@ -3156,8 +3173,8 @@ function onViewChange() {
   // ── World region layers (Level 2) with LRU Pool (prevents churn & unmounting lag) ──
   if (zoom >= REGION_ZOOM) {
     const visibleSet = new Set(visibleCodes);
-    // Up to 18 visible countries prioritized from center outwards
-    const targetCodes = visibleCodes.slice(0, 18);
+    // Up to 6 most central visible countries prioritized from center outwards
+    const targetCodes = visibleCodes.slice(0, 6);
 
     // 1. Mount visible countries and update LRU recency
     for (const code of targetCodes) {
