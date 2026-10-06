@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Android Keystores
+# Android Keystores & Release outputs
 *.jks
 *.keystore
+android/app/release/
