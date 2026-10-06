@@ -41,30 +41,10 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0" ios/App/App/Info.plist || true
 
       - name: Install Apple Distribution Certificate
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: "temporary-build-password-2026"
-        run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          # Base64 decode certificate
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-
-          # Create temporary keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # Import Apple Worldwide Developer Relations CA (G3)
-          curl -fL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
-          security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k $KEYCHAIN_PATH
-
-          # Import p12 certificate
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
 
       - name: Install Provisioning Profile
         env:
@@ -72,7 +52,7 @@ jobs:
         run: |
           PROFILES_DIR=~/Library/MobileDevice/Provisioning\ Profiles
           mkdir -p "$PROFILES_DIR"
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PROFILES_DIR/101869be-4585-4d30-b049-69ef84158f61.mobileprovision"
+          echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$PROFILES_DIR/101869be-4585-4d30-b049-69ef84158f61.mobileprovision"
           cp "$PROFILES_DIR/101869be-4585-4d30-b049-69ef84158f61.mobileprovision" "$PROFILES_DIR/Gezgin_AppStore_Profile.mobileprovision"
 
       - name: Create ExportOptions.plist
@@ -142,7 +122,7 @@ jobs:
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           mkdir -p ~/.private_keys
-          echo -n "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
           cp ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8 ~/.private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
 
           IPA_PATH=$(find build -name "*.ipa" | head -n 1)
