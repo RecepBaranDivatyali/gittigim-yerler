@@ -3414,6 +3414,7 @@ function onViewChange() {
           if (!map.hasLayer(subregionLayers[code])) {
             subregionLayers[code].addTo(map);
             refreshRegionLayer(code);
+            refreshSubregionLayer(code);
           }
           if (stateBordersLayers[code] && !map.hasLayer(stateBordersLayers[code])) {
             stateBordersLayers[code].addTo(map);
@@ -3680,6 +3681,7 @@ function attachSubregionLayer(code, data) {
     if (visibleSubNow.has(code)) {
       layer.addTo(map);
       refreshRegionLayer(code);
+      refreshSubregionLayer(code);
       if (stateBordersLayers[code] && !map.hasLayer(stateBordersLayers[code])) {
         stateBordersLayers[code].addTo(map);
       }
@@ -5446,12 +5448,27 @@ function countryStyle(c) {
   const cfg = STATUS[status];
 
   let isInteractive = true;
+  let hasRegionLayer = false;
   if (zoomed && code) {
-    const hasRegionLayer = (regionLayers[code] && map && map.hasLayer(regionLayers[code])) ||
-                           (code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer));
+    hasRegionLayer = !!((regionLayers[code] && map && map.hasLayer(regionLayers[code])) ||
+                        (code === 'TR' && turkeyLayer && map && map.hasLayer(turkeyLayer)));
     if (hasRegionLayer) {
       isInteractive = false;
     }
+  }
+
+  // Eyalet veya il katmanı (Level 2 veya Level 3) aktifken ülkenin kendi arka poligonunun rengi
+  // eyaletlerin ve şehirlerin altından sızıp tüm ülkeyi tek bir renge boyamasın
+  if (hasRegionLayer) {
+    return {
+      fillColor: themeCfg.landFill,
+      fillOpacity: 0.95,
+      color: isDark ? 'rgba(255, 255, 255, 0.50)' : 'rgba(15, 23, 42, 0.45)',
+      weight: 1.5,
+      opacity: 0.8,
+      stroke: true,
+      interactive: false
+    };
   }
 
   // Keep country polygon filled with solid land (or status color) so zooming doesn't flicker ocean for a second
@@ -5490,10 +5507,10 @@ function regionStyle(rawName, countryCode) {
     if (hasSubregions) {
       return {
         fillColor: cfg.color,
-        fillOpacity: 0.16,
-        color: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(30, 41, 59, 0.35)',
-        weight: 1.2,
-        opacity: 0.75,
+        fillOpacity: 0.22,
+        color: isDark ? 'rgba(255, 255, 255, 0.50)' : 'rgba(30, 41, 59, 0.45)',
+        weight: 1.8,
+        opacity: 0.85,
         interactive: isInteractive
       };
     }
@@ -5515,10 +5532,10 @@ function regionStyle(rawName, countryCode) {
     const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
     return {
       fillColor: blended,
-      fillOpacity: hasSubregions ? 0.08 : 0.95,
+      fillOpacity: 0.95,
       color: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(100, 116, 139, 0.45)',
-      weight: hasSubregions ? 1.0 : 1.0,
-      opacity: hasSubregions ? 0.4 : 0.85,
+      weight: 1.0,
+      opacity: 0.85,
       interactive: isInteractive
     };
   }
@@ -5526,10 +5543,10 @@ function regionStyle(rawName, countryCode) {
   // 2. Durum: Ülke de ziyaret edilmemiş (saf harita zemin rengi)
   return {
     fillColor: themeCfg.landFill,
-    fillOpacity: hasSubregions ? 0.05 : 0.95,
+    fillOpacity: 0.95,
     color: isDark ? 'rgba(148, 163, 184, 0.40)' : 'rgba(100, 116, 139, 0.40)',
-    weight: hasSubregions ? 1.0 : 1.0,
-    opacity: hasSubregions ? 0.4 : 0.8,
+    weight: 1.0,
+    opacity: 0.8,
     interactive: isInteractive
   };
 }
@@ -5590,9 +5607,9 @@ function subregionStyle(name, code) {
   if (status !== 'unvisited') {
     return {
       fillColor: cfg.color,
-      fillOpacity: cfg.fillOpacity,
+      fillOpacity: 0.90,
       color: '#ffffff',
-      weight: 1.3,
+      weight: 1.5,
       opacity: 1
     };
   }
@@ -5602,7 +5619,7 @@ function subregionStyle(name, code) {
     fillColor: 'transparent',
     fillOpacity: 0,
     color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(30, 41, 59, 0.30)',
-    weight: 0.8,
+    weight: 0.85,
     opacity: 0.85,
     stroke: true
   };
