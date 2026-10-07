@@ -622,7 +622,7 @@ export const WORLD_VISA_DATA = {
   "TH": {
     "vb": "vizesiz",
     "vy": "vizesiz",
-    "vd": "Vizesiz (30 Gün, Dijital Kart)"
+    "vd": "Vizesiz (60 Gün)"
   },
   "PH": {
     "vb": "vizesiz",

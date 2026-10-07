@@ -58,9 +58,9 @@ export const COUNTRY_GUIDE_DATA = {
     "plug": "Type C / F",
     "cur": "EUR (€)",
     "em": "112",
-    "vb": "required",
-    "vy": "free",
-    "vd": "Schengen (Kapıda Vize Var)",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (Ege Adaları Kapıda Vize İmkanı)",
     "foods": [
       "Souvlaki",
       "Moussaka",
@@ -76,9 +76,9 @@ export const COUNTRY_GUIDE_DATA = {
     "plug": "Type C / F",
     "cur": "BGN / EUR",
     "em": "112",
-    "vb": "required",
-    "vy": "free",
-    "vd": "Schengen (90 Gün)",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
     "foods": [
       "Şopska Salatası",
       "Baniçka",
@@ -94,9 +94,9 @@ export const COUNTRY_GUIDE_DATA = {
     "plug": "Type G (İngiliz)",
     "cur": "EUR / TRY",
     "em": "112",
-    "vb": "free",
-    "vy": "free",
-    "vd": "KKTC Kimlikle Vizesiz",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "KKTC Kimlikle Vizesiz / Güney Kıbrıs AB Vizesi",
     "foods": [
       "Hellim Peyniri",
       "Şeftali Kebabı",
@@ -346,9 +346,9 @@ export const COUNTRY_GUIDE_DATA = {
     "plug": "Type G (3 Ayaklı)",
     "cur": "GBP (£)",
     "em": "999 / 112",
-    "vb": "required",
-    "vy": "required",
-    "vd": "İngiltere Vizesi Gerekli",
+    "vb": "vize",
+    "vy": "vize",
+    "vd": "İngiltere Vizesi Gerekli (Schengen Geçersiz!)",
     "foods": [
       "Fish and Chips",
       "English Breakfast",
@@ -564,8 +564,8 @@ export const COUNTRY_GUIDE_DATA = {
     "plug": "Type A / B / C / F",
     "cur": "THB (฿)",
     "em": "1155 / 191",
-    "vb": "free",
-    "vy": "free",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
     "vd": "Vizesiz (60 Gün)",
     "foods": [
       "Pad Thai",
@@ -828,6 +828,420 @@ export const COUNTRY_GUIDE_DATA = {
       "Chichén Itzá Maya Piramidi",
       "Cancún & Cenote Mağaraları",
       "Meksiko Tarihi Merkezi & Teotihuacan"
+    ]
+  },
+  "RO": {
+    "plug": "Type C / F",
+    "cur": "RON (lei)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Sarmale (Lahana Sarması)",
+      "Mămăligă (Mısır Lapası)",
+      "Mici Köftesi & Papanași"
+    ],
+    "spots": [
+      "Bran Kalesi (Drakula Şatosu)",
+      "Peleș Kalesi (Sinaia)",
+      "Parlamento Sarayı (Bükreş)"
+    ]
+  },
+  "HR": {
+    "plug": "Type C / F",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Peka (Közde Et/Ahtapot)",
+      "Crni Rižot (Mürekkep Balıklı Pilav)",
+      "Ćevapi & Fritule"
+    ],
+    "spots": [
+      "Dubrovnik Eski Şehir Duvarları",
+      "Plitvice Gölleri Milli Parkı",
+      "Diocletianus Sarayı (Split)"
+    ]
+  },
+  "PL": {
+    "plug": "Type C / E",
+    "cur": "PLN (zł)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Pierogi (Polonya Mantısı)",
+      "Bigos (Avcı Yahnisi)",
+      "Żurek Çorbası"
+    ],
+    "spots": [
+      "Krakow Rynek Glowny Meydanı",
+      "Wawel Kalesi",
+      "Varşova Eski Şehir"
+    ]
+  },
+  "SA": {
+    "plug": "Type G (3 Ayaklı)",
+    "cur": "SAR (﷼)",
+    "em": "911 / 999",
+    "vb": "e_vize",
+    "vy": "e_vize",
+    "vd": "Online Kolay e-Vize / Umre (90 Gün)",
+    "foods": [
+      "Kabsa (Baharatlı Kuzu Pilavı)",
+      "Mandi",
+      "Hurma & Kakuleli Arap Kahvesi"
+    ],
+    "spots": [
+      "Mescid-i Haram (Mekke)",
+      "Mescid-i Nebevi (Medine)",
+      "Al-Ula & Hegra Antik Kenti"
+    ]
+  },
+  "RU": {
+    "plug": "Type C / F",
+    "cur": "RUB (₽)",
+    "em": "112",
+    "vb": "e_vize",
+    "vy": "vizesiz",
+    "vd": "Yeşile Vizesiz (30 Gün), Bordo Kolay e-Vize",
+    "foods": [
+      "Borş Çorbası",
+      "Pelmeni Mantısı",
+      "Blini Krep & Havyar"
+    ],
+    "spots": [
+      "Kızıl Meydan & Aziz Vasil Katedrali (Moskova)",
+      "Ermitaj Müzesi (St. Petersburg)",
+      "Kremlin Sarayı"
+    ]
+  },
+  "KZ": {
+    "plug": "Type C / F",
+    "cur": "KZT (₸)",
+    "em": "112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (30 Gün)",
+    "foods": [
+      "Beşparmak (Geleneksel Et Yemeği)",
+      "Kazy (At Eti Sucuğu)",
+      "Baursak & Kımız"
+    ],
+    "spots": [
+      "Almatı Çimbulak Kayak Merkezi",
+      "Baiterek Kulesi (Astana)",
+      "Kaindy Gölü & Çarın Kanyonu"
+    ]
+  },
+  "UZ": {
+    "plug": "Type C / F",
+    "cur": "UZS (so'm)",
+    "em": "112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (30 Gün)",
+    "foods": [
+      "Özbek Pilavı (Plov)",
+      "Somsa (Tandır Böreği)",
+      "Şaşlık Kebabı & Lagman"
+    ],
+    "spots": [
+      "Registan Meydanı (Semerkant)",
+      "Buhara Ark Kalesi",
+      "Hiva İçan Kale"
+    ]
+  },
+  "KG": {
+    "plug": "Type C / F",
+    "cur": "KGS (с)",
+    "em": "112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (90 Gün)",
+    "foods": [
+      "Beşbarmak",
+      "Kımız & Kurut",
+      "Lagman & Mantı"
+    ],
+    "spots": [
+      "Issık Göl",
+      "Ala Arça Milli Parkı",
+      "Süleyman Dağı (Oş)"
+    ]
+  },
+  "CN": {
+    "plug": "Type A / C / I",
+    "cur": "CNY (¥)",
+    "em": "110 / 120",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Yeşile Vizesiz (30 Gün), Bordo Vize / 144 Saat Transit",
+    "foods": [
+      "Pekin Ördeği",
+      "Dim Sum Mantıları",
+      "Kung Pao Tavuk & Hot Pot"
+    ],
+    "spots": [
+      "Çin Seddi (Badaling/Mutianyu)",
+      "Yasak Şehir (Pekin)",
+      "Toprak Askerler (Xi'an)"
+    ]
+  },
+  "IN": {
+    "plug": "Type C / D / M",
+    "cur": "INR (₹)",
+    "em": "112",
+    "vb": "e_vize",
+    "vy": "vize",
+    "vd": "Bordo Online e-Vize, Yeşil Konsolosluk Vizesi",
+    "foods": [
+      "Butter Chicken & Naan",
+      "Biryani",
+      "Samosa & Masala Chai"
+    ],
+    "spots": [
+      "Tac Mahal (Agra)",
+      "Varanasi Ganj Nehri Kıyıları",
+      "Amber Kalesi (Jaipur)"
+    ]
+  },
+  "AU": {
+    "plug": "Type I",
+    "cur": "AUD (A$)",
+    "em": "000",
+    "vb": "vize",
+    "vy": "vize",
+    "vd": "Online Ziyaretçi Vizesi (Subclass 600)",
+    "foods": [
+      "Avustralya Etli Turtası (Meat Pie)",
+      "Vegemite Tostu",
+      "Pavlova Tatlısı & Barramundi"
+    ],
+    "spots": [
+      "Sidney Opera Binası & Liman Köprüsü",
+      "Büyük Set Resifi",
+      "Uluru (Ayers Rock)"
+    ]
+  },
+  "IS": {
+    "plug": "Type C / F",
+    "cur": "ISK (kr)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Kjötsúpa (Kuzu Çorbası)",
+      "Rúgbrauð (Çavdar Ekmeği)",
+      "Plokkfiskur & Hákarl"
+    ],
+    "spots": [
+      "Mavi Lagün (Blue Lagoon)",
+      "Gullfoss Şelalesi & Geysir",
+      "Kuzey Işıkları (Aurora)"
+    ]
+  },
+  "MT": {
+    "plug": "Type G (3 Ayaklı)",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Pastizzi (Bezelyeli/Ricottalı Börek)",
+      "Fenkata (Tavşan Yahnisi)",
+      "Ftira Ekmeği"
+    ],
+    "spots": [
+      "Valletta Eski Şehir & Aziz Yuhanna",
+      "Mdina Sessiz Şehir",
+      "Mavi Lagün (Comino)"
+    ]
+  },
+  "SK": {
+    "plug": "Type C / E",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Bryndzové Halušky (Koyun Peynirli Hamur)",
+      "Kapustnica",
+      "Skalický Trdelník"
+    ],
+    "spots": [
+      "Bratislava Kalesi & Eski Şehir",
+      "Yüksek Tatralar Milli Parkı",
+      "Spiš Kalesi"
+    ]
+  },
+  "SI": {
+    "plug": "Type C / F",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Kranjska Klobasa (Karniola Sucuğu)",
+      "Potica Keki",
+      "Bled Kremšnita Tatlısı"
+    ],
+    "spots": [
+      "Bled Gölü & Ada Kilisesi",
+      "Postojna Mağarası & Predjama Kalesi",
+      "Ljubljana Kalesi & Üçlü Köprü"
+    ]
+  },
+  "EE": {
+    "plug": "Type C / F",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Verivorst (Geleneksel Sosis)",
+      "Kiluvõileib (Baharatlı Çaça Sandviç)",
+      "Kohuke Tatlısı"
+    ],
+    "spots": [
+      "Tallinn Orta Çağ Eski Şehri",
+      "Toompea Kalesi & Seyir Terası",
+      "Kadriorg Sarayı ve Parkı"
+    ]
+  },
+  "LV": {
+    "plug": "Type C / F",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Griķi (Karabuğday)",
+      "Karbonāde (Domuz Pirzolası)",
+      "Rupjmaize (Kara Çavdar Ekmeği)"
+    ],
+    "spots": [
+      "Riga Eski Şehir & Art Nouveau Mahallesi",
+      "Rundāle Sarayı",
+      "Jūrmala Baltık Plajları"
+    ]
+  },
+  "LT": {
+    "plug": "Type C / F",
+    "cur": "EUR (€)",
+    "em": "112",
+    "vb": "vize",
+    "vy": "vizesiz",
+    "vd": "Schengen (180 Günde 90 Gün)",
+    "foods": [
+      "Cepelinai (Patates Köftesi)",
+      "Šaltibarščiai (Soğuk Pancar Çorbası)",
+      "Šakotis Keki"
+    ],
+    "spots": [
+      "Trakai Ada Kalesi",
+      "Vilnius Gediminas Kulesi & Eski Şehir",
+      "Haçlar Tepesi (Šiauliai)"
+    ]
+  },
+  "MD": {
+    "plug": "Type C / F",
+    "cur": "MDL (L)",
+    "em": "112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Kimlikle Vizesiz (90 Gün)",
+    "foods": [
+      "Mămăligă (Mısır Lapası)",
+      "Plăcintă (Börek)",
+      "Zeamă (Tavuk Çorbası)"
+    ],
+    "spots": [
+      "Mileștii Mici Şarap Mahzenleri",
+      "Orheiul Vechi Tarihi Kompleksi",
+      "Kişinev Katedral Parkı"
+    ]
+  },
+  "UA": {
+    "plug": "Type C / F",
+    "cur": "UAH (₴)",
+    "em": "112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Kimlikle Vizesiz (90 Gün)",
+    "foods": [
+      "Borş Çorbası & Pampuşka",
+      "Vareniki Mantısı",
+      "Kiev Tavuğu (Chicken Kiev)"
+    ],
+    "spots": [
+      "Kiev Peçersk Lavra",
+      "Lviv Tarihi Şehir Meydanı",
+      "Azize Sofya Katedrali"
+    ]
+  },
+  "TN": {
+    "plug": "Type C / E",
+    "cur": "TND (DT)",
+    "em": "197 / 198",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (90 Gün)",
+    "foods": [
+      "Tunus Kuskusu",
+      "Brik (Çıtır Yumurtalı Börek)",
+      "Lablabi Çorbası & Harissa"
+    ],
+    "spots": [
+      "Sidi Bou Said Mavi-Beyaz Köyü",
+      "Kartaca Antik Kenti",
+      "El Cem Roma Amfitiyatrosu"
+    ]
+  },
+  "ZA": {
+    "plug": "Type C / D / M / N",
+    "cur": "ZAR (R)",
+    "em": "10111 / 112",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (30 Gün)",
+    "foods": [
+      "Biltong (Kurutulmuş Et)",
+      "Bobotie (Fırın Kıymalı Yemek)",
+      "Boerewors & Malva Puding"
+    ],
+    "spots": [
+      "Masa Dağı (Table Mountain - Cape Town)",
+      "Kruger Milli Parkı Safari",
+      "Ümit Burnu"
+    ]
+  },
+  "PH": {
+    "plug": "Type A / B / C",
+    "cur": "PHP (₱)",
+    "em": "911",
+    "vb": "vizesiz",
+    "vy": "vizesiz",
+    "vd": "Vizesiz (30 Gün)",
+    "foods": [
+      "Chicken Adobo",
+      "Sinigang Ekşi Çorbası",
+      "Lechon Çevirme & Halo-Halo"
+    ],
+    "spots": [
+      "Boracay Beyaz Kumsal Plajı",
+      "El Nido & Bacuit Takımadaları (Palawan)",
+      "Çikolata Tepeleri (Bohol)"
     ]
   }
 };

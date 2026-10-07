@@ -16,7 +16,7 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
-import { isUsernameAvailable } from '../utils/userDatabase.js';
+import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -527,7 +527,8 @@ export function renderLoginPage(container, onLogin) {
               : 'Username must be at least 3 characters.');
             return;
           }
-          if (!isUsernameAvailable(profileUsername)) {
+          const isAvail = await isUsernameAvailableAsync(profileUsername);
+          if (!isAvail) {
             alert(currentLang === 'tr' 
               ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 
               : `Username "${profileUsername}" is already taken. Please choose another.`);

@@ -9143,7 +9143,7 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   overflow: hidden;
   overflow-y: visible;
   position: relative;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   cursor: grab;
   user-select: none;
   perspective: 1400px;
@@ -9463,7 +9463,8 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   box-sizing: border-box;
   max-height: 70vh;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 .passport-stamp-page-sheet::before {
   content: '';
@@ -9498,26 +9499,28 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
 .passport-stamps-grid-2x2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 8px;
+  gap: 10px 8px;
   flex: 1;
-  padding: 10px 4px 12px;
+  padding: 8px 4px 10px;
   box-sizing: border-box;
+  touch-action: pan-y;
 }
 .passport-stamp-cell {
   background: rgba(255, 255, 255, 0.75);
   border: 1px dashed rgba(148, 163, 184, 0.5);
   border-radius: 8px;
-  padding: 8px 6px;
+  padding: 6px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 155px;
+  min-height: 145px;
   position: relative;
   min-width: 0;
   box-sizing: border-box;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
+  touch-action: pan-y;
 }
 .stamp-seal-item {
   width: 100%;

@@ -7,6 +7,7 @@ import {
   collection,
   getDocs,
   query,
+  where,
   limit,
   serverTimestamp
 } from 'firebase/firestore';
@@ -198,18 +199,20 @@ export function queueCloudSync(force = false) {
 
       // setDoc with merge: true writes to IndexedDB cache immediately (0ms)
       // and automatically queues network synchronization with Firestore
+      const cleanUserLower = payload.username ? payload.username.trim().toLowerCase() : '';
       await setDoc(userRef, {
         ...payload,
+        username_lowercase: cleanUserLower,
         serverUpdatedAt: serverTimestamp()
       }, { merge: true });
 
       // Also register or update username directory for global friend searches
-      if (payload.username) {
-        const usernameRef = doc(db, 'usernames', payload.username);
+      if (cleanUserLower) {
+        const usernameRef = doc(db, 'usernames', cleanUserLower);
         await setDoc(usernameRef, {
           uid: userDocId,
-          username: payload.username,
-          displayName: payload.displayName,
+          username: cleanUserLower,
+          displayName: payload.displayName || payload.username,
           avatar: payload.avatar,
           photoUrl: payload.photoUrl,
           stats: payload.stats,
@@ -316,22 +319,98 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
 export async function searchCloudTravelers(searchQuery) {
   if (!searchQuery || typeof searchQuery !== 'string') return [];
   const cleanQ = searchQuery.trim().toLowerCase().replace(/^@/, '');
-  if (!cleanQ) return [];
+  if (!cleanQ || cleanQ.length < 2) return [];
+  if (!db) return [];
 
   try {
-    const q = query(collection(db, 'usernames'), limit(20));
-    const snapshot = await getDocs(q);
-    const results = [];
-    snapshot.forEach(docSnap => {
-      const u = docSnap.data();
-      if (u && (u.username?.includes(cleanQ) || u.displayName?.toLowerCase().includes(cleanQ))) {
-        results.push(u);
+    const resultsMap = new Map();
+
+    // 1. Direct exact username lookup
+    try {
+      const exactSnap = await getDoc(doc(db, 'usernames', cleanQ));
+      if (exactSnap.exists()) {
+        const u = exactSnap.data();
+        if (u?.username) resultsMap.set(u.username.toLowerCase(), u);
       }
-    });
-    return results;
+    } catch {}
+
+    // 2. Prefix query in usernames collection (returns all users whose username starts with query)
+    try {
+      const qPrefix = query(
+        collection(db, 'usernames'),
+        where('username', '>=', cleanQ),
+        where('username', '<=', cleanQ + '\uf8ff'),
+        limit(30)
+      );
+      const snapshot = await getDocs(qPrefix);
+      snapshot.forEach(docSnap => {
+        const u = docSnap.data();
+        if (u?.username) {
+          resultsMap.set(u.username.toLowerCase(), u);
+        }
+      });
+    } catch {}
+
+    // 3. Broad scan for displayName or partial contains matches
+    if (resultsMap.size < 10) {
+      try {
+        const qBroad = query(collection(db, 'usernames'), limit(50));
+        const broadSnap = await getDocs(qBroad);
+        broadSnap.forEach(docSnap => {
+          const u = docSnap.data();
+          if (u && (u.username?.toLowerCase().includes(cleanQ) || u.displayName?.toLowerCase().includes(cleanQ))) {
+            resultsMap.set(u.username.toLowerCase(), u);
+          }
+        });
+      } catch {}
+    }
+
+    return Array.from(resultsMap.values());
   } catch (err) {
     console.warn('Error querying Firestore for travelers:', err);
     return [];
+  }
+}
+
+/**
+ * Strict Global Username Uniqueness check in Firestore
+ */
+export async function isUsernameAvailableInCloud(username, currentUserId = null) {
+  if (!username || typeof username !== 'string') return false;
+  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  if (!clean || clean.length < 3) return false;
+  if (!db) return true;
+
+  try {
+    // 1. Check usernames directory (lowercase key)
+    const usernameSnap = await getDoc(doc(db, 'usernames', clean));
+    if (usernameSnap.exists()) {
+      const data = usernameSnap.data();
+      if (currentUserId && data?.uid === currentUserId) {
+        return true; // Owned by the current user
+      }
+      return false; // Already taken by another user
+    }
+
+    // 2. Check users collection
+    const userQ = query(
+      collection(db, 'users'),
+      where('username_lowercase', '==', clean),
+      limit(1)
+    );
+    const userSnap = await getDocs(userQ);
+    if (!userSnap.empty) {
+      const matchDoc = userSnap.docs[0];
+      if (currentUserId && matchDoc.id === currentUserId) {
+        return true;
+      }
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Could not verify username uniqueness in cloud:', err);
+    return true; // Fallback to allowing if network check fails
   }
 }
 

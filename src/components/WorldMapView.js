@@ -1055,25 +1055,99 @@ export function renderWorldMapView(container, options = {}) {
               searchInput.value = '';
               if (searchClear) searchClear.style.display = 'none';
 
-              // If it's a world region or city, ensure country's region layer is loaded
-              if ((m.type === 'region' || m.type === 'city') && m.countryCode && m.countryCode !== 'TR') {
-                if (!regionLayers[m.countryCode]) {
-                  await loadRegionData(m.countryCode);
+              // 1. Preload appropriate layers
+              if (m.countryCode === 'TR') {
+                if (turkeyLayer && map && !map.hasLayer(turkeyLayer)) {
+                  turkeyLayer.addTo(map);
+                }
+              } else if (m.countryCode) {
+                if (m.type === 'region' || m.type === 'city' || m.type === 'subregion') {
+                  if (!regionLayers[m.countryCode]) {
+                    await loadRegionData(m.countryCode);
+                  }
+                  // Preload subregions if country has them (e.g. DE)
+                  if (m.countryCode === 'DE' || subregionCache[m.countryCode]) {
+                    await loadSubregionData(m.countryCode);
+                  }
+                }
+              }
+
+              // 2. Compute exact target zoom according to user rules
+              let targetZoom = 5.5;
+              if (m.type === 'country') {
+                const cLayer = countryLayersByCode[m.countryCode];
+                if (cLayer && cLayer.getBounds && map) {
+                  try {
+                    const bZoom = map.getBoundsZoom(cLayer.getBounds());
+                    targetZoom = Math.max(2.5, Math.min(5.5, bZoom));
+                  } catch {
+                    targetZoom = 4.5;
+                  }
+                } else {
+                  targetZoom = 4.5;
+                }
+              } else if (m.type === 'province') {
+                targetZoom = 6.5; // Level 2 Turkey
+              } else if (m.type === 'region') {
+                targetZoom = 5.8; // Level 2 Regions
+              } else if (m.type === 'subregion') {
+                targetZoom = 7.2; // Level 3 Subregions
+              } else if (m.type === 'city') {
+                // If this country has level 3 subregions (like Germany), zoom into level 3
+                if (m.countryCode === 'DE' || subregionCache[m.countryCode] || subregionLayers[m.countryCode]) {
+                  targetZoom = 7.2;
+                } else {
+                  targetZoom = 6.2;
                 }
               }
 
               const coords = m.coords || (m.countryCode ? COUNTRY_CENTROIDS[m.countryCode] : null);
               if (coords && map) {
-                const targetZoom = m.type === 'country' ? 5.0 : (m.type === 'province' ? 6.5 : (m.type === 'city' ? 7.5 : 6.5));
-                map.flyTo(coords, targetZoom, { duration: 0.8 });
-                setTimeout(() => {
+                // Fly smoothly to target
+                map.flyTo(coords, targetZoom, { duration: 0.75 });
+
+                map.once('moveend', () => {
                   if (m.countryCode) {
                     selectedCountryCode = m.countryCode;
                     refreshStats();
                   }
+
+                  // Execute all manual zoom rules immediately
+                  onViewChange();
+                  updateLayerHud();
+                  scheduleLabelUpdate();
+
+                  // Find matching feature to highlight cleanly in activeFeaturePane
+                  let matchedFeature = null;
+                  if (m.countryCode === 'TR' && turkeyLayer) {
+                    turkeyLayer.eachLayer(l => {
+                      const num = String(l.feature?.properties?.number || '').padStart(2, '0');
+                      const cleanId = String(m.id || '').replace('TR::', '').padStart(2, '0');
+                      if (num === cleanId || l.feature?.properties?.name === m.name) {
+                        matchedFeature = l.feature;
+                      }
+                    });
+                  } else if (subregionLayers[m.countryCode] && map.hasLayer(subregionLayers[m.countryCode])) {
+                    subregionLayers[m.countryCode].eachLayer(l => {
+                      const sName = l.feature?.properties?.name;
+                      if (sName === m.name || sName === m.altName || `${m.countryCode}::${sName}` === m.id) {
+                        matchedFeature = l.feature;
+                      }
+                    });
+                  } else if (regionLayers[m.countryCode] && map.hasLayer(regionLayers[m.countryCode])) {
+                    regionLayers[m.countryCode].eachLayer(l => {
+                      const rName = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
+                      if (rName === m.name || rName === m.altName || `${m.countryCode}::${rName}` === m.id) {
+                        matchedFeature = l.feature;
+                      }
+                    });
+                  } else if (countryLayersByCode[m.countryCode]) {
+                    matchedFeature = countryLayersByCode[m.countryCode].feature;
+                  }
+
                   const titleHtml = `${m.flag} ${m.name}`;
-                  openStatusPopup(coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode);
-                }, 850);
+                  openStatusPopup(coords, m.id || m.countryCode, titleHtml, m.type, m.countryCode, matchedFeature);
+                });
               }
             });
           });
@@ -1915,6 +1989,20 @@ export function renderWorldMapView(container, options = {}) {
         }
       });
     }
+
+    // Live header synchronization when profile username or avatar is edited
+    const onProfileUpdate = (e) => {
+      const p = e.detail;
+      if (!p) return;
+      if (p.username) userName = p.username;
+      if (p.avatar) userAvatar = p.avatar;
+      const nameEl = container.querySelector('.floating-profile-name');
+      const avatarEl = container.querySelector('.floating-profile-avatar');
+      if (nameEl && p.username) nameEl.textContent = p.username;
+      if (avatarEl && p.avatar) avatarEl.textContent = p.avatar;
+    };
+    window.addEventListener('gv-profile-updated', onProfileUpdate);
+    docListeners.push(() => window.removeEventListener('gv-profile-updated', onProfileUpdate));
   }
 
   attachUIEvents();
@@ -2053,7 +2141,7 @@ function initMap(container) {
     zoomSnap: 0.25,
     zoomDelta: 0.5,
     wheelPxPerZoomLevel: 60,
-    wheelDebounceTime: 0,
+    wheelDebounceTime: 40,
     zoomControl: false,
     attributionControl: false,
     doubleClickZoom: true,
@@ -2328,7 +2416,11 @@ function initMap(container) {
 
   // (updateProvinceLabels and updateCountryLabels are coordinated at module level)
 
+  let _layersUnmountedForZoomOut = false;
+
   function handleViewChange() {
+    if (!map) return;
+    _layersUnmountedForZoomOut = (map.getZoom() < REGION_ZOOM);
     updateLayerHud();
     onViewChange();
     scheduleLabelUpdate();
@@ -2337,26 +2429,44 @@ function initMap(container) {
   map.on('moveend zoomend', handleViewChange);
 
   map.on('zoom', () => {
+    if (!map) return;
     updateLayerHud();
-    // Immediate visual unmount during zoom-out animation below REGION_ZOOM
-    if (map && map.getZoom() < REGION_ZOOM) {
-      Object.entries(regionLayers).forEach(([code, layer]) => {
-        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-      });
-      Object.entries(subregionLayers).forEach(([code, layer]) => {
-        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-      });
-      Object.entries(stateBordersLayers).forEach(([code, layer]) => {
-        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-      });
-      if (turkeyLayer && map.hasLayer(turkeyLayer)) {
-        map.removeLayer(turkeyLayer);
+    const currentZ = map.getZoom();
+
+    // Sınırın altına indiğinde (Seviye 1 - Ülkeler) katmanları tek seferlik güvenli kaldır
+    if (currentZ < REGION_ZOOM) {
+      if (!_layersUnmountedForZoomOut) {
+        _layersUnmountedForZoomOut = true;
+        lastZoomCategory = 1;
+        Object.entries(regionLayers).forEach(([code, layer]) => {
+          if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+        });
+        Object.entries(subregionLayers).forEach(([code, layer]) => {
+          if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+        });
+        Object.entries(stateBordersLayers).forEach(([code, layer]) => {
+          if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+        });
+        if (turkeyLayer && map.hasLayer(turkeyLayer)) {
+          map.removeLayer(turkeyLayer);
+        }
+        if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
+          map.removeLayer(countryBordersLayer);
+        }
+        if (provinceLabelsLayer) {
+          provinceLabelsLayer.clearLayers();
+        }
+        if (countriesLayer) {
+          countriesLayer.eachLayer(l => l.setStyle(countryStyle(findCountry(l.feature))));
+        }
       }
-      if (countryBordersLayer && map.hasLayer(countryBordersLayer)) {
-        map.removeLayer(countryBordersLayer);
-      }
-      if (provinceLabelsLayer) {
-        provinceLabelsLayer.clearLayers();
+    } else {
+      // Hızlı yakınlaşmada sınırın üzerine çıktığında (Seviye 2/3) katmanları anında geri yükle
+      if (_layersUnmountedForZoomOut) {
+        _layersUnmountedForZoomOut = false;
+        lastZoomCategory = 0; // Kategori geçişini tetikle
+        onViewChange();
+        scheduleLabelUpdate();
       }
     }
   });
@@ -3462,6 +3572,7 @@ function attachRegionLayer(code, data) {
 }
 
 function refreshRegionLayer(code) {
+  const hasSub = !!(subregionLayers[code] && map && map.hasLayer(subregionLayers[code]));
   regionLayers[code]?.eachLayer(l => {
     const raw = l.feature?.properties?.name || l.feature?.properties?.NAME_1;
     const style = regionStyle(raw, code);
@@ -3469,7 +3580,7 @@ function refreshRegionLayer(code) {
     
     const { worldVisits } = getCachedStorage();
     const status = ns(worldVisits[`${code}::${raw}`]?.status);
-    if (status !== 'unvisited' && l.bringToFront) l.bringToFront();
+    if (status !== 'unvisited' && !hasSub && l.bringToFront) l.bringToFront();
 
     if (l._path) {
       if (style.interactive === false) {
@@ -5376,6 +5487,17 @@ function regionStyle(rawName, countryCode) {
 
   // 1. Durum: Bölge bizzat işaretlenmiş (Gidildi / Planlanıyor / İstek Listesi)
   if (status !== 'unvisited') {
+    // Level 3 (alt şehirler/ilçeler) görünürken ebeveyn eyalet rengini soluklaştırarak altındaki şehirleri baskılamamasını sağlar
+    if (hasSubregions) {
+      return {
+        fillColor: cfg.color,
+        fillOpacity: 0.16,
+        color: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(30, 41, 59, 0.35)',
+        weight: 1.2,
+        opacity: 0.75,
+        interactive: isInteractive
+      };
+    }
     return {
       fillColor: cfg.color,
       fillOpacity: cfg.fillOpacity,
@@ -5394,10 +5516,10 @@ function regionStyle(rawName, countryCode) {
     const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
     return {
       fillColor: blended,
-      fillOpacity: 0.95,
+      fillOpacity: hasSubregions ? 0.08 : 0.95,
       color: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(100, 116, 139, 0.45)',
-      weight: hasSubregions ? 1.8 : 1.0,
-      opacity: hasSubregions ? 0.6 : 0.85,
+      weight: hasSubregions ? 1.0 : 1.0,
+      opacity: hasSubregions ? 0.4 : 0.85,
       interactive: isInteractive
     };
   }
@@ -5405,10 +5527,10 @@ function regionStyle(rawName, countryCode) {
   // 2. Durum: Ülke de ziyaret edilmemiş (saf harita zemin rengi)
   return {
     fillColor: themeCfg.landFill,
-    fillOpacity: 0.95,
+    fillOpacity: hasSubregions ? 0.05 : 0.95,
     color: isDark ? 'rgba(148, 163, 184, 0.40)' : 'rgba(100, 116, 139, 0.40)',
-    weight: hasSubregions ? 1.8 : 1.0,
-    opacity: hasSubregions ? 0.6 : 0.8,
+    weight: hasSubregions ? 1.0 : 1.0,
+    opacity: hasSubregions ? 0.4 : 0.8,
     interactive: isInteractive
   };
 }
@@ -5463,42 +5585,27 @@ function subregionStyle(name, code) {
   const status = ns(worldVisits[key]?.status);
   const STATUS = getStatusConfig();
   const cfg = STATUS[status];
-  const themeCfg = getThemeConfig();
   const isDark = !isLightTheme();
   
-  // 1. Durum: Alt şehir bizzat ziyaret edilmiş / planlanmış / istek
+  // 1. Durum: Alt şehir bizzat ziyaret edilmiş / planlanmış / istek listesinde (Vurgulu ve net)
   if (status !== 'unvisited') {
     return {
       fillColor: cfg.color,
       fillOpacity: cfg.fillOpacity,
       color: '#ffffff',
-      weight: 1.2,
+      weight: 1.3,
       opacity: 1
     };
   }
 
-  // 3. Durum: Ülke ziyaret edilmiş ama bu alt şehir henüz ziyaret edilmemiş!
-  const countryStatus = ns(getEffectiveCountryStatus(code));
-
-  if (countryStatus !== 'unvisited') {
-    const tintColor = getStatusColor(countryStatus);
-    const blended = blendColors(themeCfg.landFill, tintColor, 0.28);
-    return {
-      fillColor: blended,
-      fillOpacity: 0.95,
-      color: isDark ? 'rgba(148, 163, 184, 0.30)' : 'rgba(100, 116, 139, 0.30)',
-      weight: 0.7,
-      opacity: 0.75
-    };
-  }
-
-  // 2. Durum: Ziyaret edilmemiş ülke alt şehirleri
+  // 2. Durum: Ziyaret edilmemiş alt şehirler (Saydam dolgu: ebeveyn eyaletin hafif arka plan rengini gösterir, sınırları belirgindir)
   return {
-    fillColor: themeCfg.landFill,
-    fillOpacity: 0.95,
-    color: isDark ? 'rgba(148, 163, 184, 0.25)' : 'rgba(100, 116, 139, 0.25)',
-    weight: 0.7,
-    opacity: 0.7
+    fillColor: 'transparent',
+    fillOpacity: 0,
+    color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(30, 41, 59, 0.30)',
+    weight: 0.8,
+    opacity: 0.85,
+    stroke: true
   };
 }
 

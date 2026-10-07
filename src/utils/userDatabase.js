@@ -1,6 +1,6 @@
 // userDatabase.js - Offline-First Community Traveler Database & Accounts
 // Supports username-based friend search, 1-click comparison, and offline synchronization
-import { searchCloudTravelers, getCloudTravelerProfile, queueCloudSync } from '../services/syncService.js';
+import { searchCloudTravelers, getCloudTravelerProfile, queueCloudSync, isUsernameAvailableInCloud } from '../services/syncService.js';
 import { sendTripInvitation } from './notificationSystem.js';
 
 const COMMUNITY_USERS_KEY = 'gv_community_travelers';
@@ -163,6 +163,27 @@ export function isUsernameAvailable(username, currentUserId = null) {
   if (!existing) return true;
   if (currentUserId && existing.id === currentUserId) return true;
   return false;
+}
+
+export async function isUsernameAvailableAsync(username, currentUserId = null) {
+  if (!username || typeof username !== 'string') return false;
+  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  if (!clean || clean.length < 3) return false;
+
+  // 1. First verify local database
+  if (!isUsernameAvailable(username, currentUserId)) return false;
+
+  // 2. Verify against Firestore cloud database
+  if (navigator.onLine) {
+    try {
+      const cloudAvailable = await isUsernameAvailableInCloud(clean, currentUserId);
+      if (!cloudAvailable) return false;
+    } catch (e) {
+      console.warn('isUsernameAvailableAsync cloud check error:', e);
+    }
+  }
+
+  return true;
 }
 
 export async function syncTripToBuddy(buddyUsername, placeId, visitData, currentUserProfile) {

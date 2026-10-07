@@ -29,7 +29,7 @@ import {
   searchTravelersByUsername, searchTravelersByUsernameAsync,
   getTravelerByUsername, getTravelerByUsernameAsync,
   registerOrUpdateCurrentUser, getAllCommunityTravelers,
-  isUsernameAvailable
+  isUsernameAvailable, isUsernameAvailableAsync
 } from '../utils/userDatabase.js';
 import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
@@ -1505,7 +1505,7 @@ export function renderProfileView(container, onBack) {
       });
     });
 
-    document.getElementById('settings-save-profile-btn')?.addEventListener('click', () => {
+    document.getElementById('settings-save-profile-btn')?.addEventListener('click', async () => {
       const nameInput = document.getElementById('settings-edit-username');
       const bioInput = document.getElementById('settings-edit-bio');
       const rawName = (nameInput?.value || '').trim();
@@ -1524,11 +1524,16 @@ export function renderProfileView(container, onBack) {
       }
       const cleanCurrent = (userProfile.username || '').trim().toLowerCase();
       const cleanNew = newName.trim().toLowerCase();
-      if (cleanNew !== cleanCurrent && !isUsernameAvailable(newName)) {
-        alert(currentLang === 'tr'
-          ? `"${newName}" kullanıcı adı zaten başka bir gezgin tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.`
-          : `Username "${newName}" is already taken by another traveler. Please choose another.`);
-        return;
+      if (cleanNew !== cleanCurrent) {
+        if (saveBtn) saveBtn.disabled = true;
+        const isAvail = await isUsernameAvailableAsync(newName);
+        if (saveBtn) saveBtn.disabled = false;
+        if (!isAvail) {
+          alert(currentLang === 'tr'
+            ? `"${newName}" kullanıcı adı zaten başka bir gezgin tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.`
+            : `Username "${newName}" is already taken by another traveler. Please choose another.`);
+          return;
+        }
       }
       const newBio = sanitizeText(bioInput?.value || '', 60);
 
@@ -1548,6 +1553,7 @@ export function renderProfileView(container, onBack) {
           photoUrl: uploadedPhotoUrl,
           bio: newBio
         });
+        window.dispatchEvent(new CustomEvent('gv-profile-updated', { detail: updated }));
       } catch (e) {
         console.warn('Could not save profile', e);
       }
@@ -3350,12 +3356,12 @@ export function renderProfileView(container, onBack) {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
         stampTapMoved = true;
       }
 
       if (isHorizontalDrag === null) {
-        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
           isHorizontalDrag = Math.abs(dx) >= Math.abs(dy);
           if (isHorizontalDrag) {
             try {
@@ -3397,7 +3403,7 @@ export function renderProfileView(container, onBack) {
         }
       }
 
-      const threshold = 38;
+      const threshold = 32;
       let targetPage = currentPage;
 
       if (isHorizontalDrag && Math.abs(currentDeltaX) > threshold) {
@@ -3413,7 +3419,7 @@ export function renderProfileView(container, onBack) {
       isHorizontalDrag = null;
 
       if (stampTapMoved) {
-        setTimeout(() => { stampTapMoved = false; }, 120);
+        setTimeout(() => { stampTapMoved = false; }, 350);
       }
     };
 
@@ -3960,13 +3966,18 @@ export function renderProfileView(container, onBack) {
       });
     }
 
+    let lastStampModalOpenedAt = 0;
+    const handleStampCellClick = (cCode) => {
+      if (stampTapMoved || (Date.now() - lastStampModalOpenedAt < 400)) return;
+      lastStampModalOpenedAt = Date.now();
+      openStampZoomModal(cCode);
+    };
+
     modal.querySelectorAll('.passport-stamp-cell').forEach(cell => {
       cell.addEventListener('click', (e) => {
         if (stampTapMoved) return;
         const cCode = cell.dataset.ccode;
-        if (cCode) {
-          openStampZoomModal(cCode);
-        }
+        if (cCode) handleStampCellClick(cCode);
       });
     });
 
@@ -3975,7 +3986,7 @@ export function renderProfileView(container, onBack) {
       if (stampTapMoved) return;
       const cell = e.target.closest('.passport-stamp-cell');
       if (cell && cell.dataset.ccode) {
-        openStampZoomModal(cell.dataset.ccode);
+        handleStampCellClick(cell.dataset.ccode);
       }
     });
 
