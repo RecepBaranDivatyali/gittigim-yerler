@@ -590,12 +590,12 @@ export function renderWorldMapView(container, options = {}) {
   let unsubNotifs = null;
   let unsubState = null;
   let activeDocListeners = [];
-  function addDocListener(type, fn) {
-    document.addEventListener(type, fn);
-    activeDocListeners.push({ type, fn });
+  function addDocListener(type, fn, target = document) {
+    target.addEventListener(type, fn);
+    activeDocListeners.push({ type, fn, target });
   }
   function clearDocListeners() {
-    activeDocListeners.forEach(({ type, fn }) => document.removeEventListener(type, fn));
+    activeDocListeners.forEach(({ type, fn, target }) => (target || document).removeEventListener(type, fn));
     activeDocListeners = [];
   }
 
@@ -2001,8 +2001,7 @@ export function renderWorldMapView(container, options = {}) {
       if (nameEl && p.username) nameEl.textContent = p.username;
       if (avatarEl && p.avatar) avatarEl.textContent = p.avatar;
     };
-    window.addEventListener('gv-profile-updated', onProfileUpdate);
-    docListeners.push(() => window.removeEventListener('gv-profile-updated', onProfileUpdate));
+    addDocListener('gv-profile-updated', onProfileUpdate, window);
   }
 
   attachUIEvents();

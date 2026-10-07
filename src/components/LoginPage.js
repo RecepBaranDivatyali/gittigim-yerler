@@ -425,6 +425,7 @@ export function renderLoginPage(container, onLogin) {
         return;
       }
 
+      let signedInProfile = null;
       try {
         await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         const provider = new GoogleAuthProvider();
@@ -434,7 +435,7 @@ export function renderLoginPage(container, onLogin) {
         const result = await signInWithPopup(auth, provider);
         if (result && result.user) {
           const u = result.user;
-          const profile = {
+          signedInProfile = {
             username: u.displayName || u.email.split('@')[0],
             email: u.email,
             avatar: selectedAvatar || '✈️',
@@ -442,8 +443,6 @@ export function renderLoginPage(container, onLogin) {
             authProvider: 'google',
             createdAt: new Date().toISOString()
           };
-          saveAndCompleteLogin(profile, rememberMe);
-          return;
         }
       } catch (err) {
         console.warn('Google signIn notice:', err?.code, err?.message);
@@ -479,11 +478,16 @@ export function renderLoginPage(container, onLogin) {
             ? `Google ile giriş yapılamadı (${err?.code || 'hata'}). Lütfen e-posta ile giriş yapmayı deneyin.`
             : `Could not sign in with Google (${err?.code || 'error'}). Please try signing in with email.`);
         }
+        return;
       } finally {
         if (googleBtn) {
           googleBtn.style.opacity = '1';
           googleBtn.style.pointerEvents = 'auto';
         }
+      }
+
+      if (signedInProfile) {
+        saveAndCompleteLogin(signedInProfile, rememberMe);
       }
     });
 
