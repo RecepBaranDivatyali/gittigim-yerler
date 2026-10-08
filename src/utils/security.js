@@ -18,6 +18,15 @@ export function sanitizeText(str, maxLength = 250) {
   return escapeHtml(String(str).trim().slice(0, maxLength));
 }
 
+export function sanitizePhotoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed) || /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 export function parseSecureShareCode(rawCode) {
   if (!rawCode || typeof rawCode !== 'string') return null;
   try {

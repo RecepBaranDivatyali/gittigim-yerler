@@ -9,7 +9,7 @@ import { getStorageData, saveWorldVisit, saveTurkeyVisit, toggleWorldCity, getUs
 import { getCountryGuide, getVisaBadgeInfo } from '../data/countryGuideData.js';
 import { t, getLanguage, onLanguageChange, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { getTheme, onThemeChange, getThemeConfig, applyTheme, getStatusColor, blendColors, isLightTheme } from '../utils/theme.js';
-import { escapeHtml } from '../utils/security.js';
+import { escapeHtml, sanitizePhotoUrl } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
@@ -600,12 +600,14 @@ export function renderWorldMapView(container, options = {}) {
   }
 
   let userAvatar = '🧭';
+  let userPhotoUrl = null;
   let userName = t('profile');
   try {
     const raw = localStorage.getItem('gv_profile');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.avatar) userAvatar = parsed.avatar;
+      if (parsed.photoUrl) userPhotoUrl = parsed.photoUrl;
       if (parsed.username) userName = parsed.username;
     }
   } catch {}
@@ -676,7 +678,7 @@ export function renderWorldMapView(container, options = {}) {
         <!-- Floating Profile Button & Notifications (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
-            <span class="floating-profile-avatar">${escapeHtml(userAvatar)}</span>
+            <span class="floating-profile-avatar">${userPhotoUrl && sanitizePhotoUrl(userPhotoUrl) ? `<img src="${sanitizePhotoUrl(userPhotoUrl)}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(userAvatar)}</span>` : escapeHtml(userAvatar)}</span>
             <span class="floating-profile-name">${escapeHtml(userName)}</span>
             <span id="map-profile-sync-dot" class="map-profile-sync-dot" title="Bulut Eşitlendi"></span>
           </button>
@@ -1996,10 +1998,17 @@ export function renderWorldMapView(container, options = {}) {
       if (!p) return;
       if (p.username) userName = p.username;
       if (p.avatar) userAvatar = p.avatar;
+      if ('photoUrl' in p) userPhotoUrl = p.photoUrl;
       const nameEl = container.querySelector('.floating-profile-name');
       const avatarEl = container.querySelector('.floating-profile-avatar');
       if (nameEl && p.username) nameEl.textContent = p.username;
-      if (avatarEl && p.avatar) avatarEl.textContent = p.avatar;
+      if (avatarEl) {
+        if (p.photoUrl && sanitizePhotoUrl(p.photoUrl)) {
+          avatarEl.innerHTML = `<img src="${sanitizePhotoUrl(p.photoUrl)}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(p.avatar || '🧭')}</span>`;
+        } else if (p.avatar) {
+          avatarEl.textContent = p.avatar;
+        }
+      }
     };
     addDocListener('gv-profile-updated', onProfileUpdate, window);
   }

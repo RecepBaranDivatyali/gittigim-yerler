@@ -24,7 +24,7 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { t, getLanguage, setLanguage, getCountryDisplayName, getCountryFlagHtml } from '../utils/i18n.js';
 import { THEMES, getTheme, setTheme, COLOR_PALETTES, getStatusColor, setStatusColor, getUiSize, setUiSize, getThemeConfig, isLightTheme } from '../utils/theme.js';
 import { toPng } from 'html-to-image';
-import { escapeHtml, sanitizeText } from '../utils/security.js';
+import { escapeHtml, sanitizeText, sanitizePhotoUrl } from '../utils/security.js';
 import { 
   searchTravelersByUsername, searchTravelersByUsernameAsync,
   getTravelerByUsername, getTravelerByUsernameAsync,
@@ -36,16 +36,6 @@ import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { renderMedalTokenHtml, attachMedalSpotlightListeners } from '../utils/medalDesigns.js';
-
-// Sanitize photo URL - only allow http/https URLs and data:image URLs
-function sanitizePhotoUrl(url) {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  if (/^https?:\/\//i.test(trimmed) || /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/i.test(trimmed)) {
-    return trimmed;
-  }
-  return null;
-}
 
 // Friendly Place Name helper for Photo Album & Showcase
 function getFriendlyPlaceName(targetId) {
@@ -1118,13 +1108,13 @@ export function renderProfileView(container, onBack) {
           <div class="settings-edit-drawer" id="settings-edit-drawer" style="display:none;">
             <div class="settings-input-group">
               <label>${currentLang === 'tr' ? 'Özel Profil Fotoğrafı' : 'Custom Profile Photo'}</label>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div class="settings-photo-actions-row">
                 <input type="file" id="settings-photo-upload" accept="image/*" style="display:none;" />
-                <button type="button" class="settings-edit-toggle-btn" id="btn-choose-photo" style="font-size:0.85rem;padding:7px 14px;">
+                <button type="button" class="settings-photo-upload-btn" id="btn-choose-photo">
                   📷 ${currentLang === 'tr' ? 'Fotoğraf Yükle' : 'Upload Photo'}
                 </button>
                 ${userProfile.photoUrl ? `
-                  <button type="button" id="btn-remove-photo" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:7px 12px;font-size:0.8rem;cursor:pointer;">
+                  <button type="button" class="settings-photo-remove-btn" id="btn-remove-photo">
                     🗑️ ${currentLang === 'tr' ? 'Fotoğrafı Kaldır' : 'Remove'}
                   </button>
                 ` : ''}
@@ -1506,6 +1496,7 @@ export function renderProfileView(container, onBack) {
     });
 
     document.getElementById('settings-save-profile-btn')?.addEventListener('click', async () => {
+      const saveBtn = document.getElementById('settings-save-profile-btn');
       const nameInput = document.getElementById('settings-edit-username');
       const bioInput = document.getElementById('settings-edit-bio');
       const rawName = (nameInput?.value || '').trim();
@@ -1525,14 +1516,23 @@ export function renderProfileView(container, onBack) {
       const cleanCurrent = (userProfile.username || '').trim().toLowerCase();
       const cleanNew = newName.trim().toLowerCase();
       if (cleanNew !== cleanCurrent) {
-        if (saveBtn) saveBtn.disabled = true;
-        const isAvail = await isUsernameAvailableAsync(newName);
-        if (saveBtn) saveBtn.disabled = false;
-        if (!isAvail) {
-          alert(currentLang === 'tr'
-            ? `"${newName}" kullanıcı adı zaten başka bir gezgin tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.`
-            : `Username "${newName}" is already taken by another traveler. Please choose another.`);
-          return;
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.style.opacity = '0.6';
+        }
+        try {
+          const isAvail = await isUsernameAvailableAsync(newName);
+          if (!isAvail) {
+            alert(currentLang === 'tr'
+              ? `"${newName}" kullanıcı adı zaten başka bir gezgin tarafından kullanılıyor. Lütfen başka bir kullanıcı adı seçin.`
+              : `Username "${newName}" is already taken by another traveler. Please choose another.`);
+            return;
+          }
+        } finally {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+          }
         }
       }
       const newBio = sanitizeText(bioInput?.value || '', 60);
@@ -2628,22 +2628,6 @@ export function renderProfileView(container, onBack) {
           <button class="passport-modal-close" id="passport-close-btn">&times;</button>
         </div>
 
-          <!-- Passport Booklet Minimal Header & Navigation -->
-          <div class="passport-booklet-nav">
-            <div class="booklet-page-pill">
-              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-prev" aria-label="${currentLang === 'tr' ? 'Önceki Sayfa' : 'Previous Page'}">◀</button>
-              <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
-              <span class="booklet-pill-sep">•</span>
-              <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Pasaport Kapağı' : 'Passport Cover'}</span>
-              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-next" aria-label="${currentLang === 'tr' ? 'Sonraki Sayfa' : 'Next Page'}">▶</button>
-            </div>
-            <div class="passport-dots-row" id="passport-dots-row">
-              ${Array.from({ length: totalPages }).map((_, i) => `
-                <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
-              `).join('')}
-            </div>
-          </div>
-
           <!-- Passport Document Booklet Canvas (Swipeable/Slideable Carousel) -->
           <div id="traveler-passport-canvas" class="passport-book-card">
             <div class="passport-carousel-viewport" id="passport-viewport">
@@ -2667,8 +2651,8 @@ export function renderProfileView(container, onBack) {
                           </filter>
                         </defs>
                         <!-- Crescent & Star (Ay-Yıldız) in Gold -->
-                        <path fill="#facc15" filter="url(#goldShadow)" d="M50 14 A36 36 0 1 0 78 78 A28 28 0 1 1 50 24 Z" />
-                        <polygon fill="#facc15" filter="url(#goldShadow)" points="68,40 71,48 80,48 73,53 76,61 68,56 60,61 63,53 56,48 65,48" />
+                        <path fill="#facc15" filter="url(#goldShadow)" d="M 63.66 35.03 A 28 28 0 1 0 63.66 64.97 A 22.4 22.4 0 0 1 63.66 35.03 Z" />
+                        <polygon fill="#facc15" filter="url(#goldShadow)" points="66.5,50 74.1,47.53 74.1,39.54 78.8,46.01 86.4,43.53 81.7,50 86.4,56.47 78.8,53.99 74.1,60.46 74.1,52.47" />
                       </svg>
                     </div>
 
@@ -2703,8 +2687,8 @@ export function renderProfileView(container, onBack) {
                   <div class="passport-id-page">
                     <!-- Background watermark crest -->
                     <svg viewBox="0 0 100 100" class="passport-id-security-crest">
-                      <path fill="#0f172a" d="M50 14 A36 36 0 1 0 78 78 A28 28 0 1 1 50 24 Z" />
-                      <polygon fill="#0f172a" points="68,40 71,48 80,48 73,53 76,61 68,56 60,61 63,53 56,48 65,48" />
+                      <path fill="#0f172a" d="M 63.66 35.03 A 28 28 0 1 0 63.66 64.97 A 22.4 22.4 0 0 1 63.66 35.03 Z" />
+                      <polygon fill="#0f172a" points="66.5,50 74.1,47.53 74.1,39.54 78.8,46.01 86.4,43.53 81.7,50 86.4,56.47 78.8,53.99 74.1,60.46 74.1,52.47" />
                     </svg>
 
                     <div class="passport-id-header">
@@ -3241,6 +3225,22 @@ export function renderProfileView(container, onBack) {
                 }).join('')}
 
               </div>
+            </div>
+          </div>
+
+          <!-- Passport Booklet Navigation & Dots (Positioned at bottom) -->
+          <div class="passport-booklet-nav">
+            <div class="booklet-page-pill">
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-prev" aria-label="${currentLang === 'tr' ? 'Önceki Sayfa' : 'Previous Page'}">◀</button>
+              <span class="booklet-pill-badge" id="passport-cur-page-num">1 / ${totalPages}</span>
+              <span class="booklet-pill-sep">•</span>
+              <span class="booklet-pill-label" id="passport-page-label">${currentLang === 'tr' ? 'Pasaport Kapağı' : 'Passport Cover'}</span>
+              <button type="button" class="booklet-turn-arrow-btn" id="passport-btn-next" aria-label="${currentLang === 'tr' ? 'Sonraki Sayfa' : 'Next Page'}">▶</button>
+            </div>
+            <div class="passport-dots-row" id="passport-dots-row">
+              ${Array.from({ length: totalPages }).map((_, i) => `
+                <button type="button" class="passport-dot-btn ${i === 0 ? 'active' : ''}" data-page="${i}" aria-label="Sayfa ${i + 1}"></button>
+              `).join('')}
             </div>
           </div>
       </div>

@@ -7087,6 +7087,13 @@ body[data-theme="light"] .fb-card-date {
     padding: 10px 16px;
     text-align: center;
   }
+  .settings-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+  .settings-edit-drawer {
+    padding: 14px 12px;
+  }
 }
 
 .settings-edit-drawer {
@@ -7099,6 +7106,80 @@ body[data-theme="light"] .fb-card-date {
   flex-direction: column;
   gap: 14px;
   animation: slideDownFade 0.25s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.settings-photo-actions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-photo-upload-btn {
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.15);
+  border: 1px solid rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
+  border-radius: 10px;
+  color: var(--theme-accent, #38bdf8);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.settings-photo-upload-btn:hover {
+  background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.28);
+  transform: translateY(-1px);
+}
+
+.settings-photo-remove-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.settings-photo-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.floating-profile-photo-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
 }
 
 @keyframes slideDownFade {
@@ -7111,6 +7192,26 @@ body[data-theme="light"] .fb-card-date {
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 440px) {
+  .settings-avatar-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .settings-avatar-pick-btn {
+    font-size: 1.35rem;
+    padding: 6px 2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .settings-avatar-picker-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
 }
 
 .settings-avatar-pick-btn {
@@ -9046,6 +9147,8 @@ body[data-theme="light"] .popup-visa-inline-badge.valid-personal-visa { backgrou
   gap: 5px;
   width: 100%;
   max-width: 440px;
+  margin-top: 10px;
+  margin-bottom: 4px;
 }
 .booklet-page-pill {
   display: inline-flex;
@@ -16630,6 +16733,7 @@ body[data-theme="light"] .auth-switch-prompt { color: #374151; }
 }
 .passport-cover-crest-svg {
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 10px rgba(250, 204, 21, 0.35));
+  overflow: visible;
 }
 .passport-cover-chip-row {
   display: flex;
@@ -16647,9 +16751,10 @@ body[data-theme="light"] .auth-switch-prompt { color: #374151; }
   transform: translate(-50%, -50%);
   width: 140px;
   height: 140px;
-  opacity: 0.045;
+  opacity: 0.08;
   pointer-events: none;
   z-index: 1;
+  overflow: visible;
 }
 .passport-photo-hologram {
   position: absolute;
