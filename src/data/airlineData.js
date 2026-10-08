@@ -29,7 +29,7 @@ export const AIRLINE_ALLIANCES = [
       { id: 'brussels', code: 'SN', name: 'Brussels Airlines', country: 'Belçika', flag: '🇧🇪', hub: 'BRU' },
       { id: 'airindia', code: 'AI', name: 'Air India', country: 'Hindistan', flag: '🇮🇳', hub: 'DEL' },
       { id: 'egyptair', code: 'MS', name: 'EgyptAir', country: 'Mısır', flag: '🇪🇬', hub: 'CAI' },
-      { id: 'eva', code: 'BR', name: 'EVA Air', country: 'Tayvan', flag: '🇹🇼', hub: 'TPE' },
+      { id: 'eva', code: 'BR', name: 'EVA Air', country: 'Çin Taipeisi / Tayvan', flag: '🌏', hub: 'TPE' },
       { id: 'airchina', code: 'CA', name: 'Air China', country: 'Çin', flag: '🇨🇳', hub: 'PEK' },
       { id: 'thai', code: 'TG', name: 'Thai Airways', country: 'Tayland', flag: '🇹🇭', hub: 'BKK' },
       { id: 'airnewzealand', code: 'NZ', name: 'Air New Zealand', country: 'Yeni Zelanda', flag: '🇳🇿', hub: 'AKL' },

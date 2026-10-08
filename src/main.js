@@ -5,6 +5,7 @@ import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks, initFeedbackSync } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
+import { checkPrivacyConsent } from './components/PrivacyConsentModal.js';
 import { initPhoneSimulator } from './components/PhoneSimulator.js';
 
 // Preload GeoJSON map data immediately on app launch for instant 0ms map rendering
@@ -62,6 +63,9 @@ function initApp() {
 
   // Auto-sync offline feedbacks & archive flush whenever app boots or device regains internet connection
   initFeedbackSync();
+
+  // Prompt first-time users to review and accept privacy policy (Huawei Rule 7.5 & store compliance)
+  checkPrivacyConsent();
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);';
 

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gizlilik Politikası (Privacy Policy) - Gezgin: Seyahat Haritası</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    :root {
+      --bg-color: #0b1120;
+      --card-bg: #151f32;
+      --card-border: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --section-border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.65;
+      padding: 24px 16px 60px 16px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 68px;
+      height: 68px;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      border-radius: 20px;
+      font-size: 34px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, #60a5fa, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .lang-switcher {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .lang-btn {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid #334155;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .lang-btn.active, .lang-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .policy-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 14px;
+      font-size: 0.96rem;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: #f8fafc;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .contact-box {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-top: 14px;
+    }
+
+    .contact-box p {
+      margin-bottom: 6px;
+    }
+
+    a {
+      color: var(--accent-hover);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .lang-section {
+      display: block;
+    }
+
+    .lang-section.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-badge">🌍</div>
+      <h1>Gezgin: Seyahat Haritası</h1>
+      <p class="subtitle">Gizlilik Politikası / Privacy Policy</p>
+      <div class="lang-switcher">
+        <button type="button" class="lang-btn active" onclick="switchLang('tr')">🇹🇷 Türkçe</button>
+        <button type="button" class="lang-btn" onclick="switchLang('en')">🇬🇧 English</button>
+      </div>
+    </header>
+
+    <!-- TÜRKÇE BÖLÜM -->
+    <div id="section-tr" class="lang-section">
+      <div class="policy-card">
+        <span class="badge-pill">✓ Güncel ve Yürürlükte</span>
+        <p><strong>Son Güncelleme Tarihi:</strong> 8 Ekim 2026</p>
+        <p>
+          <strong>Gezgin: Seyahat Haritası</strong> ("Uygulama"), bağımsız geliştirici <strong>Recep Baran Divatyalı</strong> ("Geliştirici", "biz", "bize") tarafından sunulan bir seyahat haritası, istatistik ve anı takip uygulamasıdır. Bu Gizlilik Politikası, mobil uygulamamızı (Google Play Store, Apple App Store, Huawei AppGallery) ve web platformumuzu (<a href="https://gittigim-yerler.vercel.app" target="_blank">gittigim-yerler.vercel.app</a>) kullandığınızda kişisel verilerinizin nasıl toplandığını, işlendiğini, saklandığını ve korunduğunu ayrıntılı olarak açıklamaktadır.
+        </p>
+      </div>
+
+      <div class="policy-card">
+        <h2>🛡️ 1. Toplanan Kişisel Veriler ve Toplanma Amaçları</h2>
+        <p>Uygulamamız yalnızca temel hizmetlerin sağlanabilmesi için gerekli olan asgari düzeyde veri toplar:</p>
+
+        <h3>a. Hesap ve Kimlik Doğrulama Verileri</h3>
+        <ul>
+          <li><strong>E-posta Adresi ve Şifre:</strong> Google Firebase Authentication altyapısı kullanılarak güvenli kullanıcı hesabı oluşturulması ve giriş yapılabilmesi için toplanır.</li>
+          <li><strong>Google ile Giriş (İsteğe Bağlı):</strong> Google hesabınızla giriş yapmayı tercih etmeniz halinde Google profilinizden yalnızca benzersiz kimlik numarası (UID), e-posta adresi ve profil adı alınır.</li>
+          <li><strong>Kullanıcı Adı ve Profil Tercihleri:</strong> Seyahat profilinizi kişiselleştirmek ve arkadaş kıyaslama özelliğini sunabilmek için seçtiğiniz gezgin rumuzu, biyografi metni ve avatar simgesi saklanır.</li>
+        </ul>
+
+        <h3>b. Seyahat ve Harita Verileri</h3>
+        <ul>
+          <li><strong>İşaretlenen Ülkeler, Şehirler ve Bölgeler:</strong> Haritanızda renklendirdiğiniz yerler (Ziyaret Edildi, Planlanıyor, İstek Listesi), giriş/çıkış tarihleri, ulaşım aracı türleri ve seyahat puanlarınız.</li>
+          <li><strong>Kişisel Seyahat Notları:</strong> Şehirler ve ülkeler hakkında isteğe bağlı olarak yazdığınız kişisel gezi notları.</li>
+        </ul>
+
+        <h3>c. Fotoğraflar ve Galeri İçeriği</h3>
+        <ul>
+          <li><strong>Yalnızca Yerel Cihazda Depolama (IndexedDB):</strong> Seyahat anılarınız için eklediğiniz fotoğraflar sunucularımıza yüklenmez. Cihazınızın yerel depolama alanında (IndexedDB) saklanır. Fotoğraflarınız üçüncü şahıslarla paylaşılmaz veya analiz edilmez.</li>
+        </ul>
+
+        <h3>d. Konum Verileri (Anlık GPS)</h3>
+        <ul>
+          <li><strong>İsteğe Bağlı & Anlık Kullanım:</strong> Harita ekranında "Konumumu Bul" butonuna bastığınızda, cihazınızın anlık konum koordinatları yalnızca haritayı bulunduğunuz noktaya ortalamak amacıyla anlık olarak kullanılır.</li>
+          <li><strong>Sıfır Arka Plan Takibi:</strong> Konumunuz asla arka planda izlenmez, kaydedilmez ve sunuculara iletilmez.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>🔒 2. Üçüncü Taraf Hizmetleri ve Veri Güvenliği</h2>
+        <p>Uygulamamız aşağıdaki güvenilir ve uluslararası güvenlik standartlarına sahip bulut altyapısını kullanmaktadır:</p>
+        <ul>
+          <li><strong>Google Firebase (Firebase Authentication & Cloud Firestore):</strong> Kullanıcı hesap yönetimi ve harita verilerinin cihazlar arası şifrelenmiş senkronizasyonu için kullanılır.</li>
+          <li><strong>Veri Şifreleme:</strong> Tüm veri iletimi modern SSL/TLS 256-bit şifreleme protokolleri ile güvence altına alınmıştır.</li>
+          <li><strong>Kesin Reklamsız Politika:</strong> Uygulamamızda hiçbir üçüncü taraf reklam ağı (Google AdMob, Unity Ads vb.) bulunmaz. Verileriniz hiçbir reklam şirketi veya veri komisyoncusu ile <u>paylaşılmaz ve satılmaz</u>.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>🗑️ 3. Kullanıcı Hakları ve Hesap/Veri Silme</h2>
+        <p>Kullanıcılarımız 6698 sayılı KVKK ve Avrupa Birliği GDPR düzenlemeleri uyarınca aşağıdaki tam haklara sahiptir:</p>
+        <ul>
+          <li><strong>Uygulama İçi Hesap Silme:</strong> Uygulama içerisinden <em>Profil ➔ Ayarlar ➔ Tehlikeli Bölge ➔ "Hesabımı ve Tüm Verilerimi Sil"</em> butonuna dokunarak hesabınızı ve Firebase üzerindeki tüm seyahat verilerinizi kalıcı olarak silebilirsiniz.</li>
+          <li><strong>Verileri Dışa Aktarma (Yedekleme):</strong> Ayarlar ekranındaki "Yedek Al" butonuna basarak seyahat verilerinizin JSON formatında bir kopyasını istediğiniz zaman indirebilirsiniz.</li>
+          <li><strong>E-Posta ile Silme Talebi:</strong> Dilediğiniz zaman geliştirici e-posta adresimize başvurarak tüm kayıtlarınızın ve kişisel verilerinizin sistemlerimizden 24 saat içerisinde tamamen silinmesini talep edebilirsiniz.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>👶 4. Çocukların Gizliliği</h2>
+        <p>
+          Uygulamamız 13 yaşın (veya ilgili ülkedeki yasal sınırın) altındaki çocukları hedeflememektedir. Bilerek çocuklardan kişisel veri toplamamaktayız. Böyle bir verinin varlığı tespit edilirse derhal sistemlerimizden silinir.
+        </p>
+      </div>
+
+      <div class="policy-card">
+        <h2>📬 5. Geliştirici ve İletişim Bilgileri</h2>
+        <p>Gizlilik Politikası, veri koruma haklarınız veya destek talepleriniz için bizimle doğrudan iletişime geçebilirsiniz:</p>
+        <div class="contact-box">
+          <p><strong>Uygulama Sahibi & Geliştirici:</strong> Recep Baran Divatyalı</p>
+          <p><strong>E-posta Adresi:</strong> <a href="mailto:barandivatyali@gmail.com">barandivatyali@gmail.com</a></p>
+          <p><strong>Web Sitesi:</strong> <a href="https://gittigim-yerler.vercel.app" target="_blank">https://gittigim-yerler.vercel.app</a></p>
+          <p><strong>Açık Kaynak Proje:</strong> <a href="https://github.com/RecepBaranDivatyali/gittigim-yerler" target="_blank">github.com/RecepBaranDivatyali/gittigim-yerler</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENGLISH SECTION -->
+    <div id="section-en" class="lang-section hidden">
+      <div class="policy-card">
+        <span class="badge-pill">✓ Effective & Up to Date</span>
+        <p><strong>Last Updated:</strong> October 8, 2026</p>
+        <p>
+          <strong>Gezgin: Seyahat Haritası (Traveler: Travel Map)</strong> ("the App") is developed and maintained by independent developer <strong>Recep Baran Divatyalı</strong> ("Developer", "we", "us"). This Privacy Policy explains how your personal data is collected, used, stored, and protected when you use our mobile application (Google Play Store, Apple App Store, Huawei AppGallery) and our web platform (<a href="https://gittigim-yerler.vercel.app" target="_blank">gittigim-yerler.vercel.app</a>).
+        </p>
+      </div>
+
+      <div class="policy-card">
+        <h2>🛡️ 1. Personal Data Collected and Purpose of Use</h2>
+        <p>Our app adheres to strict data minimization principles, collecting only what is strictly required to provide app functionality:</p>
+
+        <h3>a. Account and Authentication Data</h3>
+        <ul>
+          <li><strong>Email Address and Password:</strong> Collected via Google Firebase Authentication to enable secure account creation, sign-in, and synchronization of your travel journal.</li>
+          <li><strong>Google Sign-In (Optional):</strong> If you choose to log in using Google, we only receive your Firebase User ID, email address, and profile name.</li>
+          <li><strong>Username and Profile Preferences:</strong> Your chosen traveler handle, optional bio, and avatar icon to personalize your profile and enable friend comparisons.</li>
+        </ul>
+
+        <h3>b. Travel and Map Data</h3>
+        <ul>
+          <li><strong>Marked Countries, Cities, and Regions:</strong> Visited, planned, and wishlist places colored on your interactive map, entry/exit dates, transportation modes, and travel ratings.</li>
+          <li><strong>Personal Travel Notes:</strong> Optional notes written about visited cities or countries.</li>
+        </ul>
+
+        <h3>c. Photos and Gallery Media</h3>
+        <ul>
+          <li><strong>Local Device Storage Only (IndexedDB):</strong> Photos added to your travel memories are stored strictly in your device's local browser database (IndexedDB). They are never uploaded to remote servers or shared with third parties.</li>
+        </ul>
+
+        <h3>d. Geolocation Data</h3>
+        <ul>
+          <li><strong>Instant and On-Demand Only:</strong> When you tap the "Find My Location" button, your GPS coordinates are used exclusively to center the map on your current position.</li>
+          <li><strong>No Background Tracking:</strong> Location is never tracked in the background and is never logged or shared.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>🔒 2. Third-Party Services and Data Security</h2>
+        <p>We rely on world-class, privacy-certified cloud infrastructure:</p>
+        <ul>
+          <li><strong>Google Firebase (Authentication & Cloud Firestore):</strong> Manages user accounts and syncs encrypted map statistics across your devices.</li>
+          <li><strong>Data Encryption:</strong> All data transmissions are encrypted using standard SSL/TLS 256-bit protocols.</li>
+          <li><strong>Strictly No Ads / No Data Brokers:</strong> We do not integrate any third-party ad networks or tracking SDKs. We will <u>never sell or rent</u> your personal data.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>🗑️ 3. User Rights and Data Deletion</h2>
+        <p>In full compliance with GDPR and relevant data protection laws, you retain complete ownership and control over your data:</p>
+        <ul>
+          <li><strong>In-App Account Deletion:</strong> You can permanently delete your account and all associated cloud data at any time via <em>Profile ➔ Settings ➔ Danger Zone ➔ "Delete My Account"</em>.</li>
+          <li><strong>Data Export / Backup:</strong> You can download a complete JSON backup of your travel records via the "Export Backup" button in Settings.</li>
+          <li><strong>Email Deletion Request:</strong> You can also contact us via email to request immediate and complete deletion of your records within 24 hours.</li>
+        </ul>
+      </div>
+
+      <div class="policy-card">
+        <h2>👶 4. Children's Privacy</h2>
+        <p>
+          Our application is not targeted at children under the age of 13. We do not knowingly collect personal identifiable information from children under 13.
+        </p>
+      </div>
+
+      <div class="policy-card">
+        <h2>📬 5. Developer and Contact Information</h2>
+        <p>For questions, privacy requests, or feedback regarding this policy, please reach out to us directly:</p>
+        <div class="contact-box">
+          <p><strong>App Owner & Developer:</strong> Recep Baran Divatyalı</p>
+          <p><strong>Email Address:</strong> <a href="mailto:barandivatyali@gmail.com">barandivatyali@gmail.com</a></p>
+          <p><strong>Website:</strong> <a href="https://gittigim-yerler.vercel.app" target="_blank">https://gittigim-yerler.vercel.app</a></p>
+          <p><strong>Open Source Repository:</strong> <a href="https://github.com/RecepBaranDivatyali/gittigim-yerler" target="_blank">github.com/RecepBaranDivatyali/gittigim-yerler</a></p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2026 Recep Baran Divatyalı - Gezgin: Seyahat Haritası. Tüm hakları saklıdır.</p>
+    </footer>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      const trSec = document.getElementById('section-tr');
+      const enSec = document.getElementById('section-en');
+      const btns = document.querySelectorAll('.lang-btn');
+
+      if (lang === 'tr') {
+        trSec.classList.remove('hidden');
+        enSec.classList.add('hidden');
+        btns[0].classList.add('active');
+        btns[1].classList.remove('active');
+        document.documentElement.lang = 'tr';
+      } else {
+        trSec.classList.add('hidden');
+        enSec.classList.remove('hidden');
+        btns[0].classList.remove('active');
+        btns[1].classList.add('active');
+        document.documentElement.lang = 'en';
+      }
+    }
+  </script>
+</body>
+</html>

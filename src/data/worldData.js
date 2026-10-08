@@ -1266,10 +1266,10 @@ export const WORLD_COUNTRIES = [
   },
   {
     "code": "TW",
-    "name": "Tayvan",
-    "nameEn": "Taiwan",
+    "name": "Tayvan (Çin Taipeisi)",
+    "nameEn": "Taiwan (Chinese Taipei)",
     "continent": "asia",
-    "flag": "🇹🇼"
+    "flag": "🌏"
   },
   {
     "code": "JP",

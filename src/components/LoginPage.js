@@ -286,7 +286,37 @@ export function renderLoginPage(container, onLogin) {
             `}
           </div>
 
-          <div class="login-note">${t('notePrivacy')}</div>
+          <!-- Misafir Modu (Giriş Yapmadan Devam Et) - Apple & App Store Review Uyumluluğu -->
+          <div style="margin-top:12px;text-align:center;">
+            <button type="button" id="btn-guest-continue" style="
+              width: 100%;
+              background: rgba(148, 163, 184, 0.08);
+              border: 1px dashed rgba(148, 163, 184, 0.28);
+              border-radius: 12px;
+              padding: 10px 14px;
+              color: #cbd5e1;
+              font-size: 0.85rem;
+              font-weight: 600;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              transition: all 0.2s ease;
+            ">
+              <span>🗺️</span>
+              <span>${currentLang === 'tr' ? 'Giriş Yapmadan Devam Et (Misafir Modu)' : 'Continue as Guest (Explore Map)'}</span>
+            </button>
+          </div>
+
+          <!-- Gizlilik Politikası ve Koşullar (Huawei Rule 7.5 & App Store Compliance) -->
+          <div class="auth-privacy-agreement" style="margin-top:14px;text-align:center;font-size:0.75rem;color:#94a3b8;line-height:1.45;">
+            ${currentLang === 'tr'
+              ? 'Devam ederek <a href="https://gittigim-yerler.vercel.app/privacy.html" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;font-weight:600;">Gizlilik Politikası</a>\'nı kabul etmiş olursunuz.'
+              : 'By continuing, you agree to our <a href="https://gittigim-yerler.vercel.app/privacy.html" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline;font-weight:600;">Privacy Policy</a>.'}
+          </div>
+
+          <div class="login-note" style="margin-top:8px;">${t('notePrivacy')}</div>
         </div>
       </div>
     `;
@@ -354,6 +384,18 @@ export function renderLoginPage(container, onLogin) {
       syncFormState();
       authMode = 'login';
       render();
+    });
+
+    container.querySelector('#btn-guest-continue')?.addEventListener('click', () => {
+      const guestProfile = {
+        uid: 'guest_' + Math.random().toString(36).substring(2, 9),
+        username: currentLang === 'tr' ? 'Misafir Gezgin' : 'Guest Traveler',
+        avatar: '🧭',
+        bio: currentLang === 'tr' ? 'Haritayı keşfeden misafir gezgin' : 'Guest exploring the world map',
+        createdAt: new Date().toISOString(),
+        isGuest: true
+      };
+      saveAndCompleteLogin(guestProfile, false);
     });
 
     container.querySelector('#btn-forgot-password')?.addEventListener('click', async (e) => {
