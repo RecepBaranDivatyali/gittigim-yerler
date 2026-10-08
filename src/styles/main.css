@@ -16749,8 +16749,8 @@ body[data-theme="light"] .auth-switch-prompt { color: #374151; }
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 140px;
-  height: 140px;
+  width: 170px;
+  height: 130px;
   opacity: 0.08;
   pointer-events: none;
   z-index: 1;

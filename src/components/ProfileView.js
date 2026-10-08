@@ -2644,15 +2644,14 @@ export function renderProfileView(container, onBack) {
                     <div class="passport-cover-country">TÜRKİYE CUMHURİYETİ</div>
 
                     <div class="passport-cover-crest-wrap">
-                      <svg viewBox="0 0 100 100" class="passport-cover-crest-svg" width="84" height="84">
+                      <svg viewBox="130 130 444 340" class="passport-cover-crest-svg" width="96" height="74">
                         <defs>
                           <filter id="goldShadow" x="-20%" y="-20%" width="140%" height="140%">
                             <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.6"/>
                           </filter>
                         </defs>
-                        <!-- Crescent & Star (Ay-Yıldız) in Gold -->
-                        <path fill="#facc15" filter="url(#goldShadow)" d="M 63.66 35.03 A 28 28 0 1 0 63.66 64.97 A 22.4 22.4 0 0 1 63.66 35.03 Z" />
-                        <polygon fill="#facc15" filter="url(#goldShadow)" points="66.5,50 74.1,47.53 74.1,39.54 78.8,46.01 86.4,43.53 81.7,50 86.4,56.47 78.8,53.99 74.1,60.46 74.1,52.47" />
+                        <!-- Authentic Official Republic of Turkey Crescent & Star (Ay-Yıldız) in Gold -->
+                        <path fill="#facc15" filter="url(#goldShadow)" d="m417.504 300 135.68-44.078-83.86 115.41V228.668l83.86 115.41Zm9.25 80.21c-35.7 56.415-104.387 82.446-168.508 63.86C194.125 425.488 150 366.762 150 300s44.125-125.488 108.246-144.07c64.121-18.586 132.809 7.445 168.508 63.86-33.223-36.97-85.797-49.63-132.203-31.84C248.14 205.737 217.5 250.296 217.5 300s30.64 94.262 77.05 112.05c46.407 17.79 98.981 5.13 132.204-31.84" />
                       </svg>
                     </div>
 
@@ -2686,9 +2685,8 @@ export function renderProfileView(container, onBack) {
                   <!-- Identity Page Pane — High Security Biometric Reproduction -->
                   <div class="passport-id-page">
                     <!-- Background watermark crest -->
-                    <svg viewBox="0 0 100 100" class="passport-id-security-crest">
-                      <path fill="#0f172a" d="M 63.66 35.03 A 28 28 0 1 0 63.66 64.97 A 22.4 22.4 0 0 1 63.66 35.03 Z" />
-                      <polygon fill="#0f172a" points="66.5,50 74.1,47.53 74.1,39.54 78.8,46.01 86.4,43.53 81.7,50 86.4,56.47 78.8,53.99 74.1,60.46 74.1,52.47" />
+                    <svg viewBox="130 130 444 340" class="passport-id-security-crest">
+                      <path fill="#0f172a" d="m417.504 300 135.68-44.078-83.86 115.41V228.668l83.86 115.41Zm9.25 80.21c-35.7 56.415-104.387 82.446-168.508 63.86C194.125 425.488 150 366.762 150 300s44.125-125.488 108.246-144.07c64.121-18.586 132.809 7.445 168.508 63.86-33.223-36.97-85.797-49.63-132.203-31.84C248.14 205.737 217.5 250.296 217.5 300s30.64 94.262 77.05 112.05c46.407 17.79 98.981 5.13 132.204-31.84" />
                     </svg>
 
                     <div class="passport-id-header">
