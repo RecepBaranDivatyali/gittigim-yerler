@@ -1111,13 +1111,11 @@ export function renderProfileView(container, onBack) {
               <div class="settings-photo-actions-row">
                 <input type="file" id="settings-photo-upload" accept="image/*" style="display:none;" />
                 <button type="button" class="settings-photo-upload-btn" id="btn-choose-photo">
-                  📷 ${currentLang === 'tr' ? 'Fotoğraf Yükle' : 'Upload Photo'}
+                  📷 <span>${currentLang === 'tr' ? 'Fotoğraf Yükle' : 'Upload Photo'}</span>
                 </button>
-                ${userProfile.photoUrl ? `
-                  <button type="button" class="settings-photo-remove-btn" id="btn-remove-photo">
-                    🗑️ ${currentLang === 'tr' ? 'Fotoğrafı Kaldır' : 'Remove'}
-                  </button>
-                ` : ''}
+                <button type="button" class="settings-photo-remove-btn" id="btn-remove-photo" style="display:${userProfile.photoUrl ? 'inline-flex' : 'none'};">
+                  🗑️ <span>${currentLang === 'tr' ? 'Kaldır' : 'Remove'}</span>
+                </button>
               </div>
               <label style="font-size:0.8rem;color:var(--theme-text-muted,#94a3b8);">${t('selectAvatar')}</label>
               <div class="settings-avatar-picker-grid" id="settings-avatar-picker-grid">
@@ -1469,7 +1467,7 @@ export function renderProfileView(container, onBack) {
           if (preview) {
             preview.innerHTML = `<img src="${uploadedPhotoUrl}" class="avatar-custom-img" alt="Avatar">`;
           }
-          if (removePhotoBtn) removePhotoBtn.style.display = 'inline-block';
+          if (removePhotoBtn) removePhotoBtn.style.display = 'inline-flex';
         };
         img.src = rawDataUrl;
       };

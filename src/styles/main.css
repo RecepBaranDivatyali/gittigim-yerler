@@ -7056,46 +7056,6 @@ body[data-theme="light"] .fb-card-date {
   transform: translateY(-1px);
 }
 
-@media (max-width: 520px) {
-  .settings-profile-preview {
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 14px 16px;
-  }
-  .settings-profile-avatar {
-    font-size: 2.3rem;
-    padding: 6px 10px;
-  }
-  .settings-profile-info {
-    flex: 1 1 170px;
-    min-width: 0;
-  }
-  .settings-profile-name {
-    font-size: 1.1rem;
-  }
-  .settings-profile-bio {
-    white-space: normal;
-    font-size: 0.8rem;
-    word-break: break-word;
-  }
-  .settings-edit-toggle-btn {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 4px;
-    padding: 10px 16px;
-    text-align: center;
-  }
-  .settings-card {
-    padding: 16px 14px;
-    border-radius: 16px;
-  }
-  .settings-edit-drawer {
-    padding: 14px 12px;
-  }
-}
-
 .settings-edit-drawer {
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -7115,8 +7075,8 @@ body[data-theme="light"] .fb-card-date {
 .settings-photo-actions-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 8px;
   margin-bottom: 12px;
   width: 100%;
   box-sizing: border-box;
@@ -7128,12 +7088,13 @@ body[data-theme="light"] .fb-card-date {
   border-radius: 10px;
   color: var(--theme-accent, #38bdf8);
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: 8px 14px;
+  font-size: 0.84rem;
+  padding: 8px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7152,7 +7113,7 @@ body[data-theme="light"] .fb-card-date {
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #f87171;
   border-radius: 10px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -7196,33 +7157,20 @@ body[data-theme="light"] .fb-card-date {
   box-sizing: border-box;
 }
 
-@media (max-width: 440px) {
-  .settings-avatar-picker-grid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
-  }
-  .settings-avatar-pick-btn {
-    font-size: 1.35rem;
-    padding: 6px 2px;
-  }
-}
-
-@media (max-width: 360px) {
-  .settings-avatar-picker-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
-  }
-}
-
 .settings-avatar-pick-btn {
   background: rgba(15, 23, 42, 0.7);
   border: 2px solid transparent;
   border-radius: 12px;
-  font-size: 1.6rem;
-  padding: 8px 4px;
+  font-size: 1.55rem;
+  padding: 6px 2px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  box-sizing: border-box;
 }
 
 .settings-avatar-pick-btn:hover {
@@ -7234,8 +7182,71 @@ body[data-theme="light"] .fb-card-date {
 .settings-avatar-pick-btn.selected {
   background: rgba(var(--theme-accent-rgb, 56, 189, 248), 0.22);
   border-color: var(--theme-accent, #38bdf8);
-  transform: scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 0 12px rgba(var(--theme-accent-rgb, 56, 189, 248), 0.35);
+}
+
+@media (max-width: 520px) {
+  .settings-profile-preview {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .settings-profile-avatar {
+    font-size: 2.3rem;
+    padding: 6px 10px;
+  }
+  .settings-profile-info {
+    flex: 1 1 170px;
+    min-width: 0;
+  }
+  .settings-profile-name {
+    font-size: 1.1rem;
+  }
+  .settings-profile-bio {
+    white-space: normal;
+    font-size: 0.8rem;
+    word-break: break-word;
+  }
+  .settings-edit-toggle-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4px;
+    padding: 10px 16px;
+    text-align: center;
+  }
+  .settings-card {
+    padding: 14px 12px;
+    border-radius: 16px;
+  }
+  .settings-edit-drawer {
+    padding: 12px 10px;
+  }
+  .settings-photo-actions-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .settings-avatar-picker-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+  }
+  .settings-avatar-pick-btn {
+    font-size: 1.4rem;
+    padding: 5px 2px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .settings-avatar-picker-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .settings-avatar-pick-btn {
+    font-size: 1.32rem;
+  }
 }
 
 .settings-input-group {
