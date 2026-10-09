@@ -16,29 +16,17 @@ import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
 import { onNotificationsChange, getPendingNotifications, getAllNotifications, purgeDemoNotifications, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
 import { auth } from '../services/firebase.js';
-
-export function isCurrentUserSuperAdmin() {
-  try {
-    let email = '';
-    const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
-    if (profileStr) {
-      const profile = JSON.parse(profileStr);
-      if (profile && profile.email) {
-        email = String(profile.email).toLowerCase().trim();
-      }
-    }
-    if (!email && auth && auth.currentUser && auth.currentUser.email) {
-      email = String(auth.currentUser.email).toLowerCase().trim();
-    }
-    const isSuper = (email === 'baranimoley@gmail.com' || email === 'barandivatyali@gmail.com');
-    if (!isSuper) {
-      try { localStorage.removeItem('gv_admin_active'); } catch {}
-    }
-    return isSuper;
-  } catch {
-    return false;
-  }
-}
+import {
+  fetchCommunityPlaces,
+  addCommunityPlace,
+  deleteCommunityPlace,
+  fetchCommunityReviews,
+  saveCommunityReview,
+  deleteCommunityReview,
+  getCurrentCommunityUser,
+  normalizePlaceId
+} from '../services/communityService.js';
+export { isCurrentUserSuperAdmin } from '../utils/storage.js';
 
 const countryByCode = new Map(WORLD_COUNTRIES.map(c => [c.code, c]));
 
@@ -3897,6 +3885,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   const currentLang = getLanguage();
   const STATUS = getStatusConfig();
   const { turkeyVisits, worldVisits, worldCities = [] } = getStorageData();
+  const targetPlaceId = normalizePlaceId(id, type, countryCode);
 
   let currentStatus = 'unvisited';
   let currentRating = 0;
@@ -4180,7 +4169,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     <!-- 🍽️ Mekan / Kafe / Restoran Çekmecesi -->
     <div class="map-status-places-drawer" id="map-status-places-drawer" style="display: none;">
       <div class="places-drawer-header">
-        <span class="places-drawer-title">${t('discoveredPlaces')}</span>
+        <div style="display:flex;align-items:center;">
+          <span class="places-drawer-title">${t('discoveredPlaces')}</span>
+          <span class="places-count-pill" id="places-count-pill">0</span>
+        </div>
       </div>
 
       <!-- Yeni Mekan Ekleme Formu -->
@@ -4264,6 +4256,20 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${escapeHtml(cleanNote(currentNotes))}" />
         <button type="button" id="popup-note-save-btn" class="popup-note-save-btn" title="${t('save')}">💾</button>
       </div>
+
+      <!-- 🌟 Gezgin Topluluğu Puanı & Yorumları (Bulut Tabanlı) -->
+      <div class="community-reviews-wrap">
+        <div class="community-reviews-summary" id="community-reviews-summary">
+          <div class="cr-loading-state">⏳ Topluluk puanı yükleniyor...</div>
+        </div>
+        <div class="community-reviews-list-title">
+          <span>👥 Gezgin Yorumları</span>
+          <span class="cr-count-pill" id="community-reviews-count-pill">0</span>
+        </div>
+        <div class="community-reviews-list" id="community-reviews-list">
+          <div class="cr-loading-state">⏳ Değerlendirmeler getiriliyor...</div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -4315,6 +4321,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
         if (targetDrawerKey === 'journal') {
           loadAndRenderPhotos();
+        } else if (targetDrawerKey === 'places') {
+          loadAndRenderCommunityPlaces();
+        } else if (targetDrawerKey === 'review') {
+          loadAndRenderCommunityReviews();
         }
       }
 
@@ -4845,67 +4855,124 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     hotel: '🏨'
   };
 
-  function renderPlacesList() {
+  async function loadAndRenderCommunityPlaces() {
     if (!placesListEl) return;
-    if (!currentPlaces || currentPlaces.length === 0) {
-      placesListEl.innerHTML = '<div class="places-empty-note">Henüz kayıtlı mekan yok. Yukarıdaki formdan favori restoran, kafe veya duraklarınızı ekleyin!</div>';
+    placesListEl.innerHTML = '<div class="places-loading-note">⏳ Gezginlerin önerdiği mekanlar yükleniyor...</div>';
+
+    const commPlaces = await fetchCommunityPlaces(targetPlaceId);
+    const currentUser = getCurrentCommunityUser();
+
+    // Merge with any local places for this place
+    const map = new Map();
+    (currentPlaces || []).forEach(lp => {
+      if (lp && lp.name) {
+        map.set(lp.id || ('local_' + lp.name), {
+          ...lp,
+          username: lp.username || currentUser.username,
+          avatar: lp.avatar || currentUser.avatar,
+          photoUrl: lp.photoUrl || currentUser.photoUrl,
+          userId: lp.userId || currentUser.uid,
+          isSelf: true
+        });
+      }
+    });
+
+    (commPlaces || []).forEach(cp => {
+      if (cp && cp.name) {
+        map.set(cp.id, {
+          ...cp,
+          isSelf: (cp.userId === currentUser.uid || cp.username === currentUser.username)
+        });
+      }
+    });
+
+    const mergedPlaces = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const countPill = content.querySelector('#places-count-pill');
+    if (countPill) {
+      countPill.textContent = mergedPlaces.length;
+    }
+
+    if (mergedPlaces.length === 0) {
+      placesListEl.innerHTML = '<div class="places-empty-note">Henüz kayıtlı mekan yok. Yukarıdaki formdan ilk favori restoran, kafe veya durağınızı ekleyin!</div>';
       return;
     }
 
-    placesListEl.innerHTML = currentPlaces.map((pl, idx) => {
-      const starCount = pl.rating !== undefined && pl.rating !== null ? Math.max(0, Math.min(5, Math.floor(Number(pl.rating) || 0))) : 5;
+    placesListEl.innerHTML = mergedPlaces.map(pl => {
+      const starCount = pl.rating !== undefined && pl.rating !== null ? Math.max(1, Math.min(5, Math.floor(Number(pl.rating) || 5))) : 5;
+      const isSelf = pl.isSelf || (pl.userId && pl.userId === currentUser.uid) || (pl.username && pl.username === currentUser.username);
+      const canDelete = isSelf || currentUser.isSuperAdmin;
+      const authorName = pl.username || 'Gezgin';
+      const authorAvatar = pl.avatar || '👤';
+
       return `
-      <div class="place-card-item">
-        <div class="place-card-left">
-          <span class="place-card-cat">${catIcons[pl.category] || '📍'}</span>
-          <div class="place-card-meta">
-            <div class="place-card-name">${escapeHtml(pl.name)} <span class="place-card-stars">${starCount > 0 ? '⭐'.repeat(starCount) : ''}</span></div>
-            ${pl.note ? `<div class="place-card-note">${escapeHtml(pl.note)}</div>` : ''}
+        <div class="place-card-item" data-id="${escapeHtml(pl.id)}">
+          <div class="place-card-left">
+            <span class="place-card-cat">${catIcons[pl.category] || '📍'}</span>
+            <div class="place-card-meta">
+              <div class="place-card-name">
+                <span>${escapeHtml(pl.name)}</span>
+                <span class="place-card-stars">${'⭐'.repeat(starCount)}</span>
+              </div>
+              ${pl.note ? `<div class="place-card-note">"${escapeHtml(pl.note)}"</div>` : ''}
+              <div class="place-card-author">
+                ${pl.photoUrl ? `<img src="${escapeHtml(pl.photoUrl)}" class="place-author-avatar-img" alt=""/>` : `<span class="place-author-emoji">${escapeHtml(authorAvatar)}</span>`}
+                <span class="place-author-name">@${escapeHtml(authorName)}</span>
+                ${isSelf ? '<span class="place-badge-self">(Sen)</span>' : ''}
+              </div>
+            </div>
           </div>
+          ${canDelete ? `<button type="button" class="del-place-btn" data-id="${escapeHtml(pl.id)}" title="Mekanı Sil">&times;</button>` : ''}
         </div>
-        <button type="button" class="del-place-btn" data-idx="${idx}" title="Mekanı Sil">&times;</button>
-      </div>
-    `;
+      `;
     }).join('');
 
     placesListEl.querySelectorAll('.del-place-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const idx = parseInt(btn.dataset.idx, 10);
-        currentPlaces.splice(idx, 1);
+        const pId = btn.dataset.id;
+        btn.textContent = '...';
+        btn.disabled = true;
+        await deleteCommunityPlace(targetPlaceId, pId);
+        currentPlaces = currentPlaces.filter(p => p.id !== pId);
         persistVisitDetails({ places: currentPlaces });
-        renderPlacesList();
+        await loadAndRenderCommunityPlaces();
       });
     });
   }
 
-  renderPlacesList();
-
-  addPlaceBtn?.addEventListener('click', (e) => {
+  addPlaceBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
     const name = (placeNameInput?.value || '').trim();
     if (!name) return;
 
-    const newPlace = {
-      id: 'place_' + Date.now(),
+    addPlaceBtn.disabled = true;
+    addPlaceBtn.textContent = '⏳ ...';
+
+    const newPlace = await addCommunityPlace(targetPlaceId, {
       name,
       category: selectedCategory,
       rating: selectedPlaceRating,
-      note: (placeNoteInput?.value || '').trim(),
-      createdAt: new Date().toISOString()
-    };
+      note: (placeNoteInput?.value || '').trim()
+    });
 
-    currentPlaces.push(newPlace);
-    persistVisitDetails({ places: currentPlaces });
+    if (newPlace) {
+      currentPlaces.push(newPlace);
+      persistVisitDetails({ places: currentPlaces });
+    }
+
     if (placeNameInput) placeNameInput.value = '';
     if (placeNoteInput) placeNoteInput.value = '';
     selectedPlaceRating = 5;
     renderPlaceStars(5);
-    renderPlacesList();
+    addPlaceBtn.disabled = false;
+    addPlaceBtn.textContent = t('addBuddy');
+
     triggerConfetti();
+    await loadAndRenderCommunityPlaces();
   });
 
-  // IMDb Stars Interaction (Click & Hover)
+  // ─── ⭐ IMDb Stars & Community Reviews Logic ───
   const starSpans = content.querySelectorAll('.imdb-star');
   const scoreDisplay = content.querySelector('#rating-score-display');
   const starsRow = content.querySelector('#imdb-stars-row');
@@ -4921,6 +4988,118 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     });
   }
 
+  async function loadAndRenderCommunityReviews() {
+    const summaryEl = content.querySelector('#community-reviews-summary');
+    const listEl = content.querySelector('#community-reviews-list');
+    const countPill = content.querySelector('#community-reviews-count-pill');
+    if (!summaryEl || !listEl) return;
+
+    const data = await fetchCommunityReviews(targetPlaceId);
+    const currentUser = getCurrentCommunityUser();
+
+    let reviewsList = [...(data.reviews || [])];
+    const userHasReview = reviewsList.some(r => r.userId === currentUser.uid || r.username === currentUser.username);
+    if (!userHasReview && (currentRating > 0 || currentNotes)) {
+      reviewsList.unshift({
+        id: `${targetPlaceId}_${currentUser.uid}`,
+        placeId: targetPlaceId,
+        userId: currentUser.uid,
+        username: currentUser.username,
+        avatar: currentUser.avatar,
+        photoUrl: currentUser.photoUrl,
+        rating: currentRating,
+        note: currentNotes,
+        updatedAt: new Date().toISOString(),
+        isSelf: true
+      });
+    }
+
+    const rated = reviewsList.filter(r => Number(r.rating) > 0);
+    const totalCount = rated.length;
+    const avg = totalCount > 0
+      ? (rated.reduce((sum, r) => sum + Number(r.rating), 0) / totalCount).toFixed(1)
+      : (currentRating > 0 ? currentRating.toFixed(1) : 0);
+
+    if (countPill) countPill.textContent = reviewsList.length;
+
+    // Render Score Summary
+    if (totalCount > 0) {
+      summaryEl.innerHTML = `
+        <div class="cr-summary-card">
+          <div class="cr-score-left">
+            <span class="cr-big-star">⭐</span>
+            <span class="cr-big-score">${avg}</span>
+            <span class="cr-scale">/10</span>
+          </div>
+          <div class="cr-score-right">
+            <div class="cr-score-label">${currentLang === 'tr' ? 'Gezgin Topluluk Puanı' : 'Traveler Community Score'}</div>
+            <div class="cr-score-count">${totalCount} ${currentLang === 'tr' ? 'değerlendirme yapıldı' : 'ratings submitted'}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      summaryEl.innerHTML = `
+        <div class="cr-empty-summary">
+          <span>🌟</span>
+          <span>${currentLang === 'tr' ? 'Henüz topluluk değerlendirmesi yok. İlk puanlayan siz olun!' : 'No community ratings yet. Be the first to rate!'}</span>
+        </div>
+      `;
+    }
+
+    // Render Reviews List
+    if (reviewsList.length === 0) {
+      listEl.innerHTML = `<div class="cr-empty-reviews">${currentLang === 'tr' ? 'Henüz yorum yazılmamış. Yukarıdan puan verip notunuzu kaydedebilirsiniz!' : 'No reviews written yet. Rate above and save your note!'}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = reviewsList.map(r => {
+      const isSelf = r.isSelf || (r.userId && r.userId === currentUser.uid) || (r.username && r.username === currentUser.username);
+      const canDelete = isSelf || currentUser.isSuperAdmin;
+      const authorName = r.username || 'Gezgin';
+      const authorAvatar = r.avatar || '🧭';
+      const rScore = Number(r.rating) || 0;
+      const dateFormatted = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' }) : '';
+
+      return `
+        <div class="cr-review-item ${isSelf ? 'is-self-review' : ''}">
+          <div class="cr-review-header">
+            <div class="cr-user-meta">
+              ${r.photoUrl ? `<img src="${escapeHtml(r.photoUrl)}" class="cr-avatar-img" alt=""/>` : `<span class="cr-avatar-emoji">${escapeHtml(authorAvatar)}</span>`}
+              <span class="cr-username">@${escapeHtml(authorName)}</span>
+              ${isSelf ? `<span class="cr-self-badge">${currentLang === 'tr' ? '(Sen)' : '(You)'}</span>` : ''}
+            </div>
+            <div class="cr-rating-row">
+              ${rScore > 0 ? `<span class="cr-rating-pill">⭐ ${rScore}/10</span>` : ''}
+              ${dateFormatted ? `<span class="cr-review-date">${dateFormatted}</span>` : ''}
+              ${canDelete ? `<button type="button" class="cr-delete-btn" data-id="${escapeHtml(r.id)}" title="Sil">&times;</button>` : ''}
+            </div>
+          </div>
+          ${r.note ? `<div class="cr-review-note">"${escapeHtml(r.note)}"</div>` : (rScore > 0 ? `<div class="cr-review-note empty-note">(${currentLang === 'tr' ? 'Sadece puan verdi' : 'Rating only'})</div>` : '')}
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.cr-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const reviewIdToDelete = btn.dataset.id;
+        btn.textContent = '...';
+        btn.disabled = true;
+        await deleteCommunityReview(targetPlaceId, reviewIdToDelete);
+        if (btn.closest('.is-self-review')) {
+          currentRating = 0;
+          currentNotes = '';
+          renderStars(0);
+          if (scoreDisplay) scoreDisplay.textContent = '-';
+          const noteInp = content.querySelector('#popup-note-input');
+          if (noteInp) noteInp.value = '';
+          persistVisitDetails({ rating: 0, notes: '', hasCustomRating: false });
+        }
+        await loadAndRenderCommunityReviews();
+      });
+    });
+  }
+
   starSpans.forEach(star => {
     star.addEventListener('mouseenter', () => {
       const hoverVal = parseInt(star.dataset.score, 10);
@@ -4928,7 +5107,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       if (scoreDisplay) scoreDisplay.textContent = `⭐ ${hoverVal}/10`;
     });
 
-    star.addEventListener('click', (e) => {
+    star.addEventListener('click', async (e) => {
       e.stopPropagation();
       const scoreVal = parseInt(star.dataset.score, 10);
       currentRating = (currentRating === scoreVal) ? 0 : scoreVal;
@@ -4939,6 +5118,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       }
 
       persistVisitDetails({ rating: currentRating, hasCustomRating: currentRating > 0 });
+      await saveCommunityReview(targetPlaceId, currentRating, currentNotes);
+      await loadAndRenderCommunityReviews();
     });
   });
 
@@ -4950,7 +5131,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
   });
 
   // Note save handler
-  const saveNote = () => {
+  const saveNote = async () => {
     const noteVal = content.querySelector('#popup-note-input')?.value.trim() || '';
     currentNotes = noteVal;
     const jTextInput = content.querySelector('#journal-text-input');
@@ -4967,6 +5148,8 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       saveBtn.textContent = '✓';
       setTimeout(() => { if (saveBtn) saveBtn.textContent = '💾'; }, 1500);
     }
+    await saveCommunityReview(targetPlaceId, currentRating, currentNotes);
+    await loadAndRenderCommunityReviews();
   };
 
   content.querySelector('#popup-note-save-btn')?.addEventListener('click', (e) => {
@@ -4980,6 +5163,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     }
   });
   content.querySelector('#popup-note-input')?.addEventListener('blur', saveNote);
+
+  // Pre-load community data for snappy instant display
+  loadAndRenderCommunityPlaces().catch(() => {});
+  loadAndRenderCommunityReviews().catch(() => {});
 
   // Status buttons click handler
   content.querySelectorAll('.map-status-btn[data-val]').forEach(btn => {

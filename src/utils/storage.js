@@ -35,6 +35,29 @@ export const STORAGE_KEYS = {
   HOME_COUNTRY: 'gv_home_country'
 };
 
+export function isCurrentUserSuperAdmin() {
+  try {
+    let email = '';
+    const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+    if (profileStr) {
+      const profile = JSON.parse(profileStr);
+      if (profile && profile.email) {
+        email = String(profile.email).toLowerCase().trim();
+      }
+    }
+    if (!email && auth && auth.currentUser && auth.currentUser.email) {
+      email = String(auth.currentUser.email).toLowerCase().trim();
+    }
+    const isSuper = (email === 'baranimoley@gmail.com' || email === 'barandivatyali@gmail.com');
+    if (!isSuper) {
+      try { localStorage.removeItem('gv_admin_active'); } catch {}
+    }
+    return isSuper;
+  } catch {
+    return false;
+  }
+}
+
 function safeSetItem(key, value) {
   try {
     localStorage.setItem(key, value);
