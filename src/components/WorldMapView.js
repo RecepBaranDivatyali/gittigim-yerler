@@ -3921,15 +3921,15 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     currentStatus = ns(wData.status) !== 'unvisited'
       ? ns(wData.status)
       : (ns(regionData.status) !== 'unvisited' ? ns(regionData.status) : (isCityInList ? 'visited' : 'unvisited'));
-    currentRating = wData.rating || regionData.rating || 0;
-    currentNotes = cleanNote(wData.notes || regionData.notes);
+    currentRating = wData.rating || 0;
+    currentNotes = cleanNote(wData.notes);
     currentEntryDate = wData.entryDate || regionData.entryDate || '';
     currentEntryTransport = wData.entryTransport || regionData.entryTransport || 'flight';
     currentExitDate = wData.exitDate || regionData.exitDate || '';
     currentExitTransport = wData.exitTransport || regionData.exitTransport || 'flight';
-    currentBuddies = Array.isArray(wData.buddies) ? [...wData.buddies] : (Array.isArray(regionData.buddies) ? [...regionData.buddies] : []);
-    currentPlaces = Array.isArray(wData.places) ? [...wData.places] : (Array.isArray(regionData.places) ? [...regionData.places] : []);
-    currentJournal = wData.journal || regionData.journal || null;
+    currentBuddies = Array.isArray(wData.buddies) ? [...wData.buddies] : [];
+    currentPlaces = Array.isArray(wData.places) ? [...wData.places] : [];
+    currentJournal = wData.journal || null;
   } else {
     const wData = worldVisits[id] || {};
     currentStatus = ns(wData.status);
@@ -4283,7 +4283,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       const cleanCityName = id.includes('::') ? id.slice(id.indexOf('::') + 2) : id;
       const matchedRegionRaw = findRegionRawForPoint(countryCode, latlng, cleanCityName);
       if (matchedRegionRaw) {
-        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited', patch);
+        saveWorldVisit(`${countryCode}::${matchedRegionRaw}`, 'visited');
       }
     } else {
       saveWorldVisit(id, 'visited', patch);
