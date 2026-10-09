@@ -196,7 +196,8 @@ export function renderLoginPage(container, onLogin) {
 
           <!-- Logo & Branding -->
           <div class="login-logo">
-            <span class="login-globe">🌍</span>
+            <img src="./icon-192.png" class="login-brand-logo-img" alt="Gezgin" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block';" />
+            <span class="login-globe" style="display:none;">🌍</span>
             <h1 class="login-title">${t('appName')}</h1>
             <p class="login-subtitle">${t('appSubtitle')}</p>
           </div>

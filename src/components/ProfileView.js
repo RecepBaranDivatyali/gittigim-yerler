@@ -1404,7 +1404,8 @@ export function renderProfileView(container, onBack) {
         <!-- 9. App Info & Security Footnote -->
         <div class="settings-about-box">
           <div class="settings-about-logo">
-            <span style="font-size:1.8rem;">🧭</span>
+            <img src="./icon-192.png" alt="Gezgin" style="width:40px;height:40px;border-radius:10px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" />
+            <span style="font-size:1.8rem;display:none;">🧭</span>
             <div>
               <div class="settings-about-title">${t('appName')}</div>
               <div class="settings-about-sub">${t('appInfoDesc')}</div>

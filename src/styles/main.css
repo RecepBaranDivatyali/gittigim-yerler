@@ -1498,6 +1498,17 @@ svg, g, path {
   margin-bottom: 24px;
 }
 
+.login-brand-logo-img {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 12px auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+
 .login-globe {
   font-size: 3.5rem;
   display: block;
