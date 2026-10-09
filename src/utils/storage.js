@@ -7,11 +7,12 @@ import { calculateDemographicImpact } from '../data/worldDemographics.js';
 import { deletePhotosByTarget, deleteAllPhotos } from './photoStorage.js';
 import { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 export { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
-import { db } from '../services/firebase.js';
+import { db, auth } from '../services/firebase.js';
 import { 
   collection, 
   doc, 
   setDoc, 
+  getDoc,
   getDocs, 
   updateDoc, 
   deleteDoc, 
@@ -795,36 +796,48 @@ export function getUserFeedbacks() {
   }
 }
 
-export function saveUserFeedback(item) {
+export async function saveUserFeedback(item) {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
     const parsed = raw ? JSON.parse(raw) : null;
     let feedbacks = Array.isArray(parsed) ? parsed : [];
     
+    let currentUid = null;
+    let currentEmail = null;
+    try {
+      if (auth && auth.currentUser) {
+        currentUid = auth.currentUser.uid;
+        currentEmail = auth.currentUser.email || null;
+      }
+    } catch {}
+
     const feedbackObj = {
       id: item.id || ('fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
       type: item.type || 'suggestion',
       message: item.message || '',
-      contact: item.contact || '',
+      contact: item.contact || currentEmail || '',
       username: item.username || 'Gezgin',
+      userId: currentUid,
       status: item.status || 'pending', // pending, considering, in_progress, resolved, declined
       synced: item.synced === true, // true if sent to server, false if offline/pending
+      syncedAt: item.syncedAt || (item.synced === true ? new Date().toISOString() : null),
       devResponse: item.devResponse || '',
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    if (item.failReason) feedbackObj.failReason = item.failReason;
     
     feedbacks.unshift(feedbackObj);
     safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
     notifyStateChange();
 
-    // Asynchronously save to Firestore collection 'feedbacks' for developer mode & cross-device persistence
+    // Immediately save to Firestore collection 'feedbacks' for developer mode & cross-device persistence
     if (db) {
       try {
-        setDoc(doc(db, 'feedbacks', feedbackObj.id), feedbackObj, { merge: true }).catch(err => {
-          console.warn('Firestore feedback write err:', err);
-        });
-      } catch (err) {}
+        await setDoc(doc(db, 'feedbacks', feedbackObj.id), feedbackObj, { merge: true });
+      } catch (err) {
+        console.warn('Firestore feedback write err:', err);
+      }
     }
 
     return feedbackObj;
@@ -950,6 +963,11 @@ export async function syncPendingFeedbacks() {
         fb.syncedAt = new Date().toISOString();
         delete fb.failReason;
         updated = true;
+        if (db) {
+          try {
+            await setDoc(doc(db, 'feedbacks', fb.id), fb, { merge: true });
+          } catch {}
+        }
       } else {
         fb.synced = false;
         fb.failReason = result.error || 'İletim hatası';
@@ -1033,18 +1051,136 @@ export function initFeedbackSync() {
   if (typeof window === 'undefined') return;
   setTimeout(() => {
     flushPastFeedbacksOnce();
+    syncUserFeedbacksToCloud();
   }, 1500);
 
   window.addEventListener('online', () => {
     syncPendingFeedbacks();
+    syncUserFeedbacksToCloud();
   });
 
   // Her 60 saniyede bir arka planda bekleyen varsa otomatik dene
   setInterval(() => {
     if (navigator.onLine) {
       syncPendingFeedbacks();
+      syncUserFeedbacksToCloud();
     }
   }, 60000);
+}
+
+/**
+ * Yereldeki tüm bildirimleri (geçmiş ve güncel) Firestore 'feedbacks' koleksiyonuna yükler.
+ * Böylece geliştirici modunda geçmiş dahil TÜM bildirimler eksiksiz görünür.
+ */
+export async function syncUserFeedbacksToCloud() {
+  if (!db) return;
+  try {
+    const rawPrimary = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
+    const rawLegacy = localStorage.getItem('gv_user_feedbacks');
+    let feedbacks = [];
+    try {
+      const listA = rawPrimary ? JSON.parse(rawPrimary) : [];
+      const listB = rawLegacy ? JSON.parse(rawLegacy) : [];
+      const seen = new Set();
+      for (const it of [...listA, ...listB]) {
+        if (it && it.id && !seen.has(it.id)) {
+          seen.add(it.id);
+          feedbacks.push(it);
+        }
+      }
+    } catch {}
+
+    if (feedbacks.length === 0) return;
+
+    for (const fb of feedbacks) {
+      try {
+        await setDoc(doc(db, 'feedbacks', fb.id), {
+          id: fb.id,
+          type: fb.type || 'suggestion',
+          message: fb.message || '',
+          contact: fb.contact || '',
+          username: fb.username || 'Gezgin',
+          status: fb.status || 'pending',
+          devResponse: fb.devResponse || '',
+          synced: fb.synced === true,
+          createdAt: fb.createdAt || new Date().toISOString(),
+          updatedAt: fb.updatedAt || new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.warn('Sync feedback to cloud error:', err);
+      }
+    }
+  } catch (e) {
+    console.warn('syncUserFeedbacksToCloud error:', e);
+  }
+}
+
+/**
+ * Normal kullanıcının gönderdiği bildirimlerin en son durumunu (status) ve
+ * geliştirici yanıtını (devResponse) Firestore'dan çeker ve yerel depolamayı günceller.
+ */
+export async function syncUserFeedbacksWithCloud() {
+  if (!db) return getUserFeedbacks();
+  try {
+    const localFeedbacks = getUserFeedbacks();
+    if (!localFeedbacks || localFeedbacks.length === 0) return [];
+
+    let hasChanges = false;
+    const updatedList = [...localFeedbacks];
+
+    for (let i = 0; i < updatedList.length; i++) {
+      const fb = updatedList[i];
+      if (!fb || !fb.id) continue;
+
+      try {
+        const snap = await getDoc(doc(db, 'feedbacks', fb.id));
+        if (snap.exists()) {
+          const cData = snap.data();
+          if (cData) {
+            let itemChanged = false;
+            if (cData.status && cData.status !== fb.status) {
+              fb.status = cData.status;
+              itemChanged = true;
+            }
+            if (cData.devResponse !== undefined && cData.devResponse !== fb.devResponse) {
+              fb.devResponse = cData.devResponse;
+              itemChanged = true;
+            }
+            if (cData.updatedAt && cData.updatedAt !== fb.updatedAt) {
+              fb.updatedAt = cData.updatedAt;
+              itemChanged = true;
+            }
+            if (itemChanged) hasChanges = true;
+          }
+        } else {
+          // Bulutta henüz yoksa Firestore'a kaydet
+          await setDoc(doc(db, 'feedbacks', fb.id), {
+            id: fb.id,
+            type: fb.type || 'suggestion',
+            message: fb.message || '',
+            contact: fb.contact || '',
+            username: fb.username || 'Gezgin',
+            status: fb.status || 'pending',
+            devResponse: fb.devResponse || '',
+            synced: fb.synced === true,
+            createdAt: fb.createdAt || new Date().toISOString(),
+            updatedAt: fb.updatedAt || new Date().toISOString()
+          }, { merge: true });
+        }
+      } catch (docErr) {
+        console.warn('Feedback single sync error:', fb.id, docErr);
+      }
+    }
+
+    if (hasChanges) {
+      safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(updatedList));
+      notifyStateChange();
+    }
+    return updatedList;
+  } catch (err) {
+    console.warn('syncUserFeedbacksWithCloud error:', err);
+    return getUserFeedbacks();
+  }
 }
 
 export function getFeedbackStatusOverrides() {
@@ -1060,22 +1196,22 @@ export function getFeedbackStatusOverrides() {
 export async function fetchAllCloudFeedbacks() {
   if (!db) return [];
   try {
-    const q = query(collection(db, 'feedbacks'), orderBy('createdAt', 'desc'), limit(150));
+    const q = query(collection(db, 'feedbacks'), orderBy('createdAt', 'desc'), limit(250));
     const snap = await getDocs(q);
     const list = [];
     snap.forEach(d => {
       const data = d.data();
-      if (data && data.id) list.push(data);
+      if (data) list.push({ ...data, id: data.id || d.id });
     });
     return list;
   } catch (err) {
     console.warn('Cloud feedbacks orderBy fetch failed, falling back:', err);
     try {
-      const snap = await getDocs(query(collection(db, 'feedbacks'), limit(150)));
+      const snap = await getDocs(query(collection(db, 'feedbacks'), limit(250)));
       const list = [];
       snap.forEach(d => {
         const data = d.data();
-        if (data && data.id) list.push(data);
+        if (data) list.push({ ...data, id: data.id || d.id });
       });
       list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       return list;
@@ -1086,7 +1222,7 @@ export async function fetchAllCloudFeedbacks() {
   }
 }
 
-export function updateFeedbackStatus(id, newStatus, devResponse = '') {
+export async function updateFeedbackStatus(id, newStatus, devResponse = '') {
   try {
     const overrides = getFeedbackStatusOverrides();
     overrides[id] = {
@@ -1103,25 +1239,26 @@ export function updateFeedbackStatus(id, newStatus, devResponse = '') {
     const idx = feedbacks.findIndex(f => f.id === id);
     if (idx !== -1) {
       feedbacks[idx].status = newStatus;
-      if (devResponse) feedbacks[idx].devResponse = devResponse;
+      if (devResponse !== undefined) feedbacks[idx].devResponse = devResponse;
       feedbacks[idx].updatedAt = new Date().toISOString();
       safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
     }
     
-    // Sync to Firestore collection 'feedbacks'
+    // Sync to Firestore collection 'feedbacks' using setDoc merge (reliable and atomic)
     if (db) {
       try {
         const updateData = {
+          id,
           status: newStatus,
           updatedAt: new Date().toISOString()
         };
-        if (devResponse !== undefined && devResponse !== null) {
+        if (devResponse !== undefined) {
           updateData.devResponse = devResponse;
         }
-        updateDoc(doc(db, 'feedbacks', id), updateData).catch(err => {
-          console.warn('Firestore feedback update err:', err);
-        });
-      } catch (err) {}
+        await setDoc(doc(db, 'feedbacks', id), updateData, { merge: true });
+      } catch (err) {
+        console.warn('Firestore feedback update err:', err);
+      }
     }
 
     notifyStateChange();
@@ -1132,7 +1269,7 @@ export function updateFeedbackStatus(id, newStatus, devResponse = '') {
   }
 }
 
-export function deleteUserFeedback(id) {
+export async function deleteUserFeedback(id) {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.USER_FEEDBACKS);
     const parsed = raw ? JSON.parse(raw) : null;
@@ -1150,10 +1287,10 @@ export function deleteUserFeedback(id) {
     // Sync deletion to Firestore collection 'feedbacks'
     if (db) {
       try {
-        deleteDoc(doc(db, 'feedbacks', id)).catch(err => {
-          console.warn('Firestore feedback delete err:', err);
-        });
-      } catch (err) {}
+        await deleteDoc(doc(db, 'feedbacks', id));
+      } catch (err) {
+        console.warn('Firestore feedback delete err:', err);
+      }
     }
 
     notifyStateChange();

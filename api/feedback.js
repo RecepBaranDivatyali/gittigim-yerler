@@ -53,6 +53,31 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: 'Telegram dispatch failed', details: tgData.description });
     }
 
+    // Also persist to Firestore 'feedbacks' collection for cross-device developer mode
+    try {
+      const nowIso = new Date().toISOString();
+      await fetch(`https://firestore.googleapis.com/v1/projects/gezgin-app-c269d/databases/(default)/documents/feedbacks/${cleanId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: {
+            id: { stringValue: cleanId },
+            type: { stringValue: cleanType },
+            message: { stringValue: cleanMsg },
+            contact: { stringValue: cleanContact },
+            username: { stringValue: cleanUsername },
+            status: { stringValue: 'pending' },
+            devResponse: { stringValue: '' },
+            synced: { booleanValue: true },
+            createdAt: { stringValue: nowIso },
+            updatedAt: { stringValue: nowIso }
+          }
+        })
+      });
+    } catch (fsErr) {
+      console.warn('Firestore write in serverless feedback handler failed:', fsErr);
+    }
+
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error('Feedback API error:', err);
