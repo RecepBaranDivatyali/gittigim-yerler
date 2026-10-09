@@ -4361,7 +4361,7 @@ export function renderProfileView(container, onBack) {
                 return `
                 <div class="saved-friend-chip" data-id="${escapeHtml(f.id)}" title="${currentLang === 'tr' ? 'Bu arkadaşla haritanı kıyasla' : 'Compare with this friend'}">
                   <div class="sf-avatar-wrap">
-                    <span class="sf-avatar">${sanitizePhotoUrl(f.photoUrl) ? `<img src="${sanitizePhotoUrl(f.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(f.avatar || '🌍')}</span>
+                    <span class="sf-avatar">${sanitizePhotoUrl(f.photoUrl) ? `<img src="${sanitizePhotoUrl(f.photoUrl)}" class="avatar-custom-img" alt="Avatar" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(f.avatar || '🌍')}</span>` : escapeHtml(f.avatar || '🌍')}</span>
                   </div>
                   <div class="sf-info">
                     <span class="sf-name">${escapeHtml(f.username || 'Arkadaş')}</span>
@@ -4416,7 +4416,7 @@ export function renderProfileView(container, onBack) {
     document.getElementById('compare-mine-area').innerHTML = `
       <div class="profile-card">
         <div class="profile-header">
-          <div class="profile-avatar">${escapeHtml(myProfile.avatar || '🧭')}</div>
+          <div class="profile-avatar">${sanitizePhotoUrl(myProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(myProfile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(myProfile.avatar || '🧭')}</span>` : escapeHtml(myProfile.avatar || '🧭')}</div>
           <div class="profile-user-info">
             <div class="profile-user-title-row">
               <span class="profile-username">${escapeHtml(myProfile.username || 'Sen')}</span>
@@ -4459,7 +4459,7 @@ export function renderProfileView(container, onBack) {
         <div class="profile-card" style="position:relative;">
           <button type="button" id="btn-close-compare" class="compare-close-btn" title="${currentLang === 'tr' ? 'Karşılaştırmayı Kapat' : 'Close Comparison'}">✕</button>
           <div class="profile-header">
-            <div class="profile-avatar">${sanitizePhotoUrl(safeProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(safeProfile.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(safeProfile.avatar || '✈️')}</div>
+            <div class="profile-avatar">${sanitizePhotoUrl(safeProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(safeProfile.photoUrl)}" class="avatar-custom-img" alt="Avatar" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(safeProfile.avatar || '✈️')}</span>` : escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
                 <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
@@ -5053,7 +5053,7 @@ export function renderProfileView(container, onBack) {
               <div class="friend-search-item" data-username="${escapeHtml(tr.username)}">
                 <div class="friend-search-user-info">
                   <div class="friend-search-avatar">
-                    ${sanitizePhotoUrl(tr.photoUrl) ? `<img src="${sanitizePhotoUrl(tr.photoUrl)}" class="avatar-custom-img" alt="Avatar">` : escapeHtml(tr.avatar || '🌍')}
+                    ${sanitizePhotoUrl(tr.photoUrl) ? `<img src="${sanitizePhotoUrl(tr.photoUrl)}" class="avatar-custom-img" alt="Avatar" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(tr.avatar || '🌍')}</span>` : escapeHtml(tr.avatar || '🌍')}
                   </div>
                   <div class="friend-search-meta">
                     <div class="friend-search-name-row">
