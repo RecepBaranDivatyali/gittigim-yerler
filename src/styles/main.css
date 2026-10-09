@@ -3964,6 +3964,8 @@ body[data-theme="light"] .floating-zoom-btn:hover {
   border-radius: 20px;
   padding: 24px;
   width: min(480px, 94vw);
+  box-sizing: border-box;
+  overflow-x: hidden;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   animation: slideUp .35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -6204,8 +6206,10 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   .feedback-modal-card {
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding: 20px 18px;
+    box-sizing: border-box;
   }
 }
 
@@ -6579,6 +6583,8 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   gap: 10px;
   max-height: 320px;
   overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   padding-right: 4px;
   margin-bottom: 16px;
 }
@@ -6752,12 +6758,39 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.fb-admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  font-family: inherit;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+.fb-admin-refresh-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.fb-admin-refresh-btn:hover {
+  background: rgba(56, 189, 248, 0.28);
+  color: #bae6fd;
 }
 .fb-admin-logout-btn {
   background: rgba(239, 68, 68, 0.15);
@@ -6766,10 +6799,12 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   color: #ef4444;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 5px 12px;
+  padding: 5px 11px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
   white-space: nowrap;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 .fb-admin-logout-btn:hover {
   background: rgba(239, 68, 68, 0.3);

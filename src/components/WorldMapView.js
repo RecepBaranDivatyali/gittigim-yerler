@@ -1596,27 +1596,22 @@ export function renderWorldMapView(container, options = {}) {
         const unsentCount = feedbacks.filter(fb => fb.synced !== true).length;
         html += `
           <div class="fb-admin-status-banner">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:1.3rem;">👑</span>
-              <div>
-                <div style="font-weight:800;font-size:0.85rem;color:#10b981;">Geliştirici Modu (${feedbacks.length} Bildirim)</div>
-                <div style="font-size:0.72rem;color:#94a3b8;">Otomatik Telegram İletim Sistemi & Bulut Bildirim Yönetimi</div>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              <span style="font-size:1.2rem;line-height:1;flex-shrink:0;">👑</span>
+              <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                <span style="font-weight:800;font-size:0.86rem;color:#10b981;white-space:nowrap;">Geliştirici Modu</span>
+                <span style="background:rgba(16,185,129,0.18);color:#34d399;font-size:0.72rem;font-weight:800;padding:2px 7px;border-radius:10px;border:1px solid rgba(16,185,129,0.35);line-height:1.2;white-space:nowrap;" title="Toplam Bildirim Sayısı">${feedbacks.length}</span>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" id="btn-admin-refresh" class="fb-admin-logout-btn" style="background:rgba(56,189,248,0.15);color:#38bdf8;border-color:rgba(56,189,248,0.3);" title="Buluttan Yenile">🔄 Yenile</button>
-              ${unsentCount > 0 ? `
-                <span style="font-size:0.7rem;background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);padding:3px 7px;border-radius:6px;font-weight:700;">⚠️ ${unsentCount} İletim Bekliyor</span>
-              ` : `
-                <span style="font-size:0.7rem;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:3px 7px;border-radius:6px;font-weight:700;">✓ Telegram & Bulut Aktif</span>
-              `}
-              <button type="button" id="btn-admin-logout" class="fb-admin-logout-btn">Çıkış</button>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button type="button" id="btn-admin-refresh" class="fb-admin-action-btn fb-admin-refresh-btn" title="Buluttan Yenile">🔄 Yenile</button>
+              <button type="button" id="btn-admin-logout" class="fb-admin-action-btn fb-admin-logout-btn" title="Geliştirici Modundan Çık">Çıkış</button>
             </div>
           </div>
           ${unsentCount > 0 ? `
             <div style="margin:8px 0;padding:8px 12px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:10px;font-size:0.74rem;color:#fcd34d;display:flex;align-items:center;gap:8px;">
               <span style="font-size:1.1rem;">⚠️</span>
-              <div><b>${unsentCount} adet bildirim kuyrukta bekliyor.</b> Cihaz internete bağlandığında arka planda otomatik olarak Telegram'ınıza iletilecektir.</div>
+              <div><b>${unsentCount} adet bildirim iletim bekliyor.</b> İnternet bağlantısı sağlandığında otomatik olarak Telegram'a iletilecektir.</div>
             </div>
           ` : ''}
         `;
@@ -1626,7 +1621,7 @@ export function renderWorldMapView(container, options = {}) {
         html += `
           <div class="fb-empty-state">
             <span style="font-size:2.5rem;display:block;margin-bottom:8px;">📬</span>
-            <p>${t('noFeedbacksYet')}</p>
+            <p>${isAdminActive ? (currentLang === 'tr' ? 'Henüz gelen bildirim bulunmuyor.' : 'No feedback received yet.') : t('noFeedbacksYet')}</p>
             ${isAdminActive ? '<p style="font-size:0.75rem;color:#64748b;margin-top:6px;">Kullanıcılar bildirim gönderdikçe bu listede görünecektir.</p>' : ''}
           </div>
         `;
