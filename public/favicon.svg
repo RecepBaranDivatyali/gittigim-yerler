@@ -1,37 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="50%" stop-color="#1e293b"/>
-      <stop offset="100%" stop-color="#090d16"/>
-    </linearGradient>
-    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff5722"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
-    </linearGradient>
-    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#2563eb"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#ff5722" flood-opacity="0.4"/>
-    </filter>
-  </defs>
-
-  <!-- Background with rounded squircle -->
-  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
-  <rect width="506" height="506" x="3" y="3" rx="112" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="6"/>
-
-  <!-- Globe Ring Background -->
-  <circle cx="256" cy="270" r="145" fill="none" stroke="url(#globeGrad)" stroke-width="12" opacity="0.35"/>
-  <ellipse cx="256" cy="270" rx="145" ry="60" fill="none" stroke="url(#globeGrad)" stroke-width="8" opacity="0.25"/>
-  <ellipse cx="256" cy="270" rx="60" ry="145" fill="none" stroke="url(#globeGrad)" stroke-width="8" opacity="0.25"/>
-  <line x1="111" y1="270" x2="401" y2="270" stroke="url(#globeGrad)" stroke-width="8" opacity="0.25"/>
-
-  <!-- Glowing Map Pin -->
-  <g filter="url(#shadow)">
-    <path d="M256 100 C195 100 146 149 146 210 C146 295 256 410 256 410 C256 410 366 295 366 210 C366 149 317 100 256 100 Z" fill="url(#pinGrad)"/>
-    <circle cx="256" cy="210" r="48" fill="#ffffff"/>
-    <circle cx="256" cy="210" r="28" fill="#0f172a"/>
-  </g>
+  <clipPath id="squircle">
+    <rect width="512" height="512" rx="112" ry="112" />
+  </clipPath>
+  <image href="/icon-512.png" width="512" height="512" clip-path="url(#squircle)" />
 </svg>

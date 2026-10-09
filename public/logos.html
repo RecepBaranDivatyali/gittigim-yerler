@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gezgin - 10 Seçkin Logo Koleksiyonu (AI Efektsiz, Saf Grafik Tasarım)</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card-bg: #111a2c;
+      --card-border: #1e293b;
+      --accent: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 32px 20px 80px 20px;
+      line-height: 1.5;
+    }
+    .header {
+      text-align: center;
+      max-width: 860px;
+      margin: 0 auto 40px auto;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.lead {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 28px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .logo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      position: relative;
+    }
+    .logo-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.75);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+    .fav-tag {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #4ade80;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      z-index: 2;
+    }
+    .special-tag {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      z-index: 2;
+    }
+    .new-tag {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      z-index: 2;
+    }
+    .img-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #050811;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+    .img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 36px;
+      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.85);
+      transition: transform 0.3s ease;
+    }
+    .logo-card:hover .img-wrap img {
+      transform: scale(1.03);
+    }
+    .card-number {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .content {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 0.82rem;
+      color: #60a5fa;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+    .desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+    .palette {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      border-top: 1px solid var(--card-border);
+      padding-top: 14px;
+      flex-wrap: wrap;
+    }
+    .palette-tag {
+      background: #1e293b;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="badge">★ Gezgin 2.0 Nihai Logo Koleksiyonu</span>
+    <h1>10 Özgün Tasarım (Sıfır AI Klişesi, Saf Grafik Sanatı)</h1>
+    <p class="lead">Beğendiğiniz tasarımlar korundu; 6 ve 10 numaralar elenerek yerlerine İsviçre Bauhaus flat vektör tarzında ve kodla çizilmiş kusursuz matematiksel altın oran tasarımları eklendi.</p>
+  </div>
+
+  <div class="grid">
+    <!-- 1 -->
+    <div class="logo-card">
+      <div class="card-number">1</div>
+      <div class="fav-tag">★ FAVORİNİZ</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_origami_map_1791474077125.jpg" alt="1. Geometrik Katlanmış Harita">
+      </div>
+      <div class="content">
+        <div class="subtitle">Origami Map & Polar Star</div>
+        <div class="title">Katlanmış Harita & Kutup Yıldızı</div>
+        <div class="desc">Katlanmış kâğıt seyahat haritası fasetleri ve yön gösteren kuzey kutup yıldızı. Keşif, sıcaklık ve harita boyama ruhu.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Gün Batımı Turuncusu</span>
+          <span class="palette-tag">Kehribar</span>
+          <span class="palette-tag">Gece Laciverti</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="logo-card">
+      <div class="card-number">2</div>
+      <div class="fav-tag">★ FAVORİNİZ</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_topo_globe_1791474118161.jpg" alt="2. Eşyükselti Eğrili Küre">
+      </div>
+      <div class="content">
+        <div class="subtitle">Topographic Elevation Globe</div>
+        <div class="title">Topoğrafik Küre & Altın Rota</div>
+        <div class="desc">İnce eşyükselti harita eğrileriyle örülmüş dünya küresi ve merkezde altın hedef noktası (National Geographic stili).</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Şampanya Altını</span>
+          <span class="palette-tag">Adaçayı Yeşili</span>
+          <span class="palette-tag">Mat İndigo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="logo-card">
+      <div class="card-number">3</div>
+      <div class="fav-tag">★ FAVORİNİZ</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_aero_fin_1791474302491.jpg" alt="3. Havacılık Kuyruğu">
+      </div>
+      <div class="content">
+        <div class="subtitle">Aerodynamic Tail Fin</div>
+        <div class="title">Uçak Kuyruğu & Alacakaranlık Küresi</div>
+        <div class="desc">Uçak dikey kuyruk kanadı silüetinde minimalist dünya boylam ağı ve alacakaranlık gökyüzü degradesi.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">İndigo Gökyüzü</span>
+          <span class="palette-tag">Gün Batımı Sarısı</span>
+          <span class="palette-tag">Saf Beyaz</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="logo-card">
+      <div class="card-number">4</div>
+      <div class="fav-tag">★ FAVORİNİZ</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_wing_horizon_1791495111218.jpg" alt="4. Kanat Ucu, Küre Ufku & Gün Doğumu">
+      </div>
+      <div class="content">
+        <div class="subtitle">Winglet & Earth Horizon</div>
+        <div class="title">Kanat Ucu & Dünya Ufku</div>
+        <div class="desc">Modern jet kanat ucu (winglet) arkasından Dünya'nın kıvrımlı meridyen ufku ve doğan altın güneş.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Derin Uzay İndigosu</span>
+          <span class="palette-tag">Gündoğumu Altını</span>
+          <span class="palette-tag">Gök Mavisi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="logo-card">
+      <div class="card-number">5</div>
+      <div class="fav-tag">★ FAVORİNİZ</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_poly_globe_1791495148949.jpg" alt="5. Geometrik Low-Poly Küre & Rota Ağı">
+      </div>
+      <div class="content">
+        <div class="subtitle">Polygon Globe & Route Network</div>
+        <div class="title">Low-Poly Küre & Rota Ağı</div>
+        <div class="desc">Geometrik fasetlerle şekillendirilmiş dünya küresi üzerinde kıtaları birbirine bağlayan ışıldayan altın uçuş rotası düğümleri.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Terracotta Kıtalar</span>
+          <span class="palette-tag">Safir Okyanus</span>
+          <span class="palette-tag">Altın Rota Düğümleri</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 (YENİLENMİŞ) -->
+    <div class="logo-card">
+      <div class="card-number">6</div>
+      <div class="special-tag">⚡ YENİ (SAF FLAT VEKTÖR)</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_swiss_compass_1791496349960.jpg" alt="6. İsviçre Bauhaus Pusula İbresi">
+      </div>
+      <div class="content">
+        <div class="subtitle">Swiss Bauhaus Cardinal Needle</div>
+        <div class="title">İsviçre Bauhaus Pusula İbresi</div>
+        <div class="desc">Tamamen insan grafik tasarımcı elinden çıkmış saf 2D flat vektör: Bir yarısı sıcak kiremit turuncusu, diğer yarısı kraliyet kobalt mavisi geometrik pusula iğnesi ve koordinat halkası. Sıfır 3D/AI parıltısı.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Kiremit Turuncusu</span>
+          <span class="palette-tag">Kobalt Mavisi</span>
+          <span class="palette-tag">Mat Karbon Laciverti</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="logo-card">
+      <div class="card-number">7</div>
+      <div class="new-tag">✨ ÖZGÜN</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_hot_balloon_1791495767568.jpg" alt="7. Sıcak Hava Balonu & Dünya Ufku">
+      </div>
+      <div class="content">
+        <div class="subtitle">Ascending Balloon & Earth Arc</div>
+        <div class="title">Sıcak Hava Balonu & Dünya Ufku</div>
+        <div class="desc">Kapadokya ve Jules Verne keşif ruhu: Terracotta ve fildişi çizgili zarif sıcak hava balonu, alacakaranlıkta Dünya'nın kıvrımlı ufku üzerinden huzurla yükseliyor.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Kiremit Terracotta</span>
+          <span class="palette-tag">Fildişi Krem</span>
+          <span class="palette-tag">Alacakaranlık Göğü</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="logo-card">
+      <div class="card-number">8</div>
+      <div class="new-tag">✨ ÖZGÜN</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_luggage_tag_1791495806917.jpg" alt="8. Lüks Metalik Bagaj Etiketi & Koordinatlar">
+      </div>
+      <div class="content">
+        <div class="subtitle">Anodized Luggage Tag</div>
+        <div class="title">Lüks Bagaj Etiketi & Koordinatlar</div>
+        <div class="desc">Rimowa ve Monocle seyahat yaşam tarzı: Eloksallı titanyum uzay grisi metal bagaj plakası, kabartma dünya küresi ve emniyet turuncusu kordon detayı.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Titanyum Uzay Grisi</span>
+          <span class="palette-tag">Neon Emniyet Turuncusu</span>
+          <span class="palette-tag">Kabartma Alüminyum</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="logo-card">
+      <div class="card-number">9</div>
+      <div class="new-tag">✨ ÖZGÜN</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_lens_island_1791495845648.jpg" alt="9. Seyahat Dürbünü/Lensi: Gün Batımı Kıyı Kemeri">
+      </div>
+      <div class="content">
+        <div class="subtitle">Explorer Monocular & Coastal Arch</div>
+        <div class="title">Kaşif Dürbünü & Sahil Kemeri</div>
+        <div class="desc">Pirinç kaşif dürbününden bir manzara: Turkuaz sular, doğal kıyı kaya kemeri, gün batımına uçan göçmen kuşlar. Saf yolculuk ve rota keşfi hissi.</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Pirinç Dürbün Çerçevesi</span>
+          <span class="palette-tag">Turkuaz Deniz</span>
+          <span class="palette-tag">Altın Ufuk</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 (YENİLENMİŞ) -->
+    <div class="logo-card">
+      <div class="card-number">10</div>
+      <div class="special-tag">⚡ YENİ (ALTIN ORAN VEKTÖR)</div>
+      <div class="img-wrap">
+        <img src="/logos/gezgin_vector_master.jpg" alt="10. Geometrik Vektör Atlası & Altın Pusula Yıldızı & Uçuş Yayı">
+      </div>
+      <div class="content">
+        <div class="subtitle">Precision Vector Atlas & Flight Arc</div>
+        <div class="title">Vektör Atlası, Altın Pusula & Uçuş Yayı</div>
+        <div class="desc">Kod ve altın oran geometrisiyle çizilmiş saf vektör tasarımı: Dünya meridyenleri üzerinde fasetli altın pusula yıldızı, kalkış noktasından gökyüzüne süzülen süpersonik uçak silüeti ve sıcak gün batımı yörünge yayı. Sıfır yapay zeka dokusu!</div>
+        <div class="palette">
+          <span>Palet:</span>
+          <span class="palette-tag">Altın Varak Pusula</span>
+          <span class="palette-tag">Sıcak Gün Batımı Uçuş Yayı</span>
+          <span class="palette-tag">Gece Yarısı Atlası</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
