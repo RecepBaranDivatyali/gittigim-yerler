@@ -1611,14 +1611,12 @@ export function renderWorldMapView(container, options = {}) {
         const unsentCount = feedbacks.filter(fb => fb.synced !== true).length;
         html += `
           <div class="fb-admin-status-banner">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-              <span style="font-size:1.2rem;line-height:1;flex-shrink:0;">👑</span>
-              <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                <span style="font-weight:800;font-size:0.86rem;color:#10b981;white-space:nowrap;">Geliştirici Modu</span>
-                <span style="background:rgba(16,185,129,0.18);color:#34d399;font-size:0.72rem;font-weight:800;padding:2px 7px;border-radius:10px;border:1px solid rgba(16,185,129,0.35);line-height:1.2;white-space:nowrap;" title="Toplam Bildirim Sayısı">${feedbacks.length}</span>
-              </div>
+            <div class="fb-admin-status-left">
+              <span class="fb-admin-crown">👑</span>
+              <span class="fb-admin-title">Geliştirici Modu</span>
+              <span class="fb-admin-count-pill" title="Toplam Bildirim Sayısı">${feedbacks.length}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <div class="fb-admin-status-right">
               <button type="button" id="btn-admin-refresh" class="fb-admin-action-btn fb-admin-refresh-btn" title="Buluttan Yenile">🔄 Yenile</button>
               <button type="button" id="btn-admin-logout" class="fb-admin-action-btn fb-admin-logout-btn" title="Geliştirici Modundan Çık">Çıkış</button>
             </div>

@@ -6615,12 +6615,14 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .fb-card-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -6758,14 +6760,52 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 8px 10px;
   box-sizing: border-box;
   width: 100%;
+}
+.fb-admin-status-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.fb-admin-crown {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.fb-admin-title {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #10b981;
+  white-space: nowrap;
+}
+.fb-admin-count-pill {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  font-size: 0.70rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fb-admin-status-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .fb-admin-action-btn {
   display: inline-flex;
@@ -6773,9 +6813,9 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   justify-content: center;
   gap: 4px;
   border-radius: 8px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 5px 11px;
+  padding: 4px 9px;
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
@@ -6794,17 +6834,8 @@ body[data-theme="light"] .aviation-subtab-btn.active {
 }
 .fb-admin-logout-btn {
   background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 8px;
+  border-color: rgba(239, 68, 68, 0.35);
   color: #ef4444;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 5px 11px;
-  cursor: pointer;
-  transition: all 0.18s;
-  white-space: nowrap;
-  font-family: inherit;
-  box-sizing: border-box;
 }
 .fb-admin-logout-btn:hover {
   background: rgba(239, 68, 68, 0.3);
