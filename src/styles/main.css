@@ -8742,6 +8742,16 @@ body.sim-studio-active {
   line-height: 1;
 }
 
+.sim-brand-icon-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: block;
+}
+
 .sim-brand-text {
   display: flex;
   align-items: baseline;

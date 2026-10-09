@@ -128,7 +128,7 @@ function renderPhoneSimulatorStudio() {
     <!-- Top Floating Studio Control Bar -->
     <header class="sim-control-bar">
       <div class="sim-bar-left">
-        <span class="sim-brand-icon">🌍</span>
+        <img src="./favicon.png" alt="Gezgin Logo" class="sim-brand-icon-img" onerror="this.outerHTML='<span class=\'sim-brand-icon\'>🧭</span>'" />
         <div class="sim-brand-text">
           <span class="sim-brand-title">Gezgin</span>
           <span class="sim-badge-screen">Mobil Önizleme • 390 × 844 px</span>
