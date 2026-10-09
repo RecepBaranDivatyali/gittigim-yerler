@@ -7,6 +7,18 @@ import { calculateDemographicImpact } from '../data/worldDemographics.js';
 import { deletePhotosByTarget, deleteAllPhotos } from './photoStorage.js';
 import { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 export { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
+import { db } from '../services/firebase.js';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  orderBy, 
+  limit 
+} from 'firebase/firestore';
 
 export const STORAGE_KEYS = {
   TURKEY_VISITS: 'gittigim_yerler_turkey_v2',
@@ -805,6 +817,16 @@ export function saveUserFeedback(item) {
     feedbacks.unshift(feedbackObj);
     safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
     notifyStateChange();
+
+    // Asynchronously save to Firestore collection 'feedbacks' for developer mode & cross-device persistence
+    if (db) {
+      try {
+        setDoc(doc(db, 'feedbacks', feedbackObj.id), feedbackObj, { merge: true }).catch(err => {
+          console.warn('Firestore feedback write err:', err);
+        });
+      } catch (err) {}
+    }
+
     return feedbackObj;
   } catch (e) {
     console.error('Error saving user feedback', e);
@@ -1035,6 +1057,35 @@ export function getFeedbackStatusOverrides() {
   }
 }
 
+export async function fetchAllCloudFeedbacks() {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, 'feedbacks'), orderBy('createdAt', 'desc'), limit(150));
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data && data.id) list.push(data);
+    });
+    return list;
+  } catch (err) {
+    console.warn('Cloud feedbacks orderBy fetch failed, falling back:', err);
+    try {
+      const snap = await getDocs(query(collection(db, 'feedbacks'), limit(150)));
+      const list = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data && data.id) list.push(data);
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return list;
+    } catch (e2) {
+      console.warn('Cloud feedbacks fallback fetch failed:', e2);
+      return [];
+    }
+  }
+}
+
 export function updateFeedbackStatus(id, newStatus, devResponse = '') {
   try {
     const overrides = getFeedbackStatusOverrides();
@@ -1057,6 +1108,22 @@ export function updateFeedbackStatus(id, newStatus, devResponse = '') {
       safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(feedbacks));
     }
     
+    // Sync to Firestore collection 'feedbacks'
+    if (db) {
+      try {
+        const updateData = {
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        };
+        if (devResponse !== undefined && devResponse !== null) {
+          updateData.devResponse = devResponse;
+        }
+        updateDoc(doc(db, 'feedbacks', id), updateData).catch(err => {
+          console.warn('Firestore feedback update err:', err);
+        });
+      } catch (err) {}
+    }
+
     notifyStateChange();
     return true;
   } catch (e) {
@@ -1080,6 +1147,15 @@ export function deleteUserFeedback(id) {
       safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(overrides));
     }
     
+    // Sync deletion to Firestore collection 'feedbacks'
+    if (db) {
+      try {
+        deleteDoc(doc(db, 'feedbacks', id)).catch(err => {
+          console.warn('Firestore feedback delete err:', err);
+        });
+      } catch (err) {}
+    }
+
     notifyStateChange();
     return true;
   } catch (e) {

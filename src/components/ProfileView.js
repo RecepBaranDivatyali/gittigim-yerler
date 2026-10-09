@@ -145,6 +145,7 @@ export function renderProfileView(container, onBack) {
           }
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
+          localStorage.removeItem('gv_admin_active');
           sessionStorage.removeItem('gv_logged_in');
           sessionStorage.removeItem('gv_profile');
           location.reload();

@@ -110,6 +110,11 @@ export function renderLoginPage(container, onLogin) {
       localStorage.removeItem('gv_remember_me');
     }
 
+    const emailLower = String(profile?.email || '').toLowerCase().trim();
+    if (emailLower !== 'baranimoley@gmail.com' && emailLower !== 'barandivatyali@gmail.com') {
+      try { localStorage.removeItem('gv_admin_active'); } catch {}
+    }
+
     try {
       let worldVisits = {};
       let turkeyVisits = {};
