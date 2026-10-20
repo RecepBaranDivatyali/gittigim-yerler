@@ -31,7 +31,7 @@ import {
   registerOrUpdateCurrentUser, getAllCommunityTravelers,
   isUsernameAvailable, isUsernameAvailableAsync
 } from '../utils/userDatabase.js';
-import { getSyncStatus, onSyncStatusChange, queueCloudSync, syncLocalDataToCloud, deleteUserCloudAccountData } from '../services/syncService.js';
+import { getSyncStatus, onSyncStatusChange, queueCloudSync, deleteUserCloudAccountData } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
@@ -140,7 +140,7 @@ export function renderProfileView(container, onBack) {
         if (confirm(t('logoutConfirm'))) {
           try {
             if (!userProfile?.isGuest && navigator.onLine) {
-              await syncLocalDataToCloud();
+              await queueCloudSync(true);
             }
           } catch (syncErr) {
             console.warn('Logout cloud sync notice:', syncErr);
