@@ -2,9 +2,9 @@ import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
 
-const logoSrcPath = path.resolve('public/logos/gezgin_hot_balloon_1791495767568.jpg');
+const logoSrcPath = path.resolve('public/icon-512.png');
 const logoBuffer = fs.readFileSync(logoSrcPath);
-const base64Logo = `data:image/jpeg;base64,${logoBuffer.toString('base64')}`;
+const base64Logo = `data:image/png;base64,${logoBuffer.toString('base64')}`;
 
 async function generate() {
   const browser = await puppeteer.launch({ headless: 'new' });
