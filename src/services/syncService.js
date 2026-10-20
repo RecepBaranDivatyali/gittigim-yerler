@@ -249,17 +249,59 @@ export function queueCloudSync(force = false) {
  * Fetch cloud data for user and merge into LocalStorage
  */
 export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
-  const targetId = userIdOrUsername || getCurrentUserIdentifier();
-  if (!targetId) return null;
+  const currentId = getCurrentUserIdentifier();
+  const candidateIds = [];
+  if (auth?.currentUser?.uid) {
+    candidateIds.push(auth.currentUser.uid);
+  }
+  if (currentId && !candidateIds.includes(currentId)) {
+    candidateIds.push(currentId);
+  }
+  if (userIdOrUsername) {
+    const raw = String(userIdOrUsername).trim();
+    if (raw && !candidateIds.includes(raw)) candidateIds.push(raw);
+    const clean = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (clean) {
+      const legacyId = 'user_' + clean;
+      if (!candidateIds.includes(legacyId)) candidateIds.push(legacyId);
+    }
+  }
+
+  if (candidateIds.length === 0) return null;
 
   try {
     notifyStatus('syncing');
-    const userRef = doc(db, 'users', targetId);
-    const snap = await getDoc(userRef);
+    let data = null;
 
-    if (snap.exists()) {
-      const data = snap.data();
+    // 1. Check candidate user document IDs in priority order (Firebase UID -> user_username)
+    for (const cid of candidateIds) {
+      try {
+        const snap = await getDoc(doc(db, 'users', cid));
+        if (snap.exists()) {
+          data = snap.data();
+          break;
+        }
+      } catch {}
+    }
 
+    // 2. Fallback: look up via usernames directory if not found directly
+    if (!data && userIdOrUsername) {
+      const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (clean) {
+        try {
+          const uSnap = await getDoc(doc(db, 'usernames', clean));
+          if (uSnap.exists()) {
+            const uData = uSnap.data();
+            if (uData?.uid) {
+              const targetSnap = await getDoc(doc(db, 'users', uData.uid));
+              if (targetSnap.exists()) data = targetSnap.data();
+            }
+          }
+        } catch {}
+      }
+    }
+
+    if (data) {
       // Merge into local storage
       if (data.worldVisits && typeof data.worldVisits === 'object') {
         const localWorld = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
@@ -271,6 +313,12 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         const localTR = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}');
         const mergedTR = sanitizeVisits({ ...data.turkeyVisits, ...localTR });
         try { localStorage.setItem('gittigim_yerler_turkey_v2', JSON.stringify(mergedTR)); } catch(e) { console.warn('Storage write failed:', e); }
+      }
+
+      if (Array.isArray(data.worldCities) && data.worldCities.length > 0) {
+        const localCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]');
+        const mergedCities = Array.from(new Set([...data.worldCities, ...(Array.isArray(localCities) ? localCities : [])]));
+        try { localStorage.setItem('gittigim_yerler_cities_v2', JSON.stringify(mergedCities)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
       if (Array.isArray(data.userVisas) && data.userVisas.length > 0) {
@@ -303,6 +351,29 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       if (data.ratings && typeof data.ratings === 'object') {
         const localRatings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}');
         try { localStorage.setItem('gittigim_yerler_country_ratings_v1', JSON.stringify({ ...data.ratings, ...localRatings })); } catch(e) { console.warn('Storage write failed:', e); }
+      }
+
+      if (Array.isArray(data.bucketRanks) && data.bucketRanks.length > 0) {
+        const localBucket = JSON.parse(localStorage.getItem('gittigim_yerler_bucket_ranks_v1') || '[]');
+        if (!Array.isArray(localBucket) || localBucket.length === 0) {
+          try { localStorage.setItem('gittigim_yerler_bucket_ranks_v1', JSON.stringify(data.bucketRanks)); } catch {}
+        }
+      }
+
+      if (Array.isArray(data.airlines) && data.airlines.length > 0) {
+        const localAirlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '[]');
+        const mergedAirlines = Array.from(new Set([...data.airlines, ...(Array.isArray(localAirlines) ? localAirlines : [])]));
+        try { localStorage.setItem('gittigim_yerler_airlines_v1', JSON.stringify(mergedAirlines)); } catch {}
+      }
+
+      if (Array.isArray(data.aircraft) && data.aircraft.length > 0) {
+        const localAircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '[]');
+        const mergedAircraft = Array.from(new Set([...data.aircraft, ...(Array.isArray(localAircraft) ? localAircraft : [])]));
+        try { localStorage.setItem('gittigim_yerler_aircraft_v1', JSON.stringify(mergedAircraft)); } catch {}
+      }
+
+      if (data.homeCountry && typeof data.homeCountry === 'string') {
+        try { localStorage.setItem('gv_home_country', data.homeCountry); } catch {}
       }
 
       notifyStatus('synced');
