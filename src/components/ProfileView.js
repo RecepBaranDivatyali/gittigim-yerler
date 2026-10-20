@@ -31,7 +31,7 @@ import {
   registerOrUpdateCurrentUser, getAllCommunityTravelers,
   isUsernameAvailable, isUsernameAvailableAsync
 } from '../utils/userDatabase.js';
-import { getSyncStatus, onSyncStatusChange, queueCloudSync } from '../services/syncService.js';
+import { getSyncStatus, onSyncStatusChange, queueCloudSync, deleteUserCloudAccountData } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
@@ -1137,6 +1137,16 @@ export function renderProfileView(container, onBack) {
               💾 ${t('saveProfile')}
             </button>
           </div>
+
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.14);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span style="font-size:0.78rem;color:var(--theme-text-muted,#94a3b8);">
+              ${currentLang === 'tr' ? 'Hesap ve kişisel veri yönetimi' : 'Account & personal data management'}
+            </span>
+            <button type="button" id="profile-top-delete-account-btn" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#ef4444;border-radius:10px;padding:7px 12px;font-size:0.8rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+              <span>🗑️</span>
+              <span>${currentLang === 'tr' ? 'Hesabımı Sil' : 'Delete Account'}</span>
+            </button>
+          </div>
         </div>
 
         <!-- 2. Theme & Atmosphere Studio -->
@@ -1371,6 +1381,21 @@ export function renderProfileView(container, onBack) {
           <button type="button" id="profile-reset-map-btn" class="settings-danger-btn">
             <span>🗑️</span> <span>${t('reset')}</span>
           </button>
+
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(239,68,68,0.22);">
+            <h4 style="margin:0 0 6px 0;font-size:0.95rem;font-weight:700;color:#ef4444;">
+              🚨 ${currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Delete Account Permanently'}
+            </h4>
+            <p class="settings-card-desc" style="margin-bottom:12px;">
+              ${currentLang === 'tr'
+                ? 'Hesabınızı, profil bilgilerinizi, bulut yedeklerinizi ve tüm seyahat verilerinizi sunucularımızdan ve bu cihazdan kalıcı olarak siler. Bu işlem geri alınamaz.'
+                : 'Permanently deletes your account, profile details, cloud backups, and all travel data from our servers and this device. This action cannot be undone.'}
+            </p>
+            <button type="button" id="profile-delete-account-btn" class="settings-danger-btn" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:#ffffff;border-color:#ef4444;font-weight:700;">
+              <span>⚠️</span>
+              <span>${currentLang === 'tr' ? 'Hesabımı Kalıcı Olarak Sil' : 'Delete My Account Permanently'}</span>
+            </button>
+          </div>
         </div>
 
         <!-- 8. App Installation Card (Only shown if NOT already installed or native) -->
@@ -1700,6 +1725,140 @@ export function renderProfileView(container, onBack) {
         render();
       }
     });
+
+    // 7B. Permanent Account Deletion Flow (Apple Guideline 5.1.1(v))
+    const openDeleteAccountModal = () => {
+      const existing = document.getElementById('delete-account-modal-backdrop');
+      if (existing) existing.remove();
+
+      const backdrop = document.createElement('div');
+      backdrop.id = 'delete-account-modal-backdrop';
+      backdrop.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,0.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+
+      const currentUsername = escapeHtml(userProfile?.username || 'Gezgin');
+      const currentEmail = escapeHtml(userProfile?.email || auth?.currentUser?.email || '');
+
+      backdrop.innerHTML = `
+        <div style="width:100%;max-width:420px;background:#0f172a;color:#f8fafc;border-radius:20px;border:1px solid rgba(239,68,68,0.4);box-shadow:0 24px 64px rgba(0,0,0,0.75);overflow:hidden;font-family:inherit;">
+          <div style="padding:20px 22px;background:rgba(239,68,68,0.12);border-bottom:1px solid rgba(239,68,68,0.25);display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.75rem;line-height:1;">⚠️</span>
+            <div>
+              <h3 style="margin:0;font-size:1.08rem;font-weight:800;color:#f87171;">
+                ${currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Delete Account Permanently'}
+              </h3>
+              <div style="font-size:0.78rem;color:#fca5a5;margin-top:2px;">
+                ${currentUsername}${currentEmail ? ` (${currentEmail})` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div id="delete-account-modal-body" style="padding:20px 22px;">
+            <p style="margin:0 0 12px 0;font-size:0.88rem;line-height:1.5;color:#cbd5e1;">
+              ${currentLang === 'tr'
+                ? 'Hesabınızı silmek üzeresiniz. Bu işlem onaylandığında aşağıdaki verileriniz <strong>kalıcı olarak silinecek ve geri getirilemeyecektir</strong>:'
+                : 'You are about to permanently delete your account. Once confirmed, the following data will be <strong>permanently deleted and cannot be recovered</strong>:'}
+            </p>
+            <ul style="margin:0 0 16px 0;padding-left:20px;font-size:0.83rem;line-height:1.6;color:#94a3b8;">
+              <li>${currentLang === 'tr' ? 'Kullanıcı profiliniz, kullanıcı adınız ve giriş kimliğiniz' : 'Your user profile, username, and login credentials'}</li>
+              <li>${currentLang === 'tr' ? 'Bulut veritabanındaki tüm seyahat haritası ve şehir kayıtlarınız' : 'All cloud travel map, country, and city records'}</li>
+              <li>${currentLang === 'tr' ? 'Fotoğraf albümünüz, pasaport/vize kayıtlarınız ve değerlendirmeleriniz' : 'Your photo album, passport/visa logs, and ratings'}</li>
+            </ul>
+
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:12px;margin-bottom:18px;">
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.83rem;color:#f8fafc;line-height:1.4;">
+                <input type="checkbox" id="delete-account-confirm-check" style="margin-top:2px;accent-color:#ef4444;width:16px;height:16px;flex-shrink:0;" />
+                <span>${currentLang === 'tr'
+                  ? 'Hesabımın ve tüm kişisel verilerimin kalıcı olarak silineceğini anlıyorum ve onaylıyorum.'
+                  : 'I understand and confirm that my account and all personal data will be permanently deleted.'}</span>
+              </label>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button type="button" id="delete-account-cancel-btn" style="flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(148,163,184,0.3);background:rgba(30,41,59,0.9);color:#e2e8f0;font-size:0.9rem;font-weight:600;cursor:pointer;">
+                ${currentLang === 'tr' ? 'Vazgeç' : 'Cancel'}
+              </button>
+              <button type="button" id="delete-account-confirm-btn" disabled style="flex:1.3;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#dc2626,#991b1b);color:#ffffff;font-size:0.9rem;font-weight:700;cursor:not-allowed;opacity:0.45;transition:all 0.2s;">
+                ${currentLang === 'tr' ? 'Hesabımı Kalıcı Sil' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(backdrop);
+
+      const checkEl = backdrop.querySelector('#delete-account-confirm-check');
+      const confirmBtn = backdrop.querySelector('#delete-account-confirm-btn');
+      const cancelBtn = backdrop.querySelector('#delete-account-cancel-btn');
+      const bodyEl = backdrop.querySelector('#delete-account-modal-body');
+
+      checkEl?.addEventListener('change', () => {
+        if (checkEl.checked) {
+          confirmBtn.disabled = false;
+          confirmBtn.style.opacity = '1';
+          confirmBtn.style.cursor = 'pointer';
+        } else {
+          confirmBtn.disabled = true;
+          confirmBtn.style.opacity = '0.45';
+          confirmBtn.style.cursor = 'not-allowed';
+        }
+      });
+
+      cancelBtn?.addEventListener('click', () => backdrop.remove());
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) backdrop.remove();
+      });
+
+      confirmBtn?.addEventListener('click', async () => {
+        if (!checkEl?.checked) return;
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        confirmBtn.textContent = currentLang === 'tr' ? 'Siliniyor...' : 'Deleting...';
+
+        try {
+          await deleteUserCloudAccountData();
+        } catch (err) {
+          console.warn('Account deletion cloud cleanup warning:', err);
+        }
+
+        try {
+          resetTravelData();
+          localStorage.removeItem('gv_logged_in');
+          localStorage.removeItem('gv_profile');
+          sessionStorage.removeItem('gv_logged_in');
+          sessionStorage.removeItem('gv_profile');
+        } catch (err) {
+          console.warn('Local storage cleanup warning:', err);
+        }
+
+        if (bodyEl) {
+          bodyEl.innerHTML = `
+            <div style="text-align:center;padding:12px 4px;">
+              <div style="font-size:2.4rem;margin-bottom:10px;">✅</div>
+              <h4 style="margin:0 0 8px 0;font-size:1.05rem;color:#4ade80;">
+                ${currentLang === 'tr' ? 'Hesabınız Kalıcı Olarak Silindi' : 'Your Account Has Been Permanently Deleted'}
+              </h4>
+              <p style="margin:0 0 18px 0;font-size:0.85rem;color:#cbd5e1;line-height:1.5;">
+                ${currentLang === 'tr'
+                  ? 'Hesabınız ve tüm kişisel verileriniz sunucularımızdan ve bu cihazdan başarıyla kaldırıldı.'
+                  : 'Your account and all personal data have been permanently removed from our servers and this device.'}
+              </p>
+              <button type="button" id="delete-account-done-btn" style="width:100%;padding:12px 16px;border-radius:12px;border:none;background:#22c55e;color:#052e16;font-size:0.92rem;font-weight:800;cursor:pointer;">
+                ${currentLang === 'tr' ? 'Tamam (Giriş Ekranına Dön)' : 'Done (Return to Sign In)'}
+              </button>
+            </div>
+          `;
+          bodyEl.querySelector('#delete-account-done-btn')?.addEventListener('click', () => {
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
+      });
+    };
+
+    document.getElementById('profile-delete-account-btn')?.addEventListener('click', openDeleteAccountModal);
+    document.getElementById('profile-top-delete-account-btn')?.addEventListener('click', openDeleteAccountModal);
 
     // 8. PWA / Mobile App Installation Trigger
     document.getElementById('btn-install-pwa')?.addEventListener('click', () => {
