@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
+import { resetTravelData } from '../utils/storage.js';
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -96,7 +97,26 @@ export function renderLoginPage(container, onLogin) {
   let _isSubmitting = false;
 
 
-  function saveAndCompleteLogin(profile, remember) {
+  async function saveAndCompleteLogin(profile, remember) {
+    const newOwnerKey = profile?.isGuest
+      ? '__guest__'
+      : String(profile?.email || profile?.username || '').trim().toLowerCase();
+    const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
+
+    // If switching between two different non-guest accounts (or logging into a new account when previous owner wasn't guest),
+    // clear local travel storage first so the previous user's map data never leaks into the new account.
+    if (!profile?.isGuest && prevOwnerKey !== newOwnerKey && prevOwnerKey !== '__guest__') {
+      try {
+        resetTravelData();
+      } catch (err) {
+        console.warn('Reset local travel data on account switch warning:', err);
+      }
+    }
+
+    try {
+      localStorage.setItem('gv_data_owner_key', newOwnerKey);
+    } catch {}
+
     if (remember) {
       localStorage.setItem('gv_logged_in', '1');
       localStorage.setItem('gv_profile', JSON.stringify(profile));
@@ -117,6 +137,13 @@ export function renderLoginPage(container, onLogin) {
     }
 
     try {
+      // Pull and merge ONLY this user's cloud data before rendering the map
+      if (navigator.onLine && !profile?.isGuest) {
+        try {
+          await fetchAndMergeUserDataFromCloud(profile.username);
+        } catch {}
+      }
+
       let worldVisits = {};
       let turkeyVisits = {};
       let worldCities = [];
@@ -127,14 +154,7 @@ export function renderLoginPage(container, onLogin) {
       } catch {}
       registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, worldCities);
 
-      // Trigger automatic cloud sync and merge in background
-      if (navigator.onLine) {
-        fetchAndMergeUserDataFromCloud(profile.username).then(() => {
-          queueCloudSync(true);
-        }).catch(() => {
-          queueCloudSync(true);
-        });
-      } else {
+      if (!profile?.isGuest) {
         queueCloudSync(true);
       }
     } catch (e) {

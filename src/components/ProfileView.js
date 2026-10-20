@@ -31,7 +31,7 @@ import {
   registerOrUpdateCurrentUser, getAllCommunityTravelers,
   isUsernameAvailable, isUsernameAvailableAsync
 } from '../utils/userDatabase.js';
-import { getSyncStatus, onSyncStatusChange, queueCloudSync, deleteUserCloudAccountData } from '../services/syncService.js';
+import { getSyncStatus, onSyncStatusChange, queueCloudSync, syncLocalDataToCloud, deleteUserCloudAccountData } from '../services/syncService.js';
 import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
@@ -139,13 +139,24 @@ export function renderProfileView(container, onBack) {
       logoutBtn.addEventListener('click', async () => {
         if (confirm(t('logoutConfirm'))) {
           try {
+            if (!userProfile?.isGuest && navigator.onLine) {
+              await syncLocalDataToCloud();
+            }
+          } catch (syncErr) {
+            console.warn('Logout cloud sync notice:', syncErr);
+          }
+          try {
             if (auth) await auth.signOut();
           } catch (e) {
             console.warn('Firebase signOut error:', e);
           }
+          try {
+            resetTravelData();
+          } catch {}
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
           localStorage.removeItem('gv_admin_active');
+          localStorage.removeItem('gv_data_owner_key');
           sessionStorage.removeItem('gv_logged_in');
           sessionStorage.removeItem('gv_profile');
           location.reload();
