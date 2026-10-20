@@ -610,10 +610,19 @@ export function renderLoginPage(container, onLogin) {
 
             <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
               <label style="display:block;font-size:0.7rem;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">
-                ${currentLang === 'tr' ? 'Apple Kimliği (E-posta)' : 'Apple ID (Email)'}
+                ${currentLang === 'tr' ? 'Apple Kimliği (E-posta) *' : 'Apple ID (Email) *'}
               </label>
-              <input type="email" id="apple-sheet-email" placeholder="icloud@apple.com" value="${escapeHtml(emailVal)}" style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
+              <input type="email" id="apple-sheet-email" placeholder="icloud@apple.com" value="${escapeHtml(emailVal)}" required style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
             </div>
+
+            <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+              <label style="display:block;font-size:0.7rem;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">
+                ${currentLang === 'tr' ? 'Parola *' : 'Password *'}
+              </label>
+              <input type="password" id="apple-sheet-password" placeholder="${currentLang === 'tr' ? 'En az 6 karakter' : 'Min 6 characters'}" required style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
+            </div>
+
+            <div id="apple-sheet-error" style="display:none;color:#ff453a;font-size:0.8rem;text-align:left;margin-bottom:10px;padding:0 4px;"></div>
 
             <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:14px;">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.84rem;color:#fff;margin-bottom:8px;">
@@ -645,41 +654,104 @@ export function renderLoginPage(container, onLogin) {
       });
 
       const continueBtn = backdrop.querySelector('#apple-sheet-continue');
+      const errBox = backdrop.querySelector('#apple-sheet-error');
+      const showSheetError = (msg) => {
+        if (errBox) {
+          errBox.textContent = msg;
+          errBox.style.display = 'block';
+        } else {
+          alert(msg);
+        }
+      };
+
       continueBtn?.addEventListener('click', async () => {
+        if (errBox) errBox.style.display = 'none';
         const nameInput = backdrop.querySelector('#apple-sheet-name')?.value?.trim() || '';
         const emailInput = backdrop.querySelector('#apple-sheet-email')?.value?.trim().toLowerCase() || '';
+        const passInput = backdrop.querySelector('#apple-sheet-password')?.value || '';
         const privacyMode = backdrop.querySelector('input[name="apple-email-privacy"]:checked')?.value || 'share';
 
-        const chosenEmail = (privacyMode === 'hide' || !emailInput || !emailInput.includes('@'))
-          ? (emailInput && emailInput.includes('@') && privacyMode === 'share' ? emailInput : relayEmail)
+        if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.')) {
+          showSheetError(currentLang === 'tr'
+            ? 'Lütfen geçerli bir Apple Kimliği (e-posta) adresi girin.'
+            : 'Please enter a valid Apple ID email address.');
+          backdrop.querySelector('#apple-sheet-email')?.focus();
+          return;
+        }
+
+        if (!passInput || passInput.length < 6) {
+          showSheetError(currentLang === 'tr'
+            ? 'Lütfen Apple Kimliği parolanızı girin (en az 6 karakter).'
+            : 'Please enter your Apple ID password (at least 6 characters).');
+          backdrop.querySelector('#apple-sheet-password')?.focus();
+          return;
+        }
+
+        // Deterministic private relay address based on the user's Apple ID email so returning users always access the same account
+        let deterministicHash = 0;
+        for (let i = 0; i < emailInput.length; i++) {
+          deterministicHash = ((deterministicHash << 5) - deterministicHash) + emailInput.charCodeAt(i);
+          deterministicHash |= 0;
+        }
+        const relaySlug = Math.abs(deterministicHash).toString(36) + '_' + emailInput.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 8);
+        const chosenEmail = privacyMode === 'hide'
+          ? `apple_${relaySlug}@privaterelay.appleid.com`
           : emailInput;
 
-        const chosenUsername = sanitizeText((nameInput || chosenEmail.split('@')[0] || 'AppleGezgin').slice(0, 25), 25);
-        const deterministicPass = `AppleID_${ chosenEmail.replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) }_#Gz2026!`;
+        const chosenUsername = sanitizeText((nameInput || emailInput.split('@')[0] || 'AppleGezgin').slice(0, 25), 25);
 
         continueBtn.disabled = true;
         continueBtn.style.opacity = '0.7';
+        const originalBtnHtml = continueBtn.innerHTML;
         continueBtn.textContent = currentLang === 'tr' ? 'Doğrulanıyor...' : 'Signing in...';
 
         try {
           await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
           try {
-            await signInWithEmailAndPassword(auth, chosenEmail, deterministicPass);
+            await signInWithEmailAndPassword(auth, chosenEmail, passInput);
           } catch (signInErr) {
-            if (
-              signInErr?.code === 'auth/user-not-found' ||
+            if (signInErr?.code === 'auth/user-not-found') {
+              await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
+            } else if (
               signInErr?.code === 'auth/invalid-credential' ||
               signInErr?.code === 'auth/invalid-login-credentials'
             ) {
+              // Attempt creation; if email is already in use, then the password was wrong
               try {
-                await createUserWithEmailAndPassword(auth, chosenEmail, deterministicPass);
-              } catch {
-                // Continue with verified Apple session profile
+                await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
+              } catch (createErr) {
+                if (createErr?.code === 'auth/email-already-in-use') {
+                  showSheetError(currentLang === 'tr'
+                    ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
+                    : 'This Apple ID is already registered and the password is incorrect.');
+                  continueBtn.disabled = false;
+                  continueBtn.style.opacity = '1';
+                  continueBtn.innerHTML = originalBtnHtml;
+                  return;
+                }
+                throw createErr;
               }
+            } else if (signInErr?.code === 'auth/wrong-password') {
+              showSheetError(currentLang === 'tr'
+                ? 'Girdiğiniz parola hatalı. Lütfen tekrar deneyin.'
+                : 'Incorrect password. Please try again.');
+              continueBtn.disabled = false;
+              continueBtn.style.opacity = '1';
+              continueBtn.innerHTML = originalBtnHtml;
+              return;
+            } else {
+              throw signInErr;
             }
           }
         } catch (err) {
-          console.warn('Apple sheet Firebase auth notice:', err);
+          console.warn('Apple sheet Firebase auth error:', err);
+          showSheetError(currentLang === 'tr'
+            ? 'Giriş yapılamadı. Lütfen e-posta ve parolanızı kontrol edin.'
+            : 'Could not sign in. Please check your email and password.');
+          continueBtn.disabled = false;
+          continueBtn.style.opacity = '1';
+          continueBtn.innerHTML = originalBtnHtml;
+          return;
         }
 
         backdrop.remove();
