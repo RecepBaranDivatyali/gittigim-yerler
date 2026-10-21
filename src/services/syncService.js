@@ -44,6 +44,13 @@ export function getSyncStatus() {
   };
 }
 
+export function cancelPendingCloudSync() {
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
+    syncTimeout = null;
+  }
+}
+
 export function onSyncStatusChange(callback) {
   if (typeof callback === 'function') {
     statusListeners.add(callback);
@@ -79,18 +86,21 @@ if (typeof window !== 'undefined') {
  * Get the current active user identifier for Firestore document
  */
 export function getCurrentUserIdentifier() {
-  if (auth?.currentUser?.uid) {
-    return auth.currentUser.uid;
-  }
   try {
     const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
     if (pStr) {
       const p = JSON.parse(pStr);
+      if (p?.isGuest) return null;
+      if (auth?.currentUser?.uid) return auth.currentUser.uid;
+      if (p?.uid && !String(p.uid).startsWith('guest_')) return p.uid;
       if (p && p.username) {
         return 'user_' + p.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       }
     }
   } catch {}
+  if (auth?.currentUser?.uid) {
+    return auth.currentUser.uid;
+  }
   return null;
 }
 
@@ -106,8 +116,8 @@ export function getLocalDataPayload() {
   let notes = {};
   let ratings = {};
   let bucketRanks = [];
-  let airlines = [];
-  let aircraft = [];
+  let airlines = {};
+  let aircraft = {};
   let profile = { username: 'Gezgin', avatar: '🧭' };
   let homeCountry = 'TR';
 
@@ -120,8 +130,14 @@ export function getLocalDataPayload() {
     try { notes = JSON.parse(localStorage.getItem('gittigim_yerler_country_notes_v1') || '{}'); } catch { notes = {}; }
     try { ratings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}'); } catch { ratings = {}; }
     try { bucketRanks = JSON.parse(localStorage.getItem('gittigim_yerler_bucket_ranks_v1') || '[]'); } catch { bucketRanks = []; }
-    try { airlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '[]'); } catch { airlines = []; }
-    try { aircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '[]'); } catch { aircraft = []; }
+    try {
+      const parsedAirlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '{}');
+      airlines = (parsedAirlines && typeof parsedAirlines === 'object' && !Array.isArray(parsedAirlines)) ? parsedAirlines : {};
+    } catch { airlines = {}; }
+    try {
+      const parsedAircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '{}');
+      aircraft = (parsedAircraft && typeof parsedAircraft === 'object' && !Array.isArray(parsedAircraft)) ? parsedAircraft : {};
+    } catch { aircraft = {}; }
     homeCountry = localStorage.getItem('gv_home_country') || 'TR';
 
     const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
@@ -183,6 +199,9 @@ export function queueCloudSync(force = false) {
   }
 
   const doSync = async () => {
+    if (typeof auth?.authStateReady === 'function') {
+      try { await auth.authStateReady(); } catch {}
+    }
     const userDocId = getCurrentUserIdentifier();
     if (!userDocId) {
       // User is not logged in yet, local storage remains active
@@ -199,27 +218,39 @@ export function queueCloudSync(force = false) {
       const payload = getLocalDataPayload();
       const userRef = doc(db, 'users', userDocId);
 
-      // setDoc with merge: true writes to IndexedDB cache immediately (0ms)
-      // and automatically queues network synchronization with Firestore
+      // Write full user state (without merge: true so deleted map keys don't resurrect from cloud)
       const cleanUserLower = payload.username ? payload.username.trim().toLowerCase() : '';
       await setDoc(userRef, {
         ...payload,
+        userId: userDocId,
         username_lowercase: cleanUserLower,
         serverUpdatedAt: serverTimestamp()
-      }, { merge: true });
+      });
 
-      // Also register or update username directory for global friend searches
+      // Also register or update username directory for global friend searches (only if unowned or owned by this user)
       if (cleanUserLower) {
         const usernameRef = doc(db, 'usernames', cleanUserLower);
-        await setDoc(usernameRef, {
-          uid: userDocId,
-          username: cleanUserLower,
-          displayName: payload.displayName || payload.username,
-          avatar: payload.avatar,
-          photoUrl: payload.photoUrl,
-          stats: payload.stats,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+        let canClaimUsername = true;
+        try {
+          const existingUsernameSnap = await getDoc(usernameRef);
+          if (existingUsernameSnap.exists()) {
+            const ownerUid = existingUsernameSnap.data()?.uid;
+            if (ownerUid && ownerUid !== userDocId && ownerUid !== ('user_' + cleanUserLower)) {
+              canClaimUsername = false;
+            }
+          }
+        } catch {}
+        if (canClaimUsername) {
+          await setDoc(usernameRef, {
+            uid: userDocId,
+            username: cleanUserLower,
+            displayName: payload.displayName || payload.username,
+            avatar: payload.avatar,
+            photoUrl: payload.photoUrl,
+            stats: payload.stats,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
       }
 
       if (navigator.onLine) {
@@ -249,15 +280,22 @@ export function queueCloudSync(force = false) {
  * Fetch cloud data for user and merge into LocalStorage
  */
 export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
+  if (typeof auth?.authStateReady === 'function') {
+    try { await auth.authStateReady(); } catch {}
+  }
+  const authUid = auth?.currentUser?.uid || null;
   const currentId = getCurrentUserIdentifier();
   const candidateIds = [];
-  if (auth?.currentUser?.uid) {
-    candidateIds.push(auth.currentUser.uid);
+  if (authUid) {
+    candidateIds.push(authUid);
   }
   if (currentId && !candidateIds.includes(currentId)) {
-    candidateIds.push(currentId);
+    // Only add non-UID fallback if no Firebase UID is active
+    if (!authUid || !String(currentId).startsWith('user_')) {
+      candidateIds.push(currentId);
+    }
   }
-  if (userIdOrUsername) {
+  if (!authUid && userIdOrUsername) {
     const raw = String(userIdOrUsername).trim();
     if (raw && !candidateIds.includes(raw)) candidateIds.push(raw);
     const clean = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -273,7 +311,7 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
     notifyStatus('syncing');
     let data = null;
 
-    // 1. Check candidate user document IDs in priority order (Firebase UID -> user_username)
+    // 1. Check candidate user document IDs in priority order
     for (const cid of candidateIds) {
       try {
         const snap = await getDoc(doc(db, 'users', cid));
@@ -284,7 +322,7 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       } catch {}
     }
 
-    // 2. Fallback: look up via usernames directory if not found directly
+    // 2. Fallback: look up via usernames directory ONLY if unauthenticated legacy lookup or if usernames entry belongs to this exact UID
     if (!data && userIdOrUsername) {
       const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       if (clean) {
@@ -292,8 +330,9 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
           const uSnap = await getDoc(doc(db, 'usernames', clean));
           if (uSnap.exists()) {
             const uData = uSnap.data();
-            if (uData?.uid) {
-              const targetSnap = await getDoc(doc(db, 'users', uData.uid));
+            const targetUid = uData?.uid;
+            if (targetUid && (!authUid || targetUid === authUid)) {
+              const targetSnap = await getDoc(doc(db, 'users', targetUid));
               if (targetSnap.exists()) data = targetSnap.data();
             }
           }
@@ -360,15 +399,23 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         }
       }
 
-      if (Array.isArray(data.airlines) && data.airlines.length > 0) {
-        const localAirlines = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '[]');
-        const mergedAirlines = Array.from(new Set([...data.airlines, ...(Array.isArray(localAirlines) ? localAirlines : [])]));
+      if (data.airlines && typeof data.airlines === 'object' && !Array.isArray(data.airlines)) {
+        let localAirlines = {};
+        try {
+          const parsed = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '{}');
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localAirlines = parsed;
+        } catch {}
+        const mergedAirlines = { ...data.airlines, ...localAirlines };
         try { localStorage.setItem('gittigim_yerler_airlines_v1', JSON.stringify(mergedAirlines)); } catch {}
       }
 
-      if (Array.isArray(data.aircraft) && data.aircraft.length > 0) {
-        const localAircraft = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '[]');
-        const mergedAircraft = Array.from(new Set([...data.aircraft, ...(Array.isArray(localAircraft) ? localAircraft : [])]));
+      if (data.aircraft && typeof data.aircraft === 'object' && !Array.isArray(data.aircraft)) {
+        let localAircraft = {};
+        try {
+          const parsed = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '{}');
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localAircraft = parsed;
+        } catch {}
+        const mergedAircraft = { ...data.aircraft, ...localAircraft };
         try { localStorage.setItem('gittigim_yerler_aircraft_v1', JSON.stringify(mergedAircraft)); } catch {}
       }
 
@@ -550,16 +597,18 @@ export async function deleteUserCloudAccountData() {
 
   // 2. Remove from local community travelers directory
   if (cleanUsername) {
-    try {
-      const raw = localStorage.getItem('gv_community_travelers_v1');
-      if (raw) {
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) {
-          const filtered = list.filter(u => String(u.username || '').toLowerCase() !== cleanUsername);
-          localStorage.setItem('gv_community_travelers_v1', JSON.stringify(filtered));
+    for (const key of ['gv_community_travelers', 'gv_community_travelers_v1']) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const filtered = list.filter(u => String(u.username || '').toLowerCase() !== cleanUsername);
+            localStorage.setItem(key, JSON.stringify(filtered));
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
   }
 
   // 3. Delete Firebase Auth user if signed in, then signOut

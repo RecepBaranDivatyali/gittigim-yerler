@@ -42,6 +42,15 @@ export function getAllCommunityTravelers() {
 export function registerOrUpdateCurrentUser(profile, worldVisits, turkeyVisits, worldCities) {
   if (!profile || !profile.username) return;
   try {
+    if (worldVisits === undefined) {
+      try { worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}'); } catch { worldVisits = {}; }
+    }
+    if (turkeyVisits === undefined) {
+      try { turkeyVisits = JSON.parse(localStorage.getItem('gittigim_yerler_turkey_v2') || '{}'); } catch { turkeyVisits = {}; }
+    }
+    if (worldCities === undefined) {
+      try { worldCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]'); } catch { worldCities = []; }
+    }
     const users = getAllCommunityTravelers();
     const cleanUsername = profile.username.trim().toLowerCase().replace(/^@/, '');
     const userIndex = users.findIndex(u => u.username.toLowerCase() === cleanUsername);

@@ -61,11 +61,11 @@ function initApp() {
     setTimeout(syncAppHeight, 150);
   });
 
-  // Auto-sync offline feedbacks & archive flush whenever app boots or device regains internet connection
-  initFeedbackSync();
-
   // Prompt first-time users to review and accept privacy policy (Huawei Rule 7.5 & store compliance)
-  checkPrivacyConsent();
+  // Only initialize background network sync after privacy consent is granted
+  checkPrivacyConsent(() => {
+    initFeedbackSync();
+  });
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);';
 
@@ -95,7 +95,11 @@ function initApp() {
     if (!mapInitialized) {
       mapInitialized = true;
       renderWorldMapView(mapContainer, { onOpenProfile: showProfile });
-      setTimeout(checkOnboarding, 600);
+      setTimeout(() => {
+        checkPrivacyConsent(() => {
+          checkOnboarding();
+        });
+      }, 600);
     } else {
       if (window.__refreshMapStats) window.__refreshMapStats();
       if (window.__leafletMapInstance) {

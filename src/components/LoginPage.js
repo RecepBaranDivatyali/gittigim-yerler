@@ -14,8 +14,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   setPersistence,
-  sendPasswordResetEmail,
-  fetchSignInMethodsForEmail
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
@@ -49,16 +48,6 @@ function isHuaweiDevice() {
 
 const HUAWEI_DEVICE = isHuaweiDevice();
 
-/** E-posta Firebase'de şifreli (password) hesap olarak kayıtlı mı? (enumeration protection açıksa false döner) */
-async function emailHasPasswordMethod(email) {
-  try {
-    const methods = await fetchSignInMethodsForEmail(auth, email);
-    return Array.isArray(methods) && methods.includes('password');
-  } catch {
-    return false;
-  }
-}
-
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
   try {
@@ -89,12 +78,12 @@ export function renderLoginPage(container, onLogin) {
             try {
               const ownerKey = profile.isGuest
                 ? '__guest__'
-                : String(profile.email || profile.username || '').trim().toLowerCase();
+                : String(profile.uid || auth?.currentUser?.uid || profile.email || profile.username || '').trim().toLowerCase();
               localStorage.setItem('gv_data_owner_key', ownerKey);
             } catch {}
           }
           if (navigator.onLine && !profile.isGuest) {
-            fetchAndMergeUserDataFromCloud(profile.username).then(() => {
+            fetchAndMergeUserDataFromCloud(profile.uid || profile.username).then(() => {
               if (window.__refreshMapStats) window.__refreshMapStats();
             }).catch(() => {});
           }
@@ -119,25 +108,30 @@ export function renderLoginPage(container, onLogin) {
   let passwordVal = '';
   let usernameVal = '';
   let _isSubmitting = false;
+  let migrateLegacyData = false;
 
 
   async function saveAndCompleteLogin(profile, remember) {
+    if (profile && !profile.isGuest && auth?.currentUser?.uid) {
+      profile.uid = auth.currentUser.uid;
+    }
     const newOwnerKey = profile?.isGuest
       ? '__guest__'
-      : String(auth?.currentUser?.uid || profile?.email || profile?.username || '').trim().toLowerCase();
+      : String(profile?.uid || auth?.currentUser?.uid || profile?.email || profile?.username || '').trim().toLowerCase();
     const legacyEmailKey = String(profile?.email || profile?.username || '').trim().toLowerCase();
     const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
-    const isSameOwner = prevOwnerKey === newOwnerKey || prevOwnerKey === legacyEmailKey;
+    const isSameOwner = prevOwnerKey !== '' && (prevOwnerKey === newOwnerKey || prevOwnerKey === legacyEmailKey);
 
-    // If switching between two different non-guest accounts (or logging into a new account when previous owner wasn't guest),
-    // clear local travel storage first so the previous user's map data never leaks into the new account.
-    if (!profile?.isGuest && prevOwnerKey !== '' && !isSameOwner && prevOwnerKey !== '__guest__') {
+    // Clear local travel storage whenever switching accounts (or logging in from guest/unowned state without migration)
+    // so previous or guest map data never contaminates the authenticated account.
+    if (!profile?.isGuest && !isSameOwner && !migrateLegacyData) {
       try {
-        resetTravelData();
+        resetTravelData({ skipCloudSync: true });
       } catch (err) {
         console.warn('Reset local travel data on account switch warning:', err);
       }
     }
+    migrateLegacyData = false;
 
     try {
       localStorage.setItem('gv_data_owner_key', newOwnerKey);
@@ -422,6 +416,7 @@ export function renderLoginPage(container, onLogin) {
 
     // Migration banner butonları
     container.querySelector('#btn-migration-signup')?.addEventListener('click', () => {
+      migrateLegacyData = true;
       authMode = 'register';
       render();
     });
@@ -742,22 +737,26 @@ export function renderLoginPage(container, onLogin) {
 
         try {
           await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+          let signedIn = false;
           try {
             await signInWithEmailAndPassword(auth, emailInput, passInput);
-          } catch (signInErr) {
-            if (signInErr?.code === 'auth/user-not-found') {
+            signedIn = true;
+          } catch {
+            try {
+              await signInWithEmailAndPassword(auth, googleRelayEmail, passInput);
+              signedIn = true;
+            } catch {}
+          }
+
+          if (!signedIn) {
+            try {
               await createUserWithEmailAndPassword(auth, emailInput, passInput);
-            } else if (
-              signInErr?.code === 'auth/invalid-credential' ||
-              signInErr?.code === 'auth/invalid-login-credentials' ||
-              signInErr?.code === 'auth/wrong-password'
-            ) {
-              try {
-                await createUserWithEmailAndPassword(auth, emailInput, passInput);
-              } catch (createErr) {
-                if (createErr?.code === 'auth/email-already-in-use') {
-                  // Şifreli hesapsa gerçekten yanlış şifredir; sadece OAuth ile kayıtlıysa relay kimliğine düş
-                  if (await emailHasPasswordMethod(emailInput)) {
+            } catch (createErr) {
+              if (createErr?.code === 'auth/email-already-in-use') {
+                try {
+                  await createUserWithEmailAndPassword(auth, googleRelayEmail, passInput);
+                } catch (relayErr) {
+                  if (relayErr?.code === 'auth/email-already-in-use') {
                     showSheetError(currentLang === 'tr'
                       ? 'Bu e-posta zaten kayıtlı ve girdiğiniz şifre hatalı.'
                       : 'This email is already registered and the password is incorrect.');
@@ -766,30 +765,11 @@ export function renderLoginPage(container, onLogin) {
                     continueBtn.innerHTML = originalBtnHtml;
                     return;
                   }
-                  try {
-                    await signInWithEmailAndPassword(auth, googleRelayEmail, passInput);
-                  } catch {
-                    try {
-                      await createUserWithEmailAndPassword(auth, googleRelayEmail, passInput);
-                    } catch (relayErr) {
-                      if (relayErr?.code === 'auth/email-already-in-use') {
-                        showSheetError(currentLang === 'tr'
-                          ? 'Bu e-posta zaten kayıtlı ve girdiğiniz şifre hatalı.'
-                          : 'This email is already registered and the password is incorrect.');
-                        continueBtn.disabled = false;
-                        continueBtn.style.opacity = '1';
-                        continueBtn.innerHTML = originalBtnHtml;
-                        return;
-                      }
-                      throw relayErr;
-                    }
-                  }
-                } else {
-                  throw createErr;
+                  throw relayErr;
                 }
+              } else {
+                throw createErr;
               }
-            } else {
-              throw signInErr;
             }
           }
         } catch (err) {
@@ -804,8 +784,9 @@ export function renderLoginPage(container, onLogin) {
         }
 
         await saveAndCompleteLogin({
+          uid: auth?.currentUser?.uid || undefined,
           username: chosenUsername,
-          email: emailInput,
+          email: auth?.currentUser?.email || emailInput,
           avatar: selectedAvatar || '✈️',
           authProvider: 'google',
           createdAt: new Date().toISOString()
@@ -954,9 +935,8 @@ export function renderLoginPage(container, onLogin) {
         }
         const relaySlug = Math.abs(deterministicHash).toString(36) + '_' + emailInput.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 8);
         const appleRelayEmail = `apple_${relaySlug}@privaterelay.appleid.com`;
-        const chosenEmail = privacyMode === 'hide'
-          ? appleRelayEmail
-          : emailInput;
+        const primaryEmail = privacyMode === 'hide' ? appleRelayEmail : emailInput;
+        const secondaryEmail = privacyMode === 'hide' ? emailInput : appleRelayEmail;
 
         const chosenUsername = sanitizeText((nameInput || emailInput.split('@')[0] || 'AppleGezgin').slice(0, 25), 25);
 
@@ -967,55 +947,49 @@ export function renderLoginPage(container, onLogin) {
 
         try {
           await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+          let signedIn = false;
           try {
-            await signInWithEmailAndPassword(auth, chosenEmail, passInput);
-          } catch (signInErr) {
-            if (signInErr?.code === 'auth/user-not-found') {
-              await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
-            } else if (
-              signInErr?.code === 'auth/invalid-credential' ||
-              signInErr?.code === 'auth/invalid-login-credentials' ||
-              signInErr?.code === 'auth/wrong-password'
-            ) {
-              // Attempt creation; if email is already in use by another provider (e.g. Google OAuth), fall back to Apple relay auth identity
-              try {
-                await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
-              } catch (createErr) {
-                if (createErr?.code === 'auth/email-already-in-use') {
-                  if (chosenEmail !== appleRelayEmail && !(await emailHasPasswordMethod(chosenEmail))) {
-                    try {
-                      await signInWithEmailAndPassword(auth, appleRelayEmail, passInput);
-                    } catch {
-                      try {
-                        await createUserWithEmailAndPassword(auth, appleRelayEmail, passInput);
-                      } catch (relayErr) {
-                        if (relayErr?.code === 'auth/email-already-in-use') {
-                          showSheetError(currentLang === 'tr'
-                            ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
-                            : 'This Apple ID is already registered and the password is incorrect.');
-                          continueBtn.disabled = false;
-                          continueBtn.style.opacity = '1';
-                          continueBtn.innerHTML = originalBtnHtml;
-                          return;
-                        }
-                        throw relayErr;
-                      }
+            await signInWithEmailAndPassword(auth, primaryEmail, passInput);
+            signedIn = true;
+          } catch {
+            try {
+              await signInWithEmailAndPassword(auth, secondaryEmail, passInput);
+              signedIn = true;
+            } catch {}
+          }
+
+          if (!signedIn) {
+            try {
+              await createUserWithEmailAndPassword(auth, primaryEmail, passInput);
+            } catch (createErr) {
+              if (createErr?.code === 'auth/email-already-in-use') {
+                if (primaryEmail !== appleRelayEmail) {
+                  try {
+                    await createUserWithEmailAndPassword(auth, appleRelayEmail, passInput);
+                  } catch (relayErr) {
+                    if (relayErr?.code === 'auth/email-already-in-use') {
+                      showSheetError(currentLang === 'tr'
+                        ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
+                        : 'This Apple ID is already registered and the password is incorrect.');
+                      continueBtn.disabled = false;
+                      continueBtn.style.opacity = '1';
+                      continueBtn.innerHTML = originalBtnHtml;
+                      return;
                     }
-                  } else {
-                    showSheetError(currentLang === 'tr'
-                      ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
-                      : 'This Apple ID is already registered and the password is incorrect.');
-                    continueBtn.disabled = false;
-                    continueBtn.style.opacity = '1';
-                    continueBtn.innerHTML = originalBtnHtml;
-                    return;
+                    throw relayErr;
                   }
                 } else {
-                  throw createErr;
+                  showSheetError(currentLang === 'tr'
+                    ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
+                    : 'This Apple ID is already registered and the password is incorrect.');
+                  continueBtn.disabled = false;
+                  continueBtn.style.opacity = '1';
+                  continueBtn.innerHTML = originalBtnHtml;
+                  return;
                 }
+              } else {
+                throw createErr;
               }
-            } else {
-              throw signInErr;
             }
           }
         } catch (err) {
@@ -1030,8 +1004,9 @@ export function renderLoginPage(container, onLogin) {
         }
 
         await saveAndCompleteLogin({
+          uid: auth?.currentUser?.uid || undefined,
           username: chosenUsername,
-          email: chosenEmail,
+          email: auth?.currentUser?.email || primaryEmail,
           avatar: selectedAvatar || '🧭',
           authProvider: 'apple',
           createdAt: new Date().toISOString()
@@ -1137,13 +1112,15 @@ export function renderLoginPage(container, onLogin) {
             return;
           }
         } else {
-          // In login mode, use stored profile if available or derive from email
+          // In login mode, only reuse stored profile username if it belongs to this same email
           let existingName = emailVal.split('@')[0];
           try {
             const stored = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
             if (stored) {
               const p = JSON.parse(stored);
-              if (p?.username) existingName = p.username;
+              if (p?.username && p?.email && String(p.email).toLowerCase().trim() === emailVal.toLowerCase().trim()) {
+                existingName = p.username;
+              }
             }
           } catch {}
           profileUsername = existingName;

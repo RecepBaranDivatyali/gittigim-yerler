@@ -116,18 +116,19 @@ export function openMedalSpotlightModal(ach, isLocked = false, currentLang = 'tr
 
   document.body.appendChild(modal);
 
-  const close = () => modal.remove();
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+  const close = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    modal.remove();
+  };
   modal.querySelector('#btn-close-spotlight')?.addEventListener('click', close);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) close();
   });
-
-  const onKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      close();
-      window.removeEventListener('keydown', onKeyDown);
-    }
-  };
   window.addEventListener('keydown', onKeyDown);
 }
 

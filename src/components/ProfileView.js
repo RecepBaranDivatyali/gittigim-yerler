@@ -13,7 +13,8 @@ import {
   getAllSavedPlaces, getTotalPlacesCount,
   getUserVisas, saveUserVisa, deleteUserVisa, getActiveVisas, generateVisaNumber,
   getCountryVisits, setCountryFeaturedVisit, cleanNote,
-  saveWorldVisit, saveTurkeyVisit
+  saveWorldVisit, saveTurkeyVisit,
+  exportBackup, importBackup
 } from '../utils/storage.js';
 import { auth } from '../services/firebase.js';
 import { getAllPhotos, getTotalPhotoCount, deletePhoto } from '../utils/photoStorage.js';
@@ -86,6 +87,8 @@ const ALLOWED_AVATARS = [
 export function renderProfileView(container, onBack) {
   let activeTab = 'profile'; // profile, medals, compare, settings
   let activeCountdownTimerId = null;
+  let activeSyncUnsubscribe = null;
+  let activeOutsideCountryClickHandler = null;
   const expandedAlliances = new Set();
   const expandedAircraftFamilies = new Set();
   const expandedAircraftDetails = new Set();
@@ -94,6 +97,14 @@ export function renderProfileView(container, onBack) {
     if (activeCountdownTimerId) {
       clearInterval(activeCountdownTimerId);
       activeCountdownTimerId = null;
+    }
+    if (typeof activeSyncUnsubscribe === 'function') {
+      activeSyncUnsubscribe();
+      activeSyncUnsubscribe = null;
+    }
+    if (activeOutsideCountryClickHandler) {
+      document.removeEventListener('click', activeOutsideCountryClickHandler);
+      activeOutsideCountryClickHandler = null;
     }
   }
 
@@ -138,8 +149,13 @@ export function renderProfileView(container, onBack) {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
         if (confirm(t('logoutConfirm'))) {
+          let currentProf = null;
           try {
-            if (!userProfile?.isGuest && navigator.onLine) {
+            const pRaw = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+            if (pRaw) currentProf = JSON.parse(pRaw);
+          } catch {}
+          try {
+            if (!currentProf?.isGuest && navigator.onLine) {
               await queueCloudSync(true);
             }
           } catch (syncErr) {
@@ -150,15 +166,15 @@ export function renderProfileView(container, onBack) {
           } catch (e) {
             console.warn('Firebase signOut error:', e);
           }
-          try {
-            resetTravelData();
-          } catch {}
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
           localStorage.removeItem('gv_admin_active');
           localStorage.removeItem('gv_data_owner_key');
           sessionStorage.removeItem('gv_logged_in');
           sessionStorage.removeItem('gv_profile');
+          try {
+            resetTravelData({ skipCloudSync: true });
+          } catch {}
           location.reload();
         }
       });
@@ -266,6 +282,10 @@ export function renderProfileView(container, onBack) {
                     <span class="cloud-sync-dot"></span>
                     <span class="cloud-sync-text">${currentLang === 'tr' ? 'Eşitlendi' : 'Synced'}</span>
                   </button>
+                  <button type="button" id="btn-trigger-wrapped" class="profile-cloud-sync-pill" title="Gezgin Wrapped 2026" style="background:linear-gradient(135deg,rgba(236,72,153,0.18),rgba(139,92,246,0.18));border:1px solid rgba(236,72,153,0.4);color:#f472b6;cursor:pointer;">
+                    <span>🎁</span>
+                    <span>Wrapped</span>
+                  </button>
                 </div>
               </div>
               <div class="profile-bio">${escapeHtml(profile.bio) || (currentLang === 'tr' ? 'Dünyayı geziyor...' : 'Exploring the world...')}</div>
@@ -356,6 +376,9 @@ export function renderProfileView(container, onBack) {
       openPosterModal();
     });
 
+    document.getElementById('btn-trigger-wrapped')?.addEventListener('click', () => {
+      openWrappedModal();
+    });
 
     document.getElementById('btn-trigger-passport')?.addEventListener('click', () => {
       openPassportModal();
@@ -397,7 +420,7 @@ export function renderProfileView(container, onBack) {
       };
 
       updateSyncPillUI(getSyncStatus());
-      onSyncStatusChange(updateSyncPillUI);
+      activeSyncUnsubscribe = onSyncStatusChange(updateSyncPillUI);
       syncPill.addEventListener('click', () => {
         queueCloudSync(true);
       });
@@ -405,12 +428,15 @@ export function renderProfileView(container, onBack) {
 
     // Fetch photos for profile showcase & counter
     function refreshPhotoShowcase() {
-      getAllPhotos(36).then(photos => {
+      getTotalPhotoCount().then(totalCount => {
         const pCountEl = document.getElementById('profile-stat-photos');
         const sCountEl = document.getElementById('photo-showcase-count');
+        if (pCountEl) pCountEl.textContent = totalCount;
+        if (sCountEl) sCountEl.textContent = `${totalCount} ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}`;
+      }).catch(() => {});
+
+      getAllPhotos(36).then(photos => {
         const gridEl = document.getElementById('photo-showcase-grid');
-        if (pCountEl) pCountEl.textContent = photos.length;
-        if (sCountEl) sCountEl.textContent = `${photos.length} ${currentLang === 'tr' ? 'Fotoğraf' : 'Photos'}`;
 
         if (!gridEl) return;
         if (photos.length === 0) {
@@ -1054,7 +1080,7 @@ export function renderProfileView(container, onBack) {
 
     let userProfile = { username: 'Gezgin', avatar: '🧭', bio: '' };
     try {
-      const raw = localStorage.getItem('gv_profile');
+      const raw = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (raw) {
         const p = JSON.parse(raw);
         if (p && typeof p === 'object') userProfile = p;
@@ -1383,6 +1409,27 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
+        <!-- 6B. Backup & Restore -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3 class="settings-card-title">💾 ${currentLang === 'tr' ? 'Veri Yedekleme ve Geri Yükleme' : 'Backup & Restore Data'}</h3>
+          </div>
+          <p class="settings-card-desc">
+            ${currentLang === 'tr'
+              ? 'Tüm seyahat haritanızı, notlarınızı ve vize bilgilerinizi JSON dosyası olarak cihazınıza yedekleyebilir veya önceki yedeğinizi geri yükleyebilirsiniz.'
+              : 'Export all your travel map data, notes, and visas as a JSON backup file, or restore from an existing backup.'}
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">
+            <button type="button" id="settings-export-backup-btn" class="settings-secondary-btn" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;font-weight:600;cursor:pointer;">
+              <span>📥</span> <span>${currentLang === 'tr' ? 'Yedek İndir (.json)' : 'Export Backup (.json)'}</span>
+            </button>
+            <button type="button" id="settings-import-backup-btn" class="settings-secondary-btn" style="flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;font-weight:600;cursor:pointer;">
+              <span>📤</span> <span>${currentLang === 'tr' ? 'Yedek Yükle' : 'Restore Backup'}</span>
+            </button>
+            <input type="file" id="settings-import-backup-input" accept=".json,application/json" style="display:none;" />
+          </div>
+        </div>
+
         <!-- 7. Danger Zone -->
         <div class="settings-card settings-danger-card">
           <div class="settings-card-header">
@@ -1697,7 +1744,8 @@ export function renderProfileView(container, onBack) {
           if (countryTrigger) countryTrigger.setAttribute('aria-expanded', 'false');
         }
       };
-      document.addEventListener('click', handleOutsideCountryClick);
+      activeOutsideCountryClickHandler = handleOutsideCountryClick;
+      document.addEventListener('click', activeOutsideCountryClickHandler);
     }
 
     // 5B. Passport Type Selection
@@ -1726,6 +1774,30 @@ export function renderProfileView(container, onBack) {
       setStatusColor('wishlist', '#8b5cf6');
       alert(t('colorsReset'));
       render();
+    });
+
+    // 6B. Backup & Restore Handlers
+    document.getElementById('settings-export-backup-btn')?.addEventListener('click', () => {
+      exportBackup();
+    });
+    const importBackupBtn = document.getElementById('settings-import-backup-btn');
+    const importBackupInput = document.getElementById('settings-import-backup-input');
+    importBackupBtn?.addEventListener('click', () => {
+      importBackupInput?.click();
+    });
+    importBackupInput?.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target?.result;
+        if (typeof content === 'string' && importBackup(content)) {
+          alert(currentLang === 'tr' ? 'Yedek başarıyla geri yüklendi!' : 'Backup restored successfully!');
+          render();
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
     });
 
     // 7. Danger Zone - Reset Data
@@ -2480,7 +2552,7 @@ export function renderProfileView(container, onBack) {
     const stats = calculateStats();
     let profile = { username: 'Gezgin', avatar: '🧭' };
     try {
-      const profileStr = localStorage.getItem('gv_profile');
+      const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
       if (profileStr) {
         const parsed = JSON.parse(profileStr);
         if (parsed && typeof parsed === 'object') profile = parsed;
@@ -2624,7 +2696,10 @@ export function renderProfileView(container, onBack) {
     };
 
     const handleEsc = (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        if (document.querySelector('.passport-visa-form-overlay, .passport-stamps-zoom-overlay')) return;
+        closeModal();
+      }
     };
     document.addEventListener('keydown', handleEsc);
 
@@ -3076,6 +3151,42 @@ export function renderProfileView(container, onBack) {
                       stampCenter: '🌸',
                       stampBottom: 'VISA SECTION',
                       flagSvg: `<svg viewBox="0 0 900 600" width="28" height="20" class="pv-header-flag-svg" style="border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.4);"><rect fill="#fff" width="900" height="600"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>`
+                    },
+                    australia: {
+                      countryCode: 'AUS',
+                      docTypeEyebrow: 'COMMONWEALTH OF AUSTRALIA · VISA',
+                      docTitle: 'AUSTRALIAN VISITOR VISA',
+                      consulate: 'DEPARTMENT OF HOME AFFAIRS',
+                      validFor: 'AUSTRALIA',
+                      typeCode: 'SUBCLASS 600',
+                      headerGrad: isExpired
+                        ? 'linear-gradient(135deg, #4b5563 0%, #374151 100%)'
+                        : 'linear-gradient(135deg, #00205b 0%, #003893 50%, #001845 100%)',
+                      starsRing: '★ ★ ★',
+                      watermark: '🦘',
+                      stampColor: '#00205b',
+                      stampTop: 'AUSTRALIAN EMBASSY',
+                      stampCenter: '🦘',
+                      stampBottom: 'HOME AFFAIRS',
+                      flagSvg: `<span style="font-size:1.6rem;line-height:1;">🇦🇺</span>`
+                    },
+                    uae: {
+                      countryCode: 'ARE',
+                      docTypeEyebrow: 'UNITED ARAB EMIRATES · تأشيرة',
+                      docTitle: 'UAE ENTRY PERMIT / VISA',
+                      consulate: 'FEDERAL AUTHORITY FOR IDENTITY & CITIZENSHIP',
+                      validFor: 'UNITED ARAB EMIRATES',
+                      typeCode: 'TOURIST',
+                      headerGrad: isExpired
+                        ? 'linear-gradient(135deg, #4b5563 0%, #374151 100%)'
+                        : 'linear-gradient(135deg, #00732f 0%, #111827 55%, #ce1126 100%)',
+                      starsRing: '★ ★ ★',
+                      watermark: '🦅',
+                      stampColor: '#00732f',
+                      stampTop: 'UAE IMMIGRATION',
+                      stampCenter: '🇦🇪',
+                      stampBottom: 'ENTRY PERMIT',
+                      flagSvg: `<span style="font-size:1.6rem;line-height:1;">🇦🇪</span>`
                     },
                     other: {
                       countryCode: (visa.singleCountry || 'INT').toUpperCase().slice(0, 3),
@@ -3606,7 +3717,10 @@ export function renderProfileView(container, onBack) {
     document.addEventListener('keydown', handleKeyNav);
 
     const handleEsc = (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        if (document.querySelector('.passport-visa-form-overlay, .passport-stamps-zoom-overlay')) return;
+        closeModal();
+      }
     };
     document.addEventListener('keydown', handleEsc);
 
@@ -3669,7 +3783,7 @@ export function renderProfileView(container, onBack) {
         }
       }
     });
-
+
     // ─── Visa Form Logic ───────────────────────────────────────────────────
 
     function openVisaFormModal(existingVisa) {
@@ -3725,7 +3839,7 @@ export function renderProfileView(container, onBack) {
       ];
 
       const cMap = {
-        GERMANY: 'DE', FRANCE: 'FR', ITALY: 'IT', SPAIN: 'ES', NETHERLANDS: 'NL',
+        DEUTSCHLAND: 'DE', GERMANY: 'DE', FRANCE: 'FR', ITALY: 'IT', SPAIN: 'ES', NETHERLANDS: 'NL',
         AUSTRIA: 'AT', BELGIUM: 'BE', SWITZERLAND: 'CH', CZECHIA: 'CZ', POLAND: 'PL',
         PORTUGAL: 'PT', SWEDEN: 'SE', NORWAY: 'NO', DENMARK: 'DK', FINLAND: 'FI',
         HUNGARY: 'HU', SLOVAKIA: 'SK', SLOVENIA: 'SI', GREECE: 'GR', ESTONIA: 'EE',
@@ -3904,7 +4018,7 @@ export function renderProfileView(container, onBack) {
         containerId: 'vf-issuing-container',
         inputId: 'vf-issuing',
         items: issuingList,
-        initialVal: existingVisa?.issuingCountry || 'GERMANY',
+        initialVal: (existingVisa?.issuingCountry === 'GERMANY' ? 'DEUTSCHLAND' : existingVisa?.issuingCountry) || 'DEUTSCHLAND',
         placeholder: lang === 'tr' ? 'Veren Ülke Seçin' : 'Select Issuing Country',
         searchable: false
       });
@@ -3955,7 +4069,7 @@ export function renderProfileView(container, onBack) {
       formDialog.addEventListener('click', e => { if (e.target === formDialog) closeFormDialog(); });
 
       formDialog.querySelector('.visa-form-save-btn').addEventListener('click', () => {
-        const visaType = typeSelect.value;
+        const visaType = typeInput.value;
         const from = formDialog.querySelector('#vf-from').value;
         const until = formDialog.querySelector('#vf-until').value;
         if (!from || !until) {
@@ -3988,7 +4102,7 @@ export function renderProfileView(container, onBack) {
         saveUserVisa(visaData);
         closeFormDialog();
         closeModal();
-        openPassportModal(1);
+        openPassportModal(currentPage || 2);
       });
     }
 
@@ -4457,7 +4571,10 @@ export function renderProfileView(container, onBack) {
     };
 
     const handleEsc = (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        if (document.querySelector('.passport-visa-form-overlay, .passport-stamps-zoom-overlay')) return;
+        closeModal();
+      }
     };
     document.addEventListener('keydown', handleEsc);
 

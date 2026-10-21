@@ -5,8 +5,8 @@ import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { WORLD_COUNTRIES, TOTAL_WORLD_COUNTRIES_BENCHMARK } from '../data/worldData.js';
 import { calculateDemographicImpact } from '../data/worldDemographics.js';
 import { deletePhotosByTarget, deleteAllPhotos } from './photoStorage.js';
-import { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
-export { queueCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
+import { queueCloudSync, cancelPendingCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
+export { queueCloudSync, cancelPendingCloudSync, getSyncStatus, onSyncStatusChange, fetchAndMergeUserDataFromCloud };
 import { db, auth } from '../services/firebase.js';
 import { 
   collection, 
@@ -212,7 +212,9 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       exitTransport: details.exitTransport !== undefined ? details.exitTransport : (existing.exitTransport || ''),
       buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
       places: details.places !== undefined ? details.places : (existing.places || []),
-      journal: details.journal !== undefined ? details.journal : (existing.journal || null)
+      journal: details.journal !== undefined ? details.journal : (existing.journal || null),
+      visits: details.visits !== undefined ? details.visits : existing.visits,
+      featuredVisitIndex: details.featuredVisitIndex !== undefined ? details.featuredVisitIndex : existing.featuredVisitIndex
     };
     if (status === 'visited' && !wasAlreadyVisited) {
       triggerConfetti();
@@ -538,7 +540,10 @@ export function exportBackup() {
   return jsonStr;
 }
 
-export function resetTravelData() {
+export function resetTravelData({ skipCloudSync = false } = {}) {
+  try {
+    cancelPendingCloudSync();
+  } catch {}
   localStorage.removeItem(STORAGE_KEYS.TURKEY_VISITS);
   localStorage.removeItem(STORAGE_KEYS.WORLD_VISITS);
   localStorage.removeItem(STORAGE_KEYS.WORLD_CITIES);
@@ -547,9 +552,18 @@ export function resetTravelData() {
   localStorage.removeItem(STORAGE_KEYS.USER_AIRLINES);
   localStorage.removeItem(STORAGE_KEYS.USER_AIRCRAFT);
   localStorage.removeItem(STORAGE_KEYS.HOME_COUNTRY);
+  localStorage.removeItem(STORAGE_KEYS.SAVED_FRIENDS);
+  localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+  localStorage.removeItem('gittigim_yerler_user_places_v1');
+  localStorage.removeItem('gittigim_yerler_country_notes_v1');
+  localStorage.removeItem('gittigim_yerler_country_ratings_v1');
+  localStorage.removeItem('gv_user_visas_v1');
+  localStorage.removeItem('gv_visa_overrides');
+  localStorage.removeItem('gv_passport_type');
+  localStorage.removeItem('gv_upcoming_trip');
   unlockedCache = [];
   deleteAllPhotos().catch(e => console.warn('Photo cleanup error:', e));
-  notifyStateChange();
+  notifyStateChange({ skipCloudSync });
 }
 
 export function importBackup(fileContent) {
@@ -625,15 +639,17 @@ export function checkAndNotifyAchievements(storageData, baseStats) {
   }
 }
 
-export function notifyStateChange() {
+export function notifyStateChange({ skipCloudSync = false } = {}) {
   const sData = getStorageData();
   const sStats = calculateStats();
   checkAndNotifyAchievements(sData, sStats);
   listeners.forEach(cb => cb(sData, sStats));
-  try {
-    queueCloudSync();
-  } catch (e) {
-    console.warn('Auto cloud sync trigger error:', e);
+  if (!skipCloudSync) {
+    try {
+      queueCloudSync();
+    } catch (e) {
+      console.warn('Auto cloud sync trigger error:', e);
+    }
   }
 }
 

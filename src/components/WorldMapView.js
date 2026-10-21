@@ -603,7 +603,7 @@ export function renderWorldMapView(container, options = {}) {
   let userPhotoUrl = null;
   let userName = t('profile');
   try {
-    const raw = localStorage.getItem('gv_profile');
+    const raw = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.avatar) userAvatar = parsed.avatar;
@@ -2043,12 +2043,14 @@ export function renderWorldMapView(container, options = {}) {
       }
     });
 
-    // Legend Tap to Toggle Popover
+    // Legend Tap to Toggle Popover (mobile compact mode)
     const mapLegend = container.querySelector('#map-legend');
     if (mapLegend) {
       mapLegend.addEventListener('click', (e) => {
         e.stopPropagation();
-        mapLegend.classList.toggle('expanded');
+        if (window.innerWidth <= 768) {
+          mapLegend.classList.toggle('expanded');
+        }
       });
       addDocListener('click', (e) => {
         if (mapLegend && !mapLegend.contains(e.target) && mapLegend.classList.contains('expanded')) {
@@ -5192,6 +5194,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
           if (provs.some(v => v.status === 'visited')) saveWorldVisit('TR', 'visited');
           else if (provs.some(v => v.status === 'planned')) saveWorldVisit('TR', 'planned');
           else if (provs.some(v => v.status === 'wishlist')) saveWorldVisit('TR', 'wishlist');
+          else saveWorldVisit('TR', 'unvisited');
         }
       } else if (type === 'country') {
         saveWorldVisit(id, val);

@@ -33,6 +33,7 @@ export function getCurrentCommunityUser() {
     const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
     if (pStr) {
       const p = JSON.parse(pStr);
+      if (!uid && p.uid) uid = p.uid;
       if (p.username) username = p.username.trim();
       if (p.avatar) avatar = p.avatar;
       if (p.photoUrl) photoUrl = p.photoUrl;
