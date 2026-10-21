@@ -553,6 +553,10 @@ export function renderLoginPage(container, onLogin) {
             createdAt: new Date().toISOString()
           };
         }
+        if (signedInProfile) {
+          await saveAndCompleteLogin(signedInProfile, rememberMe);
+          return;
+        }
       } catch (err) {
         console.warn('Google signIn notice:', err?.code, err?.message);
 
@@ -587,10 +591,6 @@ export function renderLoginPage(container, onLogin) {
           googleBtn.style.pointerEvents = 'auto';
         }
       }
-
-      if (signedInProfile) {
-        saveAndCompleteLogin(signedInProfile, rememberMe);
-      }
     });
 
     // Official Sign in with Google Fallback Sheet for Native WebViews (iOS capacitor:// & Android WebView)
@@ -603,53 +603,69 @@ export function renderLoginPage(container, onLogin) {
       backdrop.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;';
 
       backdrop.innerHTML = `
-        <div style="width:100%;max-width:380px;background:#ffffff;color:#202124;border-radius:20px;border:1px solid #dadce0;box-shadow:0 24px 60px rgba(0,0,0,0.5);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f1f3f4;">
+        <style>
+          #google-signin-sheet-backdrop, #google-signin-sheet-backdrop * {
+            box-sizing: border-box;
+            font-family: var(--font-family, 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+            line-height: 1.28 !important;
+            letter-spacing: normal !important;
+          }
+          #google-signin-sheet-backdrop input:-webkit-autofill,
+          #google-signin-sheet-backdrop input:-webkit-autofill:hover,
+          #google-signin-sheet-backdrop input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #f8f9fa inset !important;
+            -webkit-text-fill-color: #202124 !important;
+            caret-color: #202124 !important;
+            transition: background-color 5000s ease-in-out 0s;
+          }
+        </style>
+        <div style="width:100%;max-width:360px;max-height:calc(100dvh - 32px);overflow-y:auto;background:#ffffff;color:#202124;border-radius:20px;border:1px solid #dadce0;box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #f1f3f4;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
               </svg>
-              <span style="font-size:0.9rem;font-weight:600;color:#5f6368;">${currentLang === 'tr' ? 'Google ile Oturum Açın' : 'Sign in with Google'}</span>
+              <span style="font-size:0.88rem;font-weight:600;color:#5f6368;">${currentLang === 'tr' ? 'Google ile Oturum Açın' : 'Sign in with Google'}</span>
             </div>
-            <button type="button" id="google-sheet-cancel" style="background:#f1f3f4;border:none;color:#5f6368;font-size:0.82rem;font-weight:600;padding:6px 12px;border-radius:14px;cursor:pointer;">
+            <button type="button" id="google-sheet-cancel" style="background:#f1f3f4;border:none;color:#5f6368;font-size:0.8rem;font-weight:600;padding:5px 11px;border-radius:12px;cursor:pointer;">
               ${currentLang === 'tr' ? 'Vazgeç' : 'Cancel'}
             </button>
           </div>
-          <div style="padding:22px 20px 20px;text-align:center;">
-            <div style="font-size:1.12rem;font-weight:700;color:#202124;margin-bottom:4px;">
-              ${currentLang === 'tr' ? 'Gezgin: Seyahat Haritası uygulamasına devam et' : 'Continue to Gezgin: Seyahat Haritası'}
+          <div style="padding:18px 18px 18px;text-align:center;">
+            <div style="font-size:1.02rem;font-weight:700;color:#202124;margin-bottom:4px;">
+              ${currentLang === 'tr' ? 'Gezgin: Seyahat Haritası' : 'Continue to Gezgin'}
             </div>
-            <div style="font-size:0.8rem;color:#5f6368;margin-bottom:16px;">
+            <div style="font-size:0.78rem;color:#5f6368;margin-bottom:14px;">
               ${currentLang === 'tr' ? 'Google Hesabınızı (Gmail) kullanarak giriş yapın' : 'Sign in using your Google Account'}
             </div>
 
-            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:9px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#5f6368;font-weight:600;margin-bottom:3px;">
+            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:8px 12px;margin-bottom:8px;">
+              <label for="google-sheet-name" style="display:block;font-size:0.68rem;color:#5f6368;font-weight:600;margin-bottom:2px;">
                 ${currentLang === 'tr' ? 'Ad / Gezgin Adı (İsteğe bağlı)' : 'Name / Traveler Name (Optional)'}
               </label>
-              <input type="text" id="google-sheet-name" maxlength="25" placeholder="${currentLang === 'tr' ? 'Adınız' : 'Your Name'}" value="${sanitizeText(usernameVal, 25)}" style="width:100%;background:transparent;border:none;color:#202124;font-size:0.92rem;outline:none;" />
+              <input type="text" id="google-sheet-name" maxlength="25" placeholder="${currentLang === 'tr' ? 'Adınız' : 'Your Name'}" value="${sanitizeText(usernameVal, 25)}" style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#202124;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:9px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#5f6368;font-weight:600;margin-bottom:3px;">
+            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:8px 12px;margin-bottom:8px;">
+              <label for="google-sheet-email" style="display:block;font-size:0.68rem;color:#5f6368;font-weight:600;margin-bottom:2px;">
                 ${currentLang === 'tr' ? 'Google E-posta Adresi *' : 'Google Email *'}
               </label>
-              <input type="email" id="google-sheet-email" placeholder="ornek@gmail.com" value="${escapeHtml(emailVal)}" required style="width:100%;background:transparent;border:none;color:#202124;font-size:0.92rem;outline:none;" />
+              <input type="email" id="google-sheet-email" placeholder="ornek@gmail.com" value="${escapeHtml(emailVal)}" required style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#202124;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:9px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#5f6368;font-weight:600;margin-bottom:3px;">
+            <div style="text-align:left;background:#f8f9fa;border:1px solid #dadce0;border-radius:10px;padding:8px 12px;margin-bottom:10px;">
+              <label for="google-sheet-password" style="display:block;font-size:0.68rem;color:#5f6368;font-weight:600;margin-bottom:2px;">
                 ${currentLang === 'tr' ? 'Şifre *' : 'Password *'}
               </label>
-              <input type="password" id="google-sheet-password" placeholder="${currentLang === 'tr' ? 'En az 6 karakter' : 'Min 6 characters'}" required style="width:100%;background:transparent;border:none;color:#202124;font-size:0.92rem;outline:none;" />
+              <input type="password" id="google-sheet-password" placeholder="${currentLang === 'tr' ? 'En az 6 karakter' : 'Min 6 characters'}" required style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#202124;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div id="google-sheet-error" style="display:none;color:#d93025;font-size:0.8rem;text-align:left;margin-bottom:10px;padding:0 4px;"></div>
+            <div id="google-sheet-error" style="display:none;color:#d93025;font-size:0.78rem;text-align:left;margin-bottom:10px;padding:0 4px;"></div>
 
-            <button type="button" id="google-sheet-continue" style="width:100%;padding:12px 16px;border-radius:10px;border:none;background:#1a73e8;color:#fff;font-size:0.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <button type="button" id="google-sheet-continue" style="width:100%;padding:12px 16px;border-radius:10px;border:none;background:#1a73e8;color:#fff;font-size:0.92rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
               <span>${currentLang === 'tr' ? 'Google ile Devam Et' : 'Continue with Google'}</span>
             </button>
           </div>
@@ -701,7 +717,7 @@ export function renderLoginPage(container, onLogin) {
         continueBtn.disabled = true;
         continueBtn.style.opacity = '0.7';
         const originalBtnHtml = continueBtn.innerHTML;
-        continueBtn.textContent = currentLang === 'tr' ? 'Doğrulanıyor...' : 'Signing in...';
+        continueBtn.textContent = currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...';
 
         try {
           await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
@@ -751,14 +767,14 @@ export function renderLoginPage(container, onLogin) {
           return;
         }
 
-        backdrop.remove();
-        saveAndCompleteLogin({
+        await saveAndCompleteLogin({
           username: chosenUsername,
           email: emailInput,
           avatar: selectedAvatar || '✈️',
           authProvider: 'google',
           createdAt: new Date().toISOString()
         }, rememberMe);
+        backdrop.remove();
       });
     };
 
@@ -771,69 +787,82 @@ export function renderLoginPage(container, onLogin) {
       backdrop.id = 'apple-signin-sheet-backdrop';
       backdrop.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;';
 
-      const relayHash = Math.random().toString(36).substring(2, 10);
-      const relayEmail = `apple_${relayHash}@privaterelay.appleid.com`;
-
       backdrop.innerHTML = `
-        <div style="width:100%;max-width:380px;background:#1c1c1e;color:#ffffff;border-radius:20px;border:1px solid rgba(255,255,255,0.14);box-shadow:0 24px 60px rgba(0,0,0,0.65);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1);">
-            <span style="font-size:0.95rem;font-weight:600;color:#ebebf5;">${currentLang === 'tr' ? 'Apple ile Giriş Yap' : 'Sign in with Apple'}</span>
-            <button type="button" id="apple-sheet-cancel" style="background:rgba(255,255,255,0.12);border:none;color:#0a84ff;font-size:0.85rem;font-weight:600;padding:6px 12px;border-radius:14px;cursor:pointer;">
+        <style>
+          #apple-signin-sheet-backdrop, #apple-signin-sheet-backdrop * {
+            box-sizing: border-box;
+            font-family: var(--font-family, 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+            line-height: 1.28 !important;
+            letter-spacing: normal !important;
+          }
+          #apple-signin-sheet-backdrop input:-webkit-autofill,
+          #apple-signin-sheet-backdrop input:-webkit-autofill:hover,
+          #apple-signin-sheet-backdrop input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #2c2c2e inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
+          }
+        </style>
+        <div style="width:100%;max-width:360px;max-height:calc(100dvh - 32px);overflow-y:auto;background:#1c1c1e;color:#ffffff;border-radius:20px;border:1px solid rgba(255,255,255,0.14);box-shadow:0 24px 60px rgba(0,0,0,0.65);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.1);">
+            <span style="font-size:0.9rem;font-weight:600;color:#ebebf5;">${currentLang === 'tr' ? 'Apple ile Giriş Yap' : 'Sign in with Apple'}</span>
+            <button type="button" id="apple-sheet-cancel" style="background:rgba(255,255,255,0.12);border:none;color:#0a84ff;font-size:0.8rem;font-weight:600;padding:5px 11px;border-radius:12px;cursor:pointer;">
               ${currentLang === 'tr' ? 'Vazgeç' : 'Cancel'}
             </button>
           </div>
-          <div style="padding:22px 20px 20px;text-align:center;">
-            <div style="width:54px;height:54px;margin:0 auto 12px;border-radius:14px;background:#000;border:1px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;">
-              <svg viewBox="0 0 24 24" style="width:28px;height:28px;color:#fff;">
+          <div style="padding:16px 18px 18px;text-align:center;">
+            <div style="width:46px;height:46px;margin:0 auto 10px;border-radius:12px;background:#000;border:1px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:24px;height:24px;color:#fff;">
                 <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
               </svg>
             </div>
-            <div style="font-size:1.05rem;font-weight:700;margin-bottom:6px;">
-              ${currentLang === 'tr' ? 'Gezgin: Seyahat Haritası için Apple Kimliği' : 'Use Apple ID for Gezgin: Seyahat Haritası'}
+            <div style="font-size:1.0rem;font-weight:700;margin-bottom:4px;color:#ffffff;">
+              ${currentLang === 'tr' ? 'Gezgin için Apple Kimliği' : 'Apple ID for Gezgin'}
             </div>
-            <div style="font-size:0.8rem;color:#8e8e93;margin-bottom:16px;line-height:1.4;">
-              ${currentLang === 'tr' ? 'Apple Kimliğiniz ile hızlı ve güvenli şekilde giriş yapın veya e-postanızı gizleyin.' : 'Sign in securely with your Apple ID or hide your email address.'}
+            <div style="font-size:0.78rem;color:#98989f;margin-bottom:12px;">
+              ${currentLang === 'tr' ? 'Apple Kimliğiniz ile güvenli şekilde giriş yapın veya e-postanızı gizleyin.' : 'Sign in securely with your Apple ID or hide your email.'}
             </div>
 
-            <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">
-                ${currentLang === 'tr' ? 'Ad / Gezgin Adı' : 'Name / Traveler Name'}
+            <div style="text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-bottom:8px;">
+              <label for="apple-sheet-name" style="display:block;font-size:0.68rem;color:#98989f;font-weight:600;margin-bottom:2px;">
+                ${currentLang === 'tr' ? 'Ad / Gezgin Adı (İsteğe bağlı)' : 'Name / Traveler Name (Optional)'}
               </label>
-              <input type="text" id="apple-sheet-name" maxlength="25" placeholder="${currentLang === 'tr' ? 'Adınız (İsteğe bağlı)' : 'Your Name (Optional)'}" value="${sanitizeText(usernameVal, 25)}" style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
+              <input type="text" id="apple-sheet-name" maxlength="25" placeholder="${currentLang === 'tr' ? 'Adınız' : 'Your Name'}" value="${sanitizeText(usernameVal, 25)}" style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#fff;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">
+            <div style="text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-bottom:8px;">
+              <label for="apple-sheet-email" style="display:block;font-size:0.68rem;color:#98989f;font-weight:600;margin-bottom:2px;">
                 ${currentLang === 'tr' ? 'Apple Kimliği (E-posta) *' : 'Apple ID (Email) *'}
               </label>
-              <input type="email" id="apple-sheet-email" placeholder="icloud@apple.com" value="${escapeHtml(emailVal)}" required style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
+              <input type="email" id="apple-sheet-email" placeholder="icloud@apple.com" value="${escapeHtml(emailVal)}" required style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#fff;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
-              <label style="display:block;font-size:0.7rem;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">
+            <div style="text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-bottom:8px;">
+              <label for="apple-sheet-password" style="display:block;font-size:0.68rem;color:#98989f;font-weight:600;margin-bottom:2px;">
                 ${currentLang === 'tr' ? 'Parola *' : 'Password *'}
               </label>
-              <input type="password" id="apple-sheet-password" placeholder="${currentLang === 'tr' ? 'En az 6 karakter' : 'Min 6 characters'}" required style="width:100%;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
+              <input type="password" id="apple-sheet-password" placeholder="${currentLang === 'tr' ? 'En az 6 karakter' : 'Min 6 characters'}" required style="width:100%;height:22px;padding:0;background:transparent;border:none;color:#fff;font-size:0.9rem;outline:none;" />
             </div>
 
-            <div id="apple-sheet-error" style="display:none;color:#ff453a;font-size:0.8rem;text-align:left;margin-bottom:10px;padding:0 4px;"></div>
+            <div id="apple-sheet-error" style="display:none;color:#ff453a;font-size:0.78rem;text-align:left;margin-bottom:8px;padding:0 4px;"></div>
 
-            <div style="text-align:left;background:#2c2c2e;border-radius:12px;padding:10px 12px;margin-bottom:14px;">
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.84rem;color:#fff;margin-bottom:8px;">
-                <input type="radio" name="apple-email-privacy" value="share" checked style="accent-color:#0a84ff;" />
+            <div style="text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-bottom:12px;">
+              <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:0.82rem;color:#fff;margin-bottom:6px;">
+                <input type="radio" name="apple-email-privacy" value="share" checked style="accent-color:#0a84ff;width:15px;height:15px;margin:0;flex-shrink:0;" />
                 <span>${currentLang === 'tr' ? 'E-postamı Paylaş' : 'Share My Email'}</span>
               </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.84rem;color:#fff;">
-                <input type="radio" name="apple-email-privacy" value="hide" style="accent-color:#0a84ff;" />
+              <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:0.82rem;color:#fff;">
+                <input type="radio" name="apple-email-privacy" value="hide" style="accent-color:#0a84ff;width:15px;height:15px;margin:0;flex-shrink:0;" />
                 <div>
                   <div>${currentLang === 'tr' ? 'E-postamı Gizle' : 'Hide My Email'}</div>
-                  <div style="font-size:0.72rem;color:#8e8e93;">${currentLang === 'tr' ? 'İletiler özel Apple rölesine yönlendirilir' : 'Forwards to your personal address'}</div>
+                  <div style="font-size:0.7rem;color:#98989f;">${currentLang === 'tr' ? 'İletiler özel Apple rölesine yönlendirilir' : 'Forwards to your personal address'}</div>
                 </div>
               </label>
             </div>
 
-            <button type="button" id="apple-sheet-continue" style="width:100%;padding:13px 16px;border-radius:12px;border:none;background:#0a84ff;color:#fff;font-size:0.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;flex-shrink:0;" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+            <button type="button" id="apple-sheet-continue" style="width:100%;padding:12px 16px;border-radius:11px;border:none;background:#0a84ff;color:#fff;font-size:0.92rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:currentColor;flex-shrink:0;" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
               <span>${currentLang === 'tr' ? 'Apple ile Devam Et' : 'Continue with Apple'}</span>
             </button>
           </div>
@@ -897,7 +926,7 @@ export function renderLoginPage(container, onLogin) {
         continueBtn.disabled = true;
         continueBtn.style.opacity = '0.7';
         const originalBtnHtml = continueBtn.innerHTML;
-        continueBtn.textContent = currentLang === 'tr' ? 'Doğrulanıyor...' : 'Signing in...';
+        continueBtn.textContent = currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...';
 
         try {
           await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
@@ -948,14 +977,14 @@ export function renderLoginPage(container, onLogin) {
           return;
         }
 
-        backdrop.remove();
-        saveAndCompleteLogin({
+        await saveAndCompleteLogin({
           username: chosenUsername,
           email: chosenEmail,
           avatar: selectedAvatar || '🧭',
           authProvider: 'apple',
           createdAt: new Date().toISOString()
         }, rememberMe);
+        backdrop.remove();
       });
     };
 
@@ -987,7 +1016,7 @@ export function renderLoginPage(container, onLogin) {
           const givenName = res?.response?.givenName || '';
           const familyName = res?.response?.familyName || '';
           const fullName = `${givenName} ${familyName}`.trim();
-          saveAndCompleteLogin({
+          await saveAndCompleteLogin({
             username: sanitizeText((fullName || appleEmail.split('@')[0] || 'Gezgin').slice(0, 25), 25),
             email: appleEmail,
             avatar: selectedAvatar || '🧭',
@@ -1112,7 +1141,7 @@ export function renderLoginPage(container, onLogin) {
           createdAt: new Date().toISOString()
         };
 
-        saveAndCompleteLogin(profile, rememberMe);
+        await saveAndCompleteLogin(profile, rememberMe);
       } finally {
         _isSubmitting = false;
       }
@@ -1122,16 +1151,19 @@ export function renderLoginPage(container, onLogin) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = container.querySelector('#auth-submit-btn');
+        const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
         if (submitBtn) {
           submitBtn.disabled = true;
-          submitBtn.style.opacity = '0.6';
+          submitBtn.style.opacity = '0.7';
           submitBtn.style.pointerEvents = 'none';
+          submitBtn.innerHTML = `<span>⏳</span><span>${currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...'}</span>`;
         }
         await handleSubmit();
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.style.opacity = '1';
           submitBtn.style.pointerEvents = 'auto';
+          if (originalBtnHtml) submitBtn.innerHTML = originalBtnHtml;
         }
       });
     }
