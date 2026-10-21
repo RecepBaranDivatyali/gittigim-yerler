@@ -113,7 +113,7 @@ export function renderLoginPage(container, onLogin) {
   async function saveAndCompleteLogin(profile, remember) {
     const newOwnerKey = profile?.isGuest
       ? '__guest__'
-      : String(profile?.email || profile?.username || '').trim().toLowerCase();
+      : String(auth?.currentUser?.uid || profile?.email || profile?.username || '').trim().toLowerCase();
     const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
 
     // If switching between two different non-guest accounts (or logging into a new account when previous owner wasn't guest),
@@ -714,6 +714,14 @@ export function renderLoginPage(container, onLogin) {
 
         const chosenUsername = sanitizeText((nameInput || emailInput.split('@')[0] || 'Gezgin').slice(0, 25), 25);
 
+        let gHash = 0;
+        for (let i = 0; i < emailInput.length; i++) {
+          gHash = ((gHash << 5) - gHash) + emailInput.charCodeAt(i);
+          gHash |= 0;
+        }
+        const gSlug = Math.abs(gHash).toString(36) + '_' + emailInput.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 8);
+        const googleRelayEmail = `google_${gSlug}@privaterelay.gezginapp.com`;
+
         continueBtn.disabled = true;
         continueBtn.style.opacity = '0.7';
         const originalBtnHtml = continueBtn.innerHTML;
@@ -728,30 +736,36 @@ export function renderLoginPage(container, onLogin) {
               await createUserWithEmailAndPassword(auth, emailInput, passInput);
             } else if (
               signInErr?.code === 'auth/invalid-credential' ||
-              signInErr?.code === 'auth/invalid-login-credentials'
+              signInErr?.code === 'auth/invalid-login-credentials' ||
+              signInErr?.code === 'auth/wrong-password'
             ) {
               try {
                 await createUserWithEmailAndPassword(auth, emailInput, passInput);
               } catch (createErr) {
                 if (createErr?.code === 'auth/email-already-in-use') {
-                  showSheetError(currentLang === 'tr'
-                    ? 'Bu e-posta zaten kayıtlı ve girdiğiniz şifre hatalı.'
-                    : 'This email is already registered and the password is incorrect.');
-                  continueBtn.disabled = false;
-                  continueBtn.style.opacity = '1';
-                  continueBtn.innerHTML = originalBtnHtml;
-                  return;
+                  // Email might be registered via OAuth popup (no password in Firebase Auth); try deterministic Google sheet auth email
+                  try {
+                    await signInWithEmailAndPassword(auth, googleRelayEmail, passInput);
+                  } catch {
+                    try {
+                      await createUserWithEmailAndPassword(auth, googleRelayEmail, passInput);
+                    } catch (relayErr) {
+                      if (relayErr?.code === 'auth/email-already-in-use') {
+                        showSheetError(currentLang === 'tr'
+                          ? 'Bu e-posta zaten kayıtlı ve girdiğiniz şifre hatalı.'
+                          : 'This email is already registered and the password is incorrect.');
+                        continueBtn.disabled = false;
+                        continueBtn.style.opacity = '1';
+                        continueBtn.innerHTML = originalBtnHtml;
+                        return;
+                      }
+                      throw relayErr;
+                    }
+                  }
+                } else {
+                  throw createErr;
                 }
-                throw createErr;
               }
-            } else if (signInErr?.code === 'auth/wrong-password') {
-              showSheetError(currentLang === 'tr'
-                ? 'Girdiğiniz şifre hatalı. Lütfen tekrar deneyin.'
-                : 'Incorrect password. Please try again.');
-              continueBtn.disabled = false;
-              continueBtn.style.opacity = '1';
-              continueBtn.innerHTML = originalBtnHtml;
-              return;
             } else {
               throw signInErr;
             }
@@ -917,8 +931,9 @@ export function renderLoginPage(container, onLogin) {
           deterministicHash |= 0;
         }
         const relaySlug = Math.abs(deterministicHash).toString(36) + '_' + emailInput.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 8);
+        const appleRelayEmail = `apple_${relaySlug}@privaterelay.appleid.com`;
         const chosenEmail = privacyMode === 'hide'
-          ? `apple_${relaySlug}@privaterelay.appleid.com`
+          ? appleRelayEmail
           : emailInput;
 
         const chosenUsername = sanitizeText((nameInput || emailInput.split('@')[0] || 'AppleGezgin').slice(0, 25), 25);
@@ -937,31 +952,46 @@ export function renderLoginPage(container, onLogin) {
               await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
             } else if (
               signInErr?.code === 'auth/invalid-credential' ||
-              signInErr?.code === 'auth/invalid-login-credentials'
+              signInErr?.code === 'auth/invalid-login-credentials' ||
+              signInErr?.code === 'auth/wrong-password'
             ) {
-              // Attempt creation; if email is already in use, then the password was wrong
+              // Attempt creation; if email is already in use by another provider (e.g. Google OAuth), fall back to Apple relay auth identity
               try {
                 await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
               } catch (createErr) {
                 if (createErr?.code === 'auth/email-already-in-use') {
-                  showSheetError(currentLang === 'tr'
-                    ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
-                    : 'This Apple ID is already registered and the password is incorrect.');
-                  continueBtn.disabled = false;
-                  continueBtn.style.opacity = '1';
-                  continueBtn.innerHTML = originalBtnHtml;
-                  return;
+                  if (chosenEmail !== appleRelayEmail) {
+                    try {
+                      await signInWithEmailAndPassword(auth, appleRelayEmail, passInput);
+                    } catch {
+                      try {
+                        await createUserWithEmailAndPassword(auth, appleRelayEmail, passInput);
+                      } catch (relayErr) {
+                        if (relayErr?.code === 'auth/email-already-in-use') {
+                          showSheetError(currentLang === 'tr'
+                            ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
+                            : 'This Apple ID is already registered and the password is incorrect.');
+                          continueBtn.disabled = false;
+                          continueBtn.style.opacity = '1';
+                          continueBtn.innerHTML = originalBtnHtml;
+                          return;
+                        }
+                        throw relayErr;
+                      }
+                    }
+                  } else {
+                    showSheetError(currentLang === 'tr'
+                      ? 'Bu Apple Kimliği zaten kayıtlı ve girdiğiniz parola hatalı.'
+                      : 'This Apple ID is already registered and the password is incorrect.');
+                    continueBtn.disabled = false;
+                    continueBtn.style.opacity = '1';
+                    continueBtn.innerHTML = originalBtnHtml;
+                    return;
+                  }
+                } else {
+                  throw createErr;
                 }
-                throw createErr;
               }
-            } else if (signInErr?.code === 'auth/wrong-password') {
-              showSheetError(currentLang === 'tr'
-                ? 'Girdiğiniz parola hatalı. Lütfen tekrar deneyin.'
-                : 'Incorrect password. Please try again.');
-              continueBtn.disabled = false;
-              continueBtn.style.opacity = '1';
-              continueBtn.innerHTML = originalBtnHtml;
-              return;
             } else {
               throw signInErr;
             }
