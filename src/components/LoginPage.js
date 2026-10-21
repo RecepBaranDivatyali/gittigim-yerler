@@ -962,18 +962,22 @@ export function renderLoginPage(container, onLogin) {
     const appleBtn = container.querySelector('#btn-apple-auth');
     appleBtn?.addEventListener('click', async () => {
       syncFormState();
-      if (appleBtn) {
-        appleBtn.style.opacity = '0.7';
-        appleBtn.style.pointerEvents = 'none';
+      if (!navigator.onLine) {
+        alert(currentLang === 'tr'
+          ? 'Apple ile giriş yapmak için internet bağlantısı gereklidir.'
+          : 'Internet connection is required to sign in with Apple.');
+        return;
       }
 
-      let signedInProfile = null;
-      try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-
-        // 1. Check if native Capacitor SignInWithApple plugin is available
-        const nativeApplePlugin = window.Capacitor?.Plugins?.SignInWithApple;
-        if (nativeApplePlugin && typeof nativeApplePlugin.authorize === 'function') {
+      // Check if native iOS Capacitor SignInWithApple plugin is installed; otherwise open the in-app Apple ID sheet directly without any popup flash
+      const nativeApplePlugin = window.Capacitor?.Plugins?.SignInWithApple;
+      if (nativeApplePlugin && typeof nativeApplePlugin.authorize === 'function') {
+        try {
+          if (appleBtn) {
+            appleBtn.style.opacity = '0.7';
+            appleBtn.style.pointerEvents = 'none';
+          }
+          await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
           const res = await nativeApplePlugin.authorize({
             clientId: 'com.gittigimyerler.app',
             redirectURI: 'https://gittigim-yerler.vercel.app',
@@ -983,50 +987,25 @@ export function renderLoginPage(container, onLogin) {
           const givenName = res?.response?.givenName || '';
           const familyName = res?.response?.familyName || '';
           const fullName = `${givenName} ${familyName}`.trim();
-          signedInProfile = {
+          saveAndCompleteLogin({
             username: sanitizeText((fullName || appleEmail.split('@')[0] || 'Gezgin').slice(0, 25), 25),
             email: appleEmail,
             avatar: selectedAvatar || '🧭',
             authProvider: 'apple',
             createdAt: new Date().toISOString()
-          };
-        } else {
-          // 2. Try Firebase OAuthProvider('apple.com')
-          const provider = new OAuthProvider('apple.com');
-          provider.addScope('email');
-          provider.addScope('name');
-          const result = await signInWithPopup(auth, provider);
-          if (result && result.user) {
-            const u = result.user;
-            const fallbackEmail = u.email || `apple_${u.uid.slice(0, 8)}@privaterelay.appleid.com`;
-            signedInProfile = {
-              username: sanitizeText((u.displayName || fallbackEmail.split('@')[0] || 'Gezgin').slice(0, 25), 25),
-              email: fallbackEmail,
-              avatar: selectedAvatar || '🧭',
-              photoUrl: u.photoURL || null,
-              authProvider: 'apple',
-              createdAt: new Date().toISOString()
-            };
-          }
-        }
-      } catch (err) {
-        console.warn('Apple signIn notice:', err?.code, err?.message);
-        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request' || err?.message?.toLowerCase()?.includes('cancel')) {
+          }, rememberMe);
           return;
-        }
-        // Fallback to in-app Apple ID sheet (handles iOS WKWebView popup restrictions & unconfigured OAuth relay seamlessly)
-        openAppleSignInSheet();
-        return;
-      } finally {
-        if (appleBtn) {
-          appleBtn.style.opacity = '1';
-          appleBtn.style.pointerEvents = 'auto';
+        } catch (err) {
+          if (err?.message?.toLowerCase()?.includes('cancel')) return;
+        } finally {
+          if (appleBtn) {
+            appleBtn.style.opacity = '1';
+            appleBtn.style.pointerEvents = 'auto';
+          }
         }
       }
 
-      if (signedInProfile) {
-        saveAndCompleteLogin(signedInProfile, rememberMe);
-      }
+      openAppleSignInSheet();
     });
 
     // Avatar pick in registration
