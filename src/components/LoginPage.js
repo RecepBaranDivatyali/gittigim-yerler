@@ -203,26 +203,6 @@ export function renderLoginPage(container, onLogin) {
     onLogin(profile);
   }
 
-  // Mobile / Redirect Google Login result check
-  if (auth && navigator.onLine) {
-    getRedirectResult(auth).then((result) => {
-      if (result && result.user) {
-        const u = result.user;
-        const profile = {
-          username: u.displayName || u.email.split('@')[0],
-          email: u.email,
-          avatar: '🧭',
-          photoUrl: u.photoURL || null,
-          authProvider: 'google',
-          createdAt: new Date().toISOString()
-        };
-        saveAndCompleteLogin(profile, true);
-      }
-    }).catch((err) => {
-      console.warn('Google redirect result notice:', err?.code || err?.message);
-    });
-  }
-
   function render() {
     const currentLang = getLanguage();
 
@@ -511,23 +491,13 @@ export function renderLoginPage(container, onLogin) {
       render();
     });
 
-    // Google Sign-In button click with real Google OAuth
+    // Google Sign-In button click -> opens in-app Google Sign-In sheet directly (never opens external browser / never loses sessionStorage)
     container.querySelector('#btn-google-auth')?.addEventListener('click', async () => {
       syncFormState();
-      const googleBtn = container.querySelector('#btn-google-auth');
-      if (googleBtn) {
-        googleBtn.style.opacity = '0.6';
-        googleBtn.style.pointerEvents = 'none';
-      }
-
       if (!navigator.onLine) {
         alert(currentLang === 'tr' 
           ? 'Google ile giriş yapmak için internet bağlantısı gereklidir.' 
           : 'Internet connection is required to sign in with Google.');
-        if (googleBtn) {
-          googleBtn.style.opacity = '1';
-          googleBtn.style.pointerEvents = 'auto';
-        }
         return;
       }
 
@@ -535,70 +505,10 @@ export function renderLoginPage(container, onLogin) {
         alert(currentLang === 'tr'
           ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.'
           : 'Authentication service is unavailable. Please sign in with email.');
-        if (googleBtn) {
-          googleBtn.style.opacity = '1';
-          googleBtn.style.pointerEvents = 'auto';
-        }
         return;
       }
 
-      let signedInProfile = null;
-      try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-        const provider = new GoogleAuthProvider();
-        // Force account selection so that Google asks which account to use instead of automatically picking one
-        provider.setCustomParameters({ prompt: 'select_account' });
-
-        const result = await signInWithPopup(auth, provider);
-        if (result && result.user) {
-          const u = result.user;
-          signedInProfile = {
-            username: u.displayName || u.email.split('@')[0],
-            email: u.email,
-            avatar: selectedAvatar || '✈️',
-            photoUrl: u.photoURL || null,
-            authProvider: 'google',
-            createdAt: new Date().toISOString()
-          };
-        }
-        if (signedInProfile) {
-          await saveAndCompleteLogin(signedInProfile, rememberMe);
-          return;
-        }
-      } catch (err) {
-        console.warn('Google signIn notice:', err?.code, err?.message);
-
-        // User intentionally closed popup or cancelled
-        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
-          return;
-        }
-
-        // In native iOS/Android Capacitor WebView (capacitor://localhost) or when popup/domain is restricted,
-        // open in-app Google Sign-In sheet backed by Firebase Auth
-        if (
-          err?.code === 'auth/operation-not-supported-in-this-environment' ||
-          err?.code === 'auth/unauthorized-domain' ||
-          err?.code === 'auth/popup-blocked' ||
-          window.location.protocol === 'capacitor:'
-        ) {
-          openGoogleSignInSheet();
-          return;
-        }
-
-        if (err?.code === 'auth/network-request-failed') {
-          alert(currentLang === 'tr'
-            ? 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.'
-            : 'Network error. Please check your internet connection and try again.');
-        } else {
-          openGoogleSignInSheet();
-        }
-        return;
-      } finally {
-        if (googleBtn) {
-          googleBtn.style.opacity = '1';
-          googleBtn.style.pointerEvents = 'auto';
-        }
-      }
+      openGoogleSignInSheet();
     });
 
     // Official Sign in with Google Fallback Sheet for Native WebViews (iOS capacitor:// & Android WebView)
