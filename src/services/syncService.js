@@ -34,6 +34,9 @@ function sanitizeVisits(visitsObj) {
 let syncStatus = navigator.onLine ? 'synced' : 'offline';
 let lastSyncTime = null;
 let syncTimeout = null;
+// Cloud document ID that was successfully read (or confirmed empty) in this session.
+// Full-document overwrites are only allowed after hydration so an empty local state can never wipe cloud data.
+let cloudHydratedFor = null;
 const statusListeners = new Set();
 
 export function getSyncStatus() {
@@ -218,14 +221,20 @@ export function queueCloudSync(force = false) {
       const payload = getLocalDataPayload();
       const userRef = doc(db, 'users', userDocId);
 
-      // Write full user state (without merge: true so deleted map keys don't resurrect from cloud)
+      // Full overwrite (so deleted map keys don't resurrect) ONLY after this user's cloud doc was hydrated this session;
+      // otherwise merge to avoid wiping cloud data with an empty/partial local state.
       const cleanUserLower = payload.username ? payload.username.trim().toLowerCase() : '';
-      await setDoc(userRef, {
+      const docData = {
         ...payload,
         userId: userDocId,
         username_lowercase: cleanUserLower,
         serverUpdatedAt: serverTimestamp()
-      });
+      };
+      if (cloudHydratedFor === userDocId) {
+        await setDoc(userRef, docData);
+      } else {
+        await setDoc(userRef, docData, { merge: true });
+      }
 
       // Also register or update username directory for global friend searches (only if unowned or owned by this user)
       if (cleanUserLower) {
@@ -310,6 +319,7 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
   try {
     notifyStatus('syncing');
     let data = null;
+    let hadReadError = false;
 
     // 1. Check candidate user document IDs in priority order
     for (const cid of candidateIds) {
@@ -319,7 +329,9 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
           data = snap.data();
           break;
         }
-      } catch {}
+      } catch {
+        hadReadError = true;
+      }
     }
 
     // 2. Fallback: look up via usernames directory ONLY if unauthenticated legacy lookup or if usernames entry belongs to this exact UID
@@ -423,8 +435,14 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         try { localStorage.setItem('gv_home_country', data.homeCountry); } catch {}
       }
 
+      cloudHydratedFor = getCurrentUserIdentifier();
       notifyStatus('synced');
       return data;
+    }
+
+    if (!hadReadError) {
+      cloudHydratedFor = getCurrentUserIdentifier();
+      notifyStatus('synced');
     }
   } catch (err) {
     console.warn('Could not fetch cloud data, using offline state:', err);

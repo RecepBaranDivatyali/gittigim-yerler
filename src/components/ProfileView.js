@@ -4294,7 +4294,7 @@ export function renderProfileView(container, onBack) {
         e.stopPropagation();
         const visaId = btn.dataset.visaId;
         if (confirm(currentLang === 'tr' ? 'Bu vizeyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this visa?')) {
-          deleteUserVisa(visaId); closeModal(); openPassportModal(1);
+          deleteUserVisa(visaId); closeModal(); openPassportModal(Math.max(1, currentPage - 1));
         }
       });
     });
@@ -4317,7 +4317,7 @@ export function renderProfileView(container, onBack) {
         e.stopPropagation();
         const visaId = delBtn.dataset.visaId;
         if (confirm(currentLang === 'tr' ? 'Bu vizeyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this visa?')) {
-          deleteUserVisa(visaId); closeModal(); openPassportModal();
+          deleteUserVisa(visaId); closeModal(); openPassportModal(Math.max(1, currentPage - 1));
         }
         return;
       }

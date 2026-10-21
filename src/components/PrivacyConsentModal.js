@@ -1,6 +1,8 @@
 // PrivacyConsentModal.js - İlk Açılış Gizlilik ve Veri Güvenliği Onayı (Huawei Rule 7.5 & App Store Compliance)
 import { getLanguage } from '../utils/i18n.js';
 
+const pendingConsentCallbacks = [];
+
 export function checkPrivacyConsent(onAccepted) {
   try {
     if (localStorage.getItem('gv_privacy_agreed') === '1') {
@@ -9,6 +11,14 @@ export function checkPrivacyConsent(onAccepted) {
     }
   } catch {
     if (typeof onAccepted === 'function') onAccepted();
+    return;
+  }
+
+  if (typeof onAccepted === 'function') {
+    pendingConsentCallbacks.push(onAccepted);
+  }
+
+  if (document.getElementById('privacy-consent-overlay')) {
     return;
   }
 
@@ -132,7 +142,10 @@ export function checkPrivacyConsent(onAccepted) {
       overlay.style.transition = 'opacity 0.2s ease';
       setTimeout(() => {
         overlay.remove();
-        if (typeof onAccepted === 'function') onAccepted();
+        while (pendingConsentCallbacks.length > 0) {
+          const cb = pendingConsentCallbacks.shift();
+          try { cb(); } catch {}
+        }
       }, 200);
     });
   }
