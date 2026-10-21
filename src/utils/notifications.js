@@ -4,6 +4,14 @@ import confetti from 'canvas-confetti';
 let toastContainer = null;
 const notificationQueue = [];
 let isShowingToast = false;
+let isNotificationsSuppressed = false;
+
+export function suppressAchievementNotifications(suppress = true) {
+  isNotificationsSuppressed = !!suppress;
+  if (suppress) {
+    notificationQueue.length = 0;
+  }
+}
 
 function ensureToastContainer() {
   if (!toastContainer || !document.body.contains(toastContainer)) {
@@ -16,7 +24,10 @@ function ensureToastContainer() {
 }
 
 export function notifyAchievementUnlocked(achievement) {
+  if (isNotificationsSuppressed) return;
   if (!achievement || !achievement.id) return;
+  // Prevent flood: if queue already has 2 items waiting, drop excess
+  if (notificationQueue.length >= 2) return;
   // Prevent duplicate notifications in queue
   if (!notificationQueue.some(item => item.id === achievement.id)) {
     notificationQueue.push(achievement);

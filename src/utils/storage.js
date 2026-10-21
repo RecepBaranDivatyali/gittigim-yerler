@@ -561,7 +561,7 @@ export function resetTravelData({ skipCloudSync = false } = {}) {
   localStorage.removeItem('gv_visa_overrides');
   localStorage.removeItem('gv_passport_type');
   localStorage.removeItem('gv_upcoming_trip');
-  unlockedCache = [];
+  unlockedCache = null;
   deleteAllPhotos().catch(e => console.warn('Photo cleanup error:', e));
   notifyStateChange({ skipCloudSync });
 }
@@ -611,25 +611,50 @@ function getUnlockedCache() {
   if (unlockedCache === null) {
     try {
       const raw = localStorage.getItem('gv_unlocked_achievements');
-      unlockedCache = raw ? JSON.parse(raw) : [];
+      unlockedCache = raw ? JSON.parse(raw) : null;
     } catch {
-      unlockedCache = [];
+      unlockedCache = null;
     }
   }
   return unlockedCache;
 }
 
-export function checkAndNotifyAchievements(storageData, baseStats) {
+export function silenceAndHydrateUnlockedAchievements(ids = null) {
+  try {
+    const sData = getStorageData();
+    const sStats = calculateStats();
+    const earned = getEarnedAchievements(sData, sStats);
+    const earnedIds = earned.map(a => a.id);
+    const combined = Array.from(new Set([...(Array.isArray(ids) ? ids : []), ...earnedIds]));
+    unlockedCache = combined;
+    safeSetItem('gv_unlocked_achievements', JSON.stringify(combined));
+  } catch {}
+}
+
+export function checkAndNotifyAchievements(storageData, baseStats, { silent = false } = {}) {
   try {
     const earned = getEarnedAchievements(storageData, baseStats);
     const earnedIds = earned.map(a => a.id);
     const unlocked = getUnlockedCache();
 
+    // If unlocked cache was never initialized (first run, fresh login, or cache cleared):
+    // ALL currently earned achievements are existing historical achievements.
+    // They must be recorded silently — NEVER toast on startup or after login!
+    if (unlocked === null || silent) {
+      unlockedCache = earnedIds;
+      safeSetItem('gv_unlocked_achievements', JSON.stringify(earnedIds));
+      return;
+    }
+
     const newlyUnlocked = earned.filter(a => !unlocked.includes(a.id));
     if (newlyUnlocked.length > 0) {
-      newlyUnlocked.forEach(a => {
-        notifyAchievementUnlocked(a);
-      });
+      // If more than 2 achievements are suddenly "new", this is a data merge / bulk hydration,
+      // not a single in-app user action. Do not spam toasts!
+      if (newlyUnlocked.length <= 2) {
+        newlyUnlocked.forEach(a => {
+          notifyAchievementUnlocked(a);
+        });
+      }
     }
 
     unlockedCache = earnedIds;

@@ -2,7 +2,7 @@ import './styles/main.css';
 import { renderWorldMapView, preloadMapGeoData } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
 import { renderProfileView } from './components/ProfileView.js';
-import { onStateChange, syncPendingFeedbacks, initFeedbackSync } from './utils/storage.js';
+import { onStateChange, syncPendingFeedbacks, initFeedbackSync, silenceAndHydrateUnlockedAchievements } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
 import { checkPrivacyConsent } from './components/PrivacyConsentModal.js';
@@ -66,6 +66,11 @@ function initApp() {
   checkPrivacyConsent(() => {
     initFeedbackSync();
   });
+
+  // Ensure any existing local visits have their achievements silenced and hydrated so startup never fires toasts
+  try {
+    silenceAndHydrateUnlockedAchievements();
+  } catch {}
 
   appContainer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);overflow:hidden;background:radial-gradient(circle at 50% 45%, #162032 0%, #0d1527 60%, #080d1a 100%);';
 

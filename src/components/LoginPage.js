@@ -17,7 +17,8 @@ import {
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
-import { resetTravelData } from '../utils/storage.js';
+import { resetTravelData, silenceAndHydrateUnlockedAchievements } from '../utils/storage.js';
+import { suppressAchievementNotifications } from '../utils/notifications.js';
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -82,10 +83,16 @@ export function renderLoginPage(container, onLogin) {
             } catch {}
           }
           if (navigator.onLine && !profile.isGuest) {
+            suppressAchievementNotifications(true);
             fetchAndMergeUserDataFromCloud(profile.uid || profile.username).then(() => {
+              silenceAndHydrateUnlockedAchievements();
               if (window.__refreshMapStats) window.__refreshMapStats();
-            }).catch(() => {});
+              setTimeout(() => suppressAchievementNotifications(false), 2000);
+            }).catch(() => {
+              setTimeout(() => suppressAchievementNotifications(false), 2000);
+            });
           }
+          silenceAndHydrateUnlockedAchievements();
           onLogin(profile);
           return;
         }
@@ -111,6 +118,7 @@ export function renderLoginPage(container, onLogin) {
 
 
   async function saveAndCompleteLogin(profile, remember) {
+    suppressAchievementNotifications(true);
     if (profile && !profile.isGuest && auth?.currentUser?.uid) {
       profile.uid = auth.currentUser.uid;
     }
@@ -195,8 +203,11 @@ export function renderLoginPage(container, onLogin) {
       if (!profile?.isGuest) {
         queueCloudSync(true);
       }
+      silenceAndHydrateUnlockedAchievements();
+      setTimeout(() => suppressAchievementNotifications(false), 2000);
     } catch (e) {
       console.warn('Could not register in community db / cloud sync', e);
+      setTimeout(() => suppressAchievementNotifications(false), 2000);
     }
 
     onLogin(profile);
