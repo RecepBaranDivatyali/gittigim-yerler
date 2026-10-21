@@ -162,9 +162,11 @@ export function getLocalDataPayload() {
   }
 
   const cleanUsername = (profile.username || 'gezgin').trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const cleanEmail = String(profile.email || auth?.currentUser?.email || '').trim().toLowerCase() || null;
 
   return {
     userId: getCurrentUserIdentifier(),
+    email: cleanEmail,
     username: cleanUsername,
     displayName: profile.username || 'Gezgin',
     avatar: profile.avatar || '🧭',
@@ -334,21 +336,44 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       }
     }
 
-    // 2. Fallback: look up via usernames directory ONLY if unauthenticated legacy lookup or if usernames entry belongs to this exact UID
-    if (!data && userIdOrUsername) {
-      const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-      if (clean) {
+    // 2. Fallback: look up by verified email or email-matching username directory
+    if (!data) {
+      let profileEmail = '';
+      try {
+        const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+        if (pStr) {
+          const p = JSON.parse(pStr);
+          if (p?.email) profileEmail = String(p.email).trim().toLowerCase();
+        }
+      } catch {}
+      if (!profileEmail && auth?.currentUser?.email) {
+        profileEmail = String(auth.currentUser.email).trim().toLowerCase();
+      }
+      if (profileEmail && !profileEmail.endsWith('@oauth.gezginapp.com') && !profileEmail.endsWith('@privaterelay.gezginapp.com')) {
         try {
-          const uSnap = await getDoc(doc(db, 'usernames', clean));
-          if (uSnap.exists()) {
-            const uData = uSnap.data();
-            const targetUid = uData?.uid;
-            if (targetUid && (!authUid || targetUid === authUid)) {
-              const targetSnap = await getDoc(doc(db, 'users', targetUid));
-              if (targetSnap.exists()) data = targetSnap.data();
-            }
+          const eq = query(collection(db, 'users'), where('email', '==', profileEmail), limit(1));
+          const eqSnap = await getDocs(eq);
+          if (!eqSnap.empty) {
+            data = eqSnap.docs[0].data();
           }
         } catch {}
+      }
+      if (!data && userIdOrUsername) {
+        const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const emailPrefix = profileEmail ? profileEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : '';
+        if (clean) {
+          try {
+            const uSnap = await getDoc(doc(db, 'usernames', clean));
+            if (uSnap.exists()) {
+              const uData = uSnap.data();
+              const targetUid = uData?.uid;
+              if (targetUid && (!authUid || targetUid === authUid || (emailPrefix && clean === emailPrefix))) {
+                const targetSnap = await getDoc(doc(db, 'users', targetUid));
+                if (targetSnap.exists()) data = targetSnap.data();
+              }
+            }
+          } catch {}
+        }
       }
     }
 
