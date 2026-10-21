@@ -14,7 +14,8 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   setPersistence,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
 import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
@@ -47,6 +48,16 @@ function isHuaweiDevice() {
 }
 
 const HUAWEI_DEVICE = isHuaweiDevice();
+
+/** E-posta Firebase'de şifreli (password) hesap olarak kayıtlı mı? (enumeration protection açıksa false döner) */
+async function emailHasPasswordMethod(email) {
+  try {
+    const methods = await fetchSignInMethodsForEmail(auth, email);
+    return Array.isArray(methods) && methods.includes('password');
+  } catch {
+    return false;
+  }
+}
 
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
@@ -114,11 +125,13 @@ export function renderLoginPage(container, onLogin) {
     const newOwnerKey = profile?.isGuest
       ? '__guest__'
       : String(auth?.currentUser?.uid || profile?.email || profile?.username || '').trim().toLowerCase();
+    const legacyEmailKey = String(profile?.email || profile?.username || '').trim().toLowerCase();
     const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
+    const isSameOwner = prevOwnerKey === newOwnerKey || prevOwnerKey === legacyEmailKey;
 
     // If switching between two different non-guest accounts (or logging into a new account when previous owner wasn't guest),
     // clear local travel storage first so the previous user's map data never leaks into the new account.
-    if (!profile?.isGuest && prevOwnerKey !== newOwnerKey && prevOwnerKey !== '__guest__') {
+    if (!profile?.isGuest && prevOwnerKey !== '' && !isSameOwner && prevOwnerKey !== '__guest__') {
       try {
         resetTravelData();
       } catch (err) {
@@ -743,7 +756,16 @@ export function renderLoginPage(container, onLogin) {
                 await createUserWithEmailAndPassword(auth, emailInput, passInput);
               } catch (createErr) {
                 if (createErr?.code === 'auth/email-already-in-use') {
-                  // Email might be registered via OAuth popup (no password in Firebase Auth); try deterministic Google sheet auth email
+                  // Şifreli hesapsa gerçekten yanlış şifredir; sadece OAuth ile kayıtlıysa relay kimliğine düş
+                  if (await emailHasPasswordMethod(emailInput)) {
+                    showSheetError(currentLang === 'tr'
+                      ? 'Bu e-posta zaten kayıtlı ve girdiğiniz şifre hatalı.'
+                      : 'This email is already registered and the password is incorrect.');
+                    continueBtn.disabled = false;
+                    continueBtn.style.opacity = '1';
+                    continueBtn.innerHTML = originalBtnHtml;
+                    return;
+                  }
                   try {
                     await signInWithEmailAndPassword(auth, googleRelayEmail, passInput);
                   } catch {
@@ -960,7 +982,7 @@ export function renderLoginPage(container, onLogin) {
                 await createUserWithEmailAndPassword(auth, chosenEmail, passInput);
               } catch (createErr) {
                 if (createErr?.code === 'auth/email-already-in-use') {
-                  if (chosenEmail !== appleRelayEmail) {
+                  if (chosenEmail !== appleRelayEmail && !(await emailHasPasswordMethod(chosenEmail))) {
                     try {
                       await signInWithEmailAndPassword(auth, appleRelayEmail, passInput);
                     } catch {
