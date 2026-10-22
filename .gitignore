@@ -34,3 +34,6 @@ ios-certs/
 *.mobileprovision
 *.cer
 *.certSigningRequest
+
+# Agent runtime state
+.agents/.runtime/
