@@ -183,6 +183,7 @@ let isRoutesModeActive = false;
 let dayNightLayer = null;
 let isDayNightModeActive = false;
 let dayNightUpdateTimer = null;
+let dayNightRenderer = null;
 const inFlightRegions = {};
 const inFlightSubregions = {};
 const MAX_MOUNTED_REGIONS = 10;
@@ -2283,6 +2284,7 @@ function initMap(container) {
   activeFeatureLayer = null;
   activeLabelLayer = null;
   activeLabelPlacedBoxes = [];
+  dayNightRenderer = null;
 
   const themeCfg = getThemeConfig();
 
@@ -2558,6 +2560,11 @@ function initMap(container) {
     updateLayerHud();
     onViewChange();
     scheduleLabelUpdate();
+    if (isDayNightModeActive && dayNightRenderer && typeof dayNightRenderer._update === 'function') {
+      try {
+        dayNightRenderer._update();
+      } catch {}
+    }
   }
 
   map.on('moveend zoomend', handleViewChange);
@@ -3607,16 +3614,16 @@ function calculateSolarTerminatorCoords(sun) {
   const nightPoleLat = effectiveLat >= 0 ? -85 : 85;
 
   const ring = [];
-  // Sample longitude from -360 to 360 with 2-degree step for high performance & smoothness across wrapped tiles
-  for (let lon = -360; lon <= 360; lon += 2) {
+  // Sample longitude from -720 to 720 with 2-degree step for seamless horizontal panning and world wrap coverage
+  for (let lon = -720; lon <= 720; lon += 2) {
     let lat = Math.atan(-Math.cos((lon - sun.lng) * toRad) / tanLat0) * toDeg;
     lat = Math.max(-85, Math.min(85, lat));
     ring.push([lat, lon]);
   }
 
   // Close polygon around the polar night edge
-  ring.push([nightPoleLat, 360]);
-  ring.push([nightPoleLat, -360]);
+  ring.push([nightPoleLat, 720]);
+  ring.push([nightPoleLat, -720]);
 
   return ring;
 }
@@ -3635,6 +3642,10 @@ function renderDayNightLayer() {
     map.getPane('dayNightPane').style.pointerEvents = 'none';
   }
 
+  if (!dayNightRenderer) {
+    dayNightRenderer = L.svg({ pane: 'dayNightPane', padding: 3.0 });
+  }
+
   dayNightLayer = L.layerGroup();
 
   const now = new Date();
@@ -3643,6 +3654,7 @@ function renderDayNightLayer() {
 
   // 1. Night hemisphere shadow polygon (pointer events ignored to preserve map interactivity)
   const nightPolygon = L.polygon(terminatorCoords, {
+    renderer: dayNightRenderer,
     pane: 'dayNightPane',
     color: 'rgba(56, 189, 248, 0.22)',
     weight: 1.5,

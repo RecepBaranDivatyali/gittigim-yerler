@@ -19492,6 +19492,12 @@ body[data-theme="natgeo_atlas"] .popup-expense-note-input {
   color: #2b2118 !important;
 }
 
+/* Day/Night solar shadow pane SVG overflow: ensures seamless display on drag/pan */
+.leaflet-dayNightPane-pane svg {
+  overflow: visible !important;
+}
+
+
 
 
 

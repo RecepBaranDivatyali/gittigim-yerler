@@ -14,6 +14,7 @@ MUDUR:
 - iOS Apple Sign-In gerçek cihazda henüz test edilmedi (Apple onayı bekleniyor).
 
 ## Son Değişiklikler
+- 2026-10-22: Gece gölgesi kaydırma kırpılması çözüldü (L.svg padding: 3.0, kesintisiz 720° boylam ve overflow: visible).
 - 2026-10-22: Gece/Gündüz Harita Modu: Gerçek zamanlı güneş zeniti, ay pozisyonu ve solar terminator gölgesi (WorldMapView.js).
 - 2026-10-22: Seyahat Cüzdanı & Harcama Yönetimi: Çoklu döviz, 6 kategori, gizlilik modu (👁️) ve mekan çekmecesi harcama girişi (travelBudget.js, ProfileView.js, main.css).
 - 2026-10-22: 3 Yeni Özellik: 11 yeni kıta/bölge rozeti (badges.js), haritada uçuş rotaları katmanı (WorldMapView.js), profilde aramalı Seyahat Günlüğü vitrini (ProfileView.js & main.css).
@@ -23,7 +24,3 @@ MUDUR:
 - 2026-10-22: Sürüm 2.8 (vc 15) Google Play'e yüklendi, Apple Store incelemede.
 - 2026-10-22: Orkestrasyon sistemi kuruldu (AGENTS.md, alt ajanlar, kancalar, ESLint + `npm run check`).
 - 2026-10-22: "Eşitleme Hatası" kök nedeni düzeltildi (`unlockedAchievements` kapsam hatası, `syncService.js`).
-- 2026-10-22: Firebase Android uygulaması + Play imzalama SHA-1 eklendi (Google girişi `ApiException: 10` çözümü).
-- 2026-10-22: "Eşitleme Hatası" kök nedeni düzeltildi (`unlockedAchievements` kapsam hatası, `syncService.js`).
-- 2026-10-22: Firebase Android uygulaması + Play imzalama SHA-1 eklendi (Google girişi `ApiException: 10` çözümü).
-- 2026-10-22: Avatar ızgarası kaydırılabilir, hesap verisi izolasyonu, arkadaş arama istatistikleri, uzun kullanıcı adı sığdırma.
