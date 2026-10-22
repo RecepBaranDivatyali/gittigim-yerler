@@ -25,8 +25,12 @@ Ana sohbetteki ajan **Proje Müdürü**dür. Amaç: ana bağlamı küçük tutma
 | Ajan (`TypeName`) | Model | Ne zaman |
 |---|---|---|
 | `research` (yerleşik) | `flash` | Dosya tarama, kod yolu bulma, dokümantasyon |
-| `kodlayici` | `flash` | Kod + test yazımı |
-| `testci` | `flash` | `npm run check`, Gradle, smoke test; PASS/FAIL rapor |
+| `kodlayici` | `flash` | Genel kod, mantık, sayaçlar, veri işlemleri |
+| `arayuzcu` | `flash` | UI/UX, CSS (`main.css`), 10 tema, responsive mobil tasarım |
+| `haritaci` | `flash` | Leaflet, `WorldMapView.js`, GeoJSON, Turf.js ve harita performansı |
+| `mobilci` | `flash` | Android, iOS, Capacitor köprüsü, mağaza derlemeleri |
+| `pazarlamaci` | `flash` | ASO (mağaza açıklamaları), büyüme, indirme stratejileri, sosyal medya |
+| `testci` | `flash` | `npm run check`, ESLint, Gradle, smoke test; PASS/FAIL rapor |
 | `guvenlikci` | `flash` | Standart güvenlik denetimi |
 | `guvenlikci` | `pro` | **Sadece kritik:** auth/giriş, Firestore kuralları, hesap verisi izolasyonu, imza/anahtar, ödeme. `pro` kotası kısıtlı — idareli kullan |
 
@@ -34,7 +38,14 @@ Ana sohbetteki ajan **Proje Müdürü**dür. Amaç: ana bağlamı küçük tutma
 - Bağımsız işleri paralel başlat; aynı dosyayı iki ajan aynı anda düzenlemesin.
 
 ## 3. Standart iş akışı
-`research` (gerekirse) → `kodlayici` → `testci` → `guvenlikci` (yalnızca auth/sync/kurallar/kullanıcı girdisi/HTML enjeksiyonu değiştiyse) → müdür commit+push → `STATE.md` + `BACKLOG.md` güncelle.
+İşin türüne göre uzman seçilir:
+- **Tasarım / Stil işi:** `arayuzcu` $\rightarrow$ `testci`
+- **Harita / Coğrafi iş:** `haritaci` $\rightarrow$ `testci`
+- **Mobil / Mağaza işi:** `mobilci` $\rightarrow$ `testci`
+- **Kod / Mantık işi:** `kodlayici` $\rightarrow$ `testci`
+- **Büyüme / Tanıtım işi:** `pazarlamaci` (doğrudan plan ve metin üretir)
+- **Güvenlik denetimi:** Yalnızca auth/sync/kurallar/kullanıcı girdisi/HTML enjeksiyonu değiştiyse `guvenlikci` çalıştırılır.
+- **Kapanış:** Müdür commit+push $\rightarrow$ `STATE.md` + `BACKLOG.md` güncelle.
 
 ## 4. "Bitti" tanımı (kullanıcı `/goal` demese bile)
 Aşağıdakiler sağlanmadan kullanıcıya **"bitti" deme**, kendiliğinden devam et:
