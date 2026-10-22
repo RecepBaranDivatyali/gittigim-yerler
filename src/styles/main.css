@@ -1549,6 +1549,38 @@ svg, g, path {
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   justify-items: center;
+  max-height: 145px;
+  overflow-y: auto;
+  padding: 8px 6px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.avatar-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.avatar-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.avatar-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+
+body[data-theme="light"] .avatar-grid {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .avatar-btn {
@@ -2028,14 +2060,17 @@ body[data-theme="light"] .profile-compact-poster-btn:hover {
 }
 
 .profile-username {
-  font-size: 1.25rem;
+  font-size: clamp(0.98rem, 3.8vw, 1.25rem);
   font-weight: 700;
   color: #f8fafc;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
   max-width: 100%;
+}
+
+.profile-username.profile-username-long {
+  font-size: clamp(0.88rem, 3.4vw, 1.05rem);
+  line-height: 1.15;
 }
 
 .profile-card-label {
@@ -7556,6 +7591,38 @@ body[data-theme="light"] .fb-card-date {
   margin-top: 6px;
   width: 100%;
   box-sizing: border-box;
+  max-height: 145px;
+  overflow-y: auto;
+  padding: 8px 6px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.settings-avatar-picker-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.settings-avatar-picker-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-avatar-picker-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+
+body[data-theme="light"] .settings-avatar-picker-grid {
+  background: rgba(241, 245, 249, 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+body[data-theme="light"] .settings-avatar-picker-grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .settings-avatar-pick-btn {

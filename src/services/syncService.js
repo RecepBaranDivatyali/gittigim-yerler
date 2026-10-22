@@ -305,21 +305,20 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
   const currentId = getCurrentUserIdentifier();
   const candidateIds = [];
   if (authUid) {
+    // If authenticated via Firebase, authUid is the ONLY authoritative candidate
     candidateIds.push(authUid);
-  }
-  if (currentId && !candidateIds.includes(currentId)) {
-    // Only add non-UID fallback if no Firebase UID is active
-    if (!authUid || !String(currentId).startsWith('user_')) {
+  } else {
+    if (currentId && !candidateIds.includes(currentId)) {
       candidateIds.push(currentId);
     }
-  }
-  if (!authUid && userIdOrUsername) {
-    const raw = String(userIdOrUsername).trim();
-    if (raw && !candidateIds.includes(raw)) candidateIds.push(raw);
-    const clean = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
-    if (clean) {
-      const legacyId = 'user_' + clean;
-      if (!candidateIds.includes(legacyId)) candidateIds.push(legacyId);
+    if (userIdOrUsername) {
+      const raw = String(userIdOrUsername).trim();
+      if (raw && !candidateIds.includes(raw)) candidateIds.push(raw);
+      const clean = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (clean) {
+        const legacyId = 'user_' + clean;
+        if (!candidateIds.includes(legacyId)) candidateIds.push(legacyId);
+      }
     }
   }
 
@@ -343,8 +342,8 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       }
     }
 
-    // 2. Fallback: look up by verified email or email-matching username directory
-    if (!data) {
+    // 2. Fallback: look up by verified email ONLY if not authenticated with Firebase Auth
+    if (!data && !authUid) {
       let profileEmail = '';
       try {
         const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
@@ -353,9 +352,6 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
           if (p?.email) profileEmail = String(p.email).trim().toLowerCase();
         }
       } catch {}
-      if (!profileEmail && auth?.currentUser?.email) {
-        profileEmail = String(auth.currentUser.email).trim().toLowerCase();
-      }
       if (profileEmail && !profileEmail.endsWith('@oauth.gezginapp.com') && !profileEmail.endsWith('@privaterelay.gezginapp.com')) {
         try {
           const eq = query(collection(db, 'users'), where('email', '==', profileEmail), limit(1));
@@ -367,20 +363,28 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       }
       if (!data && userIdOrUsername) {
         const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const emailPrefix = profileEmail ? profileEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : '';
         if (clean) {
           try {
             const uSnap = await getDoc(doc(db, 'usernames', clean));
             if (uSnap.exists()) {
               const uData = uSnap.data();
               const targetUid = uData?.uid;
-              if (targetUid && (!authUid || targetUid === authUid || (emailPrefix && clean === emailPrefix))) {
+              if (targetUid) {
                 const targetSnap = await getDoc(doc(db, 'users', targetUid));
                 if (targetSnap.exists()) data = targetSnap.data();
               }
             }
           } catch {}
         }
+      }
+    }
+
+    // Security guard: Ensure cloud document strictly matches the active Firebase Auth UID
+    if (data && authUid) {
+      const docOwner = data.userId || data.uid;
+      if (docOwner && docOwner !== authUid) {
+        console.warn('Security guard: Cloud document owner mismatch, ignoring foreign data.');
+        data = null;
       }
     }
 
@@ -398,70 +402,66 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         try { localStorage.setItem('gittigim_yerler_turkey_v2', JSON.stringify(mergedTR)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
-      if (Array.isArray(data.worldCities) && data.worldCities.length > 0) {
+      if (Array.isArray(data.worldCities)) {
         const localCities = JSON.parse(localStorage.getItem('gittigim_yerler_cities_v2') || '[]');
         const mergedCities = Array.from(new Set([...data.worldCities, ...(Array.isArray(localCities) ? localCities : [])]));
         try { localStorage.setItem('gittigim_yerler_cities_v2', JSON.stringify(mergedCities)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
-      if (Array.isArray(data.userVisas) && data.userVisas.length > 0) {
-        const localVisas = JSON.parse(localStorage.getItem('gv_user_visas_v1') || '[]');
-        const existingIds = new Set(localVisas.map(v => v.id));
-        data.userVisas.forEach(v => {
-          if (!existingIds.has(v.id)) localVisas.push(v);
-        });
-        try { localStorage.setItem('gv_user_visas_v1', JSON.stringify(localVisas)); } catch(e) { console.warn('Storage write failed:', e); }
+      // User Visas: Strict account isolation. Cloud document is source of truth.
+      const cloudVisas = Array.isArray(data.userVisas) ? data.userVisas : [];
+      try {
+        localStorage.setItem('gv_user_visas_v1', JSON.stringify(cloudVisas));
+      } catch(e) { console.warn('Storage write failed:', e); }
+
+      // Visa Overrides
+      const cloudVisaOverrides = (data.visaOverrides && typeof data.visaOverrides === 'object') ? data.visaOverrides : {};
+      try {
+        localStorage.setItem('gv_visa_overrides', JSON.stringify(cloudVisaOverrides));
+      } catch(e) {}
+
+      // Passport Type
+      if (data.passportType && typeof data.passportType === 'string') {
+        try { localStorage.setItem('gv_passport_type', data.passportType); } catch {}
+      } else {
+        try { localStorage.setItem('gv_passport_type', 'bordro'); } catch {}
       }
 
-      if (data.userPlaces && typeof data.userPlaces === 'object') {
-        const localPlaces = JSON.parse(localStorage.getItem('gittigim_yerler_user_places_v1') || '{}');
-        const mergedPlaces = { ...data.userPlaces, ...localPlaces };
-        try { localStorage.setItem('gittigim_yerler_user_places_v1', JSON.stringify(mergedPlaces)); } catch(e) { console.warn('Storage write failed:', e); }
+      // Upcoming Trip
+      if (data.upcomingTrip && typeof data.upcomingTrip === 'object') {
+        try { localStorage.setItem('gv_upcoming_trip', JSON.stringify(data.upcomingTrip)); } catch {}
+      } else {
+        try { localStorage.removeItem('gv_upcoming_trip'); } catch {}
       }
 
-      if (data.notes && typeof data.notes === 'object') {
-        const localNotes = JSON.parse(localStorage.getItem('gittigim_yerler_country_notes_v1') || '{}');
-        const mergedRaw = { ...data.notes, ...localNotes };
-        const cleanedNotes = {};
-        for (const k in mergedRaw) {
-          if (!isAutoGeneratedNote(mergedRaw[k])) {
-            cleanedNotes[k] = mergedRaw[k];
-          }
+      // User Places
+      const cloudPlaces = (data.userPlaces && typeof data.userPlaces === 'object') ? data.userPlaces : {};
+      try { localStorage.setItem('gittigim_yerler_user_places_v1', JSON.stringify(cloudPlaces)); } catch(e) { console.warn('Storage write failed:', e); }
+
+      // Country Notes
+      const cloudNotes = (data.notes && typeof data.notes === 'object') ? data.notes : {};
+      const cleanedNotes = {};
+      for (const k in cloudNotes) {
+        if (!isAutoGeneratedNote(cloudNotes[k])) {
+          cleanedNotes[k] = cloudNotes[k];
         }
-        try { localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(cleanedNotes)); } catch(e) { console.warn('Storage write failed:', e); }
       }
+      try { localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(cleanedNotes)); } catch(e) { console.warn('Storage write failed:', e); }
 
-      if (data.ratings && typeof data.ratings === 'object') {
-        const localRatings = JSON.parse(localStorage.getItem('gittigim_yerler_country_ratings_v1') || '{}');
-        try { localStorage.setItem('gittigim_yerler_country_ratings_v1', JSON.stringify({ ...data.ratings, ...localRatings })); } catch(e) { console.warn('Storage write failed:', e); }
-      }
+      // Country Ratings
+      const cloudRatings = (data.ratings && typeof data.ratings === 'object') ? data.ratings : {};
+      try { localStorage.setItem('gittigim_yerler_country_ratings_v1', JSON.stringify(cloudRatings)); } catch(e) { console.warn('Storage write failed:', e); }
 
-      if (Array.isArray(data.bucketRanks) && data.bucketRanks.length > 0) {
-        const localBucket = JSON.parse(localStorage.getItem('gittigim_yerler_bucket_ranks_v1') || '[]');
-        if (!Array.isArray(localBucket) || localBucket.length === 0) {
-          try { localStorage.setItem('gittigim_yerler_bucket_ranks_v1', JSON.stringify(data.bucketRanks)); } catch {}
-        }
-      }
+      // Bucket Ranks
+      const cloudBucket = Array.isArray(data.bucketRanks) ? data.bucketRanks : [];
+      try { localStorage.setItem('gittigim_yerler_bucket_ranks_v1', JSON.stringify(cloudBucket)); } catch {}
 
-      if (data.airlines && typeof data.airlines === 'object' && !Array.isArray(data.airlines)) {
-        let localAirlines = {};
-        try {
-          const parsed = JSON.parse(localStorage.getItem('gittigim_yerler_airlines_v1') || '{}');
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localAirlines = parsed;
-        } catch {}
-        const mergedAirlines = { ...data.airlines, ...localAirlines };
-        try { localStorage.setItem('gittigim_yerler_airlines_v1', JSON.stringify(mergedAirlines)); } catch {}
-      }
+      // Airlines & Aircraft
+      const cloudAirlines = (data.airlines && typeof data.airlines === 'object' && !Array.isArray(data.airlines)) ? data.airlines : {};
+      try { localStorage.setItem('gittigim_yerler_airlines_v1', JSON.stringify(cloudAirlines)); } catch {}
 
-      if (data.aircraft && typeof data.aircraft === 'object' && !Array.isArray(data.aircraft)) {
-        let localAircraft = {};
-        try {
-          const parsed = JSON.parse(localStorage.getItem('gittigim_yerler_aircraft_v1') || '{}');
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localAircraft = parsed;
-        } catch {}
-        const mergedAircraft = { ...data.aircraft, ...localAircraft };
-        try { localStorage.setItem('gittigim_yerler_aircraft_v1', JSON.stringify(mergedAircraft)); } catch {}
-      }
+      const cloudAircraft = (data.aircraft && typeof data.aircraft === 'object' && !Array.isArray(data.aircraft)) ? data.aircraft : {};
+      try { localStorage.setItem('gittigim_yerler_aircraft_v1', JSON.stringify(cloudAircraft)); } catch {}
 
       if (data.homeCountry && typeof data.homeCountry === 'string') {
         try { localStorage.setItem('gv_home_country', data.homeCountry); } catch {}

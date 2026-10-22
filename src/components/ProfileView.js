@@ -276,7 +276,7 @@ export function renderProfileView(container, onBack) {
             <div class="profile-avatar">${sanitizePhotoUrl(profile.photoUrl) ? `<img src="${sanitizePhotoUrl(profile.photoUrl)}" class="avatar-custom-img" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(profile.avatar || '🧭')}</span>` : escapeHtml(profile.avatar || '🧭')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
-                <div class="profile-username">${escapeHtml(profile.username || 'Gezgin')}</div>
+                <div class="profile-username ${profile.username && profile.username.length > 14 ? 'profile-username-long' : ''}">${escapeHtml(profile.username || 'Gezgin')}</div>
                 <div class="profile-title-badges">
                   <button type="button" class="profile-cloud-sync-pill" id="profile-cloud-sync-pill" title="${currentLang === 'tr' ? 'Bulut Senkronizasyonu - Tıkla ve Eşitle' : 'Cloud Sync - Click to Sync'}">
                     <span class="cloud-sync-dot"></span>
@@ -4441,7 +4441,7 @@ export function renderProfileView(container, onBack) {
             <div class="profile-avatar">${sanitizePhotoUrl(safeProfile.photoUrl) ? `<img src="${sanitizePhotoUrl(safeProfile.photoUrl)}" class="avatar-custom-img" alt="Avatar" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';" /><span style="display:none;">${escapeHtml(safeProfile.avatar || '✈️')}</span>` : escapeHtml(safeProfile.avatar || '✈️')}</div>
             <div class="profile-user-info">
               <div class="profile-user-title-row">
-                <span class="profile-username">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
+                <span class="profile-username ${safeProfile.username && safeProfile.username.length > 14 ? 'profile-username-long' : ''}">${escapeHtml(safeProfile.username || 'Arkadaş')}</span>
                 <span class="profile-card-label" style="background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.3);color:#10b981;">${currentLang === 'tr' ? 'ARKADAŞININ PROFİLİ' : 'FRIEND\'S PROFILE'}</span>
               </div>
               <div class="profile-bio">${escapeHtml(safeProfile.bio || '')}</div>
@@ -5025,8 +5025,21 @@ export function renderProfileView(container, onBack) {
         <div style="display:flex;flex-direction:column;gap:8px;">
           ${travelers.map(tr => {
             const isSaved = currentSaved.some(f => f.username?.toLowerCase() === tr.username?.toLowerCase());
-            const countryCount = Object.keys(tr.worldVisits || {}).filter(k => !k.includes('::') && tr.worldVisits[k]?.status === 'visited').length;
-            const provCount = Object.keys(tr.turkeyVisits || {}).filter(k => tr.turkeyVisits[k]?.status === 'visited').length;
+            const countryCount = Number(
+              tr.stats?.worldCountryCount ??
+              tr.worldCountryCount ??
+              (tr.worldVisits ? Object.keys(tr.worldVisits).filter(k => !k.includes('::') && tr.worldVisits[k]?.status === 'visited').length : 0)
+            );
+            const provCount = Number(
+              tr.stats?.turkeyCount ??
+              tr.turkeyCount ??
+              (tr.turkeyVisits ? Object.keys(tr.turkeyVisits).filter(k => tr.turkeyVisits[k]?.status === 'visited').length : 0)
+            );
+            const cityCount = Number(
+              tr.stats?.worldCityCount ??
+              tr.worldCityCount ??
+              (Array.isArray(tr.worldCities) ? tr.worldCities.length : 0)
+            );
 
             return `
               <div class="friend-search-item" data-username="${escapeHtml(tr.username)}">
@@ -5040,7 +5053,7 @@ export function renderProfileView(container, onBack) {
                       <span class="friend-search-handle">@${escapeHtml(tr.username)}</span>
                     </div>
                     <div class="friend-search-sub">
-                      ${countryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${provCount} ${currentLang === 'tr' ? 'İl' : 'Provinces'}${tr.bio ? ` • ${escapeHtml(tr.bio)}` : ''}
+                      ${countryCount} ${currentLang === 'tr' ? 'Ülke' : 'Countries'} • ${provCount} ${currentLang === 'tr' ? 'İl' : 'Provinces'}${cityCount > 0 ? ` • ${cityCount} ${currentLang === 'tr' ? 'Şehir' : 'Cities'}` : ''}${tr.bio ? ` • ${escapeHtml(tr.bio)}` : ''}
                     </div>
                   </div>
                 </div>

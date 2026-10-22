@@ -134,9 +134,9 @@ export function renderLoginPage(container, onLogin) {
     const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
     const isSameOwner = prevOwnerKey !== '' && (prevOwnerKey === newOwnerKey || prevOwnerKey === legacyEmailKey);
 
-    // Clear local travel storage whenever switching accounts (or logging in from guest/unowned state without migration)
+    // Clear local travel storage whenever switching accounts, registering a new account, or logging in from guest state
     // so previous or guest map data never contaminates the authenticated account.
-    if (!profile?.isGuest && !isSameOwner && !migrateLegacyData) {
+    if (!profile?.isGuest && (!isSameOwner || authMode === 'register') && !migrateLegacyData) {
       try {
         resetTravelData({ skipCloudSync: true });
       } catch (err) {
@@ -299,8 +299,8 @@ export function renderLoginPage(container, onLogin) {
           <form id="auth-main-form" class="login-form" onsubmit="return false;">
             ${authMode === 'register' ? `
               <div class="input-group">
-                <label for="auth-username">${currentLang === 'tr' ? 'Gezgin Adı / Kullanıcı Adı' : 'Traveler Name / Username'}</label>
-                <input type="text" id="auth-username" maxlength="25" placeholder="${currentLang === 'tr' ? 'Örn: gezgin_mert, seyahatsever...' : 'e.g. globetrotter'}" value="${sanitizeText(usernameVal, 25)}" autocomplete="name" required />
+                <label for="auth-username">${currentLang === 'tr' ? 'Gezgin Adı / Kullanıcı Adı (Maks 20)' : 'Traveler Name / Username (Max 20)'}</label>
+                <input type="text" id="auth-username" maxlength="20" placeholder="${currentLang === 'tr' ? 'Örn: gezgin_mert, seyahatsever...' : 'e.g. globetrotter'}" value="${sanitizeText(usernameVal, 20)}" autocomplete="name" required />
               </div>
 
               <!-- Avatar Selection for Registration -->
@@ -557,7 +557,7 @@ export function renderLoginPage(container, onLogin) {
       if (!user) throw new Error('No Firebase user');
       const email = String(user.email || user.providerData?.find(p => p?.email)?.email || '').trim().toLowerCase();
       const rawName = user.displayName || nameHint || (email ? email.split('@')[0] : '') || 'Gezgin';
-      const username = sanitizeText(String(rawName).slice(0, 25), 25) || 'Gezgin';
+      const username = sanitizeText(String(rawName).slice(0, 20), 20) || 'Gezgin';
       if (!user.displayName && nameHint) {
         await updateProfile(user, { displayName: username }).catch(() => {});
       }
@@ -715,7 +715,7 @@ export function renderLoginPage(container, onLogin) {
         let profileUsername = '';
         if (authMode === 'register') {
           const rawUser = usernameVal.trim();
-          profileUsername = sanitizeText(rawUser.slice(0, 25), 25) || emailVal.split('@')[0];
+          profileUsername = sanitizeText(rawUser.slice(0, 20), 20) || emailVal.split('@')[0];
           if (profileUsername.length < 3) {
             alert(currentLang === 'tr' 
               ? 'Kullanıcı adı en az 3 karakter olmalıdır.' 
