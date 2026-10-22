@@ -391,7 +391,7 @@ export function renderProfileView(container, onBack) {
         const text = syncPill.querySelector('.cloud-sync-text');
         if (!dot || !text) return;
 
-        syncPill.classList.remove('sync-synced', 'sync-syncing', 'sync-offline', 'sync-error');
+        syncPill.classList.remove('sync-synced', 'sync-syncing', 'sync-offline', 'sync-error', 'sync-local');
         if (status.status === 'syncing') {
           syncPill.classList.add('sync-syncing');
           text.textContent = currentLang === 'tr' ? 'Eşitleniyor...' : 'Syncing...';
@@ -400,6 +400,10 @@ export function renderProfileView(container, onBack) {
           syncPill.classList.add('sync-offline');
           text.textContent = currentLang === 'tr' ? 'Çevrimdışı Mod' : 'Offline Mode';
           syncPill.title = currentLang === 'tr' ? 'İnternet yok, verileriniz cihazda güvenle saklanıyor' : 'Offline, changes saved locally';
+        } else if (status.status === 'local') {
+          syncPill.classList.add('sync-local');
+          text.textContent = currentLang === 'tr' ? 'Cihaza Kaydedildi' : 'Saved Locally';
+          syncPill.title = currentLang === 'tr' ? 'Verileriniz bu cihazda güvende saklanıyor.' : 'Changes safely saved on this device.';
         } else if (status.status === 'error') {
           syncPill.classList.add('sync-error');
           text.textContent = currentLang === 'tr' ? 'Eşitleme Hatası' : 'Sync Error';
@@ -413,8 +417,16 @@ export function renderProfileView(container, onBack) {
 
       updateSyncPillUI(getSyncStatus());
       activeSyncUnsubscribe = onSyncStatusChange(updateSyncPillUI);
-      syncPill.addEventListener('click', () => {
-        queueCloudSync(true);
+      syncPill.addEventListener('click', async () => {
+        const cur = getSyncStatus();
+        if (cur.status === 'error') {
+          alert((currentLang === 'tr' ? 'Bulut eşitleme hatası:\n\n' : 'Cloud sync error:\n\n') + (cur.error || 'Bilinmeyen hata') + (currentLang === 'tr' ? '\n\nTekrar deneniyor...' : '\n\nRetrying...'));
+        } else if (cur.status === 'local') {
+          alert(currentLang === 'tr'
+            ? 'Seyahatleriniz ve vizeleriniz bu cihazda güvenle saklanmaktadır.\n\nGoogle Firebase bulutunda yedeklemek ve diğer cihazlarınızla eşitlemek için lütfen Google veya E-posta ile giriş yapın.'
+            : 'Your travels are safely stored on this device.\n\nTo sync with the cloud, please sign in with Google or Email.');
+        }
+        await queueCloudSync(true);
       });
     }
 

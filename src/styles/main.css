@@ -15072,6 +15072,17 @@ body[data-theme="light"] .stamp-transport-select {
   animation: pulse-sync-dot 1s infinite alternate;
 }
 
+/* Local / Saved on Device */
+.profile-cloud-sync-pill.sync-local {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.28);
+  color: #38bdf8;
+}
+.profile-cloud-sync-pill.sync-local .cloud-sync-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.45);
+}
+
 /* Offline */
 .profile-cloud-sync-pill.sync-offline {
   background: rgba(245, 158, 11, 0.12);
