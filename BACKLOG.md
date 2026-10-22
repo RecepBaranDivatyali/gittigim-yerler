@@ -3,14 +3,11 @@
 Öncelik: **P0** acil/kırık · **P1** önemli · **P2** iyileştirme. Biten maddeyi `[x]` yapıp `STATE.md` → Son Değişiklikler'e taşı, sonra buradan sil.
 
 ## P0
-- [ ] Sürüm 2.8 (vc 15) imzalı AAB'yi Google Play'e ve Huawei AppGallery'e yükle (kullanıcı adımı) ve telefonda Google girişini + "Bulut Eşitlendi" rozetini doğrula.
+- [ ] Mağaza onayları sonrası telefonda canlı doğrulamalar: Google ile Giriş ve "Bulut Eşitlendi" rozeti kontrolü.
 
 ## P1
-- [ ] ESLint ilk taramasında çıkan gerçek hataları (`no-undef` vb.) düzelt.
-- [ ] iOS: Apple Sign-In'i gerçek cihazda test et (native nonce akışı).
-- [ ] Firestore kurallarını sıkılaştır: `users/{userId}` için `user_*` önekli kimliksiz yazma izni kaldırılmalı (şu an herkes `user_xxx` dokümanı yazabiliyor).
+- [ ] iOS: Apple Sign-In'i mağaza onayı sonrası gerçek iPhone'da test et.
+- [ ] Firestore kurallarını sıkılaştır: `users/{userId}` için `user_*` önekli kimliksiz yazma izni kaldırılmalı (güvenlik kalkanı).
 
 ## P2
-- [ ] Ana JS paketini kod bölme ile küçült (`posterWorldMapSvg` gibi dinamik import'lar, harita verileri lazy-load).
-- [ ] Kök dizindeki tek seferlik betikleri temizle/`scratch/`'a taşı (`audit.py`, `audit2.py`, `build2.py`, `append_css.py`, `create_*.py`, `collected.js`).
-- [ ] Basit smoke test: `getLocalDataPayload()` ve `stripUndefinedDeep()` için Node testi (`npm run check`'e ekle).
+- [ ] Harita ve seyahat veri katmanlarında ek dinamik lazy-load optimizasyonları.

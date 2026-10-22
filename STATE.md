@@ -2,7 +2,7 @@
 
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
-- Android sürüm: **2.8** (versionCode **15**) — derleme başarılı, mağazaya yüklenmeyi bekliyor
+- Android sürüm: **2.8** (versionCode **15**) — Google Play'e yüklendi, Apple App Store incelemede
 - Web: gittigim-yerler.vercel.app (main'den otomatik)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
 
@@ -11,12 +11,14 @@ AKTIF_GOREV: yok
 MUDUR:
 
 ## Bilinen Sorunlar
-- Ana JS paketi ~1.7 MB (kod bölme yapılmadı).
-- iOS Apple Sign-In gerçek cihazda henüz test edilmedi.
+- iOS Apple Sign-In gerçek cihazda henüz test edilmedi (Apple onayı bekleniyor).
 
 ## Son Değişiklikler
+- 2026-10-22: Performans & Kod Bölme: Leaflet ve Firebase modülleri ayrı chunk'lara ayrıldı, ana bundle 1.7 MB'dan 923 kB'a düşürüldü.
+- 2026-10-22: Node yerleşik test altyapısı (tests/smoke.test.js - stripUndefinedDeep 4/4 PASS) kuruldu, npm run check'e bağlandı.
+- 2026-10-22: Kök dizindeki geçici betikler scratch/'e arşivlendi.
+- 2026-10-22: Sürüm 2.8 (vc 15) Google Play'e yüklendi, Apple Store incelemede.
 - 2026-10-22: Orkestrasyon sistemi kuruldu (AGENTS.md, alt ajanlar, kancalar, ESLint + `npm run check`).
-- 2026-10-22: Sürüm 2.8 / versionCode 15.
 - 2026-10-22: "Eşitleme Hatası" kök nedeni düzeltildi (`unlockedAchievements` kapsam hatası, `syncService.js`).
-- 2026-10-22: Firebase Android uygulaması + Play imzalama SHA-1 eklendi (Google girişi `ApiException: 10` çözümü). Apple sağlayıcısı etkin.
+- 2026-10-22: Firebase Android uygulaması + Play imzalama SHA-1 eklendi (Google girişi `ApiException: 10` çözümü).
 - 2026-10-22: Avatar ızgarası kaydırılabilir, hesap verisi izolasyonu, arkadaş arama istatistikleri, uzun kullanıcı adı sığdırma.
