@@ -1,13 +1,11 @@
 package com.gittigimyerler.app;
 
-import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -21,6 +19,12 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.getcapacitor.BridgeActivity;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import java.util.UUID;
 import org.json.JSONObject;
 
@@ -33,6 +37,7 @@ public class MainActivity extends BridgeActivity {
         "https://gezgin-app-c269d.firebaseapp.com/__/auth/handler";
 
     private Dialog oauthDialog;
+    private GoogleSignInClient googleSignInClient;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -63,39 +68,20 @@ public class MainActivity extends BridgeActivity {
         public void signInWithGoogle() {
             runOnUiThread(() -> {
                 try {
-                    Intent intent;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        intent = AccountManager.newChooseAccountIntent(
-                            null,
-                            null,
-                            new String[] { "com.google" },
-                            null,
-                            null,
-                            null,
-                            null
-                        );
-                    } else {
-                        @SuppressWarnings("deprecation")
-                        Intent legacyIntent = AccountManager.newChooseAccountIntent(
-                            null,
-                            null,
-                            new String[] { "com.google" },
-                            false,
-                            null,
-                            null,
-                            null,
-                            null
-                        );
-                        intent = legacyIntent;
-                    }
-                    startActivityForResult(intent, RC_GOOGLE_ACCOUNT_PICKER);
+                    GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(GOOGLE_WEB_CLIENT_ID)
+                        .requestEmail()
+                        .build();
+                    googleSignInClient = GoogleSignIn.getClient(MainActivity.this, gso);
+                    // signOut first so the real Google account chooser is always shown
+                    googleSignInClient.signOut().addOnCompleteListener(t ->
+                        startActivityForResult(googleSignInClient.getSignInIntent(), RC_GOOGLE_ACCOUNT_PICKER)
+                    );
                 } catch (Exception e) {
-                    // Fallback to native OAuth WebView dialog if system AccountPicker is unavailable
                     openGoogleOAuthWebViewDialog();
                 }
             });
         }
-
         @JavascriptInterface
         public void openGoogleOAuthModal() {
             runOnUiThread(() -> openGoogleOAuthWebViewDialog());
@@ -105,26 +91,46 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_GOOGLE_ACCOUNT_PICKER) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-                    if (email != null && !email.trim().isEmpty()) {
-                        JSONObject payload = new JSONObject();
-                        payload.put("email", email.trim());
-                        payload.put("provider", "google");
-                        sendGoogleResultToJs(payload.toString());
-                        return;
-                    }
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                String idToken = account != null ? account.getIdToken() : null;
+                if (idToken != null && !idToken.isEmpty()) {
+                    JSONObject payload = new JSONObject();
+                    payload.put("idToken", idToken);
+                    payload.put("provider", "google");
+                    sendGoogleResultToJs(payload.toString());
+                } else {
+                    sendGoogleErrorToJs("NO_ID_TOKEN", -1);
                 }
-                JSONObject cancelPayload = new JSONObject();
-                cancelPayload.put("cancelled", true);
-                sendGoogleResultToJs(cancelPayload.toString());
+            } catch (ApiException e) {
+                int code = e.getStatusCode();
+                if (code == 12501) {
+                    // User closed the account chooser
+                    sendGoogleResultToJs("{\"cancelled\":true}");
+                } else if (code == 10 || code == 12500) {
+                    // SHA-1 / OAuth client not registered for this build: fall back to web OAuth dialog
+                    openGoogleOAuthWebViewDialog();
+                } else {
+                    sendGoogleErrorToJs("GOOGLE_SIGN_IN_" + code, code);
+                }
             } catch (Exception e) {
-                sendGoogleResultToJs("{\"cancelled\":true}");
+                sendGoogleErrorToJs("GOOGLE_SIGN_IN_EXCEPTION", -1);
             }
             return;
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void sendGoogleErrorToJs(String message, int code) {
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("error", message);
+            payload.put("code", code);
+            sendGoogleResultToJs(payload.toString());
+        } catch (Exception e) {
+            sendGoogleResultToJs("{\"error\":\"unknown\"}");
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")

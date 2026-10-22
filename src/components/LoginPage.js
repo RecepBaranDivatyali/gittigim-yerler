@@ -47,6 +47,11 @@ function isHuaweiDevice() {
 }
 
 const HUAWEI_DEVICE = isHuaweiDevice();
+// Apple sign-in needs the native iOS sheet or a browser popup. Inside the Android WebView neither works,
+// and Apple only requires it on iOS, so the button is hidden on native Android.
+const HIDE_APPLE_BUTTON = (() => {
+  try { return window.Capacitor?.getPlatform?.() === 'android'; } catch { return false; }
+})();
 
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
@@ -263,12 +268,14 @@ export function renderLoginPage(container, onLogin) {
           </div>
 
           <!-- Official Sign in with Apple Button (Guideline 4 Equivalent Design & Prominence) -->
+          ${!HIDE_APPLE_BUTTON ? `
           <button type="button" class="apple-auth-btn" id="btn-apple-auth">
             <svg class="apple-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
             </svg>
             <span>${authMode === 'login' ? (currentLang === 'tr' ? 'Apple ile Giriş Yap' : 'Sign in with Apple') : (currentLang === 'tr' ? 'Apple ile Kayıt Ol' : 'Sign up with Apple')}</span>
           </button>
+          ` : ''}
 
           <!-- Official Google Single Sign-On Button — Huawei cihazlarda gizlenir (GMS yok) -->
           ${!HUAWEI_DEVICE ? `
@@ -501,455 +508,178 @@ export function renderLoginPage(container, onLogin) {
       render();
     });
 
-    // Helper: Authenticate a verified native OS OAuth account (Android Google AccountPicker or iOS Apple ID) with Firebase Auth
-    const authenticateOAuthBridgeAccount = async (rawEmail, providerName, displayNameHint = '', photoUrlHint = '') => {
-      const emailLower = String(rawEmail || '').trim().toLowerCase();
-      if (!emailLower || !emailLower.includes('@')) return;
+    // ── Social sign-in helpers (REAL provider tokens only; no password derivation, no fake sheets) ──
+    const NATIVE_PLATFORM = window.Capacitor?.getPlatform?.() || 'web';
+    const hasAndroidGoogleBridge = !!(window.NativeAuthBridge && typeof window.NativeAuthBridge.signInWithGoogle === 'function');
+    const hasIosAuthBridge = !!(window.webkit?.messageHandlers?.nativeAuth);
 
-      let h1 = 0x811c9dc5;
-      for (let i = 0; i < emailLower.length; i++) {
-        h1 ^= emailLower.charCodeAt(i);
-        h1 = Math.imul(h1, 0x01000193);
+    const isCancelledError = (err) => {
+      const code = String(err?.code || '');
+      return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' || code === 'native/cancelled';
+    };
+
+    const socialErrorMessage = (err, providerLabel) => {
+      const code = String(err?.code || '');
+      if (code === 'auth/operation-not-allowed') {
+        return currentLang === 'tr'
+          ? `${providerLabel} ile giriş şu anda etkin değil. Lütfen e-posta ile giriş yapın.`
+          : `${providerLabel} sign-in is not enabled right now. Please sign in with email.`;
       }
-      const detPass = `Gv!OAuth#${(h1 >>> 0).toString(16).padStart(8, '0')}$2026`;
-      const localPart = emailLower.split('@')[0].replace(/[^a-z0-9]/g, '').slice(0, 10) || 'user';
-      const slug = Math.abs(h1 | 0).toString(36) + '_' + localPart;
-      const relayEmail = `${providerName}_${slug}@oauth.gezginapp.com`;
-
-      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-
-      let signedIn = false;
-      for (const candidateEmail of [emailLower, relayEmail]) {
-        try {
-          await signInWithEmailAndPassword(auth, candidateEmail, detPass);
-          signedIn = true;
-          break;
-        } catch {}
+      if (code === 'auth/account-exists-with-different-credential') {
+        return currentLang === 'tr'
+          ? 'Bu e-posta başka bir giriş yöntemiyle kayıtlı. Önce o yöntemle giriş yapın.'
+          : 'This email is registered with a different sign-in method. Please use that method first.';
       }
-
-      if (!signedIn) {
-        try {
-          await createUserWithEmailAndPassword(auth, emailLower, detPass);
-          signedIn = true;
-        } catch (createErr) {
-          if (createErr?.code === 'auth/email-already-in-use') {
-            try {
-              await signInWithEmailAndPassword(auth, relayEmail, detPass);
-              signedIn = true;
-            } catch {
-              await createUserWithEmailAndPassword(auth, relayEmail, detPass);
-              signedIn = true;
-            }
-          } else {
-            throw createErr;
-          }
-        }
+      if (code === 'auth/network-request-failed') {
+        return currentLang === 'tr' ? 'İnternet bağlantısı hatası. Lütfen tekrar deneyin.' : 'Network error. Please try again.';
       }
-
-      const rawDisplay = displayNameHint || auth?.currentUser?.displayName || emailLower.split('@')[0] || 'Gezgin';
-      const formattedUsername = sanitizeText(
-        rawDisplay.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).slice(0, 25),
-        25
-      ) || 'Gezgin';
-
-      if (auth?.currentUser && !auth.currentUser.displayName) {
-        await updateProfile(auth.currentUser, { displayName: formattedUsername }).catch(() => {});
+      if (code === 'auth/popup-blocked') {
+        return currentLang === 'tr' ? 'Açılır pencere engellendi. Lütfen izin verip tekrar deneyin.' : 'Popup was blocked. Please allow popups and try again.';
       }
+      if (code === 'auth/invalid-credential' || code === 'auth/invalid-app-credential') {
+        return currentLang === 'tr' ? `${providerLabel} girişi doğrulanamadı. Lütfen tekrar deneyin.` : `Could not verify ${providerLabel} sign-in. Please try again.`;
+      }
+      return currentLang === 'tr'
+        ? `${providerLabel} ile giriş tamamlanamadı. Lütfen tekrar deneyin veya e-posta ile giriş yapın.`
+        : `Could not complete ${providerLabel} sign-in. Please try again or use email.`;
+    };
 
+    const setBtnLoading = (btn, loading) => {
+      if (!btn) return;
+      btn.disabled = loading;
+      btn.style.opacity = loading ? '0.7' : '1';
+      btn.style.pointerEvents = loading ? 'none' : 'auto';
+    };
+
+    // Complete app login for a user that Firebase has ALREADY authenticated with a verified provider credential.
+    // Same email => same Firebase account (Firebase links by email), so cloud data always matches.
+    const finishFirebaseSocialLogin = async (user, providerName, nameHint = '') => {
+      if (!user) throw new Error('No Firebase user');
+      const email = String(user.email || user.providerData?.find(p => p?.email)?.email || '').trim().toLowerCase();
+      const rawName = user.displayName || nameHint || (email ? email.split('@')[0] : '') || 'Gezgin';
+      const username = sanitizeText(String(rawName).slice(0, 25), 25) || 'Gezgin';
+      if (!user.displayName && nameHint) {
+        await updateProfile(user, { displayName: username }).catch(() => {});
+      }
       await saveAndCompleteLogin({
-        uid: auth?.currentUser?.uid || undefined,
-        username: formattedUsername,
-        email: emailLower,
+        uid: user.uid,
+        username,
+        email,
         avatar: selectedAvatar || (providerName === 'google' ? '✈️' : '🧭'),
-        photoUrl: photoUrlHint || auth?.currentUser?.photoURL || null,
+        photoUrl: user.photoURL || null,
         authProvider: providerName,
         createdAt: new Date().toISOString()
       }, rememberMe);
     };
 
-    // Google Sign-In button click -> Uses Native Android OS Account Picker / Native iOS Google OAuth / Web Google Popup
+    const requestNativeGoogleIdToken = () => new Promise((resolve, reject) => {
+      window.__onNativeGoogleAuthResult = (res) => {
+        window.__onNativeGoogleAuthResult = null;
+        if (res?.idToken) return resolve(res.idToken);
+        const err = new Error(res?.error || 'cancelled');
+        err.code = res?.error ? `native/error-${res.code ?? 'unknown'}` : 'native/cancelled';
+        reject(err);
+      };
+      if (hasAndroidGoogleBridge) {
+        window.NativeAuthBridge.signInWithGoogle();
+      } else {
+        window.webkit.messageHandlers.nativeAuth.postMessage({ action: 'signInWithGoogle' });
+      }
+    });
+
+    const randomNonce = () => {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    };
+    const sha256Hex = async (text) => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+    };
+
+    const requestNativeAppleToken = (hashedNonce) => new Promise((resolve, reject) => {
+      window.__onNativeAppleAuthResult = (res) => {
+        window.__onNativeAppleAuthResult = null;
+        if (res?.identityToken) return resolve(res);
+        const err = new Error(res?.error || 'cancelled');
+        err.code = res?.error ? 'native/error' : 'native/cancelled';
+        reject(err);
+      };
+      window.webkit.messageHandlers.nativeAuth.postMessage({ action: 'signInWithApple', nonce: hashedNonce });
+    });
+
+    // ── Google ──
     const googleBtn = container.querySelector('#btn-google-auth');
     googleBtn?.addEventListener('click', async () => {
       syncFormState();
       if (!navigator.onLine) {
-        alert(currentLang === 'tr'
-          ? 'Google ile giriş yapmak için internet bağlantısı gereklidir.'
-          : 'Internet connection is required to sign in with Google.');
+        alert(currentLang === 'tr' ? 'Google ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Google.');
         return;
       }
-
       if (!auth) {
-        alert(currentLang === 'tr'
-          ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.'
-          : 'Authentication service is unavailable. Please sign in with email.');
+        alert(currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.');
         return;
       }
-
-      const setGoogleBtnLoading = (loading) => {
-        if (!googleBtn) return;
-        googleBtn.disabled = loading;
-        googleBtn.style.opacity = loading ? '0.7' : '1';
-        googleBtn.style.pointerEvents = loading ? 'none' : 'auto';
-      };
-
-      // 1. Native Android Bridge (pops up the phone's saved Google accounts via AccountManager.newChooseAccountIntent)
-      if (window.NativeAuthBridge && typeof window.NativeAuthBridge.signInWithGoogle === 'function') {
-        setGoogleBtnLoading(true);
-        window.__onNativeGoogleAuthResult = async (res) => {
-          try {
-            if (!res || res.cancelled) {
-              setGoogleBtnLoading(false);
-              return;
-            }
-            if (res.idToken) {
-              await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-              const cred = await signInWithCredential(auth, GoogleAuthProvider.credential(res.idToken));
-              const u = cred?.user;
-              const email = (u?.email || res.email || '').trim().toLowerCase();
-              const uname = sanitizeText((u?.displayName || email.split('@')[0] || 'Gezgin').slice(0, 25), 25);
-              await saveAndCompleteLogin({
-                uid: u?.uid,
-                username: uname,
-                email,
-                avatar: selectedAvatar || '✈️',
-                photoUrl: u?.photoURL || null,
-                authProvider: 'google',
-                createdAt: new Date().toISOString()
-              }, rememberMe);
-              return;
-            }
-            if (res.email) {
-              await authenticateOAuthBridgeAccount(res.email, 'google', res.displayName || '', res.photoUrl || '');
-              return;
-            }
-          } catch (err) {
-            console.warn('Native Android Google Sign-In error:', err);
-            alert(currentLang === 'tr'
-              ? 'Google ile giriş tamamlanamadı. Lütfen tekrar deneyin.'
-              : 'Could not complete Google Sign-In. Please try again.');
-          } finally {
-            setGoogleBtnLoading(false);
-          }
-        };
-        window.NativeAuthBridge.signInWithGoogle();
-        return;
-      }
-
-      // 2. Native iOS Bridge (opens native iOS Google OAuth modal sheet and returns idToken)
-      if (window.webkit?.messageHandlers?.nativeAuth) {
-        setGoogleBtnLoading(true);
-        window.__onNativeGoogleAuthResult = async (res) => {
-          try {
-            if (!res || res.cancelled) {
-              setGoogleBtnLoading(false);
-              return;
-            }
-            if (res.idToken) {
-              await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-              const cred = await signInWithCredential(auth, GoogleAuthProvider.credential(res.idToken));
-              const u = cred?.user;
-              const email = (u?.email || '').trim().toLowerCase();
-              const uname = sanitizeText((u?.displayName || email.split('@')[0] || 'Gezgin').slice(0, 25), 25);
-              await saveAndCompleteLogin({
-                uid: u?.uid,
-                username: uname,
-                email,
-                avatar: selectedAvatar || '✈️',
-                photoUrl: u?.photoURL || null,
-                authProvider: 'google',
-                createdAt: new Date().toISOString()
-              }, rememberMe);
-              return;
-            }
-          } catch (err) {
-            console.warn('Native iOS Google Sign-In error:', err);
-            alert(currentLang === 'tr'
-              ? 'Google ile giriş tamamlanamadı. Lütfen tekrar deneyin.'
-              : 'Could not complete Google Sign-In. Please try again.');
-          } finally {
-            setGoogleBtnLoading(false);
-          }
-        };
-        window.webkit.messageHandlers.nativeAuth.postMessage({ action: 'signInWithGoogle' });
-        return;
-      }
-
-      // 3. Standard Web Browser -> Real Google OAuth Account Chooser Popup
+      setBtnLoading(googleBtn, true);
       try {
-        setGoogleBtnLoading(true);
         await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-        const googleProvider = new GoogleAuthProvider();
-        googleProvider.setCustomParameters({ prompt: 'select_account' });
-        const cred = await signInWithPopup(auth, googleProvider);
-        const u = cred?.user;
-        if (u) {
-          const email = (u.email || '').trim().toLowerCase();
-          const uname = sanitizeText((u.displayName || email.split('@')[0] || 'Gezgin').slice(0, 25), 25);
-          await saveAndCompleteLogin({
-            uid: u.uid,
-            username: uname,
-            email,
-            avatar: selectedAvatar || '✈️',
-            photoUrl: u.photoURL || null,
-            authProvider: 'google',
-            createdAt: new Date().toISOString()
-          }, rememberMe);
+        let cred;
+        if (hasAndroidGoogleBridge || hasIosAuthBridge) {
+          const idToken = await requestNativeGoogleIdToken();
+          cred = await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+        } else {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+          cred = await signInWithPopup(auth, provider);
         }
+        await finishFirebaseSocialLogin(cred.user, 'google');
       } catch (err) {
-        if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
-          console.warn('Web Google Sign-In error:', err);
-          alert(currentLang === 'tr'
-            ? 'Google hesap seçici açılamadı. Lütfen açılır pencere (popup) iznini kontrol edin.'
-            : 'Could not open Google Account Chooser. Please check popup blocker settings.');
+        if (!isCancelledError(err)) {
+          console.warn('Google sign-in error:', err?.code, err?.message);
+          alert(socialErrorMessage(err, 'Google'));
         }
       } finally {
-        setGoogleBtnLoading(false);
+        setBtnLoading(googleBtn, false);
       }
     });
 
-    // Apple Sign-In Account Chooser & 2-Step Apple ID Modal (for non-iOS platforms where Face ID sheet isn't available)
-    const openAppleAccountChooserModal = () => {
-      const existing = document.getElementById('apple-signin-sheet-backdrop');
-      if (existing) existing.remove();
-
-      let savedAppleAccounts = [];
-      try {
-        const parsed = JSON.parse(localStorage.getItem('gv_saved_apple_accounts') || '[]');
-        if (Array.isArray(parsed)) savedAppleAccounts = parsed.filter(a => a && a.email);
-      } catch {}
-
-      const saveAppleAccountToDevice = (emailAddr, displayName) => {
-        try {
-          const clean = String(emailAddr || '').trim().toLowerCase();
-          if (!clean) return;
-          const filtered = savedAppleAccounts.filter(a => a.email !== clean);
-          filtered.unshift({ email: clean, name: displayName || clean.split('@')[0] });
-          localStorage.setItem('gv_saved_apple_accounts', JSON.stringify(filtered.slice(0, 5)));
-        } catch {}
-      };
-
-      const backdrop = document.createElement('div');
-      backdrop.id = 'apple-signin-sheet-backdrop';
-      backdrop.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;';
-
-      const renderPickerOrStep = (forceNewAccount = false) => {
-        const showSavedList = savedAppleAccounts.length > 0 && !forceNewAccount;
-        backdrop.innerHTML = `
-          <style>
-            #apple-signin-sheet-backdrop, #apple-signin-sheet-backdrop * {
-              box-sizing: border-box;
-              font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Outfit', sans-serif !important;
-              line-height: 1.3 !important;
-            }
-          </style>
-          <div style="width:100%;max-width:350px;background:#1c1c1e;color:#ffffff;border-radius:22px;border:1px solid rgba(255,255,255,0.14);box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow:hidden;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);">
-              <span style="font-size:0.92rem;font-weight:600;color:#f5f5f7;">${currentLang === 'tr' ? 'Apple ile Giriş Yap' : 'Sign in with Apple'}</span>
-              <button type="button" id="apple-sheet-cancel" style="background:rgba(255,255,255,0.12);border:none;color:#0a84ff;font-size:0.8rem;font-weight:600;padding:5px 12px;border-radius:14px;cursor:pointer;">
-                ${currentLang === 'tr' ? 'Vazgeç' : 'Cancel'}
-              </button>
-            </div>
-            <div style="padding:20px 18px 20px;text-align:center;">
-              <div style="width:48px;height:48px;margin:0 auto 12px;border-radius:13px;background:#000;border:1px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;">
-                <svg viewBox="0 0 24 24" style="width:25px;height:25px;color:#fff;">
-                  <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                </svg>
-              </div>
-              <div style="font-size:1.05rem;font-weight:700;margin-bottom:4px;color:#ffffff;">
-                ${showSavedList
-                  ? (currentLang === 'tr' ? 'Bir Apple Hesabı Seçin' : 'Choose an Apple Account')
-                  : (currentLang === 'tr' ? 'Gezgin için Apple Kimliği' : 'Apple ID for Gezgin')}
-              </div>
-              <div style="font-size:0.78rem;color:#98989f;margin-bottom:16px;">
-                ${showSavedList
-                  ? (currentLang === 'tr' ? 'Gezgin uygulamasına devam etmek için hesabınıza dokunun' : 'Tap your account to continue to Gezgin')
-                  : (currentLang === 'tr' ? 'Apple Kimliğiniz ile devam edin' : 'Continue with your Apple ID')}
-              </div>
-
-              ${showSavedList ? `
-                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                  ${savedAppleAccounts.map((acc, idx) => `
-                    <button type="button" class="saved-apple-acc-btn" data-idx="${idx}" style="width:100%;display:flex;align-items:center;gap:12px;padding:11px 14px;background:#2c2c2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;cursor:pointer;text-align:left;">
-                      <div style="width:36px;height:36px;border-radius:50%;background:#0a84ff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;flex-shrink:0;">
-                        ${escapeHtml((acc.name || acc.email || 'A').charAt(0).toUpperCase())}
-                      </div>
-                      <div style="flex:1;min-width:0;">
-                        <div style="font-size:0.88rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(acc.name || acc.email.split('@')[0])}</div>
-                        <div style="font-size:0.75rem;color:#98989f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(acc.email)}</div>
-                      </div>
-                      <span style="color:#0a84ff;font-size:1rem;">→</span>
-                    </button>
-                  `).join('')}
-                </div>
-                <button type="button" id="apple-use-another-btn" style="width:100%;padding:10px 14px;background:transparent;border:1px solid rgba(255,255,255,0.14);border-radius:12px;color:#0a84ff;font-size:0.84rem;font-weight:600;cursor:pointer;">
-                  + ${currentLang === 'tr' ? 'Başka Bir Apple Kimliği Kullan' : 'Use Another Apple ID'}
-                </button>
-              ` : `
-                <div style="text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:9px 13px;margin-bottom:10px;">
-                  <label for="apple-sheet-email" style="display:block;font-size:0.68rem;color:#98989f;font-weight:600;margin-bottom:2px;">
-                    ${currentLang === 'tr' ? 'Apple Kimliği (E-posta)' : 'Apple ID (Email)'}
-                  </label>
-                  <input type="email" id="apple-sheet-email" placeholder="icloud@apple.com" value="${escapeHtml(emailVal)}" autocomplete="username" style="width:100%;height:24px;padding:0;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
-                </div>
-
-                <div id="apple-password-step" style="display:none;text-align:left;background:#2c2c2e;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:9px 13px;margin-bottom:10px;">
-                  <label for="apple-sheet-password" style="display:block;font-size:0.68rem;color:#98989f;font-weight:600;margin-bottom:2px;">
-                    ${currentLang === 'tr' ? 'Parola' : 'Password'}
-                  </label>
-                  <input type="password" id="apple-sheet-password" placeholder="••••••••" autocomplete="current-password" style="width:100%;height:24px;padding:0;background:transparent;border:none;color:#fff;font-size:0.92rem;outline:none;" />
-                </div>
-
-                <div id="apple-sheet-error" style="display:none;color:#ff453a;font-size:0.78rem;text-align:left;margin-bottom:10px;padding:0 4px;"></div>
-
-                <button type="button" id="apple-sheet-continue" style="width:100%;padding:12px 16px;border-radius:12px;border:none;background:#0a84ff;color:#fff;font-size:0.92rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                  <span>${currentLang === 'tr' ? 'Devam Et' : 'Continue'}</span>
-                </button>
-              `}
-            </div>
-          </div>
-        `;
-
-        backdrop.querySelector('#apple-sheet-cancel')?.addEventListener('click', () => backdrop.remove());
-        backdrop.querySelector('#apple-use-another-btn')?.addEventListener('click', () => renderPickerOrStep(true));
-
-        backdrop.querySelectorAll('.saved-apple-acc-btn').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const idx = Number(btn.getAttribute('data-idx'));
-            const acc = savedAppleAccounts[idx];
-            if (!acc || !acc.email) return;
-            btn.style.opacity = '0.6';
-            btn.style.pointerEvents = 'none';
-            try {
-              await authenticateOAuthBridgeAccount(acc.email, 'apple', acc.name || '');
-              backdrop.remove();
-            } catch {
-              btn.style.opacity = '1';
-              btn.style.pointerEvents = 'auto';
-            }
-          });
-        });
-
-        let step = 1;
-        const continueBtn = backdrop.querySelector('#apple-sheet-continue');
-        const emailField = backdrop.querySelector('#apple-sheet-email');
-        const passWrap = backdrop.querySelector('#apple-password-step');
-        const passField = backdrop.querySelector('#apple-sheet-password');
-        const errBox = backdrop.querySelector('#apple-sheet-error');
-
-        const showErr = (msg) => {
-          if (errBox) {
-            errBox.textContent = msg;
-            errBox.style.display = 'block';
-          }
-        };
-
-        continueBtn?.addEventListener('click', async () => {
-          if (errBox) errBox.style.display = 'none';
-          const em = (emailField?.value || '').trim().toLowerCase();
-          if (!em || !em.includes('@') || !em.includes('.')) {
-            showErr(currentLang === 'tr' ? 'Lütfen geçerli bir Apple Kimliği girin.' : 'Please enter a valid Apple ID.');
-            emailField?.focus();
-            return;
-          }
-          if (step === 1) {
-            step = 2;
-            if (passWrap) passWrap.style.display = 'block';
-            passField?.focus();
-            return;
-          }
-          const pw = passField?.value || '';
-          if (!pw || pw.length < 4) {
-            showErr(currentLang === 'tr' ? 'Lütfen Apple Kimliği parolanızı girin.' : 'Please enter your Apple ID password.');
-            passField?.focus();
-            return;
-          }
-          continueBtn.disabled = true;
-          continueBtn.style.opacity = '0.7';
-          continueBtn.textContent = currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...';
-          try {
-            saveAppleAccountToDevice(em, em.split('@')[0]);
-            await authenticateOAuthBridgeAccount(em, 'apple', em.split('@')[0]);
-            backdrop.remove();
-          } catch {
-            showErr(currentLang === 'tr' ? 'Apple ile giriş yapılamadı.' : 'Could not sign in with Apple.');
-            continueBtn.disabled = false;
-            continueBtn.style.opacity = '1';
-            continueBtn.textContent = currentLang === 'tr' ? 'Devam Et' : 'Continue';
-          }
-        });
-      };
-
-      renderPickerOrStep(false);
-      document.body.appendChild(backdrop);
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) backdrop.remove();
-      });
-    };
-
+    // ── Apple ──
     const appleBtn = container.querySelector('#btn-apple-auth');
     appleBtn?.addEventListener('click', async () => {
       syncFormState();
       if (!navigator.onLine) {
-        alert(currentLang === 'tr'
-          ? 'Apple ile giriş yapmak için internet bağlantısı gereklidir.'
-          : 'Internet connection is required to sign in with Apple.');
+        alert(currentLang === 'tr' ? 'Apple ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Apple.');
         return;
       }
-
-      // 1. Native iOS Bridge (AuthenticationServices Face ID / Touch ID Apple Sign-In sheet)
-      if (window.webkit?.messageHandlers?.nativeAuth) {
-        if (appleBtn) {
-          appleBtn.style.opacity = '0.7';
-          appleBtn.style.pointerEvents = 'none';
-        }
-        window.__onNativeAppleAuthResult = async (res) => {
-          try {
-            if (!res || res.cancelled) return;
-            const appleEmail = (res.email || (res.userIdentifier ? `apple_${String(res.userIdentifier).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16).toLowerCase()}@privaterelay.appleid.com` : 'apple_user@privaterelay.appleid.com')).trim().toLowerCase();
-            await authenticateOAuthBridgeAccount(appleEmail, 'apple', res.fullName || '');
-          } catch (err) {
-            console.warn('Native iOS Apple Sign-In error:', err);
-          } finally {
-            if (appleBtn) {
-              appleBtn.style.opacity = '1';
-              appleBtn.style.pointerEvents = 'auto';
-            }
-          }
-        };
-        window.webkit.messageHandlers.nativeAuth.postMessage({ action: 'signInWithApple' });
+      if (!auth) {
+        alert(currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.');
         return;
       }
-
-      // 2. Capacitor SignInWithApple plugin if installed
-      const nativeApplePlugin = window.Capacitor?.Plugins?.SignInWithApple;
-      if (nativeApplePlugin && typeof nativeApplePlugin.authorize === 'function') {
-        try {
-          if (appleBtn) {
-            appleBtn.style.opacity = '0.7';
-            appleBtn.style.pointerEvents = 'none';
-          }
-          const res = await nativeApplePlugin.authorize({
-            clientId: 'com.gittigimyerler.app',
-            redirectURI: 'https://gittigim-yerler.vercel.app',
-            scopes: 'email name'
-          });
-          const appleEmail = res?.response?.email || `apple_user@privaterelay.appleid.com`;
-          const givenName = res?.response?.givenName || '';
-          const familyName = res?.response?.familyName || '';
-          const fullName = `${givenName} ${familyName}`.trim();
-          await authenticateOAuthBridgeAccount(appleEmail, 'apple', fullName);
-          return;
-        } catch (err) {
-          if (err?.message?.toLowerCase()?.includes('cancel')) return;
-        } finally {
-          if (appleBtn) {
-            appleBtn.style.opacity = '1';
-            appleBtn.style.pointerEvents = 'auto';
-          }
+      setBtnLoading(appleBtn, true);
+      try {
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        const appleProvider = new OAuthProvider('apple.com');
+        appleProvider.addScope('email');
+        appleProvider.addScope('name');
+        let cred;
+        let nameHint = '';
+        if (hasIosAuthBridge) {
+          const rawNonce = randomNonce();
+          const res = await requestNativeAppleToken(await sha256Hex(rawNonce));
+          nameHint = res.fullName || '';
+          cred = await signInWithCredential(auth, appleProvider.credential({ idToken: res.identityToken, rawNonce }));
+        } else {
+          cred = await signInWithPopup(auth, appleProvider);
         }
+        await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
+      } catch (err) {
+        if (!isCancelledError(err)) {
+          console.warn('Apple sign-in error:', err?.code, err?.message);
+          alert(socialErrorMessage(err, 'Apple'));
+        }
+      } finally {
+        setBtnLoading(appleBtn, false);
       }
-
-      openAppleAccountChooserModal();
     });
 
     // Avatar pick in registration
@@ -1036,7 +766,9 @@ export function renderLoginPage(container, onLogin) {
             console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
             let msg = fbErr.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
             if (fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/invalid-credential') {
-              msg = currentLang === 'tr' ? 'E-posta veya şifre hatalı. Lütfen kontrol edin.' : 'Incorrect email or password. Please check and try again.';
+              msg = currentLang === 'tr'
+                ? 'E-posta veya şifre hatalı. Bu hesabı Google/Apple ile açtıysanız o butonla giriş yapın.'
+                : 'Incorrect email or password. If you created this account with Google/Apple, use that button instead.';
             } else if (fbErr.code === 'auth/user-not-found') {
               msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
             } else if (fbErr.code === 'auth/email-already-in-use') {

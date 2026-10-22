@@ -44,7 +44,7 @@ class AuthBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler,
 
         DispatchQueue.main.async {
             if action == "signInWithApple" {
-                self.startAppleSignIn()
+                self.startAppleSignIn(nonce: body["nonce"] as? String)
             } else if action == "signInWithGoogle" {
                 self.startGoogleOAuthSheet()
             }
@@ -52,10 +52,11 @@ class AuthBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler,
     }
 
     // MARK: - Native iOS Sign in with Apple (Face ID / Touch ID)
-    private func startAppleSignIn() {
+    private func startAppleSignIn(nonce: String?) {
         let provider = ASAuthorizationAppleIDProvider()
         let request = provider.createRequest()
         request.requestedScopes = [.fullName, .email]
+        if let n = nonce, !n.isEmpty { request.nonce = n }
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
         controller.delegate = self
@@ -109,7 +110,12 @@ class AuthBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler,
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        sendJsonToJs(fnName: "__onNativeAppleAuthResult", dict: ["cancelled": true])
+        let nsErr = error as NSError
+        if nsErr.code == ASAuthorizationError.canceled.rawValue {
+            sendJsonToJs(fnName: "__onNativeAppleAuthResult", dict: ["cancelled": true])
+        } else {
+            sendJsonToJs(fnName: "__onNativeAppleAuthResult", dict: ["error": "APPLE_\(nsErr.code)"])
+        }
     }
 
     // MARK: - Native iOS Google OAuth Sheet
