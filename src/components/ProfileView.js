@@ -74,6 +74,211 @@ function getFriendlyPlaceName(targetId) {
   return { name: targetId, flag: '📍', sub: '' };
 }
 
+function normalizeJournalStr(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function formatJournalDate(dateStr, lang) {
+  if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const monthsTr = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+      const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mIdx = parseInt(parts[1], 10) - 1;
+      const month = (lang === 'tr' ? monthsTr[mIdx] : monthsEn[mIdx]) || parts[1];
+      const day = parseInt(parts[2], 10);
+      return `${day} ${month} ${parts[0]}`;
+    }
+  } catch {}
+  return dateStr;
+}
+
+function renderRatingStarsHtml(rating) {
+  const r = Number(rating) || 0;
+  if (r <= 0) return '';
+  const isTenScale = r > 5;
+  const starCount = isTenScale ? Math.max(1, Math.min(5, Math.round(r / 2))) : Math.max(1, Math.min(5, Math.round(r)));
+  const scoreText = isTenScale ? `${r}/10` : `${r}/5`;
+
+  let stars = '';
+  for (let i = 1; i <= 5; i++) {
+    stars += `<span class="j-star ${i <= starCount ? 'j-star-filled' : 'j-star-empty'}">${i <= starCount ? '★' : '☆'}</span>`;
+  }
+
+  return `
+    <div class="journal-rating-badge" title="${scoreText}">
+      <span class="j-stars-group">${stars}</span>
+      <span class="j-score-text">${scoreText}</span>
+    </div>
+  `;
+}
+
+function getTravelJournalNotes(storageData, currentLang) {
+  const notesList = [];
+  if (!storageData) return notesList;
+
+  const transportLabels = {
+    flight: currentLang === 'tr' ? 'Uçak' : 'Flight',
+    train: currentLang === 'tr' ? 'Tren' : 'Train',
+    car: currentLang === 'tr' ? 'Araba' : 'Car',
+    bus: currentLang === 'tr' ? 'Otobüs' : 'Bus',
+    ship: currentLang === 'tr' ? 'Gemi' : 'Ship',
+    walk: currentLang === 'tr' ? 'Yürüyüş' : 'Walking'
+  };
+
+  const transportIcons = {
+    flight: '✈️',
+    train: '🚆',
+    car: '🚗',
+    bus: '🚌',
+    ship: '🚢',
+    walk: '🚶'
+  };
+
+  // 1. Turkey Provinces
+  const turkeyVisits = storageData.turkeyVisits || {};
+  Object.entries(turkeyVisits).forEach(([pid, v]) => {
+    if (!v) return;
+    const cNote = cleanNote(v.notes || v.journal?.text || '');
+    const r = Number(v.rating) || 0;
+    const hasExplicitRating = r > 0 && (r !== 5 || cNote || v.hasCustomRating);
+    if (!cNote && !hasExplicitRating) return;
+
+    const p = TURKEY_PROVINCES.find(x => String(x.id).padStart(2, '0') === String(pid).padStart(2, '0') || String(x.id) === String(pid));
+    const name = p ? p.name : `İl #${pid}`;
+    const date = v.entryDate || v.date || '';
+    const transKey = v.entryTransport || 'car';
+    const transIcon = transportIcons[transKey] || '🚗';
+    const transLabel = transportLabels[transKey] || transKey;
+
+    notesList.push({
+      id: `TR::${pid}`,
+      name,
+      flag: '🇹🇷',
+      sub: currentLang === 'tr' ? 'Türkiye' : 'Turkey',
+      date,
+      transportKey: transKey,
+      transportIcon: transIcon,
+      transportLabel: transLabel,
+      rating: hasExplicitRating ? r : 0,
+      note: cNote,
+      type: 'province'
+    });
+  });
+
+  // 2. World Visits (Countries & Subregions)
+  const worldVisits = storageData.worldVisits || {};
+  Object.entries(worldVisits).forEach(([code, v]) => {
+    if (!v) return;
+    const cNote = cleanNote(v.notes || v.journal?.text || '');
+    const r = Number(v.rating) || 0;
+    const hasExplicitRating = r > 0 && (r !== 5 || cNote || v.hasCustomRating);
+
+    if (hasExplicitRating || cNote) {
+      const friendly = getFriendlyPlaceName(code);
+      const date = v.entryDate || v.date || '';
+      const transKey = v.entryTransport || 'flight';
+      const transIcon = transportIcons[transKey] || '✈️';
+      const transLabel = transportLabels[transKey] || transKey;
+
+      notesList.push({
+        id: code,
+        name: friendly.name,
+        flag: friendly.flag,
+        sub: friendly.sub || '',
+        date,
+        transportKey: transKey,
+        transportIcon: transIcon,
+        transportLabel: transLabel,
+        rating: hasExplicitRating ? r : 0,
+        note: cNote,
+        type: code.includes('::') ? 'subregion' : 'country'
+      });
+    }
+
+    // Additional sub-visits with separate notes
+    if (Array.isArray(v.visits) && v.visits.length > 1) {
+      const featIdx = v.featuredVisitIndex || 0;
+      v.visits.forEach((subV, sIdx) => {
+        if (sIdx === featIdx) return;
+        const subNote = cleanNote(subV.notes || subV.journal?.text || '');
+        const subR = Number(subV.rating) || 0;
+        const subHasRating = subR > 0 && (subR !== 5 || subNote || subV.hasCustomRating);
+        if (!subNote && !subHasRating) return;
+
+        const friendly = getFriendlyPlaceName(code);
+        const date = subV.entryDate || subV.date || '';
+        const transKey = subV.entryTransport || 'flight';
+        const transIcon = transportIcons[transKey] || '✈️';
+        const transLabel = transportLabels[transKey] || transKey;
+
+        notesList.push({
+          id: `${code}::visit_${sIdx}`,
+          name: `${friendly.name} (${currentLang === 'tr' ? `${sIdx + 1}. Gezi` : `Trip ${sIdx + 1}`})`,
+          flag: friendly.flag,
+          sub: friendly.sub || '',
+          date,
+          transportKey: transKey,
+          transportIcon: transIcon,
+          transportLabel: transLabel,
+          rating: subHasRating ? subR : 0,
+          note: subNote,
+          type: 'visit'
+        });
+      });
+    }
+  });
+
+  // 3. World Cities (visited cities)
+  const worldCities = storageData.worldCities || [];
+  if (Array.isArray(worldCities)) {
+    worldCities.forEach((city, idx) => {
+      if (!city) return;
+      const cNote = cleanNote(city.notes || '');
+      const r = Number(city.rating) || 0;
+      if (!cNote && r <= 0) return;
+
+      const cObj = WORLD_COUNTRIES.find(c => c.code.toUpperCase() === (city.countryCode || '').toUpperCase());
+      const flag = (cObj && cObj.code !== 'IL') ? (cObj.flag || '📍') : '📍';
+      const cName = cObj ? getCountryDisplayName(cObj) : (city.countryCode || '');
+      const cityName = city.cityName || (currentLang === 'tr' ? 'Şehir' : 'City');
+      const transKey = city.transport || 'flight';
+      const transIcon = transportIcons[transKey] || '✈️';
+      const transLabel = transportLabels[transKey] || transKey;
+
+      notesList.push({
+        id: `city::${city.countryCode}::${cityName}::${idx}`,
+        name: cityName,
+        flag,
+        sub: cName,
+        date: city.date || '',
+        transportKey: transKey,
+        transportIcon: transIcon,
+        transportLabel: transLabel,
+        rating: r > 0 ? r : 0,
+        note: cNote,
+        type: 'city'
+      });
+    });
+  }
+
+  // Sort: newest date first, then place name
+  notesList.sort((a, b) => {
+    if (a.date && b.date) return b.date.localeCompare(a.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return notesList;
+}
+
 
 const ALLOWED_AVATARS = [
   '🧭', '🗺️', '✈️', '🚀', '🏔️', '🏖️', '🎒', '🌊', '🚢', '🚂', 
@@ -363,6 +568,25 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
+        <!-- 📖 Seyahat Günlüğü & Gezgin Notları Card -->
+        <div class="profile-journal-showcase-card" id="profile-journal-showcase">
+          <div class="journal-showcase-header">
+            <div class="journal-showcase-title-row">
+              <div class="journal-showcase-title">
+                <span>📖 ${currentLang === 'tr' ? 'Seyahat Günlüğü & Gezgin Notları' : 'Travel Journal & Notes'}</span>
+                <span class="journal-showcase-badge" id="journal-notes-count">0 ${currentLang === 'tr' ? 'Anı' : 'Memories'}</span>
+              </div>
+              <div class="journal-search-wrap">
+                <span class="journal-search-icon">🔍</span>
+                <input type="text" id="journal-search-input" class="journal-search-input" placeholder="${currentLang === 'tr' ? 'Notlarda veya yerlerde ara...' : 'Search in notes or places...'}" autocomplete="off" />
+                <button type="button" id="journal-search-clear" class="journal-search-clear" style="display:none;" title="${currentLang === 'tr' ? 'Temizle' : 'Clear'}">&times;</button>
+              </div>
+            </div>
+            <span class="journal-showcase-subtitle">${currentLang === 'tr' ? 'Gezdiğiniz yerlerde aldığınız samimi seyahat notları, ipuçları ve puanlarınız' : 'Memories, travel notes and scores from places you visited'}</span>
+          </div>
+          <div class="journal-notes-list" id="journal-notes-list"></div>
+        </div>
+
         <!-- Upcoming Trip Countdown Card -->
         <div id="trip-countdown-container"></div>
       </div>
@@ -530,6 +754,122 @@ export function renderProfileView(container, onBack) {
       }).catch(err => console.warn('Could not load profile photos', err));
     }
     refreshPhotoShowcase();
+
+    // 📖 Seyahat Günlüğü & Gezgin Notları Vitrini
+    const journalNotes = getTravelJournalNotes(storageData, currentLang);
+    const journalListEl = document.getElementById('journal-notes-list');
+    const journalCountEl = document.getElementById('journal-notes-count');
+    const journalSearchInput = document.getElementById('journal-search-input');
+    const journalSearchClear = document.getElementById('journal-search-clear');
+
+    function renderJournalItems(filterText = '') {
+      if (!journalListEl) return;
+      const q = normalizeJournalStr(filterText);
+      const filtered = journalNotes.filter(item => {
+        if (!q) return true;
+        return (
+          normalizeJournalStr(item.name).includes(q) ||
+          normalizeJournalStr(item.sub).includes(q) ||
+          normalizeJournalStr(item.note).includes(q) ||
+          normalizeJournalStr(item.date).includes(q) ||
+          normalizeJournalStr(item.transportLabel).includes(q)
+        );
+      });
+
+      if (journalCountEl) {
+        journalCountEl.textContent = `${filtered.length} ${currentLang === 'tr' ? 'Anı' : 'Memories'}`;
+      }
+
+      if (journalNotes.length === 0) {
+        journalListEl.innerHTML = `
+          <div class="journal-empty-state">
+            <span class="journal-empty-icon">📖</span>
+            <div class="journal-empty-title">${currentLang === 'tr' ? 'Henüz bir seyahat notu eklenmedi.' : 'No travel notes added yet.'}</div>
+            <div class="journal-empty-desc">${currentLang === 'tr' ? 'Haritada gezdiğin yerlere tıklayarak anılarını kaydedebilirsin!' : 'Click any visited place on the map to save your memories and notes!'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      if (filtered.length === 0) {
+        journalListEl.innerHTML = `
+          <div class="journal-empty-state journal-search-empty">
+            <span class="journal-empty-icon">🔍</span>
+            <div class="journal-empty-title">${currentLang === 'tr' ? 'Aramanıza uygun seyahat notu bulunamadı.' : 'No travel notes found matching your search.'}</div>
+            <div class="journal-empty-desc">${currentLang === 'tr' ? 'Farklı bir kelime aramayı veya filtreyi temizlemeyi deneyin.' : 'Try a different search term or clear the filter.'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      journalListEl.innerHTML = filtered.map(item => {
+        const formattedDate = formatJournalDate(item.date, currentLang);
+        const ratingHtml = renderRatingStarsHtml(item.rating);
+
+        return `
+          <div class="journal-note-card" data-id="${escapeHtml(item.id)}">
+            <div class="journal-note-header">
+              <div class="journal-note-place-wrap">
+                <span class="journal-note-flag">${item.flag}</span>
+                <div class="journal-note-place-text">
+                  <span class="journal-note-name">${escapeHtml(item.name)}</span>
+                  ${item.sub ? `<span class="journal-note-sub">${escapeHtml(item.sub)}</span>` : ''}
+                </div>
+              </div>
+              ${ratingHtml}
+            </div>
+            
+            <div class="journal-note-meta-row">
+              ${formattedDate ? `
+                <div class="journal-meta-badge" title="${currentLang === 'tr' ? 'Ziyaret Tarihi' : 'Visit Date'}">
+                  <span class="journal-meta-icon">📅</span>
+                  <span>${escapeHtml(formattedDate)}</span>
+                </div>
+              ` : ''}
+              <div class="journal-meta-badge" title="${escapeHtml(item.transportLabel)}">
+                <span class="journal-meta-icon">${item.transportIcon}</span>
+                <span>${escapeHtml(item.transportLabel)}</span>
+              </div>
+            </div>
+
+            ${item.note ? `
+              <div class="journal-note-body">
+                <span class="journal-quote-mark start">“</span>
+                <p class="journal-note-text">${escapeHtml(item.note)}</p>
+                <span class="journal-quote-mark end">”</span>
+              </div>
+            ` : `
+              <div class="journal-note-body journal-note-body-empty">
+                <span class="journal-no-note-hint">⭐ ${currentLang === 'tr' ? 'Yalnızca değerlendirme puanı girildi.' : 'Rating submitted without notes.'}</span>
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderJournalItems();
+
+    if (journalSearchInput) {
+      journalSearchInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (journalSearchClear) {
+          journalSearchClear.style.display = val ? 'flex' : 'none';
+        }
+        renderJournalItems(val);
+      });
+    }
+
+    if (journalSearchClear) {
+      journalSearchClear.addEventListener('click', () => {
+        if (journalSearchInput) {
+          journalSearchInput.value = '';
+          journalSearchClear.style.display = 'none';
+          renderJournalItems('');
+          journalSearchInput.focus();
+        }
+      });
+    }
 
     // Render and manage Upcoming Trip Countdown
     const countdownContainer = document.getElementById('trip-countdown-container');

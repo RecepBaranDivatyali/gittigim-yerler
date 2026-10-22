@@ -145,6 +145,10 @@ const TRANSLATIONS = {
     myVisas: 'Vizelerim',
     passportBordo: 'Bordo',
     passportYesil: 'Yeşil',
+    // Routes
+    routes: 'Rotalar',
+    travelRoutes: 'Seyahat Rotaları',
+    noRoutesYet: 'Henüz seyahat kaydı yok. Ziyaret ettiğin yerleri eklediğinde rotaların burada canlanacak!',
     // Popups & Drawers
     drawerStamp: 'Tarih',
     drawerJournal: 'Günlük',
@@ -329,6 +333,10 @@ const TRANSLATIONS = {
     myVisas: 'My Visas',
     passportBordo: 'Regular',
     passportYesil: 'Special',
+    // Routes
+    routes: 'Routes',
+    travelRoutes: 'Travel Routes',
+    noRoutesYet: 'No travel routes yet. Add visited places to see them here!',
     // Popups & Drawers
     drawerStamp: 'Dates',
     drawerJournal: 'Journal',

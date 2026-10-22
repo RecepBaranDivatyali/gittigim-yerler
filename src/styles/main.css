@@ -11835,6 +11835,75 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
   color: #fff !important;
 }
 
+/* Floating Flight & Travel Routes Button */
+.floating-routes-mode-btn {
+  height: 40px;
+  padding: 0 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.floating-routes-mode-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+.floating-routes-mode-btn.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
+}
+body[data-theme="light"] .floating-routes-mode-btn {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+}
+body[data-theme="light"] .floating-routes-mode-btn.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+  color: #fff !important;
+}
+
+/* Flight Route SVG Animation & Glow */
+@keyframes flightDashAnimation {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+.flight-route-path {
+  animation: flightDashAnimation 1.4s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.7));
+  cursor: pointer;
+}
+.flight-route-tooltip {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(56, 189, 248, 0.5) !important;
+  color: #f0f9ff !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 5px 10px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  pointer-events: none !important;
+}
+.flight-route-tooltip::before {
+  border-top-color: rgba(15, 23, 42, 0.92) !important;
+}
+
 /* Mobile Override for Visa Button & Top-Right Group (guarantees 32px round icon and 56px search top) */
 @media (max-width: 768px) {
   .floating-top-right-group {
@@ -11843,7 +11912,8 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
     gap: 6px !important;
     z-index: 2200;
   }
-  .floating-visa-mode-btn {
+  .floating-visa-mode-btn,
+  .floating-routes-mode-btn {
     width: 32px !important;
     height: 32px !important;
     min-width: 32px !important;
@@ -11852,7 +11922,8 @@ body[data-theme="light"] .floating-visa-mode-btn.active {
     border-radius: 50% !important;
     font-size: 0.95rem !important;
   }
-  .floating-visa-mode-btn .visa-btn-lbl {
+  .floating-visa-mode-btn .visa-btn-lbl,
+  .floating-routes-mode-btn .routes-btn-lbl {
     display: none !important;
   }
   #map-legend.floating-legend:not(.expanded) {
@@ -13246,6 +13317,355 @@ body[data-theme="light"] .stamp-transport-select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ─── 📖 Profile Travel Journal & Notes Showcase ──────────────────────── */
+.profile-journal-showcase-card {
+  background: var(--theme-card-bg, rgba(30, 41, 59, 0.8));
+  border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  margin-top: 16px;
+}
+
+.journal-showcase-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.journal-showcase-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.journal-showcase-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--theme-text-main, #f8fafc);
+}
+
+.journal-showcase-badge {
+  font-size: 0.72rem;
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+
+.journal-showcase-subtitle {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted, #94a3b8);
+  line-height: 1.4;
+}
+
+.journal-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 240px;
+  max-width: 100%;
+}
+
+.journal-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 0.82rem;
+  color: var(--theme-text-muted, #94a3b8);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.journal-search-input {
+  width: 100%;
+  padding: 7px 30px 7px 30px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  color: var(--theme-text-main, #f8fafc);
+  font-size: 0.82rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.journal-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.journal-search-clear {
+  position: absolute;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: var(--theme-text-main, #f8fafc);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+
+.journal-search-clear:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.journal-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.journal-notes-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.journal-notes-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.journal-notes-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 99px;
+}
+
+.journal-note-card {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.journal-note-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.journal-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.journal-note-place-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.journal-note-flag {
+  font-size: 1.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.journal-note-place-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.journal-note-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--theme-text-main, #f8fafc);
+  line-height: 1.25;
+}
+
+.journal-note-sub {
+  font-size: 0.74rem;
+  color: var(--theme-text-muted, #94a3b8);
+}
+
+.journal-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+.j-stars-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.j-star {
+  font-size: 0.85rem;
+}
+
+.j-star-filled {
+  color: #f59e0b;
+}
+
+.j-star-empty {
+  color: rgba(245, 158, 11, 0.3);
+}
+
+.j-score-text {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #f59e0b;
+  letter-spacing: 0.2px;
+}
+
+.journal-note-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+}
+
+.journal-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--theme-text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+.journal-meta-icon {
+  font-size: 0.85rem;
+}
+
+.journal-note-body {
+  position: relative;
+  background: rgba(0, 0, 0, 0.22);
+  border-left: 3px solid #38bdf8;
+  border-radius: 0 10px 10px 0;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.journal-quote-mark {
+  font-size: 1.35rem;
+  line-height: 1;
+  color: #38bdf8;
+  opacity: 0.75;
+  font-family: Georgia, serif;
+  user-select: none;
+}
+
+.journal-quote-mark.start {
+  margin-right: 4px;
+  vertical-align: top;
+}
+
+.journal-quote-mark.end {
+  margin-left: 4px;
+  vertical-align: bottom;
+}
+
+.journal-note-text {
+  display: inline;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--theme-text-main, #f1f5f9);
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.journal-note-body-empty {
+  border-left-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
+  padding: 8px 12px;
+}
+
+.journal-no-note-hint {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.journal-empty-state {
+  text-align: center;
+  color: var(--theme-text-muted, #94a3b8);
+  padding: 32px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  background: rgba(10, 15, 29, 0.3);
+}
+
+.journal-empty-icon {
+  font-size: 2.2rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.journal-empty-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--theme-text-main, #f8fafc);
+  margin-bottom: 4px;
+}
+
+.journal-empty-desc {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted, #94a3b8);
+  max-width: 380px;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .journal-showcase-title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .journal-search-wrap {
+    width: 100%;
+  }
+  .journal-note-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .journal-rating-badge {
+    align-self: flex-start;
+  }
+  .journal-note-card {
+    padding: 12px 14px;
+  }
 }
 
 /* ─── Luxury Sanal Pasaport Hero Card in Profile Header (User Request) ─── */
@@ -18027,12 +18447,61 @@ body[data-theme="light"] .profile-back-btn { background: rgba(0, 0, 0, 0.06) !im
 body[data-theme="light"] .profile-card,
 body[data-theme="light"] .settings-card,
 body[data-theme="light"] .profile-photo-showcase-card,
+body[data-theme="light"] .profile-journal-showcase-card,
 body[data-theme="light"] .trip-invitation-card,
 body[data-theme="light"] .compare-input-card {
   background: #ffffff !important;
   border-color: rgba(203, 213, 225, 0.85) !important;
   color: #0f172a !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+body[data-theme="light"] .journal-showcase-title,
+body[data-theme="light"] .journal-note-name,
+body[data-theme="light"] .journal-empty-title {
+  color: #0f172a !important;
+}
+body[data-theme="light"] .journal-showcase-subtitle,
+body[data-theme="light"] .journal-note-sub,
+body[data-theme="light"] .journal-empty-desc {
+  color: #64748b !important;
+}
+body[data-theme="light"] .journal-search-input {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body[data-theme="light"] .journal-search-input:focus {
+  background: #ffffff !important;
+  border-color: #3b82f6 !important;
+}
+body[data-theme="light"] .journal-search-clear {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+body[data-theme="light"] .journal-note-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+body[data-theme="light"] .journal-note-card:hover {
+  background: #ffffff !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+}
+body[data-theme="light"] .journal-meta-badge {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+body[data-theme="light"] .journal-note-body {
+  background: #f1f5f9 !important;
+  border-left-color: #0284c7 !important;
+}
+body[data-theme="light"] .journal-note-text {
+  color: #1e293b !important;
+}
+body[data-theme="light"] .journal-empty-state {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
 }
 body[data-theme="light"] .notifications-modal-card {
   background: #ffffff !important;
@@ -18076,11 +18545,56 @@ body[data-theme="natgeo_atlas"] .ptab.active { background: #fdf8f2 !important; c
 body[data-theme="natgeo_atlas"] .profile-card,
 body[data-theme="natgeo_atlas"] .settings-card,
 body[data-theme="natgeo_atlas"] .profile-photo-showcase-card,
+body[data-theme="natgeo_atlas"] .profile-journal-showcase-card,
 body[data-theme="natgeo_atlas"] .trip-invitation-card,
 body[data-theme="natgeo_atlas"] .compare-input-card {
   background: rgba(253, 248, 242, 0.96) !important;
   border-color: rgba(140, 112, 82, 0.3) !important;
   color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-showcase-title,
+body[data-theme="natgeo_atlas"] .journal-note-name,
+body[data-theme="natgeo_atlas"] .journal-empty-title {
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-showcase-subtitle,
+body[data-theme="natgeo_atlas"] .journal-note-sub,
+body[data-theme="natgeo_atlas"] .journal-empty-desc {
+  color: #785a3c !important;
+}
+body[data-theme="natgeo_atlas"] .journal-search-input {
+  background: #f5ece0 !important;
+  border-color: rgba(140, 112, 82, 0.35) !important;
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-search-input:focus {
+  background: #fdfaf6 !important;
+  border-color: #b45309 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-note-card {
+  background: #fdfaf6 !important;
+  border-color: rgba(140, 112, 82, 0.25) !important;
+}
+body[data-theme="natgeo_atlas"] .journal-note-card:hover {
+  background: #fffdf9 !important;
+  border-color: rgba(180, 83, 9, 0.4) !important;
+  box-shadow: 0 6px 16px rgba(140, 112, 82, 0.12) !important;
+}
+body[data-theme="natgeo_atlas"] .journal-meta-badge {
+  background: #f5ece0 !important;
+  border-color: rgba(140, 112, 82, 0.25) !important;
+  color: #5c432d !important;
+}
+body[data-theme="natgeo_atlas"] .journal-note-body {
+  background: #f5ece0 !important;
+  border-left-color: #b45309 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-note-text {
+  color: #2b2118 !important;
+}
+body[data-theme="natgeo_atlas"] .journal-empty-state {
+  background: #f5ece0 !important;
+  border-color: rgba(140, 112, 82, 0.3) !important;
 }
 body[data-theme="natgeo_atlas"] .profile-username,
 body[data-theme="natgeo_atlas"] .settings-title,

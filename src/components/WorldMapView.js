@@ -177,6 +177,8 @@ let regionLayers = {};
 let regionCache = {};
 let subregionLayers = {};
 let subregionCache = {};
+let travelRoutesLayer = null;
+let isRoutesModeActive = false;
 const inFlightRegions = {};
 const inFlightSubregions = {};
 const MAX_MOUNTED_REGIONS = 10;
@@ -701,8 +703,11 @@ export function renderWorldMapView(container, options = {}) {
           <div id="map-search-results" class="map-search-results" style="display:none;"></div>
         </div>
 
-        <!-- Floating Top-Right: Visa Mode Button & Travel Legend -->
+        <!-- Floating Top-Right: Routes & Visa Mode Buttons & Travel Legend -->
         <div class="floating-top-right-group">
+          <button type="button" id="btn-toggle-routes-mode" class="floating-routes-mode-btn" title="${t('travelRoutes')}">
+            <span>✈️</span> <span class="routes-btn-lbl">${t('routes')}</span>
+          </button>
           <button type="button" id="btn-toggle-visa-mode" class="floating-visa-mode-btn" title="${t('visaMode')}">
             <span>🛂</span> <span class="visa-btn-lbl">${t('visaMode')}</span>
           </button>
@@ -1227,12 +1232,18 @@ export function renderWorldMapView(container, options = {}) {
         if (profileWrap) profileWrap.style.display = 'none';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = 'none';
+        if (travelRoutesLayer && map && map.hasLayer(travelRoutesLayer)) {
+          map.removeLayer(travelRoutesLayer);
+        }
       } else {
         if (visaBanner) visaBanner.style.display = 'none';
         if (topRightGroup) topRightGroup.style.display = '';
         if (profileWrap) profileWrap.style.display = '';
         const searchWrap = container.querySelector('#map-search-wrap');
         if (searchWrap) searchWrap.style.display = '';
+        if (isRoutesModeActive && travelRoutesLayer && map && !map.hasLayer(travelRoutesLayer)) {
+          map.addLayer(travelRoutesLayer);
+        }
       }
 
       applyVisaModeStyles();
@@ -1253,6 +1264,21 @@ export function renderWorldMapView(container, options = {}) {
     visaExitBtn?.addEventListener('click', () => {
       if (isVisaModeActive) toggleVisaMode();
     });
+
+    // Travel Routes Toggle Handling
+    const routesToggleBtn = container.querySelector('#btn-toggle-routes-mode');
+    function toggleRoutesMode() {
+      isRoutesModeActive = !isRoutesModeActive;
+      if (routesToggleBtn) {
+        routesToggleBtn.classList.toggle('active', isRoutesModeActive);
+      }
+      if (isRoutesModeActive) {
+        renderTravelRoutes();
+      } else {
+        clearTravelRoutes();
+      }
+    }
+    routesToggleBtn?.addEventListener('click', toggleRoutesMode);
 
     // "Vizelerim" button in visa banner → opens profile → passport
     const visaMyBtn = container.querySelector('#btn-visa-banner-my-visas');
@@ -1495,6 +1521,9 @@ export function renderWorldMapView(container, options = {}) {
       refreshAllStyles();
       refreshStats();
       scheduleLabelUpdate();
+      if (isRoutesModeActive) {
+        renderTravelRoutes();
+      }
     });
     // Initial fetch from cloud & UI update
     if (userName) {
@@ -2151,7 +2180,8 @@ export function renderWorldMapView(container, options = {}) {
       try { promotedLabelParent.appendChild(promotedLabelMarker._icon); } catch {}
     }
     promotedLabelMarker = null;
-    promotedLabelParent = null;
+    clearTravelRoutes();
+    isRoutesModeActive = false;
     if (map) { map.remove(); map = null; }
     regionLayers = {};
     subregionLayers = {};
@@ -3271,6 +3301,227 @@ function getVisibleCountries() {
   });
 
   return visible;
+}
+
+/**
+ * Generates an arched flight trajectory (Great Circle approximation)
+ * between two geographic coordinates using a quadratic Bézier curve.
+ */
+function generateCurvedFlightPath(start, end, numPoints = 28) {
+  const [lat1, lng1] = start;
+  const [lat2, lng2] = end;
+
+  let dLng = lng2 - lng1;
+  if (dLng > 180) dLng -= 360;
+  if (dLng < -180) dLng += 360;
+
+  const dLat = lat2 - lat1;
+  const dist = Math.hypot(dLat, dLng);
+
+  if (dist < 0.2) {
+    return [[lat1, lng1], [lat2, lng2]];
+  }
+
+  const midLat = (lat1 + lat2) / 2;
+  const midLng = lng1 + dLng / 2;
+
+  // Arc height scaled to distance (subtle on short hops, prominent on long intercontinental flights)
+  const arcLift = Math.min(Math.max(dist * 0.18, 1.5), 18);
+  const normLen = Math.hypot(-dLng, dLat) || 1;
+  const perpLat = (-dLng / normLen) * arcLift * 0.5;
+  const perpLng = (dLat / normLen) * arcLift * 0.5;
+
+  let ctrlLat = midLat + arcLift * 0.6 + perpLat * 0.4;
+  let ctrlLng = midLng + perpLng * 0.4;
+  ctrlLat = Math.max(-80, Math.min(80, ctrlLat));
+
+  const points = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = i / numPoints;
+    const inv = 1 - t;
+    const lat = inv * inv * lat1 + 2 * inv * t * ctrlLat + t * t * lat2;
+    const lng = inv * inv * lng1 + 2 * inv * t * ctrlLng + t * t * (lng1 + dLng);
+    points.push([lat, lng]);
+  }
+  return points;
+}
+
+/**
+ * Renders the Travel & Flight Routes overlay on the map.
+ * Connects the user's home country to all visited countries and world cities.
+ */
+function renderTravelRoutes() {
+  if (!map) return;
+  clearTravelRoutes();
+
+  travelRoutesLayer = L.layerGroup();
+
+  const homeCountryCode = (typeof getHomeCountry === 'function' ? getHomeCountry() : null) || 'TR';
+  const homeCoords = COUNTRY_CENTROIDS[homeCountryCode] || COUNTRY_LABEL_OFFSETS[homeCountryCode] || [39.0, 35.2];
+  const homeCountryName = getCountryDisplayName(homeCountryCode) || (homeCountryCode === 'TR' ? 'Türkiye' : homeCountryCode);
+
+  const storage = getStorageData();
+  const worldVisits = storage.worldVisits || {};
+  const worldCities = storage.worldCities || [];
+
+  const visitedCountries = Object.entries(worldVisits)
+    .filter(([code, data]) => code !== homeCountryCode && (data?.status === 'visited' || data === 'visited'))
+    .map(([code]) => code);
+
+  const citiesByCountry = new Map();
+  if (Array.isArray(worldCities)) {
+    worldCities.forEach(cityItem => {
+      if (!cityItem || !cityItem.countryCode || cityItem.countryCode === homeCountryCode) return;
+      if (!citiesByCountry.has(cityItem.countryCode)) {
+        citiesByCountry.set(cityItem.countryCode, []);
+      }
+      citiesByCountry.get(cityItem.countryCode).push(cityItem);
+    });
+  }
+
+  const routeTargets = [];
+  const seenKeys = new Set();
+
+  const addTarget = (coords, name, code) => {
+    if (!coords || !Array.isArray(coords) || coords.length < 2) return;
+    const key = `${coords[0].toFixed(2)},${coords[1].toFixed(2)}`;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+    routeTargets.push({ coords, name, code });
+  };
+
+  visitedCountries.forEach(cCode => {
+    const countryName = getCountryDisplayName(cCode);
+    const cities = citiesByCountry.get(cCode);
+    if (cities && cities.length > 0) {
+      cities.forEach(c => {
+        const matchCity = WORLD_CITIES_INDEX.find(ci =>
+          ci.countryCode === cCode &&
+          (ci.nameTr.toLowerCase() === c.cityName.toLowerCase() || ci.nameEn.toLowerCase() === c.cityName.toLowerCase())
+        );
+        if (matchCity && typeof matchCity.lat === 'number') {
+          addTarget([matchCity.lat, matchCity.lng], `${c.cityName}, ${countryName}`, cCode);
+        } else {
+          const cCoords = COUNTRY_CENTROIDS[cCode] || COUNTRY_LABEL_OFFSETS[cCode];
+          if (cCoords) addTarget(cCoords, countryName, cCode);
+        }
+      });
+    } else {
+      const cCoords = COUNTRY_CENTROIDS[cCode] || COUNTRY_LABEL_OFFSETS[cCode];
+      if (cCoords) addTarget(cCoords, countryName, cCode);
+    }
+  });
+
+  // Cities belonging to countries that user has marked cities in
+  citiesByCountry.forEach((cities, cCode) => {
+    const countryName = getCountryDisplayName(cCode);
+    cities.forEach(c => {
+      const matchCity = WORLD_CITIES_INDEX.find(ci =>
+        ci.countryCode === cCode &&
+        (ci.nameTr.toLowerCase() === c.cityName.toLowerCase() || ci.nameEn.toLowerCase() === c.cityName.toLowerCase())
+      );
+      if (matchCity && typeof matchCity.lat === 'number') {
+        addTarget([matchCity.lat, matchCity.lng], `${c.cityName}, ${countryName}`, cCode);
+      }
+    });
+  });
+
+  if (routeTargets.length > 0) {
+    // Home base marker
+    const homeMarker = L.circleMarker(homeCoords, {
+      radius: 6.5,
+      color: '#f59e0b',
+      fillColor: '#fbbf24',
+      fillOpacity: 1,
+      weight: 2.5
+    });
+    homeMarker.bindTooltip(`🏠 <b>${escapeHtml(homeCountryName)}</b>`, {
+      className: 'flight-route-tooltip',
+      direction: 'top',
+      offset: [0, -6]
+    });
+    travelRoutesLayer.addLayer(homeMarker);
+
+    routeTargets.forEach(({ coords, name }) => {
+      const flightPoints = generateCurvedFlightPath(homeCoords, coords);
+
+      // Curved dashed flight line
+      const flightLine = L.polyline(flightPoints, {
+        color: '#38bdf8',
+        weight: 2.5,
+        opacity: 0.85,
+        dashArray: '6, 8',
+        lineCap: 'round',
+        lineJoin: 'round',
+        className: 'flight-route-path'
+      });
+
+      const tooltipContent = `✈️ <b>${escapeHtml(homeCountryName)}</b> ➔ <b>${escapeHtml(name)}</b>`;
+      flightLine.bindTooltip(tooltipContent, {
+        className: 'flight-route-tooltip',
+        sticky: true,
+        direction: 'top',
+        offset: [0, -10]
+      });
+
+      flightLine.on('mouseover', () => {
+        flightLine.setStyle({
+          color: '#7dd3fc',
+          weight: 4,
+          opacity: 1
+        });
+      });
+      flightLine.on('mouseout', () => {
+        flightLine.setStyle({
+          color: '#38bdf8',
+          weight: 2.5,
+          opacity: 0.85
+        });
+      });
+      flightLine.on('click', () => {
+        if (map) {
+          map.flyTo(coords, Math.max(map.getZoom(), 4), { duration: 1 });
+        }
+      });
+
+      // Target circular pin
+      const destMarker = L.circleMarker(coords, {
+        radius: 4.5,
+        color: '#38bdf8',
+        fillColor: '#0284c7',
+        fillOpacity: 0.95,
+        weight: 2
+      });
+      destMarker.bindTooltip(tooltipContent, {
+        className: 'flight-route-tooltip',
+        direction: 'top',
+        offset: [0, -6]
+      });
+      destMarker.on('click', () => {
+        if (map) {
+          map.flyTo(coords, Math.max(map.getZoom(), 5), { duration: 1 });
+        }
+      });
+
+      travelRoutesLayer.addLayer(flightLine);
+      travelRoutesLayer.addLayer(destMarker);
+    });
+  }
+
+  travelRoutesLayer.addTo(map);
+}
+
+/**
+ * Clears and unmounts the Travel Routes layer.
+ */
+function clearTravelRoutes() {
+  if (travelRoutesLayer && map) {
+    if (map.hasLayer(travelRoutesLayer)) {
+      map.removeLayer(travelRoutesLayer);
+    }
+    travelRoutesLayer.clearLayers();
+  }
+  travelRoutesLayer = null;
 }
 
 function applyVisaModeStyles() {
