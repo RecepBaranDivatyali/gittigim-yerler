@@ -213,6 +213,7 @@ export function saveTurkeyVisit(provinceId, status, details = {}) {
       buddies: details.buddies !== undefined ? details.buddies : (existing.buddies || []),
       places: details.places !== undefined ? details.places : (existing.places || []),
       journal: details.journal !== undefined ? details.journal : (existing.journal || null),
+      expenses: details.expenses !== undefined ? details.expenses : (existing.expenses || null),
       visits: details.visits !== undefined ? details.visits : existing.visits,
       featuredVisitIndex: details.featuredVisitIndex !== undefined ? details.featuredVisitIndex : existing.featuredVisitIndex
     };
@@ -331,6 +332,7 @@ export function saveWorldVisit(countryCode, status, details = {}) {
       buddies: details.buddies !== undefined ? details.buddies : (featuredVisit.buddies !== undefined ? featuredVisit.buddies : (existing.buddies || [])),
       places: details.places !== undefined ? details.places : (existing.places || []),
       journal: details.journal !== undefined ? details.journal : (existing.journal || null),
+      expenses: details.expenses !== undefined ? details.expenses : (existing.expenses || null),
       visits,
       featuredVisitIndex: safeFeaturedIdx
     };

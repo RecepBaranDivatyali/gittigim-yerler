@@ -13,6 +13,7 @@ import { escapeHtml, sanitizePhotoUrl } from '../utils/security.js';
 import { savePhoto, getPhotosByTarget, deletePhoto } from '../utils/photoStorage.js';
 import { renderSimulatorSwitcherButton } from './PhoneSimulator.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
+import { formatMoney, EXPENSE_CATEGORIES, SUPPORTED_CURRENCIES } from '../utils/travelBudget.js';
 import { getAllCommunityTravelers, syncTripToBuddy } from '../utils/userDatabase.js';
 import { onNotificationsChange, getPendingNotifications, getAllNotifications, purgeDemoNotifications, acceptTripInvitation, declineTripInvitation, fetchCloudNotifications } from '../utils/notificationSystem.js';
 import { auth } from '../services/firebase.js';
@@ -179,6 +180,9 @@ let subregionLayers = {};
 let subregionCache = {};
 let travelRoutesLayer = null;
 let isRoutesModeActive = false;
+let dayNightLayer = null;
+let isDayNightModeActive = false;
+let dayNightUpdateTimer = null;
 const inFlightRegions = {};
 const inFlightSubregions = {};
 const MAX_MOUNTED_REGIONS = 10;
@@ -703,8 +707,11 @@ export function renderWorldMapView(container, options = {}) {
           <div id="map-search-results" class="map-search-results" style="display:none;"></div>
         </div>
 
-        <!-- Floating Top-Right: Routes & Visa Mode Buttons & Travel Legend -->
+        <!-- Floating Top-Right: Day/Night, Routes & Visa Mode Buttons & Travel Legend -->
         <div class="floating-top-right-group">
+          <button type="button" id="btn-toggle-daynight-mode" class="floating-daynight-mode-btn" title="${t('dayNightMode')}">
+            <span>🌓</span> <span class="daynight-btn-lbl">${t('dayNight')}</span>
+          </button>
           <button type="button" id="btn-toggle-routes-mode" class="floating-routes-mode-btn" title="${t('travelRoutes')}">
             <span>✈️</span> <span class="routes-btn-lbl">${t('routes')}</span>
           </button>
@@ -1279,6 +1286,27 @@ export function renderWorldMapView(container, options = {}) {
       }
     }
     routesToggleBtn?.addEventListener('click', toggleRoutesMode);
+    if (routesToggleBtn) {
+      routesToggleBtn.classList.toggle('active', isRoutesModeActive);
+    }
+
+    // Day/Night Layer Toggle Handling
+    const dayNightToggleBtn = container.querySelector('#btn-toggle-daynight-mode');
+    function toggleDayNightMode() {
+      isDayNightModeActive = !isDayNightModeActive;
+      if (dayNightToggleBtn) {
+        dayNightToggleBtn.classList.toggle('active', isDayNightModeActive);
+      }
+      if (isDayNightModeActive) {
+        renderDayNightLayer();
+      } else {
+        clearDayNightLayer();
+      }
+    }
+    dayNightToggleBtn?.addEventListener('click', toggleDayNightMode);
+    if (dayNightToggleBtn) {
+      dayNightToggleBtn.classList.toggle('active', isDayNightModeActive);
+    }
 
     // "Vizelerim" button in visa banner → opens profile → passport
     const visaMyBtn = container.querySelector('#btn-visa-banner-my-visas');
@@ -2182,6 +2210,8 @@ export function renderWorldMapView(container, options = {}) {
     promotedLabelMarker = null;
     clearTravelRoutes();
     isRoutesModeActive = false;
+    clearDayNightLayer();
+    isDayNightModeActive = false;
     if (map) { map.remove(); map = null; }
     regionLayers = {};
     subregionLayers = {};
@@ -3524,6 +3554,188 @@ function clearTravelRoutes() {
   travelRoutesLayer = null;
 }
 
+/**
+ * Calculates the subsolar point (latitude & longitude) for a given date.
+ * Based on high-precision astronomical algorithms (NOAA / Spencer).
+ * @param {Date} [date]
+ * @returns {{lat: number, lng: number}}
+ */
+function calculateSubsolarPoint(date = new Date()) {
+  const time = date.getTime();
+  const jd = (time / 86400000) + 2440587.5;
+  const d = jd - 2451545.0; // days since J2000.0
+
+  const toRad = Math.PI / 180;
+  const toDeg = 180 / Math.PI;
+
+  const L0 = (280.46646 + 0.98564736 * d) % 360;
+  const M = ((357.52911 + 0.98560028 * d) % 360) * toRad;
+  const C = (1.914602 - 0.004817 * (d / 36525)) * Math.sin(M) +
+            (0.019993 - 0.000101 * (d / 36525)) * Math.sin(2 * M) +
+            0.000289 * Math.sin(3 * M);
+  const sunTrueLong = L0 + C;
+
+  const eps = (23.439291 - 0.0130042 * (d / 36525)) * toRad;
+  const lambda = sunTrueLong * toRad;
+
+  const declination = Math.asin(Math.sin(eps) * Math.sin(lambda)) * toDeg;
+  const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) * toDeg;
+  const gmst = (280.46061837 + 360.98564736629 * d) % 360;
+
+  let lng = -((gmst - ra) % 360);
+  while (lng < -180) lng += 360;
+  while (lng > 180) lng -= 360;
+
+  return { lat: declination, lng };
+}
+
+/**
+ * Calculates the solar terminator boundary coordinates enclosing the night hemisphere.
+ * @param {{lat: number, lng: number}} sun
+ * @returns {Array<[number, number]>}
+ */
+function calculateSolarTerminatorCoords(sun) {
+  const toRad = Math.PI / 180;
+  const toDeg = 180 / Math.PI;
+
+  // Avoid divide-by-zero at exact equinox (declination = 0)
+  const effectiveLat = Math.abs(sun.lat) < 0.08 ? (sun.lat >= 0 ? 0.08 : -0.08) : sun.lat;
+  const tanLat0 = Math.tan(effectiveLat * toRad);
+
+  // If subsolar point is in Northern hemisphere (lat >= 0), South Pole (-85) is dark.
+  // If subsolar point is in Southern hemisphere (lat < 0), North Pole (+85) is dark.
+  const nightPoleLat = effectiveLat >= 0 ? -85 : 85;
+
+  const ring = [];
+  // Sample longitude from -360 to 360 with 2-degree step for high performance & smoothness across wrapped tiles
+  for (let lon = -360; lon <= 360; lon += 2) {
+    let lat = Math.atan(-Math.cos((lon - sun.lng) * toRad) / tanLat0) * toDeg;
+    lat = Math.max(-85, Math.min(85, lat));
+    ring.push([lat, lon]);
+  }
+
+  // Close polygon around the polar night edge
+  ring.push([nightPoleLat, 360]);
+  ring.push([nightPoleLat, -360]);
+
+  return ring;
+}
+
+/**
+ * Renders the real-time Day/Night solar shadow terminator layer and Sun/Moon markers.
+ */
+function renderDayNightLayer() {
+  if (!map) return;
+  clearDayNightLayer();
+
+  // Create or retrieve dayNightPane (just below labelsPane)
+  if (!map.getPane('dayNightPane')) {
+    map.createPane('dayNightPane');
+    map.getPane('dayNightPane').style.zIndex = 455;
+    map.getPane('dayNightPane').style.pointerEvents = 'none';
+  }
+
+  dayNightLayer = L.layerGroup();
+
+  const now = new Date();
+  const sun = calculateSubsolarPoint(now);
+  const terminatorCoords = calculateSolarTerminatorCoords(sun);
+
+  // 1. Night hemisphere shadow polygon (pointer events ignored to preserve map interactivity)
+  const nightPolygon = L.polygon(terminatorCoords, {
+    pane: 'dayNightPane',
+    color: 'rgba(56, 189, 248, 0.22)',
+    weight: 1.5,
+    opacity: 0.35,
+    fillColor: '#020617',
+    fillOpacity: 0.44,
+    interactive: false,
+    className: 'daynight-night-polygon'
+  });
+  dayNightLayer.addLayer(nightPolygon);
+
+  // 2. Sun Zenith Marker (☀️)
+  const sunIcon = L.divIcon({
+    className: 'daynight-marker-wrap',
+    html: `
+      <div class="daynight-sun-badge" title="${t('sunZenith')}">
+        <span class="daynight-sun-halo"></span>
+        <span class="daynight-sun-emoji">☀️</span>
+      </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+
+  const sunMarker = L.marker([sun.lat, sun.lng], {
+    icon: sunIcon,
+    interactive: true,
+    pane: 'labelsPane'
+  });
+  sunMarker.bindTooltip(t('sunZenith'), {
+    direction: 'top',
+    offset: [0, -14],
+    className: 'daynight-tooltip'
+  });
+  dayNightLayer.addLayer(sunMarker);
+
+  // 3. Moon / Midnight Nadir Marker (🌙)
+  const nadirLng = sun.lng > 0 ? sun.lng - 180 : sun.lng + 180;
+  const nadirLat = -sun.lat;
+
+  const moonIcon = L.divIcon({
+    className: 'daynight-marker-wrap',
+    html: `
+      <div class="daynight-moon-badge" title="${t('moonZenith')}">
+        <span class="daynight-moon-halo"></span>
+        <span class="daynight-moon-emoji">🌙</span>
+      </div>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+
+  const moonMarker = L.marker([nadirLat, nadirLng], {
+    icon: moonIcon,
+    interactive: true,
+    pane: 'labelsPane'
+  });
+  moonMarker.bindTooltip(t('moonZenith'), {
+    direction: 'top',
+    offset: [0, -14],
+    className: 'daynight-tooltip'
+  });
+  dayNightLayer.addLayer(moonMarker);
+
+  dayNightLayer.addTo(map);
+
+  // Start periodic 60-second live update if not already running
+  if (!dayNightUpdateTimer) {
+    dayNightUpdateTimer = setInterval(() => {
+      if (isDayNightModeActive && map) {
+        renderDayNightLayer();
+      }
+    }, 60000);
+  }
+}
+
+/**
+ * Clears and unmounts the Day/Night layer and stops the live timer.
+ */
+function clearDayNightLayer() {
+  if (dayNightUpdateTimer) {
+    clearInterval(dayNightUpdateTimer);
+    dayNightUpdateTimer = null;
+  }
+  if (dayNightLayer && map) {
+    if (map.hasLayer(dayNightLayer)) {
+      map.removeLayer(dayNightLayer);
+    }
+    dayNightLayer.clearLayers();
+  }
+  dayNightLayer = null;
+}
+
 function applyVisaModeStyles() {
   if (!map) return;
 
@@ -4202,6 +4414,55 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
 
   // Multi-visit initialization
   const countryVisitObj = (type === 'province') ? (turkeyVisits[id.replace('TR::', '')] || {}) : (worldVisits[id] || {});
+  
+  // Expenses initialization
+  let defaultCurrency = 'TRY';
+  if (type !== 'province') {
+    if (countryCode === 'US') defaultCurrency = 'USD';
+    else if (countryCode === 'GB') defaultCurrency = 'GBP';
+    else if (['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'GR', 'PT', 'IE', 'FI'].includes(countryCode)) defaultCurrency = 'EUR';
+  }
+
+  const rawExp = countryVisitObj.expenses;
+  let currentExpenses = {
+    currency: defaultCurrency,
+    items: [],
+    total: 0
+  };
+
+  if (rawExp) {
+    if (Array.isArray(rawExp)) {
+      currentExpenses.items = rawExp.map((it, idx) => ({
+        id: it.id || `exp_${idx}`,
+        amount: Number(it.amount) || 0,
+        currency: it.currency || defaultCurrency,
+        category: it.category || 'other',
+        note: it.note || ''
+      }));
+      currentExpenses.currency = rawExp[0]?.currency || defaultCurrency;
+    } else if (typeof rawExp === 'object' && rawExp !== null) {
+      currentExpenses.currency = rawExp.currency || defaultCurrency;
+      if (Array.isArray(rawExp.items)) {
+        currentExpenses.items = rawExp.items.map((it, idx) => ({
+          id: it.id || `exp_${idx}`,
+          amount: Number(it.amount) || 0,
+          currency: it.currency || currentExpenses.currency,
+          category: it.category || 'other',
+          note: it.note || ''
+        }));
+      } else if (rawExp.amount !== undefined) {
+        currentExpenses.items = [{
+          id: 'exp_1',
+          amount: Number(rawExp.amount) || 0,
+          currency: currentExpenses.currency,
+          category: rawExp.category || 'other',
+          note: rawExp.note || ''
+        }];
+      }
+    }
+  }
+  currentExpenses.total = currentExpenses.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+
   let currentVisits = Array.isArray(countryVisitObj.visits) && countryVisitObj.visits.length > 0
     ? JSON.parse(JSON.stringify(countryVisitObj.visits))
     : [{
@@ -4290,9 +4551,10 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         <span class="hub-btn-icon">🍽️</span>
         <span class="hub-btn-label">${t('drawerPlaces')}${currentPlaces.length > 0 ? ` (${currentPlaces.length})` : ''}</span>
       </button>
-      <button type="button" class="popup-hub-btn ${currentRating > 0 ? 'has-data' : ''}" data-drawer="review" title="${currentLang === 'tr' ? 'Puan & Not' : 'Rating & Notes'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
-        <span class="hub-btn-icon">⭐</span>
-        <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : t('drawerReview')}</span>
+      <button type="button" class="popup-hub-btn ${(currentRating > 0 || currentExpenses.total > 0) ? 'has-data' : ''}" data-drawer="review" title="${currentLang === 'tr' ? 'Puan, Not & Harcamalar' : 'Rating, Notes & Expenses'}" style="display: ${currentStatus === 'visited' ? 'flex' : 'none'};">
+        <span class="hub-btn-icon">${currentExpenses.total > 0 && currentRating === 0 ? '💰' : '⭐'}</span>
+        <span class="hub-btn-label">${currentRating > 0 ? `${currentRating}/10` : (currentExpenses.total > 0 ? '💰' : t('drawerReview'))}</span>
+        ${(currentExpenses.total > 0) ? `<span class="hub-btn-dot gold"></span>` : ''}
       </button>
       ${guide ? `
         <button type="button" class="popup-hub-btn" data-drawer="guide" title="${currentLang === 'tr' ? 'Rehber & Bilgi' : 'Guide & Info'}" style="display: flex;">
@@ -4507,6 +4769,51 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       <div class="popup-notes-input-row">
         <input type="text" id="popup-note-input" class="popup-note-input" placeholder="${t('notePlaceholder')}" value="${escapeHtml(cleanNote(currentNotes))}" />
         <button type="button" id="popup-note-save-btn" class="popup-note-save-btn" title="${t('save')}">💾</button>
+      </div>
+
+      <!-- 💰 Harcamalar (İsteğe Bağlı) Katlanabilir Bölüm -->
+      <div class="popup-expenses-collapsible-section">
+        <div class="popup-expenses-summary-bar" id="popup-expenses-toggle-btn">
+          <div class="popup-expenses-summary-left">
+            <span class="popup-expenses-icon">💰</span>
+            <span class="popup-expenses-title">${currentLang === 'tr' ? 'Harcamalar (İsteğe Bağlı)' : 'Expenses (Optional)'}</span>
+            <span class="popup-expenses-total-badge" id="popup-expenses-total-badge">${formatMoney(currentExpenses.total, currentExpenses.currency)}</span>
+          </div>
+          <span class="popup-expenses-toggle-arrow" id="popup-expenses-toggle-arrow">▾</span>
+        </div>
+
+        <div class="popup-expenses-drawer-content" id="popup-expenses-drawer-content" style="display: none;">
+          <!-- Hızlı Harcama Ekleme Formu -->
+          <div class="popup-expense-input-box">
+            <div class="popup-expense-top-row">
+              <select id="popup-expense-currency" class="popup-expense-currency-select">
+                <option value="TRY" ${currentExpenses.currency === 'TRY' ? 'selected' : ''}>₺ TRY</option>
+                <option value="USD" ${currentExpenses.currency === 'USD' ? 'selected' : ''}>$ USD</option>
+                <option value="EUR" ${currentExpenses.currency === 'EUR' ? 'selected' : ''}>€ EUR</option>
+                <option value="GBP" ${currentExpenses.currency === 'GBP' ? 'selected' : ''}>£ GBP</option>
+              </select>
+              <input type="number" id="popup-expense-amount" class="popup-expense-amount-input" placeholder="${currentLang === 'tr' ? 'Tutar (örn: 250)' : 'Amount'}" min="0" step="any" inputmode="decimal" />
+            </div>
+
+            <!-- Kategori Seçici -->
+            <div class="popup-expense-cats-row" id="popup-expense-cats-row">
+              <button type="button" class="exp-cat-btn active" data-cat="transport" title="${EXPENSE_CATEGORIES.transport.labelTr}">✈️</button>
+              <button type="button" class="exp-cat-btn" data-cat="stay" title="${EXPENSE_CATEGORIES.stay.labelTr}">🏨</button>
+              <button type="button" class="exp-cat-btn" data-cat="food" title="${EXPENSE_CATEGORIES.food.labelTr}">🍕</button>
+              <button type="button" class="exp-cat-btn" data-cat="activity" title="${EXPENSE_CATEGORIES.activity.labelTr}">🎟️</button>
+              <button type="button" class="exp-cat-btn" data-cat="shopping" title="${EXPENSE_CATEGORIES.shopping.labelTr}">🛍️</button>
+              <button type="button" class="exp-cat-btn" data-cat="other" title="${EXPENSE_CATEGORIES.other.labelTr}">📦</button>
+            </div>
+
+            <div class="popup-expense-note-row">
+              <input type="text" id="popup-expense-note" class="popup-expense-note-input" placeholder="${currentLang === 'tr' ? 'Açıklama (örn: Uçak bileti, Müze girişi)' : 'Note (optional)'}" maxlength="50" />
+              <button type="button" id="popup-expense-add-btn" class="popup-expense-add-btn">${currentLang === 'tr' ? '+ Ekle' : '+ Add'}</button>
+            </div>
+          </div>
+
+          <!-- Kayıtlı Harcama Kalemleri Listesi -->
+          <div class="popup-expenses-items-list" id="popup-expenses-items-list"></div>
+        </div>
       </div>
 
       <!-- 🌟 Gezgin Topluluğu Puanı & Yorumları (Bulut Tabanlı) -->
@@ -5415,6 +5722,157 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
     }
   });
   content.querySelector('#popup-note-input')?.addEventListener('blur', saveNote);
+
+  // ─── Seyahat Harcamaları Yönetimi ───
+  let selectedExpenseCat = 'transport';
+  const expenseToggleBtn = content.querySelector('#popup-expenses-toggle-btn');
+  const expenseDrawerContent = content.querySelector('#popup-expenses-drawer-content');
+  const expenseArrow = content.querySelector('#popup-expenses-toggle-arrow');
+  const expenseBadge = content.querySelector('#popup-expenses-total-badge');
+  const expenseCurrencySelect = content.querySelector('#popup-expense-currency');
+  const expenseAmountInput = content.querySelector('#popup-expense-amount');
+  const expenseNoteInput = content.querySelector('#popup-expense-note');
+  const expenseAddBtn = content.querySelector('#popup-expense-add-btn');
+  const expenseListEl = content.querySelector('#popup-expenses-items-list');
+  const expenseCatBtns = content.querySelectorAll('#popup-expense-cats-row .exp-cat-btn');
+
+  function renderExpensesList() {
+    if (!expenseListEl) return;
+    if (currentExpenses.items.length === 0) {
+      expenseListEl.innerHTML = `
+        <div class="popup-expense-empty-hint">
+          ${currentLang === 'tr' ? 'Henüz bu geziye ait harcama eklenmedi.' : 'No expenses added yet for this trip.'}
+        </div>
+      `;
+    } else {
+      expenseListEl.innerHTML = currentExpenses.items.map((item, idx) => {
+        const catInfo = EXPENSE_CATEGORIES[item.category] || EXPENSE_CATEGORIES.other;
+        return `
+          <div class="popup-expense-item" data-idx="${idx}">
+            <div class="popup-exp-left">
+              <span class="popup-exp-icon" style="background:${catInfo.color}22;color:${catInfo.color};">${catInfo.icon}</span>
+              <div class="popup-exp-desc">
+                <span class="popup-exp-cat">${currentLang === 'tr' ? catInfo.labelTr : catInfo.labelEn}</span>
+                ${item.note ? `<span class="popup-exp-note">${escapeHtml(item.note)}</span>` : ''}
+              </div>
+            </div>
+            <div class="popup-exp-right">
+              <span class="popup-exp-amount">${formatMoney(item.amount, item.currency || currentExpenses.currency)}</span>
+              <button type="button" class="popup-exp-del-btn" data-idx="${idx}" title="${currentLang === 'tr' ? 'Sil' : 'Delete'}">&times;</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      expenseListEl.querySelectorAll('.popup-exp-del-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const delIdx = parseInt(btn.dataset.idx, 10);
+          if (!Number.isNaN(delIdx) && delIdx >= 0 && delIdx < currentExpenses.items.length) {
+            currentExpenses.items.splice(delIdx, 1);
+            currentExpenses.total = currentExpenses.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+            persistVisitDetails({ expenses: currentExpenses });
+            if (expenseBadge) expenseBadge.textContent = formatMoney(currentExpenses.total, currentExpenses.currency);
+            renderExpensesList();
+          }
+        });
+      });
+    }
+
+    if (expenseBadge) {
+      expenseBadge.textContent = formatMoney(currentExpenses.total, currentExpenses.currency);
+    }
+  }
+
+  renderExpensesList();
+
+  if (expenseToggleBtn && expenseDrawerContent && expenseArrow) {
+    expenseToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = expenseDrawerContent.style.display === 'block';
+      expenseDrawerContent.style.display = isOpen ? 'none' : 'block';
+      expenseArrow.textContent = isOpen ? '▾' : '▴';
+      if (!isOpen && expenseAmountInput) {
+        setTimeout(() => expenseAmountInput.focus(), 100);
+      }
+      if (activeStatusPopup) activeStatusPopup.update();
+      requestAnimationFrame(ensurePopupInView);
+    });
+  }
+
+  if (expenseCatBtns) {
+    expenseCatBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        expenseCatBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedExpenseCat = btn.dataset.cat || 'transport';
+      });
+    });
+  }
+
+  if (expenseCurrencySelect) {
+    expenseCurrencySelect.addEventListener('change', (e) => {
+      currentExpenses.currency = e.target.value;
+      currentExpenses.items.forEach(it => { it.currency = currentExpenses.currency; });
+      persistVisitDetails({ expenses: currentExpenses });
+      renderExpensesList();
+    });
+  }
+
+  function addExpenseItem() {
+    if (!expenseAmountInput) return;
+    const amountVal = parseFloat(expenseAmountInput.value);
+    if (isNaN(amountVal) || amountVal <= 0) {
+      expenseAmountInput.focus();
+      return;
+    }
+    const noteVal = expenseNoteInput?.value.trim() || '';
+    const currency = expenseCurrencySelect?.value || currentExpenses.currency || 'TRY';
+
+    const newItem = {
+      id: 'exp_' + Date.now(),
+      amount: amountVal,
+      currency,
+      category: selectedExpenseCat,
+      note: noteVal,
+      date: new Date().toISOString()
+    };
+
+    currentExpenses.items.push(newItem);
+    currentExpenses.currency = currency;
+    currentExpenses.total = currentExpenses.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+
+    persistVisitDetails({ expenses: currentExpenses });
+    expenseAmountInput.value = '';
+    if (expenseNoteInput) expenseNoteInput.value = '';
+    renderExpensesList();
+    if (activeStatusPopup) activeStatusPopup.update();
+  }
+
+  if (expenseAddBtn) {
+    expenseAddBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addExpenseItem();
+    });
+  }
+
+  if (expenseAmountInput) {
+    expenseAmountInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addExpenseItem();
+      }
+    });
+  }
+  if (expenseNoteInput) {
+    expenseNoteInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addExpenseItem();
+      }
+    });
+  }
 
   // Pre-load community data for snappy instant display
   loadAndRenderCommunityPlaces().catch(() => {});

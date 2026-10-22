@@ -149,6 +149,11 @@ const TRANSLATIONS = {
     routes: 'Rotalar',
     travelRoutes: 'Seyahat Rotaları',
     noRoutesYet: 'Henüz seyahat kaydı yok. Ziyaret ettiğin yerleri eklediğinde rotaların burada canlanacak!',
+    // Day / Night Mode
+    dayNight: 'Gece/Gündüz',
+    dayNightMode: 'Gece/Gündüz Haritası',
+    sunZenith: '☀️ Güneş Öğle Noktası (Zenith)',
+    moonZenith: '🌙 Gece Yarısı Noktası (Nadir)',
     // Popups & Drawers
     drawerStamp: 'Tarih',
     drawerJournal: 'Günlük',
@@ -337,6 +342,11 @@ const TRANSLATIONS = {
     routes: 'Routes',
     travelRoutes: 'Travel Routes',
     noRoutesYet: 'No travel routes yet. Add visited places to see them here!',
+    // Day / Night Mode
+    dayNight: 'Day/Night',
+    dayNightMode: 'Day/Night Map',
+    sunZenith: '☀️ Solar Zenith Point',
+    moonZenith: '🌙 Midnight Point (Nadir)',
     // Popups & Drawers
     drawerStamp: 'Dates',
     drawerJournal: 'Journal',

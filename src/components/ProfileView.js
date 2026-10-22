@@ -37,6 +37,7 @@ import { getCountryStampStyle, STAMP_SHAPES } from '../utils/stampStyles.js';
 import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../utils/pwaInstall.js';
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { renderMedalTokenHtml, attachMedalSpotlightListeners } from '../utils/medalDesigns.js';
+import { calculateBudgetStats, formatMoney, EXPENSE_CATEGORIES } from '../utils/travelBudget.js';
 
 // Friendly Place Name helper for Photo Album & Showcase
 function getFriendlyPlaceName(targetId) {
@@ -587,6 +588,24 @@ export function renderProfileView(container, onBack) {
           <div class="journal-notes-list" id="journal-notes-list"></div>
         </div>
 
+        <!-- 💰 Seyahat Cüzdanı & Harcama Özeti Card -->
+        <div class="profile-budget-showcase-card" id="profile-budget-showcase">
+          <div class="budget-showcase-header">
+            <div class="budget-showcase-title-row">
+              <div class="budget-showcase-title">
+                <span class="budget-title-icon">💰</span>
+                <span>${currentLang === 'tr' ? 'Seyahat Cüzdanı & Harcamalar' : 'Travel Wallet & Expenses'}</span>
+              </div>
+              <button type="button" id="budget-toggle-privacy-btn" class="budget-privacy-toggle-btn" title="${currentLang === 'tr' ? 'Tutarları Gizle / Göster' : 'Hide / Show Amounts'}">
+                <span id="budget-privacy-icon">👁️</span>
+                <span id="budget-privacy-text" class="budget-privacy-text">${currentLang === 'tr' ? 'Gizle' : 'Hide'}</span>
+              </button>
+            </div>
+            <span class="budget-showcase-subtitle">${currentLang === 'tr' ? 'Gezdiğiniz yerlerdeki harcamalarınız, döviz toplamları ve bütçe dağılımı' : 'Trip costs, multi-currency totals and category budget distribution'}</span>
+          </div>
+          <div class="budget-showcase-body" id="budget-showcase-body"></div>
+        </div>
+
         <!-- Upcoming Trip Countdown Card -->
         <div id="trip-countdown-container"></div>
       </div>
@@ -868,6 +887,117 @@ export function renderProfileView(container, onBack) {
           renderJournalItems('');
           journalSearchInput.focus();
         }
+      });
+    }
+
+    // 💰 Seyahat Cüzdanı & Harcama Özeti Mantığı
+    let isExpensesHidden = localStorage.getItem('gz_hide_expenses') === 'true';
+
+    function renderBudgetShowcase() {
+      const bodyEl = document.getElementById('budget-showcase-body');
+      const privIcon = document.getElementById('budget-privacy-icon');
+      const privText = document.getElementById('budget-privacy-text');
+      if (privIcon) privIcon.textContent = isExpensesHidden ? '🙈' : '👁️';
+      if (privText) privText.textContent = isExpensesHidden ? (currentLang === 'tr' ? 'Göster' : 'Show') : (currentLang === 'tr' ? 'Gizle' : 'Hide');
+
+      if (!bodyEl) return;
+
+      const currentStorageData = getStorageData();
+      const budgetStats = calculateBudgetStats(currentStorageData);
+
+      if (!budgetStats.hasExpenses) {
+        bodyEl.innerHTML = `
+          <div class="budget-empty-state">
+            <div class="budget-empty-icon">💳</div>
+            <div class="budget-empty-title">${currentLang === 'tr' ? 'Henüz Harcama Kaydı Yok' : 'No Expenses Recorded Yet'}</div>
+            <div class="budget-empty-desc">${currentLang === 'tr' ? 'Henüz harcama kaydı eklenmedi. Haritada gezdiğin yerlere tıklayıp çekmeceden seyahat masraflarını kolayca not edebilirsin!' : 'No travel expenses recorded yet. Tap on visited places on the map to log your trip costs effortlessly!'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Döviz bazında toplamlar
+      const currencyEntries = Object.entries(budgetStats.totalsByCurrency);
+      const activeCategories = budgetStats.categories.filter(c => c.total > 0);
+
+      bodyEl.innerHTML = `
+        <div class="budget-showcase-inner">
+          <!-- Döviz Toplamları Rozetleri -->
+          <div class="budget-totals-row">
+            ${currencyEntries.map(([currCode, sum]) => `
+              <div class="budget-total-pill">
+                <span class="budget-pill-curr">${currCode}</span>
+                <span class="budget-pill-val">${formatMoney(sum, currCode, isExpensesHidden)}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Kategori Dağılımı Çubukları -->
+          ${activeCategories.length > 0 ? `
+            <div class="budget-categories-block">
+              <div class="budget-block-title">📊 ${currentLang === 'tr' ? 'Kategori Dağılımı' : 'Category Breakdown'}</div>
+              <div class="budget-cat-list">
+                ${activeCategories.map(cat => {
+                  const mainCurr = Object.keys(cat.totalsByCurrency)[0] || 'TRY';
+                  const catLabel = currentLang === 'tr' ? cat.labelTr : cat.labelEn;
+                  return `
+                    <div class="budget-cat-item">
+                      <div class="budget-cat-header">
+                        <span class="budget-cat-label">
+                          <span class="budget-cat-icon" style="background:${cat.color}22;color:${cat.color};">${cat.icon}</span>
+                          <span class="budget-cat-name">${escapeHtml(catLabel)}</span>
+                          <span class="budget-cat-count">(${cat.count})</span>
+                        </span>
+                        <span class="budget-cat-amount-wrap">
+                          <span class="budget-cat-amount">${formatMoney(cat.total, mainCurr, isExpensesHidden)}</span>
+                          <span class="budget-cat-pct">%${cat.percentage}</span>
+                        </span>
+                      </div>
+                      <div class="budget-cat-bar-bg">
+                        <div class="budget-cat-bar-fill" style="width: ${Math.max(cat.percentage, 4)}%; background: ${cat.color};"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- En Çok Harcama Yapılan İlk 3 Yer -->
+          ${budgetStats.topPlaces.length > 0 ? `
+            <div class="budget-top-places-block">
+              <div class="budget-block-title">🏆 ${currentLang === 'tr' ? 'En Çok Harcama Yapılan Yerler' : 'Top Expense Destinations'}</div>
+              <div class="budget-top-places-list">
+                ${budgetStats.topPlaces.map((pl, idx) => {
+                  const rankIcons = ['🥇', '🥈', '🥉'];
+                  return `
+                    <div class="budget-place-item">
+                      <div class="budget-place-rank">${rankIcons[idx] || '#' + (idx + 1)}</div>
+                      <div class="budget-place-info">
+                        <span class="budget-place-name">${escapeHtml(pl.name)}</span>
+                        <span class="budget-place-meta">${pl.itemCount} ${currentLang === 'tr' ? 'masraf kalemi' : 'expenses'}</span>
+                      </div>
+                      <div class="budget-place-total">
+                        ${formatMoney(pl.total, pl.currency, isExpensesHidden)}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    renderBudgetShowcase();
+
+    const budgetPrivacyBtn = document.getElementById('budget-toggle-privacy-btn');
+    if (budgetPrivacyBtn) {
+      budgetPrivacyBtn.addEventListener('click', () => {
+        isExpensesHidden = !isExpensesHidden;
+        localStorage.setItem('gz_hide_expenses', isExpensesHidden ? 'true' : 'false');
+        renderBudgetShowcase();
       });
     }
 
