@@ -148,6 +148,7 @@ export function getLocalDataPayload() {
   let aircraft = {};
   let profile = { username: 'Gezgin', avatar: '🧭' };
   let homeCountry = 'TR';
+  let unlockedAchievements = [];
 
   try {
     try { worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}'); } catch { worldVisits = {}; }
@@ -168,7 +169,6 @@ export function getLocalDataPayload() {
     } catch { aircraft = {}; }
     homeCountry = localStorage.getItem('gv_home_country') || 'TR';
 
-    let unlockedAchievements = [];
     try {
       const unRaw = localStorage.getItem('gv_unlocked_achievements');
       if (unRaw) unlockedAchievements = JSON.parse(unRaw);
