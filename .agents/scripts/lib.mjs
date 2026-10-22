@@ -54,5 +54,6 @@ export function parseActiveTask(stateText) {
   const open = [...section.matchAll(/^\s*-\s*\[\s\]\s*(.+)$/gm)].map(x => x[1].trim());
   const isIdle = !task || /^yok$/i.test(task);
   const isBlocked = /^BLOKE/i.test(task);
-  return { task, owner, open, isIdle, isBlocked };
+  const isWaiting = /BEKL[EİI]/i.test(task);
+  return { task, owner, open, isIdle, isBlocked, isWaiting };
 }

@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "check": "vite build && eslint src"
+    "check": "vite build && eslint src",
+    "sync-workspaces": "git push origin main && git -C ../GittigimYerler pull origin main"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

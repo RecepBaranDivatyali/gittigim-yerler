@@ -55,8 +55,9 @@ Aşağıdakiler sağlanmadan kullanıcıya **"bitti" deme**, kendiliğinden deva
 4. Commit + `git push origin main`; ikinci çalışma alanı senkron: `C:\Users\90536\Desktop\GittigimYerler` → `git pull origin main`.
 5. Android'e giden değişiklikte: `npx cap sync android`; mağazaya çıkacaksa `android/app/build.gradle` → `versionCode` +1, `versionName` +0.1.
 6. `STATE.md` ve `BACKLOG.md` güncellendi.
+7. Görsel/CSS değişikliği yapıldıysa kullanıcıya canlıda veya telefonda nasıl göründüğü 1 cümleyle belirtildi (göz kontrolü).
 
-Takılırsan (aynı hata 3 deneme) dur, `STATE.md`'de `AKTIF_GOREV:` satırını `BLOKE: <neden>` yap ve kullanıcıya sor.
+**Can Simidi (Rollback Kuralı):** Bir alt ajan görevi 3 denemede toparlayamaz veya `npm run check` kırmızı kalırsa, kod tabanını yarım/bozuk bırakmak yasaktır. Müdür derhal `git restore .` yaparak projeyi göreve başlamadan önceki tertemiz haline döndürür, `STATE.md`'yi `BLOKE: <neden>` yapar ve durumu kullanıcıya açıklar.
 
 ## 5. STATE.md sözleşmesi (kancalar bunu okur)
 - Çok adımlı bir göreve başlarken `STATE.md` → `## Aktif Görev` bölümünü doldur:

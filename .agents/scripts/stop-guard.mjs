@@ -14,7 +14,7 @@ if (input.fullyIdle === false) allow(); // subagents/background tasks will wake 
 const active = parseActiveTask(readText(STATE_FILE));
 const convId = String(input.conversationId || '');
 if (!active.owner || !convId || active.owner !== convId) allow(); // not the manager chat (or no task owner)
-if (active.isBlocked) allow();
+if (active.isBlocked || active.isWaiting) allow();
 
 const reasons = [];
 const failure = readJson(FAILURE_FILE);
