@@ -571,6 +571,103 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
+        <!-- 🎯 Hazır Keşif Rotaları & Hedef Paketleri Vitrini -->
+        <div class="profile-bucket-packages-card" style="margin-top: 14px; background: var(--bg-card, rgba(15, 23, 42, 0.6)); border: 1px solid var(--border, rgba(255, 255, 255, 0.08)); border-radius: 16px; padding: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 14px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.3rem;">🎯</span>
+              <div>
+                <div style="font-weight:700; font-size:1rem; color:var(--theme-text-main, #f8fafc);">${currentLang === 'tr' ? 'Keşif Rotaları & Hedef Paketleri' : 'Discovery Routes & Bucket Lists'}</div>
+                <div style="font-size:0.75rem; color:var(--theme-text-muted, #94a3b8);">${currentLang === 'tr' ? 'Popüler tematik seyahat rotalarını keşfet, hedefine ekle' : 'Explore curated travel routes and add to your wishlist'}</div>
+              </div>
+            </div>
+            <button type="button" id="btn-quick-country-wizard" class="bucket-wizard-launch-btn" style="
+              display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px;
+              background:linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color:#ffffff; border:none;
+              font-weight:600; font-size:0.82rem; cursor:pointer; box-shadow:0 2px 8px rgba(245,158,11,0.25);
+              transition:transform 0.15s ease;
+            ">
+              <span>⚡</span> <span>${currentLang === 'tr' ? 'Hızlı Ülke Seçim Sihirbazı' : 'Quick Country Selector'}</span>
+            </button>
+          </div>
+
+          <div class="bucket-list-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+            ${BUCKET_LISTS.map(list => {
+              const progress = calculateBucketListProgress(list, storageData.worldVisits, baseStats.turkeyCount);
+              const title = currentLang === 'tr' ? list.titleTr : list.titleEn;
+              const isCompleted = progress.remainingCount === 0;
+
+              return `
+                <div class="bucket-card" style="
+                  background: rgba(10, 15, 29, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px;
+                  padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.2s ease;
+                ">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:1.25rem;">${list.icon}</span>
+                      <span style="font-weight:600; font-size:0.9rem; color:var(--theme-text-main, #f8fafc);">${escapeHtml(title)}</span>
+                    </div>
+                    <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:99px; background:${isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.15)'}; color:${isCompleted ? '#10b981' : '#60a5fa'};">
+                      ${progress.visitedCount}/${progress.total} (%${progress.percent})
+                    </span>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="bucket-progress-bar" style="height:6px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden;">
+                    <div class="bucket-progress-fill" style="width:${progress.percent}%; height:100%; background:${isCompleted ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #8b5cf6)'}; border-radius:99px; transition:width 0.3s ease;"></div>
+                  </div>
+
+                  <!-- Country Chips -->
+                  <div class="bucket-country-chips" style="display:flex; flex-wrap:wrap; gap:5px; margin: 2px 0;">
+                    ${list.countries.map(code => {
+                      const st = progress.countryStatuses[code] || 'unvisited';
+                      const cObj = WORLD_COUNTRIES.find(x => x.code === code);
+                      const cName = cObj ? getCountryDisplayName(cObj) : code;
+                      const flag = (code === 'IL') ? '' : (cObj?.flag || '🌍');
+                      const isVis = st === 'visited';
+                      const isWish = st === 'wishlist' || st === 'planned';
+                      const chipBg = isVis ? 'rgba(16,185,129,0.2)' : (isWish ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)');
+                      const chipBorder = isVis ? 'rgba(16,185,129,0.4)' : (isWish ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.08)');
+                      const chipColor = isVis ? '#34d399' : (isWish ? '#c084fc' : 'inherit');
+
+                      return `
+                        <span class="bucket-country-chip ${st}" title="${escapeHtml(cName)}" style="
+                          display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:6px;
+                          background:${chipBg}; border:1px solid ${chipBorder}; color:${chipColor}; font-size:0.75rem;
+                        ">
+                          <span>${flag}</span>
+                          <span>${escapeHtml(code)}</span>
+                          ${isVis ? '<span style="font-size:0.7rem;">✓</span>' : ''}
+                        </span>
+                      `;
+                    }).join('')}
+                  </div>
+
+                  <!-- Action Button -->
+                  <div style="margin-top:auto; padding-top:4px;">
+                    ${isCompleted ? `
+                      <button type="button" class="bucket-action-btn completed" disabled style="
+                        width:100%; padding:7px 12px; border-radius:8px; background:rgba(16,185,129,0.15);
+                        border:1px solid rgba(16,185,129,0.3); color:#10b981; font-size:0.8rem; font-weight:600; cursor:default;
+                      ">
+                        🏆 ${currentLang === 'tr' ? 'Tamamlandı!' : 'Completed!'}
+                      </button>
+                    ` : `
+                      <button type="button" class="bucket-action-btn" data-list-id="${list.id}" style="
+                        width:100%; padding:7px 12px; border-radius:8px; background:rgba(255,255,255,0.06);
+                        border:1px solid rgba(255,255,255,0.12); color:var(--theme-text-main, #f8fafc); font-size:0.8rem;
+                        font-weight:600; cursor:pointer; transition:all 0.15s ease;
+                      ">
+                        🎯 ${currentLang === 'tr' ? 'Kalanları Hedefe Ekle' : 'Add Remaining to Wishlist'}
+                      </button>
+                    `}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
         <!-- 📖 Seyahat Günlüğü & Gezgin Notları Card -->
         <div class="profile-journal-showcase-card" id="profile-journal-showcase">
           <div class="journal-showcase-header">
@@ -2423,6 +2520,24 @@ export function renderProfileView(container, onBack) {
     document.getElementById('btn-install-pwa')?.addEventListener('click', () => {
       triggerAppInstallation(currentLang);
     });
+
+    // 9. Hazır Keşif Rotaları & Hızlı Ülke Seçim Sihirbazı
+    contentArea.querySelector('#btn-quick-country-wizard')?.addEventListener('click', () => {
+      openQuickCountryWizard(() => {
+        render(false);
+      });
+    });
+
+    contentArea.querySelectorAll('.bucket-action-btn[data-list-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const listId = btn.dataset.listId;
+        const count = applyBucketListToWishlist(listId);
+        if (count > 0) {
+          triggerConfetti();
+        }
+        render(false);
+      });
+    });
   }
 
   function renderMedalsTab(contentArea) {
@@ -3020,8 +3135,13 @@ export function renderProfileView(container, onBack) {
   }
 
   // ─── 📸 Instagram / Story Travel Poster Generator Modal ───────────────────────
+  let _cachedPosterSvg = null;
   async function openPosterModal() {
-    const { POSTER_WORLD_MAP_SVG } = await import('../data/posterWorldMapSvg.js');
+    if (!_cachedPosterSvg) {
+      const m = await import('../data/posterWorldMapSvg.js');
+      _cachedPosterSvg = m.POSTER_WORLD_MAP_SVG || m.POSTER_WORLD_PATHS;
+    }
+    const POSTER_WORLD_MAP_SVG = _cachedPosterSvg;
     const currentLang = getLanguage();
     const currentTheme = getTheme();
     const storageData = getStorageData();
@@ -3190,9 +3310,30 @@ export function renderProfileView(container, onBack) {
       if (!node) return;
       try {
         const dataUrl = await toPng(node, { quality: 0.95, pixelRatio: 2 });
-        const link = document.createElement('a');
         const cleanName = (profile.username || 'Gezgin').replace(/[^a-zA-Z0-9_\-\u00C0-\u017F]/g, '_');
-        link.download = `Gezgin-Seyahat-Posteri-${cleanName}.png`;
+        const fileName = `Gezgin-Seyahat-Posteri-${cleanName}.png`;
+
+        // Mobil / iOS: Eğer navigator.canShare ile dosya paylaşımı destekleniyorsa doğrudan sistem paylaşım/kaydet menüsünü aç
+        const isMobileOrIos = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isIosDevice();
+        if (isMobileOrIos && navigator.share && window.File) {
+          try {
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], fileName, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: 'Gezgin Seyahat Haritam'
+              });
+              return;
+            }
+          } catch (shareErr) {
+            if (shareErr.name === 'AbortError') return; // Kullanıcı iptal ettiyse indirmeye düşme
+            console.warn('Native share fallback to download link', shareErr);
+          }
+        }
+
+        const link = document.createElement('a');
+        link.download = fileName;
         link.href = dataUrl;
         link.click();
       } catch (err) {

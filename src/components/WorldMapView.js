@@ -616,6 +616,13 @@ function buildStatsCountriesHtml(worldCount, stats, visitedColor) {
 export function renderWorldMapView(container, options = {}) {
   applyTheme(getTheme());
 
+  // Preemptively lazy-load search data in background after map initialization
+  setTimeout(() => {
+    loadUniversalSearchData().then(() => {
+      refreshStats();
+    }).catch(() => {});
+  }, 1000);
+
   let unsubSync = null;
   let unsubNotifs = null;
   let unsubState = null;
@@ -1022,13 +1029,16 @@ export function renderWorldMapView(container, options = {}) {
         } else if (e.key === 'Escape') {
           searchResults.style.display = 'none';
         }
+      });
+
       searchInput.addEventListener('focus', () => {
         loadUniversalSearchData();
       });
 
       searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
+        searchTimeout = setTimeout(async () => {
+          await loadUniversalSearchData();
           const query = searchInput.value.trim().toLowerCase();
           selectedResultIndex = -1;
           if (query.length === 0) {
@@ -2305,6 +2315,14 @@ export function renderWorldMapView(container, options = {}) {
     isRoutesModeActive = false;
     clearDayNightLayer();
     isDayNightModeActive = false;
+    dayNightRenderer = null;
+    dayNightPolygon = null;
+    dayNightSunMarker = null;
+    dayNightMoonMarker = null;
+    if (onDocumentPointerUpHandler) {
+      document.removeEventListener('pointerup', onDocumentPointerUpHandler, true);
+      onDocumentPointerUpHandler = null;
+    }
     if (map) { map.remove(); map = null; }
     regionLayers = {};
     subregionLayers = {};
@@ -2431,13 +2449,17 @@ function initMap(container) {
     closeActivePopup();
   });
 
-  document.addEventListener('pointerup', () => {
+  if (onDocumentPointerUpHandler) {
+    document.removeEventListener('pointerup', onDocumentPointerUpHandler, true);
+  }
+  onDocumentPointerUpHandler = () => {
     if (_popupClosedOnPointerDown) {
       setTimeout(() => {
         _popupClosedOnPointerDown = false;
       }, 150);
     }
-  }, true);
+  };
+  document.addEventListener('pointerup', onDocumentPointerUpHandler, true);
 
   // Generous SVG renderer buffer (padding: 1.5): eliminates the black gap/void during drag, pan and pinch-zoom
   mapRenderer = L.svg({ padding: 1.5 });
@@ -3541,8 +3563,9 @@ function renderTravelRoutes() {
     }
   });
 
-  // Cities belonging to countries that user has marked cities in
+  // Cities belonging to countries that user has marked cities in (skip if already handled above)
   citiesByCountry.forEach((cities, cCode) => {
+    if (visitedCountries.includes(cCode)) return;
     const countryName = getCountryDisplayName(cCode);
     cities.forEach(c => {
       const matchCity = WORLD_CITIES_INDEX.find(ci =>
@@ -3811,16 +3834,42 @@ function renderDayNightLayer() {
   });
   dayNightLayer.addLayer(moonMarker);
 
+  dayNightPolygon = nightPolygon;
+  dayNightSunMarker = sunMarker;
+  dayNightMoonMarker = moonMarker;
+
   dayNightLayer.addTo(map);
 
   // Start periodic 60-second live update if not already running
   if (!dayNightUpdateTimer) {
     dayNightUpdateTimer = setInterval(() => {
       if (isDayNightModeActive && map) {
-        renderDayNightLayer();
+        updateDayNightTerminator();
       }
     }, 60000);
   }
+}
+
+/**
+ * Updates the Day/Night solar shadow terminator layer and Sun/Moon markers in-place
+ * using .setLatLngs() and .setLatLng() without re-creating DOM nodes every 60 seconds.
+ */
+function updateDayNightTerminator() {
+  if (!map || !isDayNightModeActive) return;
+  const now = new Date();
+  const sun = calculateSubsolarPoint(now);
+  const terminatorCoords = calculateSolarTerminatorCoords(sun);
+  const nadirLng = sun.lng > 0 ? sun.lng - 180 : sun.lng + 180;
+  const nadirLat = -sun.lat;
+
+  if (dayNightPolygon && dayNightSunMarker && dayNightMoonMarker && dayNightLayer && map.hasLayer(dayNightLayer)) {
+    dayNightPolygon.setLatLngs(terminatorCoords);
+    dayNightSunMarker.setLatLng([sun.lat, sun.lng]);
+    dayNightMoonMarker.setLatLng([nadirLat, nadirLng]);
+    return;
+  }
+
+  renderDayNightLayer();
 }
 
 /**
@@ -3838,6 +3887,9 @@ function clearDayNightLayer() {
     dayNightLayer.clearLayers();
   }
   dayNightLayer = null;
+  dayNightPolygon = null;
+  dayNightSunMarker = null;
+  dayNightMoonMarker = null;
 }
 
 function applyVisaModeStyles() {

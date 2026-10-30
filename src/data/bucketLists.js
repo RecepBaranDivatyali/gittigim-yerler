@@ -167,3 +167,33 @@ export function calculateBucketListProgress(list, worldVisits = {}, turkeyVisits
     remainingCountries
   };
 }
+
+export function applyBucketListToWishlist(listId) {
+  const list = BUCKET_LISTS.find(l => l.id === listId);
+  if (!list) return 0;
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('gittigim_yerler_world_v2') : null;
+    const worldVisits = raw ? JSON.parse(raw) : {};
+    let added = 0;
+    const nowIso = new Date().toISOString();
+    for (const c of list.countries) {
+      if (!worldVisits[c.code] || (worldVisits[c.code].status !== 'visited' && worldVisits[c.code].status !== 'wishlist')) {
+        worldVisits[c.code] = {
+          ...(worldVisits[c.code] || {}),
+          status: 'wishlist',
+          updatedAt: nowIso
+        };
+        added++;
+      }
+    }
+    if (added > 0 && typeof localStorage !== 'undefined') {
+      localStorage.setItem('gittigim_yerler_world_v2', JSON.stringify(worldVisits));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('GezginDataUpdated'));
+      }
+    }
+    return added;
+  } catch {
+    return 0;
+  }
+}

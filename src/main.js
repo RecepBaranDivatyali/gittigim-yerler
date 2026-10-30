@@ -93,8 +93,10 @@ function initApp() {
   appContainer.appendChild(loginContainer);
 
   let mapInitialized = false;
+  let currentView = 'login';
 
   function showMap() {
+    currentView = 'map';
     profileContainer.style.display = 'none';
     profileContainer.innerHTML = '';
     if (!mapInitialized) {
@@ -114,11 +116,75 @@ function initApp() {
   }
 
   function showProfile() {
+    currentView = 'profile';
     profileContainer.style.display = 'block';
     renderProfileView(profileContainer, () => {
       showMap();
     });
   }
+
+  // Android Donanım / Fiziksel Geri Tuşu Köprüsü
+  window.__handleGezginBackButton = function() {
+    try {
+      // 1) Açık modal, lightbox veya sihirbazlar
+      const modalSelectors = [
+        '.quick-wizard-overlay',
+        '.onboarding-overlay',
+        '.poster-modal-overlay',
+        '.country-detail-modal',
+        '.city-modal-overlay',
+        '.photo-lightbox-modal',
+        '.passport-modal-overlay',
+        '.friends-modal-overlay',
+        '.privacy-consent-overlay'
+      ];
+      for (const sel of modalSelectors) {
+        const modalEl = document.querySelector(sel);
+        if (modalEl) {
+          const closeBtn = modalEl.querySelector('.wizard-close-btn, #poster-close-btn, .modal-close, .close-btn, #btn-close-lightbox, button[id*="close"]');
+          if (closeBtn) {
+            closeBtn.click();
+          } else {
+            modalEl.remove();
+          }
+          return 'consumed';
+        }
+      }
+
+      // Çekmece kontrolü (ülke detay çekmecesi)
+      const drawer = document.getElementById('country-drawer');
+      if (drawer && (drawer.classList.contains('open') || drawer.classList.contains('active'))) {
+        const closeBtn = drawer.querySelector('.drawer-close, #drawer-close-btn, .drawer-close-btn');
+        if (closeBtn) closeBtn.click();
+        else drawer.classList.remove('open', 'active');
+        document.body.classList.remove('drawer-open');
+        return 'consumed';
+      }
+      if (document.body.classList.contains('drawer-open')) {
+        document.body.classList.remove('drawer-open');
+        return 'consumed';
+      }
+
+      // Leaflet harita popup kontrolü
+      const popupClose = document.querySelector('.leaflet-popup-close-button');
+      if (popupClose) {
+        popupClose.click();
+        return 'consumed';
+      }
+
+      // 2) Profil görünümündeyse -> Haritaya dön
+      if (currentView === 'profile' || (profileContainer && profileContainer.style.display !== 'none')) {
+        showMap();
+        return 'consumed';
+      }
+
+      // 3) Harita ana görünümündeyse ve açık pencere yoksa -> Çıkış
+      return 'exit';
+    } catch (e) {
+      console.warn('Back button handler error:', e);
+      return 'exit';
+    }
+  };
 
   if (typeof onStateChange === 'function') {
     onStateChange(() => {

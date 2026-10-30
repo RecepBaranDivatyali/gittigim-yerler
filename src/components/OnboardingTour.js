@@ -1,123 +1,394 @@
-// OnboardingTour.js - Hızlı Ülke Seçim Sihirbazı & Hoş Geldiniz
-import { getStorageData, saveWorldVisit, saveTurkeyVisit } from '../utils/storage.js';
+// OnboardingTour.js - Gezgin 3.0 Hoş Geldiniz Turu & 10 Saniyede Gezdiğin Ülkeleri Seç Sihirbazı
 import { getLanguage, getCountryDisplayName } from '../utils/i18n.js';
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { escapeHtml } from '../utils/security.js';
 
-// En çok seyahat edilen popüler başlangıç ülkeleri
-const POPULAR_QUICK_COUNTRIES = [
-  'TR', 'DE', 'IT', 'FR', 'ES', 'GR', 'GB', 'NL', 'US', 'GE',
-  'AZ', 'AT', 'CH', 'ME', 'RS', 'BA', 'HU', 'CZ', 'BE', 'EG',
-  'AE', 'JP', 'TH', 'PT', 'PL', 'SE', 'NO', 'DK', 'RO', 'BG'
+export const POPULAR_COUNTRIES = [
+  { code: 'TR', name: 'Türkiye', nameEn: 'Turkey', flag: '🇹🇷' },
+  { code: 'GE', name: 'Gürcistan', nameEn: 'Georgia', flag: '🇬🇪' },
+  { code: 'AZ', name: 'Azerbaycan', nameEn: 'Azerbaijan', flag: '🇦🇿' },
+  { code: 'GR', name: 'Yunanistan', nameEn: 'Greece', flag: '🇬🇷' },
+  { code: 'BG', name: 'Bulgaristan', nameEn: 'Bulgaria', flag: '🇧🇬' },
+  { code: 'IT', name: 'İtalya', nameEn: 'Italy', flag: '🇮🇹' },
+  { code: 'FR', name: 'Fransa', nameEn: 'France', flag: '🇫🇷' },
+  { code: 'DE', name: 'Almanya', nameEn: 'Germany', flag: '🇩🇪' },
+  { code: 'ES', name: 'İspanya', nameEn: 'Spain', flag: '🇪🇸' },
+  { code: 'NL', name: 'Hollanda', nameEn: 'Netherlands', flag: '🇳🇱' },
+  { code: 'GB', name: 'İngiltere', nameEn: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'AT', name: 'Avusturya', nameEn: 'Austria', flag: '🇦🇹' },
+  { code: 'CH', name: 'İsviçre', nameEn: 'Switzerland', flag: '🇨🇭' },
+  { code: 'BE', name: 'Belçika', nameEn: 'Belgium', flag: '🇧🇪' },
+  { code: 'CZ', name: 'Çekya', nameEn: 'Czechia', flag: '🇨🇿' },
+  { code: 'HU', name: 'Macaristan', nameEn: 'Hungary', flag: '🇭🇺' },
+  { code: 'PL', name: 'Polonya', nameEn: 'Poland', flag: '🇵🇱' },
+  { code: 'PT', name: 'Portekiz', nameEn: 'Portugal', flag: '🇵🇹' },
+  { code: 'RS', name: 'Sırbistan', nameEn: 'Serbia', flag: '🇷🇸' },
+  { code: 'BA', name: 'Bosna-Hersek', nameEn: 'Bosnia and Herzegovina', flag: '🇧🇦' },
+  { code: 'ME', name: 'Karadağ', nameEn: 'Montenegro', flag: '🇲🇪' },
+  { code: 'AL', name: 'Arnavutluk', nameEn: 'Albania', flag: '🇦🇱' },
+  { code: 'MK', name: 'Kuzey Makedonya', nameEn: 'North Macedonia', flag: '🇲🇰' },
+  { code: 'RO', name: 'Romanya', nameEn: 'Romania', flag: '🇷🇴' },
+  { code: 'RU', name: 'Rusya', nameEn: 'Russia', flag: '🇷🇺' },
+  { code: 'UA', name: 'Ukrayna', nameEn: 'Ukraine', flag: '🇺🇦' },
+  { code: 'EG', name: 'Mısır', nameEn: 'Egypt', flag: '🇪🇬' },
+  { code: 'AE', name: 'BAE (Dubai)', nameEn: 'UAE (Dubai)', flag: '🇦🇪' },
+  { code: 'QA', name: 'Katar', nameEn: 'Qatar', flag: '🇶🇦' },
+  { code: 'SA', name: 'Suudi Arabistan', nameEn: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: 'JP', name: 'Japonya', nameEn: 'Japan', flag: '🇯🇵' },
+  { code: 'KR', name: 'Güney Kore', nameEn: 'South Korea', flag: '🇰🇷' },
+  { code: 'TH', name: 'Tayland', nameEn: 'Thailand', flag: '🇹🇭' },
+  { code: 'SG', name: 'Singapur', nameEn: 'Singapore', flag: '🇸🇬' },
+  { code: 'ID', name: 'Endonezya', nameEn: 'Indonesia', flag: '🇮🇩' },
+  { code: 'US', name: 'ABD', nameEn: 'USA', flag: '🇺🇸' },
+  { code: 'CA', name: 'Kanada', nameEn: 'Canada', flag: '🇨🇦' },
+  { code: 'BR', name: 'Brezilya', nameEn: 'Brazil', flag: '🇧🇷' },
+  { code: 'MX', name: 'Meksika', nameEn: 'Mexico', flag: '🇲🇽' },
+  { code: 'MA', name: 'Fas', nameEn: 'Morocco', flag: '🇲🇦' }
 ];
 
+/**
+ * ⚡ 10 Saniyede Gezdiğin Ülkeleri Seç Hızlı Başlangıç Sihirbazı
+ * @param {Function} [onComplete]
+ */
 export function openQuickCountryWizard(onComplete) {
-  const lang = getLanguage();
-  const isTr = lang === 'tr';
-  const { worldVisits, turkeyVisits } = getStorageData();
-  const turkeyCount = Object.keys(turkeyVisits || {}).filter(k => turkeyVisits[k]?.status === 'visited').length;
+  const isTr = getLanguage() === 'tr';
 
-  const modal = document.createElement('div');
-  modal.className = 'onboarding-overlay quick-wizard-overlay';
+  let currentVisits = {};
+  try {
+    currentVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
+  } catch {
+    currentVisits = {};
+  }
 
-  const countryItems = POPULAR_QUICK_COUNTRIES.map(code => {
-    const info = WORLD_COUNTRIES.find(c => c.code === code) || { code, nameTr: code, nameEn: code };
-    const name = getCountryDisplayName(info);
-    const isVisited = (code === 'TR' && turkeyCount > 0) || (worldVisits[code]?.status === 'visited');
-    return {
-      code,
-      name,
-      flag: (code === 'IL') ? '' : (info.flag || '🌍'),
-      visited: isVisited
-    };
+  const selectedCodes = new Set();
+  Object.entries(currentVisits).forEach(([code, data]) => {
+    if (data?.status === 'visited' || data === 'visited') {
+      selectedCodes.add(code);
+    }
   });
 
-  modal.innerHTML = `
-    <div class="onboarding-card quick-wizard-card" style="max-width: 540px; width: 92%; max-height: 85vh; display: flex; flex-direction: column;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <h3 style="margin:0; font-size: 1.15rem; display:flex; align-items:center; gap:8px;">
+  const overlay = document.createElement('div');
+  overlay.className = 'quick-wizard-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(3, 7, 18, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+  `;
+
+  overlay.innerHTML = `
+    <div class="qw-card" style="
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      width: 100%;
+      max-width: 560px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    ">
+      <div style="padding: 18px 20px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); position: relative;">
+        <button type="button" id="qw-btn-close" style="
+          position: absolute; top: 16px; right: 16px;
+          background: rgba(255, 255, 255, 0.08); border: none;
+          color: #94a3b8; font-size: 1.1rem; width: 34px; height: 34px;
+          border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        ">✕</button>
+        <div style="font-size: 1.25rem; font-weight: 800; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
           <span>⚡</span>
-          <span>${isTr ? '10 Saniyede Gezdiğin Ülkeleri Seç' : 'Quick Country Selector'}</span>
-        </h3>
-        <button type="button" class="wizard-close-btn" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:inherit; opacity:0.7;">&times;</button>
-      </div>
+          <span>${isTr ? '10 Saniyede Gezdiğin Ülkeleri Seç' : 'Pick Visited Countries in 10s'}</span>
+        </div>
+        <div style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 12px 0; line-height: 1.4;">
+          ${isTr 
+            ? 'Şimdiye kadar ayak bastığın ülkeleri dokunarak işaretle, dünya haritan saniyeler içinde rengarenk boyansın!' 
+            : 'Tap the countries you’ve visited to light up your world map in seconds!'}
+        </div>
 
-      <p style="margin: 0 0 14px 0; font-size: 0.85rem; opacity: 0.8; line-height: 1.4;">
-        ${isTr 
-          ? 'Gezdiğin ülkelere dokunarak tek tıkla haritana ekle. Sonradan istediğin zaman haritadan yenilerini ekleyebilirsin.' 
-          : 'Tap the countries you have visited to add them instantly. You can always add more on the map later.'}
-      </p>
-
-      <div class="wizard-country-grid" style="overflow-y:auto; flex:1; display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding-right: 4px; margin-bottom: 16px;">
-        ${countryItems.map(item => `
-          <button type="button" class="wizard-country-chip ${item.visited ? 'selected' : ''}" data-code="${item.code}" style="
-            display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,0.12));
-            background: ${item.visited ? 'var(--primary, #3b82f6)' : 'var(--bg-secondary, rgba(255,255,255,0.05))'};
-            color: ${item.visited ? '#ffffff' : 'inherit'};
-            font-size: 0.82rem; cursor: pointer; text-align: left; transition: all 0.15s ease;
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div id="qw-counter" style="
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+            border: 1px solid #10b981; color: #34d399; font-size: 0.85rem; font-weight: 700;
+            padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;
           ">
-            <span style="font-size: 1.2rem; line-height: 1;">${item.flag}</span>
-            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight: 500;">${escapeHtml(item.name)}</span>
-            <span class="chip-check" style="opacity: ${item.visited ? '1' : '0.2'}; font-size: 0.85rem;">✓</span>
-          </button>
-        `).join('')}
+            <span>🎉</span>
+            <span id="qw-counter-text">${selectedCodes.size} ${isTr ? 'Ülke Seçildi' : 'Countries Selected'}</span>
+          </div>
+        </div>
+
+        <div style="position: relative; margin-top: 10px;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.95rem; color: #64748b; pointer-events: none;">🔍</span>
+          <input type="text" id="qw-search-input" placeholder="${isTr ? 'Ülke ara (örn. İtalya, Japonya)...' : 'Search country (e.g. Italy, Japan)...'}" style="
+            width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px; padding: 10px 14px 10px 38px; color: #f8fafc; font-size: 0.92rem;
+            outline: none; box-sizing: border-box;
+          " />
+        </div>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; pt-2; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
-        <span id="wizard-selected-count" style="font-size: 0.85rem; opacity: 0.85;">
-          ${isTr ? 'Seçilen:' : 'Selected:'} <strong>${countryItems.filter(x => x.visited).length}</strong>
-        </span>
-        <button type="button" id="wizard-done-btn" class="onboarding-btn primary" style="padding: 8px 20px; font-weight: 600;">
-          ${isTr ? 'Kaydet & Haritayı Gör 🚀' : 'Save & View Map 🚀'}
+      <div style="padding: 14px 16px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch;">
+        <div id="qw-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px;"></div>
+      </div>
+
+      <div style="padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0b1120;">
+        <button type="button" id="qw-btn-clear" style="background: transparent; border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+          ${isTr ? 'Temizle' : 'Clear'}
+        </button>
+        <button type="button" id="qw-btn-save" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 8px;">
+          <span>${isTr ? 'Kaydet ve Haritamı Boya 🚀' : 'Save & Paint My Map 🚀'}</span>
         </button>
       </div>
     </div>
   `;
 
-  document.body.appendChild(modal);
+  document.body.appendChild(overlay);
 
-  const chips = modal.querySelectorAll('.wizard-country-chip');
-  const countSpan = modal.querySelector('#wizard-selected-count strong');
+  const gridEl = overlay.querySelector('#qw-grid');
+  const counterTextEl = overlay.querySelector('#qw-counter-text');
+  const counterBadgeEl = overlay.querySelector('#qw-counter');
+  const searchInput = overlay.querySelector('#qw-search-input');
+  const btnClose = overlay.querySelector('#qw-btn-close');
+  const btnClear = overlay.querySelector('#qw-btn-clear');
+  const btnSave = overlay.querySelector('#qw-btn-save');
 
-  const updateCount = () => {
-    const selected = modal.querySelectorAll('.wizard-country-chip.selected').length;
-    if (countSpan) countSpan.textContent = selected;
-  };
-
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const code = chip.dataset.code;
-      const isSelected = chip.classList.toggle('selected');
-      const check = chip.querySelector('.chip-check');
-
-      if (isSelected) {
-        chip.style.background = 'var(--primary, #3b82f6)';
-        chip.style.color = '#ffffff';
-        if (check) check.style.opacity = '1';
-        saveWorldVisit(code, 'visited');
-        if (code === 'TR') {
-          saveTurkeyVisit('34', 'visited'); // İstanbul varsayılan
-        }
-      } else {
-        chip.style.background = 'var(--bg-secondary, rgba(255,255,255,0.05))';
-        chip.style.color = 'inherit';
-        if (check) check.style.opacity = '0.2';
-        saveWorldVisit(code, 'unvisited');
-      }
-      updateCount();
-    });
-  });
-
-  const close = () => {
-    modal.remove();
-    if (typeof onComplete === 'function') {
-      try { onComplete(); } catch (e) { console.error(e); }
+  function updateCounter() {
+    if (counterTextEl) {
+      counterTextEl.textContent = `${selectedCodes.size} ${isTr ? 'Ülke Seçildi' : 'Countries Selected'}`;
     }
-  };
+    if (counterBadgeEl) {
+      counterBadgeEl.style.transform = 'scale(1.06)';
+      setTimeout(() => {
+        if (counterBadgeEl) counterBadgeEl.style.transform = 'scale(1)';
+      }, 120);
+    }
+  }
 
-  modal.querySelector('.wizard-close-btn')?.addEventListener('click', close);
-  modal.querySelector('#wizard-done-btn')?.addEventListener('click', close);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
+  function getDisplayedCountries(query = '') {
+    const q = query.trim().toLocaleLowerCase('tr-TR');
+    if (!q) {
+      const popularCodes = new Set(POPULAR_COUNTRIES.map(c => c.code));
+      const extraSelected = Array.from(selectedCodes)
+        .filter(code => !popularCodes.has(code))
+        .map(code => {
+          const found = WORLD_COUNTRIES.find(c => c.code === code);
+          return found ? { code: found.code, name: found.name, nameEn: found.nameEn, flag: found.flag } : null;
+        })
+        .filter(Boolean);
+
+      return [...POPULAR_COUNTRIES, ...extraSelected];
+    }
+
+    return WORLD_COUNTRIES.filter(c => {
+      const trName = (c.name || '').toLocaleLowerCase('tr-TR');
+      const enName = (c.nameEn || '').toLocaleLowerCase('tr-TR');
+      const code = (c.code || '').toLocaleLowerCase('tr-TR');
+      return trName.includes(q) || enName.includes(q) || code === q;
+    }).slice(0, 80);
+  }
+
+  function renderGrid(query = '') {
+    const list = getDisplayedCountries(query);
+    if (list.length === 0) {
+      gridEl.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 30px 10px; color: #64748b;">
+          ${isTr ? 'Aradığınız kriterde ülke bulunamadı.' : 'No countries found matching your search.'}
+        </div>
+      `;
+      return;
+    }
+
+    gridEl.innerHTML = list.map(c => {
+      const isSelected = selectedCodes.has(c.code);
+      const name = isTr ? c.name : (c.nameEn || c.name);
+      return `
+        <button type="button" class="qw-chip ${isSelected ? 'selected' : ''}" data-code="${c.code}" style="
+          background: ${isSelected ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))' : 'rgba(30, 41, 59, 0.7)'};
+          border: 1px solid ${isSelected ? '#10b981' : 'rgba(255, 255, 255, 0.08)'};
+          box-shadow: ${isSelected ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'};
+          border-radius: 12px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+          user-select: none; text-align: left; color: inherit; width: 100%;
+        ">
+          <span style="font-size: 1.25rem; line-height: 1; flex-shrink: 0;">${c.flag || '🌍'}</span>
+          <span style="font-size: 0.82rem; font-weight: 600; color: ${isSelected ? '#34d399' : '#e2e8f0'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+        </button>
+      `;
+    }).join('');
+
+    gridEl.querySelectorAll('.qw-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const code = chip.getAttribute('data-code');
+        if (!code) return;
+        if (selectedCodes.has(code)) {
+          selectedCodes.delete(code);
+        } else {
+          selectedCodes.add(code);
+        }
+        renderGrid(searchInput?.value || '');
+        updateCounter();
+      });
+    });
+  }
+
+  renderGrid();
+
+  searchInput?.addEventListener('input', (e) => {
+    renderGrid(e.target.value);
   });
+
+  btnClear?.addEventListener('click', () => {
+    selectedCodes.clear();
+    renderGrid(searchInput?.value || '');
+    updateCounter();
+  });
+
+  function closeWizard() {
+    overlay.remove();
+  }
+
+  btnClose?.addEventListener('click', closeWizard);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeWizard();
+  });
+
+  btnSave?.addEventListener('click', () => {
+    try {
+      let worldVisits = {};
+      try {
+        worldVisits = JSON.parse(localStorage.getItem('gittigim_yerler_world_v2') || '{}');
+      } catch {
+        worldVisits = {};
+      }
+
+      const now = new Date().toISOString();
+      const today = now.split('T')[0];
+
+      selectedCodes.forEach(code => {
+        if (!worldVisits[code]) {
+          worldVisits[code] = {
+            status: 'visited',
+            updatedAt: now,
+            entryDate: today,
+            entryTransport: (code === 'TR' || code.startsWith('TR::')) ? 'car' : 'flight'
+          };
+        } else {
+          worldVisits[code].status = 'visited';
+          worldVisits[code].updatedAt = now;
+          if (!worldVisits[code].entryDate) worldVisits[code].entryDate = today;
+        }
+      });
+
+      localStorage.setItem('gittigim_yerler_world_v2', JSON.stringify(worldVisits));
+      try {
+        localStorage.setItem('gv_onboarded', '1');
+      } catch {}
+
+      window.dispatchEvent(new CustomEvent('GezginDataUpdated', {
+        detail: { source: 'quick-wizard', count: selectedCodes.size }
+      }));
+    } catch (e) {
+      console.error('Failed to save quick country wizard visits:', e);
+    }
+
+    closeWizard();
+    if (typeof onComplete === 'function') {
+      try { onComplete(); } catch (err) { console.error(err); }
+    }
+  });
+}
+
+/**
+ * Onboarding turunu kontrol eder ve gerekiyorsa başlatır
+ */
+export function checkOnboarding() {
+  try {
+    if (localStorage.getItem('gv_onboarded')) return;
+  } catch {
+    return;
+  }
+
+  const lang = getLanguage();
+  const isTr = lang === 'tr';
+
+  const steps = [
+    {
+      icon: '🌍',
+      title: isTr ? 'Dünyayı Keşfet & Boya' : 'Explore & Color the World',
+      desc: isTr 
+        ? 'Haritadaki ülkelere, eyaletlere ve şehirlere dokun. Gezdiğin yerleri, seyahat planlarını ve hayalindeki rotaları favori renklerine boya!' 
+        : 'Tap on countries, states, and cities on the map. Color your visited places, travel plans, and dream bucket list!'
+    },
+    {
+      icon: '🛂',
+      title: isTr ? 'Damgalar & Ulaşım Araçları' : 'Stamps & Transport Modes',
+      desc: isTr 
+        ? 'Her ülkeye giriş ve çıkış damgası bas! Seyahat ettiğin aracı seç: Uçak ✈️, Tren 🚆, Şahsi Araba 🚗, Otobüs 🚌 veya Gemi 🚢 ile anılarını ölümsüzleştir.' 
+        : 'Stamp your passport with entry and exit marks! Choose your mode: Flight ✈️, Train 🚆, Car 🚗, Bus 🚌, or Ship 🚢.'
+    },
+    {
+      icon: '🏅',
+      title: isTr ? 'Sanal Pasaport & Rozetler' : 'Virtual Passport & Badges',
+      desc: isTr 
+        ? 'Sınırları aştıkça özel gezgin madalyaları kazan, arkadaşlarınla rotalarını kıyasla ve yüksek çözünürlüklü Sanal Pasaportunu indirip paylaş!' 
+        : 'Earn traveler badges as you cross borders, compare journeys with friends, and download your high-res Virtual Passport!'
+    }
+  ];
+
+  let currentStep = 0;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'onboarding-overlay';
+
+  function renderCard() {
+    const s = steps[currentStep];
+    const isLast = currentStep === steps.length - 1;
+
+    overlay.innerHTML = `
+      <div class="onboarding-card">
+        <div class="onboarding-icon">${s.icon}</div>
+        <div class="onboarding-title">${s.title}</div>
+        <div class="onboarding-desc">${s.desc}</div>
+
+        <div class="onboarding-dots-row">
+          ${steps.map((_, i) => `<span class="onboarding-dot ${i === currentStep ? 'active' : ''}"></span>`).join('')}
+        </div>
+
+        <div class="onboarding-btn-row">
+          <button type="button" class="onboarding-btn secondary" id="btn-onboard-skip">${isTr ? 'Atla' : 'Skip'}</button>
+          <button type="button" class="onboarding-btn primary" id="btn-onboard-next">${isLast ? (isTr ? 'Ülkelerimi Seç 🚀' : 'Pick My Countries 🚀') : (isTr ? 'Devam Et ➔' : 'Continue ➔')}</button>
+        </div>
+      </div>
+    `;
+
+    overlay.querySelector('#btn-onboard-skip')?.addEventListener('click', finish);
+    overlay.querySelector('#btn-onboard-next')?.addEventListener('click', () => {
+      if (isLast) {
+        finish();
+        openQuickCountryWizard();
+      } else {
+        currentStep++;
+        renderCard();
+      }
+    });
+  }
+
+  function finish() {
+    try {
+      localStorage.setItem('gv_onboarded', '1');
+    } catch {}
+    overlay.remove();
+  }
+
+  renderCard();
+  document.body.appendChild(overlay);
 }
