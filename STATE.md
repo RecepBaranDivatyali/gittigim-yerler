@@ -7,8 +7,12 @@
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
 
 ## Aktif Görev
-AKTIF_GOREV: yok
-MUDUR:
+AKTIF_GOREV: iOS Native Apple Sign-In Derleme & App Store Connect Otomatik Yükleme
+MUDUR: 284e5da2-c83e-47f9-a4df-e2a6700d5ee5
+- [x] Apple Developer Portal: com.gittigimyerler.app için APPLE_ID_AUTH (Sign In with Apple) yetkisi açıldı ve yeni Provisioning Profile üretildi
+- [ ] SceneDelegate.swift WKNavigationActionPolicy düzeltmesi ve LoginPage.js iOS Apple yedek akışı
+- [ ] deploy-ios.yml: macos-26 runner + App Store Connect API'den güncel profil indirme ve otomatik yükleme
+- [ ] GitHub Actions derlemesinin başarıyla tamamlanıp App Store Connect'e ulaşmasının doğrulanması
 
 ## Bilinen Sorunlar
 - Apple App Store: 21 Ekim tarihli eski 1.0 (40) sürümü `4.0.0 Design: Preamble` maddesinden döndü (Screenshot-1027-151530.png detayı bekleniyor) + yeni Apple Lisans Sözleşmesi onayı gerekiyor.

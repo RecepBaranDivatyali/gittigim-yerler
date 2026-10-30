@@ -661,17 +661,32 @@ export function renderLoginPage(container, onLogin) {
         const appleProvider = new OAuthProvider('apple.com');
         appleProvider.addScope('email');
         appleProvider.addScope('name');
-        let cred;
         let nameHint = '';
         if (hasIosAuthBridge) {
           const rawNonce = randomNonce();
           const res = await requestNativeAppleToken(await sha256Hex(rawNonce));
           nameHint = res.fullName || '';
-          cred = await signInWithCredential(auth, appleProvider.credential({ idToken: res.identityToken, rawNonce }));
+          try {
+            const cred = await signInWithCredential(auth, appleProvider.credential({ idToken: res.identityToken, rawNonce }));
+            await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
+          } catch (fbErr) {
+            console.warn('[AppleAuth] Firebase credential exchange failed, using native Apple session fallback:', fbErr);
+            const appleUid = `apple_${res.userIdentifier || Date.now()}`;
+            const username = sanitizeText(String(nameHint || (res.email ? res.email.split('@')[0] : 'Gezgin Apple')).slice(0, 20), 20) || 'Gezgin Apple';
+            const email = res.email || `${appleUid}@privaterelay.appleid.com`;
+            await saveAndCompleteLogin({
+              uid: appleUid,
+              username,
+              email,
+              avatar: selectedAvatar || '🧭',
+              authProvider: 'apple',
+              createdAt: new Date().toISOString()
+            }, rememberMe);
+          }
         } else {
-          cred = await signInWithPopup(auth, appleProvider);
+          const cred = await signInWithPopup(auth, appleProvider);
+          await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
         }
-        await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
       } catch (err) {
         if (!isCancelledError(err)) {
           console.warn('Apple sign-in error:', err?.code, err?.message);

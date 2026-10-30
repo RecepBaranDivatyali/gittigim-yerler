@@ -163,7 +163,7 @@ class AuthBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler,
         sendJsonToJs(fnName: "__onNativeGoogleAuthResult", dict: ["cancelled": true])
     }
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationPolicy) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if let urlStr = navigationAction.request.url?.absoluteString,
            urlStr.hasPrefix(firebaseRedirectUri) {
             decisionHandler(.cancel)
