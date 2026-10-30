@@ -15,8 +15,9 @@ AKTIF_GOREV: yok
 - Bilinen açık sorun yok. (Google Play 2.9 yayında; iOS 1.0 Derleme 64 ve Huawei 2.9 incelemede).
 
 ## Son Değişiklikler
-- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı: -47 MB ham GeoJSON temizliği, ana JS paketinin 955 kB'dan 215 kB'a (%77 küçülme!) düşürülmesi, "⚡ 10 Saniyede Gezdiğin Ülkeleri Seç" hızlı başlangıç sihirbazı, 6 adet "🎯 Hazır Keşif & Hedef Paketi", çevrimdışı veri birleştirme, döviz dönüşümlü bütçe, Android geri tuşu, iOS native poster paylaşımı, 10 tema/ergonomi düzeltmesi ve güvenlik kalkanı (14/14 test PASS).
-- 2026-10-31: 7 uzman ajanla (`guvenlikci`, `haritaci`, `arayuzcu`, `kodlayici`, `mobilci`, `pazarlamaci`, `testci`) 360° kapsamlı uygulama denetimi tamamlandı.
+- 2026-10-31: 2. Tur Derinlemesine (Didik Didik) 360° Denetim tamamlandı; yeni özelliklerdeki ince senkronizasyon, istatistik sayacı, tema ve UX bulguları raporlandı.
+- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 17/17 test PASS).
+- 2026-10-31: 7 uzman ajanla 1. tur 360° kapsamlı uygulama denetimi tamamlandı.
 - 2026-10-31: 3 Mağaza Tam Otomasyon Sistemi (`scripts/deploy-stores.mjs` ve `build.gradle` otomatik imzalama) kuruldu.
 - 2026-10-31: Sürüm 2.9 (vc 16) Google Play'de yayına girdi (`completed`), Huawei AppGallery'de incelemede.
 - 2026-10-31: Apple App Store reddi (`4.0.0 Design: Preamble`) çözüldü, iOS 1.0 (Derleme 64) yeniden incelemeye gönderildi (`WAITING_FOR_REVIEW`).
@@ -24,4 +25,3 @@ AKTIF_GOREV: yok
 - 2026-10-22: Gece gölgesi kaydırma kırpılması çözüldü.
 - 2026-10-22: Gece/Gündüz Harita Modu ve Seyahat Cüzdanı eklendi.
 - 2026-10-22: 3 Yeni Özellik: 11 yeni kıta/bölge rozeti, haritada uçuş rotaları katmanı, profilde Seyahat Günlüğü vitrini.
-- 2026-10-22: Performans & Kod Bölme: Leaflet ve Firebase modülleri ayrı chunk'lara ayrıldı.
