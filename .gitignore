@@ -26,6 +26,9 @@ dist-ssr
 # Android Keystores & Release outputs
 *.jks
 *.keystore
+keystore.properties
+android/keystore.properties
+store-secrets/
 android/app/release/
 
 # iOS Certificates & Keys
