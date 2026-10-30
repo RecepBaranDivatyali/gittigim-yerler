@@ -4,25 +4,19 @@
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
 - iOS sürüm: **1.0 (Derleme 64)** — App Store Connect'te incelemede (**Waiting for Review**)
 - Android sürüm: **2.9** (versionCode **16**) — Google Play'de **Yayında (`completed`)**, Huawei AppGallery'de **İncelemede (`State 5`)**
-- Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
+- Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama (`--bump` destekli) aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
 
 ## Aktif Görev
-AKTIF_GOREV: 2. Tur Denetim Düzeltmeleri ve Yeni Etkileşim Özellikleri (Gemini 4 Argon Ajanlarıyla)
-MUDUR: 284e5da2-c83e-47f9-a4df-e2a6700d5ee5
-- [x] `kodlayici` (Argon - Bölüm 1): `bucketLists.js`, `storage.js`, `main.js`, `deploy-stores.mjs` güncellendi
-- [ ] `kodlayici` (Argon - Bölüm 2): `tests/smoke.test.js` 18. testin tamamlanması
-- [ ] `haritaci` (Argon): `OnboardingTour.js` ve `WorldMapView.js` ("🎲 Şansımı Dene" + 195 ülke arama) yazımlarının tamamlanması
-- [ ] `arayuzcu` (Argon): `ProfileView.js` ve `main.css` yazımlarının tamamlanması
+AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık sorun yok. (Google Play 2.9 yayında; iOS 1.0 Derleme 64 ve Huawei 2.9 incelemede).
+- Bilinen açık sorun yok. (Google Play 2.9 yayında; iOS 1.0 Derleme 64 ve Huawei 2.9 incelemede; Vercel web derlemesi yeşil).
 
 ## Son Değişiklikler
-- 2026-10-31: 2. Tur Derinlemesine (Didik Didik) 360° Denetim tamamlandı.
-- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 17/17 test PASS).
-- 2026-10-31: 7 uzman ajanla 1. tur 360° kapsamlı uygulama denetimi tamamlandı.
+- 2026-10-31: Vercel ara commit (`9cfc99f`) hatası çözüldü; 2. Tur iyileştirmeleri ("🎲 Şansımı Dene / Rota Çevir" butonu, Keşif Paketlerinden haritaya uçuş, sihirbazda 195 ülke arama, ProfileView dinamik kod bölme ile 483 kB ana paket, 18/18 birim testi PASS) canlıya alındı.
+- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı).
 - 2026-10-31: 3 Mağaza Tam Otomasyon Sistemi (`scripts/deploy-stores.mjs` ve `build.gradle` otomatik imzalama) kuruldu.
 - 2026-10-31: Sürüm 2.9 (vc 16) Google Play'de yayına girdi (`completed`), Huawei AppGallery'de incelemede.
 - 2026-10-31: Apple App Store reddi (`4.0.0 Design: Preamble`) çözüldü, iOS 1.0 (Derleme 64) yeniden incelemeye gönderildi (`WAITING_FOR_REVIEW`).
