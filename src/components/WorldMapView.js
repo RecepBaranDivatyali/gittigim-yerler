@@ -305,6 +305,7 @@ let selectedCountryCode = null;
 let activeStatusPopup = null;
 let isVisaModeActive = false;
 let activePopupOutsideListener = null;
+let onDocumentPointerUpHandler = null;
 let popupBackdropEl = null;
 let provinceLabelsLayer = null;
 let activeLabelPlacedBoxes = [];
@@ -707,7 +708,7 @@ export function renderWorldMapView(container, options = {}) {
         <!-- Floating Profile Button & Notifications (top-left) -->
         <div id="profile-btn-wrap" class="floating-profile-wrap">
           <button id="btn-open-profile" class="floating-profile-btn" aria-label="${t('profile')}">
-            <span class="floating-profile-avatar">${userPhotoUrl && sanitizePhotoUrl(userPhotoUrl) ? `<img src="${sanitizePhotoUrl(userPhotoUrl)}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(userAvatar)}</span>` : escapeHtml(userAvatar)}</span>
+            <span class="floating-profile-avatar">${userPhotoUrl && sanitizePhotoUrl(userPhotoUrl) ? `<img src="${escapeHtml(sanitizePhotoUrl(userPhotoUrl))}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(userAvatar)}</span>` : escapeHtml(userAvatar)}</span>
             <span class="floating-profile-name">${escapeHtml(userName)}</span>
             <span id="map-profile-sync-dot" class="map-profile-sync-dot" title="Bulut Eşitlendi"></span>
           </button>
@@ -729,6 +730,9 @@ export function renderWorldMapView(container, options = {}) {
           </div>
           <div id="map-search-results" class="map-search-results" style="display:none;"></div>
         </div>
+
+        <!-- Floating Active Mode Indicator (top-center, shown when Visa or Routes mode is active) -->
+        <div id="map-active-mode-badge" class="map-active-mode-badge" style="display:none;"></div>
 
         <!-- Floating Top-Right: Day/Night, Routes & Visa Mode Buttons & Travel Legend -->
         <div class="floating-top-right-group">
@@ -874,103 +878,111 @@ export function renderWorldMapView(container, options = {}) {
     const searchResults = container.querySelector('#map-search-results');
 
     // ── Universal Search Database: Every Clickable Country, Province, Capital, City & World Region ──
-    const searchDatabase = [
-      // 1. Turkey 81 Provinces
-      ...TURKEY_PROVINCES.map(p => ({
-        type: 'province',
-        id: `TR::${p.id}`,
-        name: p.name,
-        altName: '',
-        sub: 'Türkiye (İl)',
-        flag: getFlagHtml('TR'),
-        coords: [p.lat, p.lng],
-        countryCode: 'TR'
-      })),
-      // 2. World Countries (All 241 countries with accurate centroids)
-      ...WORLD_COUNTRIES.map(c => {
-        let altName = c.nameEn || c.name;
-        if (c.code === 'GB') {
-          altName = 'Birleşik Krallık / United Kingdom / UK / England / Great Britain / Büyük Britanya / Londra / London';
-        } else if (c.code === 'IE') {
-          altName = 'Ireland / Republic of Ireland / İrlanda Cumhuriyeti / Dublin';
-        }
-        return {
-          type: 'country',
-          id: c.code,
-          name: getCountryDisplayName(c),
-          altName: altName,
-          sub: currentLang === 'tr' ? (c.code === 'GB' ? 'Birleşik Krallık / UK' : (c.nameEn || c.name)) : (c.code === 'GB' ? 'İngiltere / United Kingdom' : c.name),
-          flag: getFlagHtml(c.code),
-          coords: COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code] || null,
-          countryCode: c.code
-        };
-      }),
-      // 2B. Direct Fast-Search for UK Constituent Nations
-      {
-        type: 'region',
-        id: 'GB::Scotland',
-        name: 'İskoçya',
-        altName: 'Scotland / Edinburgh / Glasgow / Highlands / UK',
-        sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
-        flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-        coords: [56.4907, -4.2026],
-        countryCode: 'GB'
-      },
-      {
-        type: 'region',
-        id: 'GB::Wales',
-        name: 'Galler',
-        altName: 'Wales / Cymru / Cardiff / UK',
-        sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
-        flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
-        coords: [52.1307, -3.7837],
-        countryCode: 'GB'
-      },
-      {
-        type: 'region',
-        id: 'GB::Northern Ireland',
-        name: 'Kuzey İrlanda',
-        altName: 'Northern Ireland / Belfast / Ulster / UK',
-        sub: 'İngiltere & Birleşik Krallık (Bölge)',
-        flag: '🇬🇧',
-        coords: [54.7877, -6.4923],
-        countryCode: 'GB'
-      },
-      // 3. World Capitals & Major Global Cities (Over 240 global hubs with TR/EN names)
-      ...WORLD_CITIES_INDEX.map(city => {
-        const c = countryByCode.get(city.countryCode);
-        const countryName = c ? getCountryDisplayName(c) : city.countryCode;
-        const isTr = currentLang === 'tr';
-        const primary = isTr ? city.nameTr : city.nameEn;
-        const secondary = isTr ? city.nameEn : city.nameTr;
-        return {
-          type: 'city',
-          id: `${city.countryCode}::${city.nameEn}`,
-          name: primary,
-          altName: secondary,
-          sub: `${countryName} (${currentLang === 'tr' ? 'Şehir/Başkent' : 'City/Capital'})`,
-          flag: getFlagHtml(city.countryCode),
-          coords: [city.lat, city.lng],
-          countryCode: city.countryCode
-        };
-      }),
-      // 4. All World Regions & Subdivisions (3,500+ states, provinces, prefectures, cantons)
-      ...WORLD_REGIONS_INDEX.map(r => {
-        const c = countryByCode.get(r.countryCode);
-        const countryName = c ? getCountryDisplayName(c) : r.countryCode;
-        const localizedName = getLocalizedName(r.name, r.countryCode);
-        return {
+    let cachedSearchDatabase = null;
+    function getSearchDatabase() {
+      if (cachedSearchDatabase && (cachedSearchDatabase.hasRegions || WORLD_REGIONS_INDEX.length === 0)) {
+        return cachedSearchDatabase.items;
+      }
+      const items = [
+        // 1. Turkey 81 Provinces
+        ...TURKEY_PROVINCES.map(p => ({
+          type: 'province',
+          id: `TR::${p.id}`,
+          name: p.name,
+          altName: '',
+          sub: 'Türkiye (İl)',
+          flag: getFlagHtml('TR'),
+          coords: [p.lat, p.lng],
+          countryCode: 'TR'
+        })),
+        // 2. World Countries (All 241 countries with accurate centroids)
+        ...WORLD_COUNTRIES.map(c => {
+          let altName = c.nameEn || c.name;
+          if (c.code === 'GB') {
+            altName = 'Birleşik Krallık / United Kingdom / UK / England / Great Britain / Büyük Britanya / Londra / London';
+          } else if (c.code === 'IE') {
+            altName = 'Ireland / Republic of Ireland / İrlanda Cumhuriyeti / Dublin';
+          }
+          return {
+            type: 'country',
+            id: c.code,
+            name: getCountryDisplayName(c),
+            altName: altName,
+            sub: currentLang === 'tr' ? (c.code === 'GB' ? 'Birleşik Krallık / UK' : (c.nameEn || c.name)) : (c.code === 'GB' ? 'İngiltere / United Kingdom' : c.name),
+            flag: getFlagHtml(c.code),
+            coords: COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code] || null,
+            countryCode: c.code
+          };
+        }),
+        // 2B. Direct Fast-Search for UK Constituent Nations
+        {
           type: 'region',
-          id: `${r.countryCode}::${r.name}`,
-          name: localizedName,
-          altName: r.name !== localizedName ? r.name : '',
-          sub: `${countryName} (${currentLang === 'tr' ? 'Bölge/Eyalet' : 'Region/State'})`,
-          flag: getFlagHtml(r.countryCode),
-          coords: (r.lat && r.lng) ? [r.lat, r.lng] : (COUNTRY_CENTROIDS[r.countryCode] || null),
-          countryCode: r.countryCode
-        };
-      })
-    ];
+          id: 'GB::Scotland',
+          name: 'İskoçya',
+          altName: 'Scotland / Edinburgh / Glasgow / Highlands / UK',
+          sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
+          flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+          coords: [56.4907, -4.2026],
+          countryCode: 'GB'
+        },
+        {
+          type: 'region',
+          id: 'GB::Wales',
+          name: 'Galler',
+          altName: 'Wales / Cymru / Cardiff / UK',
+          sub: 'İngiltere & Birleşik Krallık (Kurucu Ülke)',
+          flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+          coords: [52.1307, -3.7837],
+          countryCode: 'GB'
+        },
+        {
+          type: 'region',
+          id: 'GB::Northern Ireland',
+          name: 'Kuzey İrlanda',
+          altName: 'Northern Ireland / Belfast / Ulster / UK',
+          sub: 'İngiltere & Birleşik Krallık (Bölge)',
+          flag: '🇬🇧',
+          coords: [54.7877, -6.4923],
+          countryCode: 'GB'
+        },
+        // 3. World Capitals & Major Global Cities (Over 240 global hubs with TR/EN names)
+        ...WORLD_CITIES_INDEX.map(city => {
+          const c = countryByCode.get(city.countryCode);
+          const countryName = c ? getCountryDisplayName(c) : city.countryCode;
+          const isTr = currentLang === 'tr';
+          const primary = isTr ? city.nameTr : city.nameEn;
+          const secondary = isTr ? city.nameEn : city.nameTr;
+          return {
+            type: 'city',
+            id: `${city.countryCode}::${city.nameEn}`,
+            name: primary,
+            altName: secondary,
+            sub: `${countryName} (${currentLang === 'tr' ? 'Şehir/Başkent' : 'City/Capital'})`,
+            flag: getFlagHtml(city.countryCode),
+            coords: [city.lat, city.lng],
+            countryCode: city.countryCode
+          };
+        }),
+        // 4. All World Regions & Subdivisions (lazy loaded)
+        ...(WORLD_REGIONS_INDEX || []).map(r => {
+          const c = countryByCode.get(r.countryCode);
+          const countryName = c ? getCountryDisplayName(c) : r.countryCode;
+          const localizedName = getLocalizedName(r.name, r.countryCode);
+          return {
+            type: 'region',
+            id: `${r.countryCode}::${r.name}`,
+            name: localizedName,
+            altName: r.name !== localizedName ? r.name : '',
+            sub: `${countryName} (${currentLang === 'tr' ? 'Bölge/Eyalet' : 'Region/State'})`,
+            flag: getFlagHtml(r.countryCode),
+            coords: (r.lat && r.lng) ? [r.lat, r.lng] : (COUNTRY_CENTROIDS[r.countryCode] || null),
+            countryCode: r.countryCode
+          };
+        })
+      ];
+      cachedSearchDatabase = { items, hasRegions: WORLD_REGIONS_INDEX.length > 0 };
+      return items;
+    }
 
     if (searchInput && searchResults) {
       let searchTimeout = null;
@@ -1010,6 +1022,8 @@ export function renderWorldMapView(container, options = {}) {
         } else if (e.key === 'Escape') {
           searchResults.style.display = 'none';
         }
+      searchInput.addEventListener('focus', () => {
+        loadUniversalSearchData();
       });
 
       searchInput.addEventListener('input', () => {
@@ -1035,8 +1049,9 @@ export function renderWorldMapView(container, options = {}) {
 
           // Search matches with prioritization scoring: exact match > startsWith > includes
           const scoredMatches = [];
-          for (let i = 0; i < searchDatabase.length; i++) {
-            const item = searchDatabase[i];
+          const currentSearchDb = getSearchDatabase();
+          for (let i = 0; i < currentSearchDb.length; i++) {
+            const item = currentSearchDb[i];
             const nameNorm = norm(item.name);
             const altNorm = norm(item.altName);
             const subNorm = norm(item.sub);
@@ -1249,6 +1264,47 @@ export function renderWorldMapView(container, options = {}) {
       try { updateVisaBannerMyVisas(); } catch {}
     }
 
+    function updateActiveModeBadge() {
+      const badge = container.querySelector('#map-active-mode-badge');
+      if (!badge) return;
+      const isTr = (typeof getLanguage === 'function' ? getLanguage() : 'tr') === 'tr';
+
+      if (isVisaModeActive) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:6px;">
+            <span>🛂</span>
+            <span>${isTr ? 'Vize Görünümü Aktif' : 'Visa View Active'}</span>
+          </span>
+          <button type="button" id="btn-close-active-mode" style="background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.45);color:#fca5a5;border-radius:12px;padding:2px 8px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-left:6px;display:inline-flex;align-items:center;gap:3px;" aria-label="Kapat">
+            ✕ <span>${isTr ? 'Kapat' : 'Close'}</span>
+          </button>
+        `;
+        badge.querySelector('#btn-close-active-mode')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleVisaMode();
+        });
+      } else if (isRoutesModeActive) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:6px;">
+            <span>✈️</span>
+            <span>${isTr ? 'Uçuş Rotaları Aktif' : 'Flight Routes Active'}</span>
+          </span>
+          <button type="button" id="btn-close-active-mode" style="background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.45);color:#fca5a5;border-radius:12px;padding:2px 8px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-left:6px;display:inline-flex;align-items:center;gap:3px;" aria-label="Kapat">
+            ✕ <span>${isTr ? 'Kapat' : 'Close'}</span>
+          </button>
+        `;
+        badge.querySelector('#btn-close-active-mode')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleRoutesMode();
+        });
+      } else {
+        badge.style.display = 'none';
+        badge.innerHTML = '';
+      }
+    }
+
     function toggleVisaMode() {
       isVisaModeActive = !isVisaModeActive;
       const pType = getPassportType();
@@ -1277,6 +1333,7 @@ export function renderWorldMapView(container, options = {}) {
       }
 
       applyVisaModeStyles();
+      updateActiveModeBadge();
     }
 
     // Visa passport switcher click handlers (Bordo / Yeşil)
@@ -1307,6 +1364,7 @@ export function renderWorldMapView(container, options = {}) {
       } else {
         clearTravelRoutes();
       }
+      updateActiveModeBadge();
     }
     routesToggleBtn?.addEventListener('click', toggleRoutesMode);
     if (routesToggleBtn) {
@@ -2113,6 +2171,7 @@ export function renderWorldMapView(container, options = {}) {
       '.floating-profile-wrap',
       '.floating-poster-btn',
       '.floating-search-wrap',
+      '.map-active-mode-badge',
       '#stats-overlay'
     ];
     floatingSelectors.forEach(sel => {
@@ -2151,13 +2210,24 @@ export function renderWorldMapView(container, options = {}) {
       if (nameEl && p.username) nameEl.textContent = p.username;
       if (avatarEl) {
         if (p.photoUrl && sanitizePhotoUrl(p.photoUrl)) {
-          avatarEl.innerHTML = `<img src="${sanitizePhotoUrl(p.photoUrl)}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(p.avatar || '🧭')}</span>`;
+          avatarEl.innerHTML = `<img src="${escapeHtml(sanitizePhotoUrl(p.photoUrl))}" class="floating-profile-photo-img" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block;" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${escapeHtml(p.avatar || '🧭')}</span>`;
         } else if (p.avatar) {
           avatarEl.textContent = p.avatar;
         }
       }
     };
     addDocListener('gv-profile-updated', onProfileUpdate, window);
+
+    // Live update when Gezgin data is updated (e.g. from Quick Country Wizard or Cloud Sync)
+    const onGezginDataUpdated = () => {
+      invalidateStorageCache();
+      refreshAllStyles();
+      refreshStats();
+      if (isRoutesModeActive) {
+        renderTravelRoutes();
+      }
+    };
+    addDocListener('GezginDataUpdated', onGezginDataUpdated, window);
   }
 
   attachUIEvents();

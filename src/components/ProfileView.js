@@ -38,6 +38,8 @@ import { isAppInstalledOrNative, isIosDevice, triggerAppInstallation } from '../
 import { fetchGeoDataWithCache } from '../utils/geoDataCache.js';
 import { renderMedalTokenHtml, attachMedalSpotlightListeners } from '../utils/medalDesigns.js';
 import { calculateBudgetStats, formatMoney, EXPENSE_CATEGORIES } from '../utils/travelBudget.js';
+import { BUCKET_LISTS, calculateBucketListProgress, applyBucketListToWishlist } from '../data/bucketLists.js';
+import { openQuickCountryWizard } from './OnboardingTour.js';
 
 // Friendly Place Name helper for Photo Album & Showcase
 function getFriendlyPlaceName(targetId) {
@@ -339,7 +341,7 @@ export function renderProfileView(container, onBack) {
             <button class="ptab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings"><span class="tab-icon">⚙️</span><span class="tab-label">${t('settings')}</span></button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <button id="profile-logout" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:10px;padding:8px 14px;font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:600;">${t('logout')}</button>
+            <button id="profile-logout" class="profile-logout-btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:${isLightTheme(getTheme()) ? '#dc2626' : '#f87171'};border-radius:10px;padding:8px 14px;font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:600;">${t('logout')}</button>
           </div>
         </div>
         <div class="profile-content" id="profile-content-area"></div>

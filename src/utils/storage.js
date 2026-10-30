@@ -58,7 +58,7 @@ export function isCurrentUserSuperAdmin() {
   }
 }
 
-function safeSetItem(key, value) {
+export function safeSetItem(key, value) {
   try {
     localStorage.setItem(key, value);
   } catch (e) {
@@ -479,7 +479,7 @@ export function calculateStats() {
   });
 
   const markedRegionCount = Object.keys(worldVisits).filter(code => code.includes('::') && worldVisits[code]?.status === 'visited').length;
-  const worldCityCount = Math.max(worldCities.length, markedRegionCount) + turkeyCount;
+  const worldCityCount = Math.max(worldCities.length, markedRegionCount);
 
   // Global Demographic & Land Impact
   const demographicStats = calculateDemographicImpact(worldVisitedCodes);
@@ -1103,7 +1103,7 @@ export async function flushPastFeedbacksOnce() {
       console.log(`[Gezgin] Geçmiş ${count} adet bildirim Telegram'a tek seferlik başarıyla aktarıldı.`);
     }
 
-    localStorage.setItem('gv_past_feedbacks_flushed_v2', 'true');
+    safeSetItem('gv_past_feedbacks_flushed_v2', 'true');
     notifyStateChange();
   } catch (err) {
     console.warn('Flush past feedbacks error:', err);

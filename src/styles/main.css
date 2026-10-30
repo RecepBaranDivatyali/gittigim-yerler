@@ -6255,11 +6255,24 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     white-space: nowrap;
   }
   .floating-notif-btn {
+    position: relative;
     height: 28px;
     width: 28px;
     min-width: 28px;
     padding: 0;
     border-radius: 50%;
+  }
+  .floating-notif-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
   }
   .floating-notif-btn .notif-bell-svg {
     width: 13px;
@@ -6273,6 +6286,7 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     font-size: 0.55rem;
   }
   .floating-poster-btn {
+    position: relative;
     height: 32px;
     width: 32px;
     min-width: 32px;
@@ -6283,6 +6297,18 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     font-size: 0.95rem;
     margin: 0;
     border-radius: 50%;
+  }
+  .floating-poster-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
   }
   .poster-btn-text {
     display: none;
@@ -11825,10 +11851,10 @@ body[data-theme="light"] .popup-visa-note-bar {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    background: rgba(15, 23, 42, 0.96) !important;
+    background: var(--theme-ui-bg, rgba(15, 23, 42, 0.96)) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.16)) !important;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
   }
   .floating-top-right-group #map-legend.floating-legend.expanded .legend-items-list {
@@ -11850,20 +11876,46 @@ body[data-theme="light"] .popup-visa-note-bar {
 .floating-top-right-group #map-legend.floating-legend.expanded .legend-text {
   display: inline-block !important;
   font-size: 0.75rem !important;
-  color: #f1f5f9 !important;
+  color: var(--theme-text-main, #f1f5f9) !important;
   white-space: nowrap !important;
 }
 body.light-theme .floating-top-right-group #map-legend.floating-legend.expanded,
 body[data-theme="light"] .floating-top-right-group #map-legend.floating-legend.expanded,
-body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded {
-  background: rgba(250, 243, 233, 0.98) !important;
-  border: 1px solid rgba(140, 112, 82, 0.35) !important;
+body[data-theme="light"] #map-legend.floating-legend.expanded,
+body[data-theme="light"] .map-legend-floating.expanded,
+body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="natgeo_atlas"] #map-legend.floating-legend.expanded,
+body[data-theme="natgeo_atlas"] .map-legend-floating.expanded,
+body[data-theme="vintage"] .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="vintage"] #map-legend.floating-legend.expanded,
+body[data-theme="vintage"] .map-legend-floating.expanded,
+body[data-theme="nordic_frost"] .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="nordic_frost"] #map-legend.floating-legend.expanded,
+body[data-theme="nordic_frost"] .map-legend-floating.expanded,
+body[data-theme="sakura"] .floating-top-right-group #map-legend.floating-legend.expanded,
+body[data-theme="sakura"] #map-legend.floating-legend.expanded,
+body[data-theme="sakura"] .map-legend-floating.expanded {
+  background: var(--theme-ui-bg, rgba(250, 243, 233, 0.98)) !important;
+  border: 1px solid var(--theme-ui-border, rgba(140, 112, 82, 0.35)) !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
 }
 body.light-theme .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
 body[data-theme="light"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
-body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text {
-  color: #1e293b !important;
+body[data-theme="light"] #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="light"] .map-legend-floating.expanded .legend-text,
+body[data-theme="natgeo_atlas"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="natgeo_atlas"] #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="natgeo_atlas"] .map-legend-floating.expanded .legend-text,
+body[data-theme="vintage"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="vintage"] #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="vintage"] .map-legend-floating.expanded .legend-text,
+body[data-theme="nordic_frost"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="nordic_frost"] #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="nordic_frost"] .map-legend-floating.expanded .legend-text,
+body[data-theme="sakura"] .floating-top-right-group #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="sakura"] #map-legend.floating-legend.expanded .legend-text,
+body[data-theme="sakura"] .map-legend-floating.expanded .legend-text {
+  color: var(--theme-text-main, #1e293b) !important;
 }
 .floating-visa-mode-btn {
   height: 40px;
@@ -12129,7 +12181,11 @@ svg path.daynight-night-polygon {
   }
   .floating-visa-mode-btn,
   .floating-routes-mode-btn,
-  .floating-daynight-mode-btn {
+  .floating-routes-btn,
+  .floating-daynight-mode-btn,
+  .floating-daynight-btn,
+  .floating-poster-btn {
+    position: relative !important;
     width: 32px !important;
     height: 32px !important;
     min-width: 32px !important;
@@ -12138,9 +12194,29 @@ svg path.daynight-night-polygon {
     border-radius: 50% !important;
     font-size: 0.95rem !important;
   }
+  .floating-visa-mode-btn::after,
+  .floating-routes-mode-btn::after,
+  .floating-routes-btn::after,
+  .floating-daynight-mode-btn::after,
+  .floating-daynight-btn::after,
+  .floating-poster-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+  }
   .floating-visa-mode-btn .visa-btn-lbl,
   .floating-routes-mode-btn .routes-btn-lbl,
-  .floating-daynight-mode-btn .daynight-btn-lbl {
+  .floating-routes-btn .routes-btn-lbl,
+  .floating-daynight-mode-btn .daynight-btn-lbl,
+  .floating-daynight-btn .daynight-btn-lbl,
+  .floating-poster-btn .poster-btn-text {
     display: none !important;
   }
   #map-legend.floating-legend:not(.expanded) {
@@ -18401,6 +18477,18 @@ body[data-theme="natgeo_atlas"] .map-status-popup {
   -webkit-backdrop-filter: blur(12px);
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+}
+.floating-notif-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
 }
 .floating-notif-btn:hover {
   transform: translateY(-2px);

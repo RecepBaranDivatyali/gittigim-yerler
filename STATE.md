@@ -15,7 +15,7 @@ AKTIF_GOREV: yok
 - Bilinen açık sorun yok. (Google Play 2.9 yayında; iOS 1.0 Derleme 64 ve Huawei 2.9 incelemede).
 
 ## Son Değişiklikler
-- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı: -47 MB ham GeoJSON temizliği, ana JS paketinin 955 kB'dan 220 kB'a (%77 küçülme!) düşürülmesi, "⚡ 10 Saniyede Gezdiğin Ülkeleri Seç" hızlı başlangıç sihirbazı, 6 adet "🎯 Hazır Keşif & Hedef Paketi", çevrimdışı veri birleştirme, döviz dönüşümlü bütçe, Android geri tuşu, iOS native poster paylaşımı, 10 tema/ergonomi düzeltmesi ve güvenlik kalkanı (13/13 test PASS).
+- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı: -47 MB ham GeoJSON temizliği, ana JS paketinin 955 kB'dan 215 kB'a (%77 küçülme!) düşürülmesi, "⚡ 10 Saniyede Gezdiğin Ülkeleri Seç" hızlı başlangıç sihirbazı, 6 adet "🎯 Hazır Keşif & Hedef Paketi", çevrimdışı veri birleştirme, döviz dönüşümlü bütçe, Android geri tuşu, iOS native poster paylaşımı, 10 tema/ergonomi düzeltmesi ve güvenlik kalkanı (14/14 test PASS).
 - 2026-10-31: 7 uzman ajanla (`guvenlikci`, `haritaci`, `arayuzcu`, `kodlayici`, `mobilci`, `pazarlamaci`, `testci`) 360° kapsamlı uygulama denetimi tamamlandı.
 - 2026-10-31: 3 Mağaza Tam Otomasyon Sistemi (`scripts/deploy-stores.mjs` ve `build.gradle` otomatik imzalama) kuruldu.
 - 2026-10-31: Sürüm 2.9 (vc 16) Google Play'de yayına girdi (`completed`), Huawei AppGallery'de incelemede.

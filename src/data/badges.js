@@ -67,7 +67,7 @@ export const BADGES = [
   {
     id: 'world_cities_15',
     title: 'Metropol Avcısı 🏙️',
-    description: 'Dünya çapında en az 15 farklı şehir veya il işaretledin.',
+    description: 'Dünya çapında en az 15 farklı şehir işaretledin.',
     condition: (stats) => (stats?.worldCityCount || 0) >= 15,
     icon: '🏙️',
     color: '#6366f1'
@@ -75,7 +75,7 @@ export const BADGES = [
   {
     id: 'world_cities_30',
     title: 'Dünya Sakini 🌍',
-    description: 'Dünya çapında en az 30 farklı şehir veya il gezdin.',
+    description: 'Dünya çapında en az 30 farklı şehir gezdin.',
     condition: (stats) => (stats?.worldCityCount || 0) >= 30,
     icon: '🌍',
     color: '#8b5cf6'
