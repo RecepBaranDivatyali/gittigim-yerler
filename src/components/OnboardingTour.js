@@ -27,23 +27,13 @@ export const POPULAR_COUNTRIES = [
   { code: 'ME', name: 'Karadağ', nameEn: 'Montenegro', flag: '🇲🇪' },
   { code: 'AL', name: 'Arnavutluk', nameEn: 'Albania', flag: '🇦🇱' },
   { code: 'MK', name: 'Kuzey Makedonya', nameEn: 'North Macedonia', flag: '🇲🇰' },
-  { code: 'RO', name: 'Romanya', nameEn: 'Romania', flag: '🇷🇴' },
   { code: 'RU', name: 'Rusya', nameEn: 'Russia', flag: '🇷🇺' },
   { code: 'UA', name: 'Ukrayna', nameEn: 'Ukraine', flag: '🇺🇦' },
   { code: 'EG', name: 'Mısır', nameEn: 'Egypt', flag: '🇪🇬' },
   { code: 'AE', name: 'BAE (Dubai)', nameEn: 'UAE (Dubai)', flag: '🇦🇪' },
-  { code: 'QA', name: 'Katar', nameEn: 'Qatar', flag: '🇶🇦' },
-  { code: 'SA', name: 'Suudi Arabistan', nameEn: 'Saudi Arabia', flag: '🇸🇦' },
   { code: 'JP', name: 'Japonya', nameEn: 'Japan', flag: '🇯🇵' },
-  { code: 'KR', name: 'Güney Kore', nameEn: 'South Korea', flag: '🇰🇷' },
   { code: 'TH', name: 'Tayland', nameEn: 'Thailand', flag: '🇹🇭' },
-  { code: 'SG', name: 'Singapur', nameEn: 'Singapore', flag: '🇸🇬' },
-  { code: 'ID', name: 'Endonezya', nameEn: 'Indonesia', flag: '🇮🇩' },
-  { code: 'US', name: 'ABD', nameEn: 'USA', flag: '🇺🇸' },
-  { code: 'CA', name: 'Kanada', nameEn: 'Canada', flag: '🇨🇦' },
-  { code: 'BR', name: 'Brezilya', nameEn: 'Brazil', flag: '🇧🇷' },
-  { code: 'MX', name: 'Meksika', nameEn: 'Mexico', flag: '🇲🇽' },
-  { code: 'MA', name: 'Fas', nameEn: 'Morocco', flag: '🇲🇦' }
+  { code: 'US', name: 'ABD', nameEn: 'USA', flag: '🇺🇸' }
 ];
 
 /**
@@ -62,7 +52,7 @@ export function openQuickCountryWizard(onComplete) {
 
   const selectedCodes = new Set();
   Object.entries(currentVisits).forEach(([code, data]) => {
-    if (data?.status === 'visited' || data === 'visited') {
+    if (!code.includes('::') && (data?.status === 'visited' || data === 'visited')) {
       selectedCodes.add(code);
     }
   });
@@ -84,10 +74,19 @@ export function openQuickCountryWizard(onComplete) {
   `;
 
   overlay.innerHTML = `
+    <style>
+      .wizard-country-chip {
+        border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+        transition: all 0.18s ease;
+      }
+      .wizard-country-chip.selected {
+        border: 1px solid #10b981 !important;
+      }
+    </style>
     <div class="qw-card" style="
-      background: #0f172a;
-      color: #f8fafc;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: var(--theme-bg-card, #0f172a);
+      color: var(--theme-text-main, #f8fafc);
+      border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
       border-radius: 20px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
       width: 100%;
@@ -99,18 +98,18 @@ export function openQuickCountryWizard(onComplete) {
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     ">
-      <div style="padding: 18px 20px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); position: relative;">
+      <div style="padding: 18px 20px 14px; border-bottom: 1px solid var(--theme-border, rgba(148, 163, 184, 0.25)); position: relative;">
         <button type="button" id="qw-btn-close" style="
           position: absolute; top: 16px; right: 16px;
-          background: rgba(255, 255, 255, 0.08); border: none;
-          color: #94a3b8; font-size: 1.1rem; width: 34px; height: 34px;
+          background: rgba(148, 163, 184, 0.15); border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+          color: var(--theme-text-muted, #94a3b8); font-size: 1.1rem; width: 34px; height: 34px;
           border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
         ">✕</button>
         <div style="font-size: 1.25rem; font-weight: 800; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
           <span>⚡</span>
           <span>${isTr ? '10 Saniyede Gezdiğin Ülkeleri Seç' : 'Pick Visited Countries in 10s'}</span>
         </div>
-        <div style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 12px 0; line-height: 1.4;">
+        <div style="font-size: 0.85rem; color: var(--theme-text-muted, #94a3b8); margin: 0 0 12px 0; line-height: 1.4;">
           ${isTr 
             ? 'Şimdiye kadar ayak bastığın ülkeleri dokunarak işaretle, dünya haritan saniyeler içinde rengarenk boyansın!' 
             : 'Tap the countries you’ve visited to light up your world map in seconds!'}
@@ -119,7 +118,7 @@ export function openQuickCountryWizard(onComplete) {
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
           <div id="qw-counter" style="
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
-            border: 1px solid #10b981; color: #34d399; font-size: 0.85rem; font-weight: 700;
+            border: 1px solid #10b981; color: #10b981; font-size: 0.85rem; font-weight: 700;
             padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;
           ">
             <span>🎉</span>
@@ -128,10 +127,9 @@ export function openQuickCountryWizard(onComplete) {
         </div>
 
         <div style="position: relative; margin-top: 10px;">
-          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.95rem; color: #64748b; pointer-events: none;">🔍</span>
-          <input type="text" id="qw-search-input" placeholder="${isTr ? 'Ülke ara (örn. İtalya, Japonya)...' : 'Search country (e.g. Italy, Japan)...'}" style="
-            width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 12px; padding: 10px 14px 10px 38px; color: #f8fafc; font-size: 0.92rem;
+          <input type="text" id="qw-search-input" placeholder="${isTr ? '🔍 Tüm dünya ülkelerinde ara (195 ülke)...' : '🔍 Search all world countries (195 countries)...'}" style="
+            width: 100%; background: rgba(148, 163, 184, 0.1); border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+            border-radius: 12px; padding: 10px 14px; color: var(--theme-text-main, #f8fafc); font-size: 0.92rem;
             outline: none; box-sizing: border-box;
           " />
         </div>
@@ -141,8 +139,8 @@ export function openQuickCountryWizard(onComplete) {
         <div id="qw-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px;"></div>
       </div>
 
-      <div style="padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0b1120;">
-        <button type="button" id="qw-btn-clear" style="background: transparent; border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+      <div style="padding: 14px 20px; border-top: 1px solid var(--theme-border, rgba(148, 163, 184, 0.25)); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--theme-bg-card, #0b1120);">
+        <button type="button" id="qw-btn-clear" style="background: transparent; border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35)); color: var(--theme-text-muted, #94a3b8); padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
           ${isTr ? 'Temizle' : 'Clear'}
         </button>
         <button type="button" id="qw-btn-save" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 8px;">
@@ -174,10 +172,22 @@ export function openQuickCountryWizard(onComplete) {
     }
   }
 
+  function normText(s) {
+    return (s || '')
+      .toLocaleLowerCase('tr-TR')
+      .replace(/ı/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c');
+  }
+
   function getDisplayedCountries(query = '') {
     const q = query.trim().toLocaleLowerCase('tr-TR');
     if (!q) {
-      const popularCodes = new Set(POPULAR_COUNTRIES.map(c => c.code));
+      const popular30 = POPULAR_COUNTRIES.slice(0, 30);
+      const popularCodes = new Set(popular30.map(c => c.code));
       const extraSelected = Array.from(selectedCodes)
         .filter(code => !popularCodes.has(code))
         .map(code => {
@@ -186,22 +196,29 @@ export function openQuickCountryWizard(onComplete) {
         })
         .filter(Boolean);
 
-      return [...POPULAR_COUNTRIES, ...extraSelected];
+      return [...popular30, ...extraSelected];
     }
 
+    const qNorm = normText(q);
     return WORLD_COUNTRIES.filter(c => {
       const trName = (c.name || '').toLocaleLowerCase('tr-TR');
       const enName = (c.nameEn || '').toLocaleLowerCase('tr-TR');
       const code = (c.code || '').toLocaleLowerCase('tr-TR');
-      return trName.includes(q) || enName.includes(q) || code === q;
-    }).slice(0, 80);
+      return (
+        trName.includes(q) ||
+        enName.includes(q) ||
+        normText(trName).includes(qNorm) ||
+        normText(enName).includes(qNorm) ||
+        code === q
+      );
+    });
   }
 
   function renderGrid(query = '') {
     const list = getDisplayedCountries(query);
     if (list.length === 0) {
       gridEl.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 30px 10px; color: #64748b;">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 30px 10px; color: var(--theme-text-muted, #64748b);">
           ${isTr ? 'Aradığınız kriterde ülke bulunamadı.' : 'No countries found matching your search.'}
         </div>
       `;
@@ -212,20 +229,20 @@ export function openQuickCountryWizard(onComplete) {
       const isSelected = selectedCodes.has(c.code);
       const name = isTr ? c.name : (c.nameEn || c.name);
       return `
-        <button type="button" class="qw-chip ${isSelected ? 'selected' : ''}" data-code="${c.code}" style="
-          background: ${isSelected ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))' : 'rgba(30, 41, 59, 0.7)'};
-          border: 1px solid ${isSelected ? '#10b981' : 'rgba(255, 255, 255, 0.08)'};
+        <button type="button" class="qw-chip wizard-country-chip ${isSelected ? 'selected' : ''}" data-code="${c.code}" style="
+          background: ${isSelected ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))' : 'rgba(148, 163, 184, 0.1)'};
+          border: 1px solid ${isSelected ? '#10b981' : 'var(--theme-border, rgba(148, 163, 184, 0.35))'};
           box-shadow: ${isSelected ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'};
           border-radius: 12px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;
           user-select: none; text-align: left; color: inherit; width: 100%;
         ">
           <span style="font-size: 1.25rem; line-height: 1; flex-shrink: 0;">${c.flag || '🌍'}</span>
-          <span style="font-size: 0.82rem; font-weight: 600; color: ${isSelected ? '#34d399' : '#e2e8f0'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+          <span style="font-size: 0.82rem; font-weight: 600; color: ${isSelected ? '#10b981' : 'var(--theme-text-main, #e2e8f0)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
         </button>
       `;
     }).join('');
 
-    gridEl.querySelectorAll('.qw-chip').forEach(chip => {
+    gridEl.querySelectorAll('.wizard-country-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const code = chip.getAttribute('data-code');
         if (!code) return;
@@ -270,21 +287,33 @@ export function openQuickCountryWizard(onComplete) {
         worldVisits = {};
       }
 
-      const now = new Date().toISOString();
-      const today = now.split('T')[0];
+      const nowTs = Date.now();
+      const today = new Date().toISOString().split('T')[0];
 
+      // 1. Seçilen ülkeleri mevcut alt alanlarını (notes, rating, date, expenses vb.) koruyarak visited yap
       selectedCodes.forEach(code => {
-        if (!worldVisits[code]) {
+        const existing = (worldVisits[code] && typeof worldVisits[code] === 'object') ? worldVisits[code] : {};
+        worldVisits[code] = {
+          ...existing,
+          status: 'visited',
+          updatedAt: nowTs,
+          entryDate: existing.entryDate || existing.date || today,
+          entryTransport: existing.entryTransport || ((code === 'TR' || code.startsWith('TR::')) ? 'car' : 'flight')
+        };
+      });
+
+      // 2. Seçimi kaldırılan (unvisited) ülkelerde mevcut notları/tarihi/harcamaları/puanı silmeden yalnızca status: 'unvisited' ve updatedAt: Date.now() güncelle
+      Object.keys(worldVisits).forEach(code => {
+        if (code.includes('::')) return;
+        const existing = worldVisits[code];
+        const wasVisited = existing?.status === 'visited' || existing === 'visited';
+        if (wasVisited && !selectedCodes.has(code)) {
+          const baseObj = (existing && typeof existing === 'object') ? existing : {};
           worldVisits[code] = {
-            status: 'visited',
-            updatedAt: now,
-            entryDate: today,
-            entryTransport: (code === 'TR' || code.startsWith('TR::')) ? 'car' : 'flight'
+            ...baseObj,
+            status: 'unvisited',
+            updatedAt: nowTs
           };
-        } else {
-          worldVisits[code].status = 'visited';
-          worldVisits[code].updatedAt = now;
-          if (!worldVisits[code].entryDate) worldVisits[code].entryDate = today;
         }
       });
 

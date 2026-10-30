@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stripUndefinedDeep } from '../src/services/syncService.js';
+import { stripUndefinedDeep, cancelPendingCloudSync } from '../src/services/syncService.js';
 import { sanitizePhotoUrl } from '../src/utils/security.js';
-import { BUCKET_LISTS, calculateBucketListProgress } from '../src/data/bucketLists.js';
+import { BUCKET_LISTS, calculateBucketListProgress, applyBucketListToWishlist } from '../src/data/bucketLists.js';
 
 test('stripUndefinedDeep - nesnelerdeki undefined alanları temizler', () => {
   const input = { a: 1, b: undefined, c: 'gezgin' };
@@ -143,4 +143,27 @@ test('calculateBucketListProgress - ilerleme yüzdesi ve tamamlanma durumunu do�
   assert.strictEqual(fullProgress.remaining, 0);
   assert.strictEqual(fullProgress.percentage, 100);
   assert.strictEqual(fullProgress.isCompleted, true);
+});
+
+test('applyBucketListToWishlist - hedefleri ekler ve updatedAt alanını sayısal (number) yazar', () => {
+  const store = new Map();
+  const prevLocalStorage = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k)
+  };
+
+  try {
+    const added = applyBucketListToWishlist('seven_wonders');
+    assert.strictEqual(added, 7);
+
+    const saved = JSON.parse(store.get('gittigim_yerler_world_v2') || '{}');
+    assert.strictEqual(saved.IT?.status, 'wishlist');
+    assert.strictEqual(typeof saved.IT?.updatedAt, 'number');
+    assert.ok(saved.IT.updatedAt > 1700000000000);
+  } finally {
+    cancelPendingCloudSync();
+    globalThis.localStorage = prevLocalStorage;
+  }
 });

@@ -749,6 +749,9 @@ export function renderWorldMapView(container, options = {}) {
           <button type="button" id="btn-toggle-routes-mode" class="floating-routes-mode-btn" title="${t('travelRoutes')}">
             <span>✈️</span> <span class="routes-btn-lbl">${t('routes')}</span>
           </button>
+          <button type="button" id="btn-lucky-route" class="floating-lucky-btn floating-routes-mode-btn" title="Sıradaki Rotam Nereye? (Şansımı Dene)">
+            <span>🎲</span> <span class="routes-btn-lbl">${currentLang === 'tr' ? 'Şansımı Dene' : 'Surprise Me'}</span>
+          </button>
           <button type="button" id="btn-toggle-visa-mode" class="floating-visa-mode-btn" title="${t('visaMode')}">
             <span>🛂</span> <span class="visa-btn-lbl">${t('visaMode')}</span>
           </button>
@@ -1380,6 +1383,88 @@ export function renderWorldMapView(container, options = {}) {
     if (routesToggleBtn) {
       routesToggleBtn.classList.toggle('active', isRoutesModeActive);
     }
+
+    // 🎲 Lucky Route ("Şansımı Dene / Sıradaki Rotam") & Direct Country FlyTo Helper
+    function flyToCountryAndOpenPopup(rawCode) {
+      const code = String(rawCode || '').trim().toUpperCase();
+      if (!code || !map) return;
+
+      const profRoot = document.getElementById('profile-app-root');
+      if (profRoot && profRoot.style.display !== 'none') {
+        profRoot.style.display = 'none';
+        profRoot.innerHTML = '';
+        try { map.invalidateSize(); } catch {}
+      }
+
+      const countryObj = countryByCode.get(code) || WORLD_COUNTRIES.find(c => c.code === code);
+      const coords = COUNTRY_CENTROIDS[code] || COUNTRY_LABEL_OFFSETS[code];
+      if (!coords) return;
+
+      closeActivePopup();
+      map.flyTo(coords, 4.8, { duration: 1.1 });
+
+      let opened = false;
+      const onFinishFly = () => {
+        if (opened || !map) return;
+        opened = true;
+        selectedCountryCode = code;
+        refreshStats();
+        onViewChange();
+        updateLayerHud();
+        scheduleLabelUpdate();
+
+        const matchedFeature = countryLayersByCode[code]?.feature || countryFeaturesByCode[code] || null;
+        const displayName = countryObj ? getCountryDisplayName(countryObj) : code;
+        const titleHtml = `${getFlagHtml(code)} ${displayName}`;
+        openStatusPopup(coords, code, titleHtml, 'country', code, matchedFeature);
+      };
+
+      map.once('moveend', onFinishFly);
+      setTimeout(onFinishFly, 1180);
+    }
+
+    const luckyRouteBtn = container.querySelector('.floating-lucky-btn');
+    luckyRouteBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      invalidateStorageCache();
+      const { worldVisits } = getCachedStorage();
+      const validCountries = WORLD_COUNTRIES.filter(c => Boolean(COUNTRY_CENTROIDS[c.code] || COUNTRY_LABEL_OFFSETS[c.code]));
+
+      // 1. Önce kullanıcının Hedef Listesindeki (wishlist) ülkeler
+      let pool = validCountries.filter(c => (
+        getEffectiveCountryStatus(c.code) === 'wishlist' ||
+        worldVisits?.[c.code]?.status === 'wishlist'
+      ));
+
+      // 2. Hedef listesi boşsa henüz gezmediği ülkeler
+      if (pool.length === 0) {
+        pool = validCountries.filter(c => getEffectiveCountryStatus(c.code) !== 'visited');
+      }
+
+      // 3. Tüm dünya gezildiyse tüm ülkeler
+      if (pool.length === 0) {
+        pool = validCountries;
+      }
+
+      if (pool.length > 1 && selectedCountryCode) {
+        const filtered = pool.filter(c => c.code !== selectedCountryCode);
+        if (filtered.length > 0) pool = filtered;
+      }
+
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      if (chosen) {
+        flyToCountryAndOpenPopup(chosen.code);
+      }
+    });
+
+    const onFlyToCountryEvent = (e) => {
+      const code = e?.detail?.code || e?.detail?.countryCode;
+      if (code) {
+        flyToCountryAndOpenPopup(code);
+      }
+    };
+    addDocListener('GezginMapFlyTo', onFlyToCountryEvent, window);
+    addDocListener('GezginFlyToCountry', onFlyToCountryEvent, window);
 
     // Day/Night Layer Toggle Handling
     const dayNightToggleBtn = container.querySelector('#btn-toggle-daynight-mode');
