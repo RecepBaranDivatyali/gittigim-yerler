@@ -559,6 +559,7 @@ export function resetTravelData({ skipCloudSync = false } = {}) {
   localStorage.removeItem('gittigim_yerler_user_places_v1');
   localStorage.removeItem('gittigim_yerler_country_notes_v1');
   localStorage.removeItem('gittigim_yerler_country_ratings_v1');
+  localStorage.removeItem('gittigim_yerler_custom_routes_v1');
   localStorage.removeItem('gv_user_visas_v1');
   localStorage.removeItem('gv_visa_overrides');
   localStorage.removeItem('gv_passport_type');

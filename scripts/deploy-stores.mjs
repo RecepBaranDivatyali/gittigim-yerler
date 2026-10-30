@@ -6,10 +6,10 @@
  *
  * Kullanım:
  *   node scripts/deploy-stores.mjs [status]
- *   node scripts/deploy-stores.mjs build-android
+ *   node scripts/deploy-stores.mjs build-android [--bump]
  *   node scripts/deploy-stores.mjs deploy-google [--name="..."] [--notes="..."]
  *   node scripts/deploy-stores.mjs deploy-huawei [--notes="..."]
- *   node scripts/deploy-stores.mjs deploy-android [--name="..."] [--notes="..."]
+ *   node scripts/deploy-stores.mjs deploy-android [--bump] [--name="..."] [--notes="..."]
  */
 
 import fs from 'node:fs';
@@ -55,12 +55,15 @@ function parseCliArgs() {
   const options = {
     command,
     name: DEFAULT_RELEASE_NAME,
-    notes: DEFAULT_RELEASE_NOTES
+    notes: DEFAULT_RELEASE_NOTES,
+    bump: false
   };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg.startsWith('--name=')) {
+    if (arg === '--bump') {
+      options.bump = true;
+    } else if (arg.startsWith('--name=')) {
       options.name = arg.slice(7);
     } else if (arg === '--name' && args[i + 1]) {
       options.name = args[++i];
@@ -709,10 +712,42 @@ function resolveJavaHome() {
   return null;
 }
 
-async function buildAndroid() {
+function bumpAndroidVersion() {
+  const gradlePath = path.join(ANDROID_DIR, 'app', 'build.gradle');
+  if (!fs.existsSync(gradlePath)) {
+    throw new Error(`build.gradle bulunamadı: ${gradlePath}`);
+  }
+  let content = fs.readFileSync(gradlePath, 'utf8');
+  let oldCode = null;
+  let newCode = null;
+  let oldName = null;
+  let newName = null;
+
+  content = content.replace(/versionCode\s+(\d+)/, (match, codeStr) => {
+    oldCode = parseInt(codeStr, 10);
+    newCode = oldCode + 1;
+    return `versionCode ${newCode}`;
+  });
+
+  content = content.replace(/versionName\s+"([0-9.]+)"/, (match, nameStr) => {
+    oldName = nameStr;
+    const num = parseFloat(nameStr);
+    newName = Number.isNaN(num) ? nameStr : (Math.round((num + 0.1) * 10) / 10).toFixed(1);
+    return `versionName "${newName}"`;
+  });
+
+  fs.writeFileSync(gradlePath, content, 'utf8');
+  console.log(`\n🔼 Android sürümü otomatik artırıldı: versionCode ${oldCode} -> ${newCode}, versionName "${oldName}" -> "${newName}"`);
+}
+
+async function buildAndroid({ bump = false } = {}) {
   console.log('==============================================================');
   console.log('📱 GEZGİN: ANDROID DERLEME SÜRECİ BAŞLATILIYOR');
   console.log('==============================================================');
+
+  if (bump) {
+    bumpAndroidVersion();
+  }
 
   console.log('\n[Adım 1/3] Web varlıkları derleniyor (npm run build)...');
   await runCommand('npm', ['run', 'build'], { cwd: ROOT_DIR });
@@ -846,7 +881,7 @@ async function main() {
         break;
 
       case 'build-android':
-        await buildAndroid();
+        await buildAndroid({ bump: cli.bump });
         break;
 
       case 'deploy-google':
@@ -859,7 +894,7 @@ async function main() {
 
       case 'deploy-android':
         console.log('🎯 Tek komutla Android derleme ve 2 mağazaya (Google + Huawei) yükleme başlatılıyor...\n');
-        await buildAndroid();
+        await buildAndroid({ bump: cli.bump });
         await deployGooglePlay({ name: cli.name, notes: cli.notes });
         await deployHuaweiAppGallery({ notes: cli.notes });
         console.log('\n🎉 TEBRİKLER! Android derlemesi tamamlandı ve Google Play ile Huawei AppGallery\'ye yüklendi.');

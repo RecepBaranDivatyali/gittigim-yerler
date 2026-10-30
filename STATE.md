@@ -15,7 +15,7 @@ AKTIF_GOREV: yok
 - Bilinen açık sorun yok. (Google Play 2.9 yayında; iOS 1.0 Derleme 64 ve Huawei 2.9 incelemede).
 
 ## Son Değişiklikler
-- 2026-10-31: 2. Tur Derin Denetim iyileştirmeleri tamamlandı: "🎲 Şansımı Dene (Rota Çevir)" butonu, Keşif Paketlerinden haritaya uçuş, sihirbazda 195 ülke arama ve eski anıları koruma, ProfileView lazy-split (ana paket 770 kB -> 367 kB), çıkışta özel uçuş rotası temizliği, `--bump` sürüm artırma ve 18/18 test PASS.
+- 2026-10-31: 2. Tur Derin Denetim iyileştirmeleri Gemini 4 Argon ajanlarıyla tamamlandı: "🎲 Şansımı Dene (Rota Çevir)" butonu, Keşif Paketlerinden haritaya uçuş (`GezginFlyToCountry`), sihirbazda 195 ülke arama ve eski anıları koruma, ProfileView dinamik paket ayrımı (ana paket 770 kB -> 369 kB), çıkışta özel uçuş rotası temizliği, `--bump` sürüm artırma ve 18/18 test PASS.
 - 2026-10-31: 2. Tur Derinlemesine (Didik Didik) 360° Denetim tamamlandı.
 - 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 17/17 test PASS).
 - 2026-10-31: 7 uzman ajanla 1. tur 360° kapsamlı uygulama denetimi tamamlandı.

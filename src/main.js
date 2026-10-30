@@ -1,7 +1,6 @@
 import './styles/main.css';
 import { renderWorldMapView, preloadMapGeoData } from './components/WorldMapView.js';
 import { renderLoginPage } from './components/LoginPage.js';
-import { renderProfileView } from './components/ProfileView.js';
 import { onStateChange, syncPendingFeedbacks, initFeedbackSync, silenceAndHydrateUnlockedAchievements } from './utils/storage.js';
 import { applyTheme, getTheme } from './utils/theme.js';
 import { checkOnboarding } from './components/OnboardingModal.js';
@@ -115,13 +114,23 @@ function initApp() {
     }
   }
 
-  function showProfile() {
+  async function showProfile() {
     currentView = 'profile';
     profileContainer.style.display = 'block';
+    const { renderProfileView } = await import('./components/ProfileView.js');
     renderProfileView(profileContainer, () => {
       showMap();
     });
   }
+
+  window.addEventListener('GezginFlyToCountry', (e) => {
+    if (currentView === 'profile' || (profileContainer && profileContainer.style.display !== 'none')) {
+      showMap();
+    }
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('GezginMapFlyTo', { detail: e.detail }));
+    }, 150);
+  });
 
   // Android Donanım / Fiziksel Geri Tuşu Köprüsü
   window.__handleGezginBackButton = function() {
