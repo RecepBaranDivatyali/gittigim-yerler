@@ -70,7 +70,5 @@
 	<string>Seyahat anılarınıza ve profilinize fotoğraf ekleyebilmeniz için fotoğraf galerinize erişim izni gereklidir.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Seyahat fotoğrafları çekip kaydedebilmeniz için kamera erişim izni gereklidir.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Haritada anlık konumunuzu görebilmeniz için konum izni gereklidir.</string>
 </dict>
 </plist>

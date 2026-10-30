@@ -21,7 +21,14 @@ export function sanitizeText(str, maxLength = 250) {
 export function sanitizePhotoUrl(url) {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
-  if (/^https?:\/\//i.test(trimmed) || /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/i.test(trimmed)) {
+  // Tırnak, açılı ayraçlar, boşluk veya kontrol karakterleri img src injection riski taşır
+  if (/[\s"'<>]|[\x00-\x1f\x7f-\x9f]/.test(trimmed)) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^data:image\/(jpeg|jpg|png|gif|webp);base64,[a-z0-9+/=]+$/i.test(trimmed)) {
     return trimmed;
   }
   return null;

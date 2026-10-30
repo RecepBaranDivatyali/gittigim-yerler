@@ -18,6 +18,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -38,12 +39,44 @@ public class MainActivity extends BridgeActivity {
 
     private Dialog oauthDialog;
     private GoogleSignInClient googleSignInClient;
+    private OnBackPressedCallback backPressedCallback;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupBackNavigation();
         attachNativeAuthBridge();
+    }
+
+    private void setupBackNavigation() {
+        backPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (bridge != null && bridge.getWebView() != null) {
+                    String js = "(function() { try { return window.__handleGezginBackButton ? window.__handleGezginBackButton() : 'exit'; } catch (e) { return 'exit'; } })()";
+                    bridge.getWebView().evaluateJavascript(js, result -> runOnUiThread(() -> {
+                        boolean consumed = false;
+                        if (result != null) {
+                            String clean = result.replace("\"", "").trim();
+                            if ("consumed".equalsIgnoreCase(clean) || "true".equalsIgnoreCase(clean)) {
+                                consumed = true;
+                            }
+                        }
+                        if (!consumed) {
+                            setEnabled(false);
+                            getOnBackPressedDispatcher().onBackPressed();
+                            setEnabled(true);
+                        }
+                    }));
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
+                }
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
     }
 
     @Override
