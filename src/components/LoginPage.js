@@ -225,7 +225,7 @@ export function renderLoginPage(container, onLogin) {
       <div class="login-overlay">
         <!-- Language Switcher in Top Right -->
         <div style="position:fixed;top:max(12px, env(safe-area-inset-top, 12px));right:max(12px, env(safe-area-inset-right, 12px));z-index:10001;">
-          <div class="lang-toggle-btn" id="login-lang-toggle" style="background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;color:#f8fafc;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px);">
+          <div class="lang-toggle-btn" id="login-lang-toggle" style="background:var(--theme-ui-bg, rgba(30,41,59,0.85));border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;color:var(--theme-text-main, #f8fafc);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px);">
             <span>🌐</span>
             <span style="font-weight:700;">${currentLang.toUpperCase()}</span>
           </div>
@@ -671,7 +671,11 @@ export function renderLoginPage(container, onLogin) {
             await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
           } catch (fbErr) {
             console.warn('[AppleAuth] Firebase credential exchange failed, using native Apple session fallback:', fbErr);
-            const appleUid = `apple_${res.userIdentifier || Date.now()}`;
+            if (!res?.userIdentifier) {
+              alert(currentLang === 'tr' ? 'Apple ile giriş tamamlanamadı. Lütfen tekrar deneyin.' : 'Apple sign in could not be completed. Please try again.');
+              return;
+            }
+            const appleUid = `apple_${res.userIdentifier}`;
             const username = sanitizeText(String(nameHint || (res.email ? res.email.split('@')[0] : 'Gezgin Apple')).slice(0, 20), 20) || 'Gezgin Apple';
             const email = res.email || `${appleUid}@privaterelay.appleid.com`;
             await saveAndCompleteLogin({
@@ -716,6 +720,13 @@ export function renderLoginPage(container, onLogin) {
       _isSubmitting = true;
       try {
         syncFormState();
+
+        if (!navigator.onLine) {
+          alert(currentLang === 'tr'
+            ? 'Giriş yapmak veya kayıt olmak için internet bağlantısı gereklidir. Çevrimdışı devam etmek için "Misafir Olarak Devam Et" seçeneğini kullanabilirsiniz.'
+            : 'Internet connection is required to sign in or register. You can use "Continue as Guest" to use offline.');
+          return;
+        }
 
         if (!emailVal || !emailVal.includes('@')) {
           alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');

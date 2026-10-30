@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Kullanıcıya özel ana veri dokümanı: Sadece kimliği doğrulanmış doküman sahibi okuyabilir/yazabilir
+    match /users/{userId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Topluluk kullanıcı profilleri: Keşfet/profil vitrini herkese açık, yazma ve silme oturum açmış kullanıcıya özel
+    match /community_users/{docId} {
+      allow read: if true;
+      allow write, delete: if request.auth != null;
+    }
+
+    // Kullanıcı adı dizini: Arkadaş arama ve benzersizlik kontrolü için herkese açık okuma
+    match /usernames/{username} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Topluluk mekanları ve yorumları
+    match /community_places/{placeId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /community_reviews/{reviewId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Kullanıcı geri bildirimleri
+    match /user_feedbacks/{feedbackId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+  }
+}

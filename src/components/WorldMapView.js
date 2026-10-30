@@ -1,5 +1,24 @@
 import L from 'leaflet';
-import { WORLD_REGIONS_INDEX } from '../data/universalSearchData.js';
+// universalSearchData.js dynamically lazy-loaded to save 270 kB from initial bundle
+let WORLD_REGIONS_INDEX = [];
+let universalSearchLoaded = false;
+let universalSearchPromise = null;
+export async function loadUniversalSearchData() {
+  if (universalSearchLoaded) return WORLD_REGIONS_INDEX;
+  if (!universalSearchPromise) {
+    universalSearchPromise = import('../data/universalSearchData.js')
+      .then(m => {
+        WORLD_REGIONS_INDEX = m.WORLD_REGIONS_INDEX || [];
+        universalSearchLoaded = true;
+        return WORLD_REGIONS_INDEX;
+      })
+      .catch(err => {
+        console.warn('Failed to lazy-load universal search data:', err);
+        return [];
+      });
+  }
+  return universalSearchPromise;
+}
 import { WORLD_COUNTRIES } from '../data/worldData.js';
 import { TURKEY_PROVINCES } from '../data/turkeyData.js';
 import { COUNTRY_CENTROIDS } from '../data/countryCoordinates.js';
@@ -181,6 +200,9 @@ let subregionCache = {};
 let travelRoutesLayer = null;
 let isRoutesModeActive = false;
 let dayNightLayer = null;
+let dayNightPolygon = null;
+let dayNightSunMarker = null;
+let dayNightMoonMarker = null;
 let isDayNightModeActive = false;
 let dayNightUpdateTimer = null;
 let dayNightRenderer = null;
@@ -513,7 +535,7 @@ function getHomeCountrySubdivisionStats(homeCode, turkeyVisits, worldVisits) {
   // Other countries
   const prefix = `${homeCode}::`;
   const visited = Object.entries(worldVisits || {}).filter(([k, v]) => k.startsWith(prefix) && v?.status === 'visited').length;
-  const homeRegions = WORLD_REGIONS_INDEX.filter(r => r.countryCode === homeCode);
+  const homeRegions = (WORLD_REGIONS_INDEX || []).filter(r => r.countryCode === homeCode);
   const total = homeRegions.length || 0;
 
   const label = FEDERAL_STATE_COUNTRIES.has(homeCode)

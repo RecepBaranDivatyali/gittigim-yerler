@@ -1462,6 +1462,7 @@ svg, g, path {
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 .migration-dismiss-btn {
+  position: relative;
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
@@ -1476,6 +1477,17 @@ svg, g, path {
   transition: all 0.2s ease;
   flex-shrink: 0;
   font-family: inherit;
+}
+.migration-dismiss-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  transform: translate(-50%, -50%);
 }
 .migration-dismiss-btn:hover {
   border-color: rgba(255, 255, 255, 0.3);
@@ -6347,8 +6359,8 @@ body[data-theme="light"] .aviation-subtab-btn.active {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    background: rgba(15, 23, 42, 0.96) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    background: var(--theme-ui-bg, rgba(15, 23, 42, 0.96)) !important;
+    border: 1px solid var(--theme-ui-border, rgba(255, 255, 255, 0.16)) !important;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
   }
   #map-legend.floating-legend.expanded .legend-items-list {
@@ -6365,7 +6377,7 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   #map-legend.floating-legend.expanded .legend-text {
     display: inline-block;
     font-size: 0.74rem;
-    color: #f1f5f9;
+    color: var(--theme-text-main, #f1f5f9) !important;
   }
 
   /* Floating Row 2: Search Bar sits cleanly below top buttons */
@@ -6829,6 +6841,66 @@ body[data-theme="light"] .aviation-subtab-btn.active {
   }
   .sf-sub {
     font-size: 0.64rem;
+  }
+}
+
+/* ── Small Mobile Phones (<= 420px / 375px / 360px Top Bar Ergonomics) ── */
+@media (max-width: 420px) {
+  .floating-profile-wrap {
+    gap: 4px !important;
+    max-width: calc(100vw - 210px) !important;
+  }
+  .floating-profile-btn,
+  .floating-profile-pill {
+    max-width: 115px !important;
+    padding: 3px 8px 3px 5px !important;
+    height: 30px !important;
+    gap: 4px !important;
+  }
+  .floating-profile-avatar {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.9rem !important;
+  }
+  .floating-profile-avatar img,
+  .floating-profile-photo-img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .floating-profile-name {
+    max-width: 58px !important;
+    font-size: 0.74rem !important;
+  }
+  .floating-notif-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+  .floating-top-right-group {
+    gap: 5px !important;
+    right: max(6px, env(safe-area-inset-right, 6px)) !important;
+  }
+  .floating-visa-mode-btn,
+  .floating-routes-mode-btn,
+  .floating-routes-btn,
+  .floating-daynight-mode-btn,
+  .floating-daynight-btn,
+  .floating-poster-btn {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.88rem !important;
+  }
+  #map-legend.floating-legend:not(.expanded) {
+    height: 30px !important;
+    padding: 0 6px !important;
+  }
+  #map-legend .legend-items-list {
+    gap: 4px !important;
+  }
+  #map-legend .legend-dot {
+    width: 8px !important;
+    height: 8px !important;
   }
 }
 

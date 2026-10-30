@@ -346,27 +346,11 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
     try { await auth.authStateReady(); } catch {}
   }
   const authUid = auth?.currentUser?.uid || null;
-  const currentId = getCurrentUserIdentifier();
-  const candidateIds = [];
-  if (authUid) {
-    // If authenticated via Firebase, authUid is the ONLY authoritative candidate
-    candidateIds.push(authUid);
-  } else {
-    if (currentId && !candidateIds.includes(currentId)) {
-      candidateIds.push(currentId);
-    }
-    if (userIdOrUsername) {
-      const raw = String(userIdOrUsername).trim();
-      if (raw && !candidateIds.includes(raw)) candidateIds.push(raw);
-      const clean = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
-      if (clean) {
-        const legacyId = 'user_' + clean;
-        if (!candidateIds.includes(legacyId)) candidateIds.push(legacyId);
-      }
-    }
+  // Güvenlik kalkanı: Kullanıcı gerçek bir Firebase oturumu açmamışsa bulut dokümanı çekme
+  if (!authUid) {
+    return null;
   }
-
-  if (candidateIds.length === 0) return null;
+  const candidateIds = [authUid];
 
   try {
     notifyStatus('syncing');
@@ -383,43 +367,6 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         }
       } catch {
         hadReadError = true;
-      }
-    }
-
-    // 2. Fallback: look up by verified email ONLY if not authenticated with Firebase Auth
-    if (!data && !authUid) {
-      let profileEmail = '';
-      try {
-        const pStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
-        if (pStr) {
-          const p = JSON.parse(pStr);
-          if (p?.email) profileEmail = String(p.email).trim().toLowerCase();
-        }
-      } catch {}
-      if (profileEmail && !profileEmail.endsWith('@oauth.gezginapp.com') && !profileEmail.endsWith('@privaterelay.gezginapp.com')) {
-        try {
-          const eq = query(collection(db, 'users'), where('email', '==', profileEmail), limit(1));
-          const eqSnap = await getDocs(eq);
-          if (!eqSnap.empty) {
-            data = eqSnap.docs[0].data();
-          }
-        } catch {}
-      }
-      if (!data && userIdOrUsername) {
-        const clean = String(userIdOrUsername).trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-        if (clean) {
-          try {
-            const uSnap = await getDoc(doc(db, 'usernames', clean));
-            if (uSnap.exists()) {
-              const uData = uSnap.data();
-              const targetUid = uData?.uid;
-              if (targetUid) {
-                const targetSnap = await getDoc(doc(db, 'users', targetUid));
-                if (targetSnap.exists()) data = targetSnap.data();
-              }
-            }
-          } catch {}
-        }
       }
     }
 
@@ -452,16 +399,51 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         try { localStorage.setItem('gittigim_yerler_cities_v2', JSON.stringify(mergedCities)); } catch(e) { console.warn('Storage write failed:', e); }
       }
 
-      // User Visas: Strict account isolation. Cloud document is source of truth.
-      const cloudVisas = Array.isArray(data.userVisas) ? data.userVisas : [];
+      // User Visas & visaData: Yerel vizeler ile bulut vizelerini birleştir (çevrimdışı eklenenler kaybolmasın)
+      const cloudVisas = Array.isArray(data.userVisas) ? data.userVisas : (Array.isArray(data.visaData) ? data.visaData : []);
+      let localVisas = [];
       try {
-        localStorage.setItem('gv_user_visas_v1', JSON.stringify(cloudVisas));
+        const rawLocal = localStorage.getItem('gv_user_visas_v1');
+        if (rawLocal) localVisas = JSON.parse(rawLocal);
+      } catch {}
+      if (!Array.isArray(localVisas)) localVisas = [];
+
+      const visasMap = new Map();
+      cloudVisas.forEach(v => {
+        if (v && typeof v === 'object') {
+          const key = v.id || `${v.countryCode || v.issuingCountry || v.country || ''}_${v.visaType || v.type || ''}`;
+          visasMap.set(key, v);
+        }
+      });
+      localVisas.forEach(v => {
+        if (v && typeof v === 'object') {
+          const key = v.id || `${v.countryCode || v.issuingCountry || v.country || ''}_${v.visaType || v.type || ''}`;
+          if (visasMap.has(key)) {
+            visasMap.set(key, { ...visasMap.get(key), ...v });
+          } else {
+            visasMap.set(key, v);
+          }
+        }
+      });
+      const mergedVisas = Array.from(visasMap.values());
+      try {
+        localStorage.setItem('gv_user_visas_v1', JSON.stringify(mergedVisas));
       } catch(e) { console.warn('Storage write failed:', e); }
+
+      if (data.visaData && typeof data.visaData === 'object' && !Array.isArray(data.visaData)) {
+        let localVisaObj = {};
+        try { localVisaObj = JSON.parse(localStorage.getItem('gv_visa_data') || '{}'); } catch {}
+        const mergedVisaObj = { ...data.visaData, ...(typeof localVisaObj === 'object' ? localVisaObj : {}) };
+        try { localStorage.setItem('gv_visa_data', JSON.stringify(mergedVisaObj)); } catch {}
+      }
 
       // Visa Overrides
       const cloudVisaOverrides = (data.visaOverrides && typeof data.visaOverrides === 'object') ? data.visaOverrides : {};
+      let localVisaOverrides = {};
+      try { localVisaOverrides = JSON.parse(localStorage.getItem('gv_visa_overrides') || '{}'); } catch {}
+      const mergedVisaOverrides = { ...cloudVisaOverrides, ...(typeof localVisaOverrides === 'object' ? localVisaOverrides : {}) };
       try {
-        localStorage.setItem('gv_visa_overrides', JSON.stringify(cloudVisaOverrides));
+        localStorage.setItem('gv_visa_overrides', JSON.stringify(mergedVisaOverrides));
       } catch(e) {}
 
       // Passport Type
@@ -482,7 +464,7 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       const cloudPlaces = (data.userPlaces && typeof data.userPlaces === 'object') ? data.userPlaces : {};
       try { localStorage.setItem('gittigim_yerler_user_places_v1', JSON.stringify(cloudPlaces)); } catch(e) { console.warn('Storage write failed:', e); }
 
-      // Country Notes
+      // Country Notes: Yerel notları ezmeden birleştir
       const cloudNotes = (data.notes && typeof data.notes === 'object') ? data.notes : {};
       const cleanedNotes = {};
       for (const k in cloudNotes) {
@@ -490,7 +472,49 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
           cleanedNotes[k] = cloudNotes[k];
         }
       }
-      try { localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(cleanedNotes)); } catch(e) { console.warn('Storage write failed:', e); }
+      let localNotes = {};
+      try { localNotes = JSON.parse(localStorage.getItem('gittigim_yerler_country_notes_v1') || '{}'); } catch {}
+      const mergedNotes = { ...cleanedNotes, ...(typeof localNotes === 'object' ? localNotes : {}) };
+      try { localStorage.setItem('gittigim_yerler_country_notes_v1', JSON.stringify(mergedNotes)); } catch(e) { console.warn('Storage write failed:', e); }
+
+      // City Notes: Bulut ve yerel notları birleştir
+      if (data.cityNotes && typeof data.cityNotes === 'object') {
+        let localCityNotes = {};
+        try { localCityNotes = JSON.parse(localStorage.getItem('gv_city_notes') || '{}'); } catch {}
+        const mergedCityNotes = { ...data.cityNotes, ...(typeof localCityNotes === 'object' ? localCityNotes : {}) };
+        try { localStorage.setItem('gv_city_notes', JSON.stringify(mergedCityNotes)); } catch(e) {}
+      }
+
+      // Custom Routes: Bulut ve yerel seyahat rotalarını birleştir
+      if (data.customRoutes) {
+        let localRoutes = [];
+        try { localRoutes = JSON.parse(localStorage.getItem('gv_custom_routes') || '[]'); } catch {}
+        if (Array.isArray(data.customRoutes)) {
+          const routesMap = new Map();
+          data.customRoutes.forEach(r => {
+            if (r) {
+              const k = r.id || `${r.from || ''}_${r.to || ''}_${r.date || ''}`;
+              routesMap.set(k, r);
+            }
+          });
+          (Array.isArray(localRoutes) ? localRoutes : []).forEach(r => {
+            if (r) {
+              const k = r.id || `${r.from || ''}_${r.to || ''}_${r.date || ''}`;
+              if (routesMap.has(k)) {
+                routesMap.set(k, { ...routesMap.get(k), ...r });
+              } else {
+                routesMap.set(k, r);
+              }
+            }
+          });
+          try { localStorage.setItem('gv_custom_routes', JSON.stringify(Array.from(routesMap.values()))); } catch {}
+        } else if (typeof data.customRoutes === 'object') {
+          let localObj = {};
+          try { localObj = JSON.parse(localStorage.getItem('gv_custom_routes') || '{}'); } catch {}
+          const mergedObj = { ...data.customRoutes, ...(typeof localObj === 'object' ? localObj : {}) };
+          try { localStorage.setItem('gv_custom_routes', JSON.stringify(mergedObj)); } catch {}
+        }
+      }
 
       // Country Ratings
       const cloudRatings = (data.ratings && typeof data.ratings === 'object') ? data.ratings : {};

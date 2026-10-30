@@ -18,8 +18,30 @@ export const SUPPORTED_CURRENCIES = {
   TRY: { code: 'TRY', symbol: '₺', name: 'Türk Lirası' },
   USD: { code: 'USD', symbol: '$', name: 'Amerikan Doları' },
   EUR: { code: 'EUR', symbol: '€', name: 'Euro' },
-  GBP: { code: 'GBP', symbol: '£', name: 'İngiliz Sterlini' }
+  GBP: { code: 'GBP', symbol: '£', name: 'İngiliz Sterlini' },
+  JPY: { code: 'JPY', symbol: '¥', name: 'Japon Yeni' },
+  CHF: { code: 'CHF', symbol: 'CHF', name: 'İsviçre Frangı' },
+  AED: { code: 'AED', symbol: 'د.إ', name: 'BAE Dirhemi' }
 };
+
+export const CURRENCY_TO_EUR_RATE = {
+  EUR: 1,
+  USD: 0.92,
+  GBP: 1.17,
+  CHF: 1.04,
+  AED: 0.25,
+  JPY: 0.0061,
+  TRY: 0.027
+};
+
+export function convertToEur(amount, currencyCode = 'TRY') {
+  const curr = String(currencyCode || 'TRY').toUpperCase();
+  const rate = CURRENCY_TO_EUR_RATE[curr] || 1;
+  const num = typeof amount === 'number' && !Number.isNaN(amount)
+    ? amount
+    : (Number.parseFloat(amount) || 0);
+  return num * rate;
+}
 
 /**
  * Para miktarını seçilen para birimi sembolü ile şık biçimde formatlar.
@@ -179,6 +201,9 @@ export function calculateBudgetStats(allVisits = {}) {
       const rawCat = (item.category || 'other').toLowerCase();
       const catKey = EXPENSE_CATEGORIES[rawCat] ? rawCat : 'other';
 
+      const rate = CURRENCY_TO_EUR_RATE[currCode] || 1;
+      const normalizedAmount = rawAmount * rate;
+
       placeHasValidExpense = true;
       totalItems += 1;
 
@@ -187,6 +212,7 @@ export function calculateBudgetStats(allVisits = {}) {
 
       // Kategori bazında toplam
       byCategory[catKey].total += rawAmount;
+      byCategory[catKey].normalizedTotal = (byCategory[catKey].normalizedTotal || 0) + normalizedAmount;
       byCategory[catKey].count += 1;
       byCategory[catKey].totalsByCurrency[currCode] =
         (byCategory[catKey].totalsByCurrency[currCode] || 0) + rawAmount;
@@ -198,12 +224,14 @@ export function calculateBudgetStats(allVisits = {}) {
           name: rec.name,
           type: rec.type,
           total: 0,
+          normalizedTotal: 0,
           currency: currCode,
           totalsByCurrency: {},
           itemCount: 0
         };
       }
       placeTotals[placeKey].total += rawAmount;
+      placeTotals[placeKey].normalizedTotal += normalizedAmount;
       placeTotals[placeKey].itemCount += 1;
       placeTotals[placeKey].totalsByCurrency[currCode] =
         (placeTotals[placeKey].totalsByCurrency[currCode] || 0) + rawAmount;
@@ -214,22 +242,22 @@ export function calculateBudgetStats(allVisits = {}) {
     }
   });
 
-  // Kategori yüzdelerini hesapla
-  const grandTotal = Object.values(totalByCurrency).reduce((sum, v) => sum + v, 0);
+  // Kategori yüzdelerini normalize edilmiş (EUR bazlı) değerler üzerinden hesapla
+  const grandNormalizedTotal = Object.values(byCategory).reduce((sum, c) => sum + (c.normalizedTotal || 0), 0);
   Object.keys(byCategory).forEach((catId) => {
-    byCategory[catId].percentage = grandTotal > 0
-      ? Math.round((byCategory[catId].total / grandTotal) * 100)
+    byCategory[catId].percentage = grandNormalizedTotal > 0
+      ? Math.round(((byCategory[catId].normalizedTotal || 0) / grandNormalizedTotal) * 100)
       : 0;
   });
 
-  // En yüksek harcama yapılan ilk 3 yer
+  // En yüksek harcama yapılan ilk 3 yer (normalize edilmiş değere göre)
   const topPlaces = Object.values(placeTotals)
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => (b.normalizedTotal || b.total) - (a.normalizedTotal || a.total))
     .slice(0, 3);
 
-  // Kategori listesi (harcamaya göre azalan)
+  // Kategori listesi (normalize edilmiş harcamaya göre azalan)
   const categories = Object.values(byCategory)
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => (b.normalizedTotal || b.total) - (a.normalizedTotal || a.total));
 
   return {
     totalByCurrency,
@@ -241,4 +269,67 @@ export function calculateBudgetStats(allVisits = {}) {
     totalItems,
     hasExpenses: totalItems > 0
   };
+}
+
+/**
+ * Harcamaların kategori bazındaki dağılımını normalize edilmiş ağırlıklarla döner.
+ */
+export function getCategoryBreakdown(allVisits = {}) {
+  const stats = calculateBudgetStats(allVisits);
+  return stats.categories;
+}
+
+/**
+ * Harcamaların ülke bazındaki dağılımını normalize edilmiş ağırlıklarla döner.
+ */
+export function getCountryBreakdown(allVisits = {}) {
+  const safeData = allVisits || {};
+  let worldVisits = safeData.worldVisits;
+  if (!worldVisits && !safeData.turkeyVisits && !safeData.worldCities && typeof safeData === 'object') {
+    worldVisits = safeData;
+  }
+  worldVisits = worldVisits || {};
+
+  const countryTotals = {};
+
+  Object.entries(worldVisits).forEach(([code, data]) => {
+    if (!data || typeof data !== 'object' || !data.expenses) return;
+    const rawItems = Array.isArray(data.expenses)
+      ? data.expenses
+      : (data.expenses.items || (data.expenses.amount !== undefined ? [data.expenses] : []));
+
+    const defaultCurrency = (typeof data.expenses === 'object' && data.expenses.currency) || 'TRY';
+
+    rawItems.forEach(item => {
+      if (!item) return;
+      const rawAmount = typeof item.amount === 'number' ? item.amount : Number.parseFloat(item.amount);
+      if (Number.isNaN(rawAmount) || rawAmount <= 0) return;
+
+      const curr = (item.currency || defaultCurrency || 'TRY').toUpperCase();
+      const rate = CURRENCY_TO_EUR_RATE[curr] || 1;
+      const normalizedAmount = rawAmount * rate;
+
+      if (!countryTotals[code]) {
+        countryTotals[code] = {
+          code,
+          name: data.name || data.countryName || code,
+          total: 0,
+          normalizedTotal: 0,
+          totalsByCurrency: {},
+          percentage: 0
+        };
+      }
+
+      countryTotals[code].total += rawAmount;
+      countryTotals[code].normalizedTotal += normalizedAmount;
+      countryTotals[code].totalsByCurrency[curr] = (countryTotals[code].totalsByCurrency[curr] || 0) + rawAmount;
+    });
+  });
+
+  const grandNorm = Object.values(countryTotals).reduce((sum, c) => sum + c.normalizedTotal, 0);
+  Object.values(countryTotals).forEach(c => {
+    c.percentage = grandNorm > 0 ? Math.round((c.normalizedTotal / grandNorm) * 100) : 0;
+  });
+
+  return Object.values(countryTotals).sort((a, b) => b.normalizedTotal - a.normalizedTotal);
 }
