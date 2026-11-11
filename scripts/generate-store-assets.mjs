@@ -95,13 +95,27 @@ const SCENES = [
 
 // Mockup HTML Üretici Şablon
 function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = false }) {
-  const badgeFontSize = isGooglePlay ? '22px' : '26px';
+  const badgeFontSize = isGooglePlay ? '20px' : '24px';
   const badgePadding = isGooglePlay ? '8px 20px' : '10px 24px';
   const titleFontSize = isGooglePlay ? '50px' : '62px';
-  const subFontSize = isGooglePlay ? '24px' : '28px';
-  const phoneWidth = isGooglePlay ? '780px' : '900px';
+  const subFontSize = isGooglePlay ? '23px' : '28px';
+  const headerPaddingTop = isGooglePlay ? '90px' : '120px';
+  const headerPaddingBottom = isGooglePlay ? '22px' : '26px';
+
+  // Telefon Kasa ve Ekran Ölçüleri
+  const phoneWidth = isGooglePlay ? '790px' : '930px';
   const phoneRadius = isGooglePlay ? '48px' : '56px';
   const phoneBorder = isGooglePlay ? '10px' : '12px';
+  const statusBarHeight = isGooglePlay ? '48px' : '56px';
+  const statusBarPaddingX = isGooglePlay ? '30px' : '36px';
+  const timeFontSize = isGooglePlay ? '18px' : '21px';
+  const islandWidth = isGooglePlay ? '140px' : '160px';
+  const islandHeight = isGooglePlay ? '30px' : '34px';
+  const lensSize = isGooglePlay ? '10px' : '12px';
+  const screenHeight = isGooglePlay ? '1680px' : '1980px';
+  const homeBarHeight = isGooglePlay ? '38px' : '44px';
+  const indicatorWidth = isGooglePlay ? '140px' : '160px';
+  const indicatorHeight = isGooglePlay ? '4.5px' : '5px';
 
   return `
 <!DOCTYPE html>
@@ -172,8 +186,8 @@ function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = fa
       z-index: 10;
       width: 90%;
       text-align: center;
-      padding-top: ${isGooglePlay ? '100px' : '130px'};
-      padding-bottom: 30px;
+      padding-top: ${headerPaddingTop};
+      padding-bottom: ${headerPaddingBottom};
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -193,7 +207,7 @@ function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = fa
       border: 1.5px solid rgba(56, 189, 248, 0.35);
       color: #38bdf8;
       box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      margin-bottom: 22px;
+      margin-bottom: 18px;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
@@ -203,7 +217,7 @@ function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = fa
       font-weight: 900;
       line-height: 1.15;
       letter-spacing: -1px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       background: linear-gradient(135deg, #ffffff 40%, #bae6fd 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -233,52 +247,110 @@ function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = fa
 
     .phone-frame {
       width: ${phoneWidth};
-      background: #090d16;
+      background: #000000;
       border: ${phoneBorder} solid #1e293b;
-      border-radius: ${phoneRadius} ${phoneRadius} 0 0;
-      border-bottom: none;
+      border-radius: ${phoneRadius};
       position: relative;
       box-shadow: 
-        0 40px 120px -10px rgba(0, 0, 0, 0.9),
-        0 0 60px rgba(56, 189, 248, 0.15),
-        inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+        0 40px 120px -10px rgba(0, 0, 0, 0.95),
+        0 0 60px rgba(56, 189, 248, 0.18),
+        inset 0 0 0 1.5px rgba(255, 255, 255, 0.12);
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
-    /* Dynamic Island / Kamera Hapı */
-    .island-bar {
-      position: absolute;
-      top: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 150px;
-      height: 38px;
+    /* Üst Bağımsız Durum Çubuğu */
+    .phone-status-bar {
+      width: 100%;
+      height: ${statusBarHeight};
       background: #000000;
-      border-radius: 20px;
-      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 ${statusBarPaddingX};
+      box-sizing: border-box;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .status-time {
+      font-size: ${timeFontSize};
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+      min-width: 80px;
+      text-align: left;
+    }
+
+    /* Dynamic Island / Kamera Hapı */
+    .dynamic-island {
+      width: ${islandWidth};
+      height: ${islandHeight};
+      background: #0c0f17;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      padding-right: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      padding-right: 12px;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6);
     }
     .island-lens {
-      width: 12px;
-      height: 12px;
-      background: radial-gradient(circle at 35% 35%, #1e293b 0%, #030712 80%);
+      width: ${lensSize};
+      height: ${lensSize};
+      background: radial-gradient(circle at 35% 35%, #253347 0%, #030712 85%);
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 2px rgba(56, 189, 248, 0.3);
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 80px;
+      justify-content: flex-end;
+    }
+    .status-svg {
+      display: block;
+    }
+
+    /* Ekran Görüntüsü Görüntüleme Penceresi */
+    .screen-viewport {
+      width: 100%;
+      height: ${screenHeight};
+      overflow: hidden;
+      background: #090d16;
+      flex-shrink: 0;
+      position: relative;
     }
 
     .phone-screen-img {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
       object-fit: cover;
       object-position: top;
       background: #090d16;
+    }
+
+    /* Alt Home Bar */
+    .phone-home-bar {
+      width: 100%;
+      height: ${homeBarHeight};
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .home-indicator {
+      width: ${indicatorWidth};
+      height: ${indicatorHeight};
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 999px;
     }
   </style>
 </head>
@@ -295,10 +367,36 @@ function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = fa
 
   <div class="mockup-wrapper">
     <div class="phone-frame">
-      <div class="island-bar">
-        <div class="island-lens"></div>
+      <div class="phone-status-bar">
+        <div class="status-time">09:41</div>
+        <div class="dynamic-island">
+          <div class="island-lens"></div>
+        </div>
+        <div class="status-icons">
+          <svg class="status-svg" width="${isGooglePlay ? '17' : '20'}" height="${isGooglePlay ? '11' : '13'}" viewBox="0 0 19 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="9" width="3" height="4" rx="0.8" fill="#FFFFFF"/>
+            <rect x="5" y="6" width="3" height="7" rx="0.8" fill="#FFFFFF"/>
+            <rect x="10" y="3" width="3" height="10" rx="0.8" fill="#FFFFFF"/>
+            <rect x="15" y="0" width="3" height="13" rx="0.8" fill="#FFFFFF"/>
+          </svg>
+          <svg class="status-svg" width="${isGooglePlay ? '16' : '19'}" height="${isGooglePlay ? '11' : '13'}" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 10.5C9.6 10.5 10.1 11 10.1 11.6C10.1 12.2 9.6 12.7 9 12.7C8.4 12.7 7.9 12.2 7.9 11.6C7.9 11 8.4 10.5 9 10.5Z" fill="#FFFFFF"/>
+            <path d="M5.2 8C7.3 6.1 10.7 6.1 12.8 8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2 5C6 1.4 12 1.4 16 5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <svg class="status-svg" width="${isGooglePlay ? '22' : '26'}" height="${isGooglePlay ? '10' : '12'}" viewBox="0 0 25 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0.75" y="0.75" width="20.5" height="10.5" rx="3.25" stroke="#FFFFFF" stroke-width="1.5"/>
+            <rect x="2.5" y="2.5" width="16" height="7" rx="1.8" fill="#FFFFFF"/>
+            <path d="M23 4C23.6 4.4 24 5.1 24 6C24 6.9 23.6 7.6 23 8" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
       </div>
-      <img src="${imageBase64}" class="phone-screen-img" alt="${scene.title}" />
+      <div class="screen-viewport">
+        <img src="${imageBase64}" class="phone-screen-img" alt="${scene.title}" />
+      </div>
+      <div class="phone-home-bar">
+        <div class="home-indicator"></div>
+      </div>
     </div>
   </div>
 </body>
