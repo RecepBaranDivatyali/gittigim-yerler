@@ -40,3 +40,4 @@ ios-certs/
 
 # Agent runtime state
 .agents/.runtime/
+magaza-gorselleri/.temp-raw/

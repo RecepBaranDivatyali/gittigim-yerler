@@ -593,9 +593,9 @@ export function renderProfileView(container, onBack) {
 
           <div class="bucket-list-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
             ${BUCKET_LISTS.map(list => {
-              const progress = calculateBucketListProgress(list, storageData.worldVisits, baseStats.turkeyCount);
+              const progress = calculateBucketListProgress(list, storageData.worldVisits, storageData.turkeyVisits);
               const title = currentLang === 'tr' ? list.titleTr : list.titleEn;
-              const isCompleted = progress.remainingCount === 0;
+              const isCompleted = progress.remaining === 0;
 
               return `
                 <div class="bucket-card" style="
@@ -608,23 +608,24 @@ export function renderProfileView(container, onBack) {
                       <span style="font-weight:600; font-size:0.9rem; color:var(--theme-text-main, #f8fafc);">${escapeHtml(title)}</span>
                     </div>
                     <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:99px; background:${isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.15)'}; color:${isCompleted ? '#10b981' : '#60a5fa'};">
-                      ${progress.visitedCount}/${progress.total} (%${progress.percent})
+                      ${progress.visited}/${progress.total} (%${progress.percentage})
                     </span>
                   </div>
 
                   <!-- Progress Bar -->
                   <div class="bucket-progress-bar" style="height:6px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden;">
-                    <div class="bucket-progress-fill" style="width:${progress.percent}%; height:100%; background:${isCompleted ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #8b5cf6)'}; border-radius:99px; transition:width 0.3s ease;"></div>
+                    <div class="bucket-progress-fill" style="width:${progress.percentage}%; height:100%; background:${isCompleted ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #8b5cf6)'}; border-radius:99px; transition:width 0.3s ease;"></div>
                   </div>
 
                   <!-- Country Chips -->
                   <div class="bucket-country-chips" style="display:flex; flex-wrap:wrap; gap:5px; margin: 2px 0;">
                     ${list.countries.map(code => {
-                      const st = progress.countryStatuses[code] || 'unvisited';
+                      const isVis = progress.visitedCountries.includes(code);
+                      const rawSt = storageData.worldVisits?.[code]?.status;
+                      const st = isVis ? 'visited' : (rawSt === 'wishlist' || rawSt === 'planned' ? rawSt : 'unvisited');
                       const cObj = WORLD_COUNTRIES.find(x => x.code === code);
                       const cName = cObj ? getCountryDisplayName(cObj) : code;
                       const flag = (code === 'IL') ? '' : (cObj?.flag || '🌍');
-                      const isVis = st === 'visited';
                       const isWish = st === 'wishlist' || st === 'planned';
                       const chipBg = isVis ? 'rgba(16,185,129,0.2)' : (isWish ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)');
                       const chipBorder = isVis ? 'rgba(16,185,129,0.4)' : (isWish ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.08)');
@@ -2533,7 +2534,7 @@ export function renderProfileView(container, onBack) {
         const listId = btn.dataset.listId;
         const count = applyBucketListToWishlist(listId);
         if (count > 0) {
-          triggerConfetti();
+          confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
         }
         render(false);
       });

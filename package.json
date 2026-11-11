@@ -12,6 +12,7 @@
     "check": "vite build && eslint src && npm test",
     "sync-workspaces": "git push origin main && git -C ../GittigimYerler pull origin main",
     "stores:status": "node scripts/deploy-stores.mjs status",
+    "stores:screenshots": "node scripts/generate-store-assets.mjs",
     "stores:build:android": "node scripts/deploy-stores.mjs build-android",
     "stores:deploy:android": "node scripts/deploy-stores.mjs deploy-android"
   },
