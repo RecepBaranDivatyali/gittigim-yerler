@@ -6,8 +6,10 @@
 - Şu an açık P0 görev yok.
 
 ## P1
-- [ ] iOS 1.0 (Derleme 64) ve Huawei 2.9 onaylandıktan sonra Sürüm 3.0'ı tek komutla (`node scripts/deploy-stores.mjs deploy-android --bump` + iOS workflow) 3 mağazaya yayınla.
+- [ ] Mağaza vitrin görselleri (App Store 1290x2796, Google Play 1080x2400 + 1024x500 Feature Graphic) setini oluştur ve mağazalara yükle.
+- [ ] ASO: Apple App Store için 30 karakterlik vurucu "Alt Başlık" (Subtitle) tanımla (Örn: `Dünya Haritası & Gezi Notları`).
 - [ ] iOS: Apple Sign-In'i mağaza onayı sonrası gerçek iPhone'da test et.
+- [ ] Yeni özellikler sonrası Sürüm 3.0'ı tek komutla (`node scripts/deploy-stores.mjs deploy-android --bump` + iOS workflow) 3 mağazaya yayınla.
 
 ## P2
 - [ ] İleride isteğe bağlı Push / Yerel Bildirim (`@capacitor/local-notifications`) hatırlatıcıları.

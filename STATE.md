@@ -3,7 +3,7 @@
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
 - iOS sürüm: **1.0 (Derleme 64)** — Apple App Store'da **Yayında / Onaylandı (`READY_FOR_SALE`)** 🎉🍏
-- Android sürüm: **2.9** (versionCode **16**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **Yeniden İncelemede (`State 5`)** 🌸
+- Android sürüm: **2.9** (versionCode **16**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **Yayında (`State 0`)** 🌸
 - Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik yayında)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
@@ -12,9 +12,10 @@
 AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık sorun yok. (Apple ve Google Play yayında; Huawei 2.9 gizlilik etiketi tamamlanarak tekrar incelemeye alındı).
+- Bilinen açık sorun yok. (Apple App Store, Google Play ve Huawei AppGallery'de tüm sürümler onaylandı ve YAYINDA 🎉).
 
 ## Son Değişiklikler
+- 2026-11-11: Huawei AppGallery 2.9 sürümü başarıyla onaylandı ve yayına girdi (`State 0`). 3 mağazanın tümü yeşil ve yayında!
 - 2026-11-06: Huawei AppGallery 2.9 sürümü gizlilik etiketi form yapılandırması tamamlanarak başarıyla tekrar incelemeye gönderildi (`State 5`).
 - 2026-11-06: Apple App Store 1.0 (Derleme 64) resmi olarak onaylandı ve yayına girdi (`READY_FOR_SALE`).
 - 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 18/18 test PASS).
