@@ -11,13 +11,15 @@ service cloud.firestore {
     // Topluluk kullanıcı profilleri: Keşfet/profil vitrini herkese açık, yazma ve silme oturum açmış kullanıcıya özel
     match /community_users/{docId} {
       allow read: if true;
-      allow write, delete: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     // Kullanıcı adı dizini: Arkadaş arama ve benzersizlik kontrolü için herkese açık okuma
     match /usernames/{username} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     // Topluluk mekanları ve yorumları

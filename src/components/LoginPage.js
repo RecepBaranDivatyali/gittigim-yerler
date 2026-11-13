@@ -15,7 +15,7 @@ import {
   setPersistence,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { queueCloudSync, fetchAndMergeUserDataFromCloud } from '../services/syncService.js';
+import { queueCloudSync, fetchAndMergeUserDataFromCloud, getUsernameLoginHint } from '../services/syncService.js';
 import { isUsernameAvailable, isUsernameAvailableAsync } from '../utils/userDatabase.js';
 import { resetTravelData, silenceAndHydrateUnlockedAchievements } from '../utils/storage.js';
 import { suppressAchievementNotifications } from '../utils/notifications.js';
@@ -155,6 +155,17 @@ export function renderLoginPage(container, onLogin) {
       localStorage.setItem('gv_remember_me', '1');
       sessionStorage.removeItem('gv_logged_in');
       sessionStorage.removeItem('gv_profile');
+
+      if (profile?.email && profile?.username) {
+        try {
+          const remembered = JSON.parse(localStorage.getItem('gv_remembered_accounts') || '{}');
+          const cleanUser = String(profile.username).trim().toLowerCase().replace(/^@/, '');
+          if (cleanUser) {
+            remembered[cleanUser] = String(profile.email).trim().toLowerCase();
+            localStorage.setItem('gv_remembered_accounts', JSON.stringify(remembered));
+          }
+        } catch {}
+      }
     } else {
       sessionStorage.setItem('gv_logged_in', '1');
       sessionStorage.setItem('gv_profile', JSON.stringify(profile));
@@ -315,8 +326,8 @@ export function renderLoginPage(container, onLogin) {
             ` : ''}
 
             <div class="input-group">
-              <label for="auth-email">${currentLang === 'tr' ? 'E-Posta Adresi' : 'Email Address'}</label>
-              <input type="email" id="auth-email" placeholder="ornek@email.com" value="${escapeHtml(emailVal)}" autocomplete="email" required />
+              <label for="auth-email">${authMode === 'login' ? (currentLang === 'tr' ? 'E-Posta veya Kullanıcı Adı' : 'Email or Username') : (currentLang === 'tr' ? 'E-Posta Adresi' : 'Email Address')}</label>
+              <input type="${authMode === 'login' ? 'text' : 'email'}" id="auth-email" placeholder="${authMode === 'login' ? (currentLang === 'tr' ? 'ornek@email.com veya kullaniciadi' : 'example@email.com or username') : 'ornek@email.com'}" value="${escapeHtml(emailVal)}" autocomplete="${authMode === 'login' ? 'username' : 'email'}" required />
             </div>
 
             <div class="input-group">
@@ -728,9 +739,61 @@ export function renderLoginPage(container, onLogin) {
           return;
         }
 
-        if (!emailVal || !emailVal.includes('@')) {
-          alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');
-          return;
+        if (authMode === 'login') {
+          if (!emailVal) {
+            alert(currentLang === 'tr' ? 'Lütfen e-posta adresinizi veya kullanıcı adınızı girin.' : 'Please enter your email or username.');
+            return;
+          }
+
+          if (!emailVal.includes('@')) {
+            const cleanInput = emailVal.trim().toLowerCase().replace(/^@/, '');
+            let rememberedEmail = null;
+            try {
+              const remembered = JSON.parse(localStorage.getItem('gv_remembered_accounts') || '{}');
+              if (remembered && remembered[cleanInput]) {
+                rememberedEmail = remembered[cleanInput];
+              }
+            } catch {}
+
+            if (rememberedEmail) {
+              emailVal = rememberedEmail;
+            } else {
+              const hint = await getUsernameLoginHint(cleanInput);
+              if (hint.exists && hint.authProvider === 'google') {
+                alert(currentLang === 'tr'
+                  ? 'Bu kullanıcı adı Google hesabına bağlı. Lütfen aşağıdaki "Google ile Devam Et" butonunu kullanın.'
+                  : 'This username is linked to a Google account. Please use the "Continue with Google" button below.');
+                return;
+              }
+              if (hint.exists && hint.authProvider === 'apple') {
+                alert(currentLang === 'tr'
+                  ? 'Bu kullanıcı adı Apple hesabına bağlı. Lütfen aşağıdaki "Apple ile Devam Et" butonunu kullanın.'
+                  : 'This username is linked to an Apple account. Please use the "Continue with Apple" button below.');
+                return;
+              }
+              if (hint.exists && hint.emailHint) {
+                alert(currentLang === 'tr'
+                  ? `Bu kullanıcı adı (${hint.emailHint}) e-postasına bağlı. Güvenlik gereği yeni oturumda e-posta adresinizle giriş yapmanız gerekir.`
+                  : `This username is linked to (${hint.emailHint}). For security, please sign in with your email address on a new session.`);
+                return;
+              }
+              if (hint.exists) {
+                alert(currentLang === 'tr'
+                  ? 'Bu kullanıcı adı kayıtlı ancak e-posta bilgisi bulunamadı. Hesabı açtığınız e-posta adresini veya Google/Apple butonunu kullanın.'
+                  : 'This username is registered but email info could not be found. Please use your email address or Google/Apple sign-in.');
+                return;
+              }
+              alert(currentLang === 'tr'
+                ? 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı. Yeni hesap için "Kayıt Ol" sekmesini kullanabilirsiniz.'
+                : 'No account found with this username. You can use the "Register" tab to create a new account.');
+              return;
+            }
+          }
+        } else {
+          if (!emailVal || !emailVal.includes('@')) {
+            alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');
+            return;
+          }
         }
 
         if (!passwordVal || passwordVal.length < 4) {
@@ -750,9 +813,14 @@ export function renderLoginPage(container, onLogin) {
           }
           const isAvail = await isUsernameAvailableAsync(profileUsername);
           if (!isAvail) {
+            const hint = await getUsernameLoginHint(profileUsername);
+            let extra = '';
+            if (hint.exists && hint.emailHint) {
+              extra = ` (${hint.emailHint})`;
+            }
             alert(currentLang === 'tr' 
-              ? `"${profileUsername}" kullanıcı adı zaten kullanımda. Lütfen başka bir kullanıcı adı seçin.` 
-              : `Username "${profileUsername}" is already taken. Please choose another.`);
+              ? `"${profileUsername}" kullanıcı adı zaten kullanımda${extra}. Bu hesap size aitse "Giriş Yap" sekmesinden giriş yapabilirsiniz.` 
+              : `Username "${profileUsername}" is already taken${extra}. If this is your account, please sign in from the "Sign In" tab.`);
             return;
           }
         } else {

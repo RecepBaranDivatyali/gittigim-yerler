@@ -378,6 +378,7 @@ export function renderProfileView(container, onBack) {
           localStorage.removeItem('gv_profile');
           localStorage.removeItem('gv_admin_active');
           localStorage.removeItem('gv_data_owner_key');
+          localStorage.removeItem('gv_community_travelers');
           sessionStorage.removeItem('gv_logged_in');
           sessionStorage.removeItem('gv_profile');
           try {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stripUndefinedDeep, cancelPendingCloudSync } from '../src/services/syncService.js';
+import { stripUndefinedDeep, cancelPendingCloudSync, maskEmailHint } from '../src/services/syncService.js';
 import { sanitizePhotoUrl } from '../src/utils/security.js';
 import { BUCKET_LISTS, calculateBucketListProgress, applyBucketListToWishlist } from '../src/data/bucketLists.js';
 
@@ -166,4 +166,13 @@ test('applyBucketListToWishlist - hedefleri ekler ve updatedAt alanını sayısa
     cancelPendingCloudSync();
     globalThis.localStorage = prevLocalStorage;
   }
+});
+
+test('maskEmailHint - e-posta adresini gizlilik ve ipucu standartlarına uygun maskeler', () => {
+  assert.strictEqual(maskEmailHint('baranimoley@gmail.com'), 'ba***@g***.com');
+  assert.strictEqual(maskEmailHint('ahmet@hotmail.com'), 'ah***@h***.com');
+  assert.strictEqual(maskEmailHint('x@example.org'), 'x***@e***.org');
+  assert.strictEqual(maskEmailHint(''), '');
+  assert.strictEqual(maskEmailHint(null), '');
+  assert.strictEqual(maskEmailHint('invalid-email'), '');
 });
