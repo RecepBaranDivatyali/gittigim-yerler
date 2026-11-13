@@ -13,6 +13,7 @@ const DIST_DIR = path.resolve('dist');
 
 // Hedef klasörler
 const APP_STORE_DIR = path.resolve('magaza-gorselleri/app-store-1290x2796');
+const APP_STORE_MEDIUM_DIR = path.resolve('magaza-gorselleri/app-store-1206x2622');
 const GOOGLE_PLAY_DIR = path.resolve('magaza-gorselleri/google-play-1080x2400');
 const FEATURE_GRAPHIC_DIR = path.resolve('magaza-gorselleri/google-play-feature-graphic');
 const RAW_DIR = path.resolve('magaza-gorselleri/.temp-raw');
@@ -95,26 +96,27 @@ const SCENES = [
 
 // Mockup HTML Üretici Şablon
 function renderMockupHtml({ scene, imageBase64, width, height, isGooglePlay = false }) {
-  const badgeFontSize = isGooglePlay ? '20px' : '24px';
+  const isMediumIos = !isGooglePlay && width === 1206;
+  const badgeFontSize = isGooglePlay ? '20px' : (isMediumIos ? '22px' : '24px');
   const badgePadding = isGooglePlay ? '8px 20px' : '10px 24px';
-  const titleFontSize = isGooglePlay ? '50px' : '62px';
-  const subFontSize = isGooglePlay ? '23px' : '28px';
-  const headerPaddingTop = isGooglePlay ? '90px' : '120px';
+  const titleFontSize = isGooglePlay ? '50px' : (isMediumIos ? '58px' : '62px');
+  const subFontSize = isGooglePlay ? '23px' : (isMediumIos ? '26px' : '28px');
+  const headerPaddingTop = isGooglePlay ? '90px' : (isMediumIos ? '110px' : '120px');
   const headerPaddingBottom = isGooglePlay ? '22px' : '26px';
 
   // Telefon Kasa ve Ekran Ölçüleri
-  const phoneWidth = isGooglePlay ? '790px' : '930px';
-  const phoneRadius = isGooglePlay ? '48px' : '56px';
+  const phoneWidth = isGooglePlay ? '790px' : (isMediumIos ? '870px' : '930px');
+  const phoneRadius = isGooglePlay ? '48px' : (isMediumIos ? '52px' : '56px');
   const phoneBorder = isGooglePlay ? '10px' : '12px';
-  const statusBarHeight = isGooglePlay ? '48px' : '56px';
-  const statusBarPaddingX = isGooglePlay ? '30px' : '36px';
-  const timeFontSize = isGooglePlay ? '18px' : '21px';
-  const islandWidth = isGooglePlay ? '140px' : '160px';
-  const islandHeight = isGooglePlay ? '30px' : '34px';
+  const statusBarHeight = isGooglePlay ? '48px' : (isMediumIos ? '52px' : '56px');
+  const statusBarPaddingX = isGooglePlay ? '30px' : (isMediumIos ? '34px' : '36px');
+  const timeFontSize = isGooglePlay ? '18px' : (isMediumIos ? '20px' : '21px');
+  const islandWidth = isGooglePlay ? '140px' : (isMediumIos ? '150px' : '160px');
+  const islandHeight = isGooglePlay ? '30px' : (isMediumIos ? '32px' : '34px');
   const lensSize = isGooglePlay ? '10px' : '12px';
-  const screenHeight = isGooglePlay ? '1680px' : '1980px';
-  const homeBarHeight = isGooglePlay ? '38px' : '44px';
-  const indicatorWidth = isGooglePlay ? '140px' : '160px';
+  const screenHeight = isGooglePlay ? '1680px' : (isMediumIos ? '1855px' : '1980px');
+  const homeBarHeight = isGooglePlay ? '38px' : (isMediumIos ? '40px' : '44px');
+  const indicatorWidth = isGooglePlay ? '140px' : (isMediumIos ? '150px' : '160px');
   const indicatorHeight = isGooglePlay ? '4.5px' : '5px';
 
   return `
@@ -605,7 +607,7 @@ async function main() {
   console.log('=== GEZGİN MAĞAZA GÖRSELLERİ ÜRETİMİ BAŞLADI ===\n');
 
   // Dizinleri oluştur
-  [APP_STORE_DIR, GOOGLE_PLAY_DIR, FEATURE_GRAPHIC_DIR, RAW_DIR].forEach((dir) => {
+  [APP_STORE_DIR, APP_STORE_MEDIUM_DIR, GOOGLE_PLAY_DIR, FEATURE_GRAPHIC_DIR, RAW_DIR].forEach((dir) => {
     fs.mkdirSync(dir, { recursive: true });
   });
 
@@ -783,6 +785,31 @@ async function main() {
     const outPath = path.join(APP_STORE_DIR, `${scene.id}.png`);
     await mockupPage.screenshot({ path: outPath, type: 'png' });
     console.log(`  ✓ [App Store] ${scene.id}.png hazır`);
+  }
+
+  // 3b. App Store Medium Display Formatı (1206x2622 - iPhone with Dynamic Island)
+  console.log('\n[3/4] Apple App Store (1206x2622) vitrin görselleri üretiliyor...');
+  await mockupPage.setViewport({ width: 1206, height: 2622, deviceScaleFactor: 1 });
+
+  for (let i = 0; i < SCENES.length; i++) {
+    const scene = SCENES[i];
+    const rawBuffer = fs.readFileSync(rawScreens[i]);
+    const base64Img = `data:image/png;base64,${rawBuffer.toString('base64')}`;
+
+    const html = renderMockupHtml({
+      scene,
+      imageBase64: base64Img,
+      width: 1206,
+      height: 2622,
+      isGooglePlay: false
+    });
+
+    await mockupPage.setContent(html, { waitUntil: 'load' });
+    await new Promise((r) => setTimeout(r, 400));
+
+    const outPath = path.join(APP_STORE_MEDIUM_DIR, `${scene.id}.png`);
+    await mockupPage.screenshot({ path: outPath, type: 'png' });
+    console.log(`  ✓ [App Store Medium] ${scene.id}.png hazır`);
   }
 
   // 4. Google Play Formatı (1080x2400)
