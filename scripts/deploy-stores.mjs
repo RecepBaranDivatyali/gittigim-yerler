@@ -434,7 +434,7 @@ async function deployHuaweiAppGallery({ notes }) {
   console.log(`  1. Dosya bilgileri hazırlandı: app-release.apk (${apkSizeMb} MB, sha256: ${sha256.slice(0, 12)}...)`);
   console.log('  2. Huawei OBS güvenli yükleme adresi alınıyor...');
 
-  const getUrl = `https://connect-api.cloud.huawei.com/api/publish/v2/upload-url/for-obs?appId=${HUAWEI_APP_ID}&suffix=apk&contentLength=${contentLength}&sha256=${sha256}`;
+  const getUrl = `https://connect-api.cloud.huawei.com/api/publish/v2/upload-url/for-obs?appId=${HUAWEI_APP_ID}&fileName=app-release.apk&suffix=apk&contentLength=${contentLength}&sha256=${sha256}`;
   const urlRes = await httpRequest(getUrl, {
     headers: {
       'Authorization': `Bearer ${jwt}`,

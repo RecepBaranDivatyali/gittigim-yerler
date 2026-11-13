@@ -2,8 +2,8 @@
 
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
-- iOS sürüm: **1.0 (Derleme 64)** — Apple App Store'da **Yayında / Onaylandı (`READY_FOR_SALE`)** 🎉🍏
-- Android sürüm: **2.9** (versionCode **16**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **Yayında (`State 0`)** 🌸
+- iOS sürüm: **3.0** (GitHub Actions derlemesi tetiklendi; önceki **1.0 (Derleme 64)** yayında) 🍏
+- Android sürüm: **3.0** (versionCode **17**) — Google Play'e **Yüklendi** 🟢, Huawei AppGallery'de **İncelemede** 🌸
 - Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik yayında)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
@@ -12,9 +12,10 @@
 AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık sorun yok. (Apple App Store, Google Play ve Huawei AppGallery'de tüm sürümler onaylandı ve YAYINDA 🎉).
+- Bilinen açık sorun yok.
 
 ## Son Değişiklikler
+- 2026-11-13: Sürüm 3.0 (vc 17) Android paketleri derlendi ve Google Play + Huawei AppGallery'ye gönderildi; deploy-stores.mjs Huawei OBS `fileName` parametresi düzeltildi; iOS 3.0 GitHub Actions derlemesi tetiklendi.
 - 2026-11-13: Veritabanı, Auth ve Kullanıcı Adı giriş akışı düzeltildi (E-posta veya Kullanıcı Adı girişi, cihaz içi güvenli hesap hatırlama, maskeli e-posta ipucu, Firestore UID sahiplik kuralları, çıkışta yerel dizin temizliği, eski user_ bulut verisi uyumluluğu; 19/19 test PASS, güvenlik denetimi TEMİZ).
 - 2026-11-11: Mağaza vitrin görsellerinde kamera çakışması (bağımsız status bar ile) ve telefonun alt kısmının kesilmesi (4 köşeli tam kasa ve home bar ile) giderildi. Yeni görseller ve artifact güncellendi.
 - 2026-11-11: Mağaza vitrin görselleri seti (App Store 1290x2796, Google Play 1080x2400 ve 1024x500 Feature Graphic) Puppeteer otomasyonu ile sıfırdan üretildi (`npm run stores:screenshots`). ProfileView bucket list renderındaki progress alanları ve triggerConfetti çağrısı düzeltildi.
