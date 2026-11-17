@@ -2,8 +2,8 @@
 
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
-- iOS sürüm: **3.0** (GitHub Actions derlemesi tetiklendi; önceki **1.0 (Derleme 64)** yayında) 🍏
-- Android sürüm: **3.0** (versionCode **17**) — Google Play'e **Yüklendi** 🟢, Huawei AppGallery'de **İncelemede** 🌸
+- iOS sürüm: **3.0 (Derleme 66)** — Apple App Store'da **Yayında / Onaylandı (`READY_FOR_SALE`)** 🎉🍏
+- Android sürüm: **3.0** (versionCode **17**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **Yayında (`State 0`)** 🌸
 - Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik yayında)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
@@ -15,6 +15,7 @@ AKTIF_GOREV: yok
 - Bilinen açık sorun yok.
 
 ## Son Değişiklikler
+- 2026-11-17: Gezgin Sürüm 3.0 (iOS Derleme 66 + Android vc 17) Apple App Store (`READY_FOR_SALE`), Google Play (`completed`) ve Huawei AppGallery (`State 0`) dahil 3 mağazanın tamamında resmi olarak YAYINDA!
 - 2026-11-13: Sürüm 3.0 (vc 17) Android paketleri derlendi ve Google Play + Huawei AppGallery'ye gönderildi; deploy-stores.mjs Huawei OBS `fileName` parametresi düzeltildi; iOS 3.0 GitHub Actions derlemesi tetiklendi.
 - 2026-11-13: Veritabanı, Auth ve Kullanıcı Adı giriş akışı düzeltildi (E-posta veya Kullanıcı Adı girişi, cihaz içi güvenli hesap hatırlama, maskeli e-posta ipucu, Firestore UID sahiplik kuralları, çıkışta yerel dizin temizliği, eski user_ bulut verisi uyumluluğu; 19/19 test PASS, güvenlik denetimi TEMİZ).
 - 2026-11-11: Mağaza vitrin görsellerinde kamera çakışması (bağımsız status bar ile) ve telefonun alt kısmının kesilmesi (4 köşeli tam kasa ve home bar ile) giderildi. Yeni görseller ve artifact güncellendi.
