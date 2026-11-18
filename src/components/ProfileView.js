@@ -40,6 +40,7 @@ import { renderMedalTokenHtml, attachMedalSpotlightListeners } from '../utils/me
 import { calculateBudgetStats, formatMoney, EXPENSE_CATEGORIES } from '../utils/travelBudget.js';
 import { BUCKET_LISTS, calculateBucketListProgress, applyBucketListToWishlist } from '../data/bucketLists.js';
 import { openQuickCountryWizard } from './OnboardingTour.js';
+import { isSimulatorAllowed } from './PhoneSimulator.js';
 
 // Friendly Place Name helper for Photo Album & Showcase
 function getFriendlyPlaceName(targetId) {
@@ -1803,7 +1804,7 @@ export function renderProfileView(container, onBack) {
           </div>
         </div>
 
-        <!-- 3B. Screen & View Mode (Desktop Fullscreen vs Mobile Phone Frame) -->
+        ${isSimulatorAllowed() ? `<!-- 3B. Screen & View Mode (Desktop Fullscreen vs Mobile Phone Frame) -->
         <div class="settings-card">
           <div class="settings-card-header">
             <h3 class="settings-card-title">📱 ${currentLang === 'tr' ? 'Ekran Görünüm Modu' : 'Display View Mode'}</h3>
@@ -1825,7 +1826,7 @@ export function renderProfileView(container, onBack) {
               </div>
             </button>
           </div>
-        </div>
+        </div>` : ''}
 
         <!-- 4. Language & Region -->
         <div class="settings-card">

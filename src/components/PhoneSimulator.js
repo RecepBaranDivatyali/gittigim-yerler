@@ -25,6 +25,20 @@ export function isDesktopWeb() {
   return true;
 }
 
+export function isSimulatorAllowed() {
+  if (!isDesktopWeb()) return false;
+  const host = window.location.hostname || '';
+  const isLocalHost =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]' ||
+    host.startsWith('192.168.') ||
+    host.startsWith('10.');
+  const isDevEnv = Boolean(import.meta?.env?.DEV);
+  const hasExplicitSimFlag = window.location.search.includes('devsim=1');
+  return isDevEnv || isLocalHost || hasExplicitSimFlag;
+}
+
 export function getSimulatorMode() {
   return localStorage.getItem('gv_simulator_mode') || 'fullscreen';
 }
@@ -43,7 +57,7 @@ export function setSimulatorScaleMode(scaleMode) {
 
 // Floating button displayed on desktop when in fullscreen mode
 export function renderSimulatorSwitcherButton() {
-  if (!isDesktopWeb()) return;
+  if (!isSimulatorAllowed()) return;
   if (window.location.search.includes('simulated=1')) return;
 
   let btn = document.getElementById('floating-sim-switch-pill');
@@ -85,7 +99,7 @@ export function initPhoneSimulator() {
     return false;
   }
 
-  if (!isDesktopWeb()) {
+  if (!isSimulatorAllowed()) {
     return false;
   }
 

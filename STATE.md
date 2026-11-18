@@ -15,6 +15,7 @@ AKTIF_GOREV: yok
 - Bilinen açık sorun yok.
 
 ## Son Değişiklikler
+- 2026-11-19: Mobil önizleme telefon çerçevesi (`PhoneSimulator.js` + `ProfileView.js`) yalnızca yerel geliştirme ortamıyla (`localhost`/`DEV`/`?devsim=1`) sınırlandırıldı; canlı web (`gittigim-yerler.vercel.app`) artık her zaman doğrudan tam ekran açılıyor (19/19 test PASS).
 - 2026-11-17: Gezgin Sürüm 3.0 (iOS Derleme 66 + Android vc 17) Apple App Store (`READY_FOR_SALE`), Google Play (`completed`) ve Huawei AppGallery (`State 0`) dahil 3 mağazanın tamamında resmi olarak YAYINDA!
 - 2026-11-13: Sürüm 3.0 (vc 17) Android paketleri derlendi ve Google Play + Huawei AppGallery'ye gönderildi; deploy-stores.mjs Huawei OBS `fileName` parametresi düzeltildi; iOS 3.0 GitHub Actions derlemesi tetiklendi.
 - 2026-11-13: Veritabanı, Auth ve Kullanıcı Adı giriş akışı düzeltildi (E-posta veya Kullanıcı Adı girişi, cihaz içi güvenli hesap hatırlama, maskeli e-posta ipucu, Firestore UID sahiplik kuralları, çıkışta yerel dizin temizliği, eski user_ bulut verisi uyumluluğu; 19/19 test PASS, güvenlik denetimi TEMİZ).
@@ -24,4 +25,3 @@ AKTIF_GOREV: yok
 - 2026-11-06: Huawei AppGallery 2.9 sürümü gizlilik etiketi form yapılandırması tamamlanarak başarıyla tekrar incelemeye gönderildi (`State 5`).
 - 2026-11-06: Apple App Store 1.0 (Derleme 64) resmi olarak onaylandı ve yayına girdi (`READY_FOR_SALE`).
 - 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 18/18 test PASS).
-- 2026-10-31: Sürüm 2.9 (vc 16) Google Play'de yayına girdi (`completed`).
