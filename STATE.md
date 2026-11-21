@@ -12,9 +12,10 @@
 AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık sorun yok.
+- 360° Denetimde tespit edilen maddeler (`BACKLOG.md` P0/P1 listesinde; kullanıcı onayıyla tek seferde onarıma hazır).
 
 ## Son Değişiklikler
+- 2026-11-21: Canlı web (`gittigim-yerler.vercel.app`) ve mobil uygulama (Android/iOS/Capacitor/Offline/Veritabanı) 4 uzman ajan + 35+ gerçek Puppeteer E2E senaryosu ile ayrı ayrı denetlendi ve kapsamlı rapor hazırlandı.
 - 2026-11-19: Mobil önizleme telefon çerçevesi (`PhoneSimulator.js` + `ProfileView.js`) yalnızca yerel geliştirme ortamıyla (`localhost`/`DEV`/`?devsim=1`) sınırlandırıldı; canlı web (`gittigim-yerler.vercel.app`) artık her zaman doğrudan tam ekran açılıyor (19/19 test PASS).
 - 2026-11-17: Gezgin Sürüm 3.0 (iOS Derleme 66 + Android vc 17) Apple App Store (`READY_FOR_SALE`), Google Play (`completed`) ve Huawei AppGallery (`State 0`) dahil 3 mağazanın tamamında resmi olarak YAYINDA!
 - 2026-11-13: Sürüm 3.0 (vc 17) Android paketleri derlendi ve Google Play + Huawei AppGallery'ye gönderildi; deploy-stores.mjs Huawei OBS `fileName` parametresi düzeltildi; iOS 3.0 GitHub Actions derlemesi tetiklendi.
@@ -24,4 +25,3 @@ AKTIF_GOREV: yok
 - 2026-11-11: Huawei AppGallery 2.9 sürümü başarıyla onaylandı ve yayına girdi (`State 0`). 3 mağazanın tümü yeşil ve yayında!
 - 2026-11-06: Huawei AppGallery 2.9 sürümü gizlilik etiketi form yapılandırması tamamlanarak başarıyla tekrar incelemeye gönderildi (`State 5`).
 - 2026-11-06: Apple App Store 1.0 (Derleme 64) resmi olarak onaylandı ve yayına girdi (`READY_FOR_SALE`).
-- 2026-10-31: 360° Denetimdeki 6 maddenin tamamı uygulandı (-47 MB temizlik, Hızlı Ülke Seçim Sihirbazı, 6 Keşif Paketi, döviz dönüşümlü bütçe, Android geri tuşu, iOS paylaşım, güvenlik kalkanı, 18/18 test PASS).
