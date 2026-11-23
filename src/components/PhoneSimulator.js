@@ -17,9 +17,12 @@ export function isDesktopWeb() {
   if (window.innerWidth <= 520) {
     return false;
   }
-  // User agent check for mobile phones (phones/phablets on small screens)
-  const isMobileUA = /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobileUA && window.innerWidth <= 768) {
+  // User agent check for mobile phones and tablets (including iPadOS desktop UA & Android tablets)
+  const ua = navigator.userAgent || '';
+  const isMobileUA = /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isIPad = /iPad|Tablet|PlayBook|Silk/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  const isAndroidTablet = /Android/i.test(ua) && !/Mobile/i.test(ua);
+  if (isMobileUA || isIPad || isAndroidTablet) {
     return false;
   }
   return true;

@@ -1397,10 +1397,11 @@ svg, g, path {
   background: #0f172a;
   z-index: 10000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: fadeIn .35s ease;
 }
 
@@ -4226,6 +4227,7 @@ body[data-theme="light"] .floating-zoom-btn:hover {
   gap: 0.5rem;
   pointer-events: none;
   max-width: calc(100vw - 80px);
+  overflow: visible;
 }
 
 .stats-chip {
@@ -4472,6 +4474,10 @@ body[data-theme="light"] .floating-zoom-btn:hover {
 
 /* ── Floating Layer HUD Badge ── */
 .floating-layer-hud {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -4486,6 +4492,7 @@ body[data-theme="light"] .floating-zoom-btn:hover {
   pointer-events: auto;
   transition: all 0.3s ease;
   width: fit-content;
+  white-space: nowrap;
 }
 
 /* ── Floating Poster Button ── */
@@ -20561,6 +20568,246 @@ body[data-theme="light"] .map-active-mode-banner .mode-banner-close-btn:hover {
 .bucket-card-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.14);
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   📱 Tablet Portrait & Landscape Optimization (600px – 1200px & Short Height)
+   Covers: 673×841, 744×1133, 768×1024, 800×1280, 820×1180, 834×1194,
+           1024×768, 1024×1366, 1180×820
+═════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Profile Topbar & 6 Tabs on Tablets (769px – 1150px) */
+@media (min-width: 769px) and (max-width: 1150px) {
+  .profile-topbar {
+    flex-wrap: wrap;
+    padding: max(12px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 12px max(18px, env(safe-area-inset-left));
+    gap: 10px 12px;
+  }
+  .profile-back-btn,
+  .profile-logout-btn,
+  #profile-logout {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .profile-tabs {
+    order: 3;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+  .ptab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    min-width: 0;
+    white-space: nowrap;
+  }
+}
+
+/* Small Tablets (600px – 768px): give 6-col profile tabs slightly roomier labels */
+@media (min-width: 600px) and (max-width: 768px) {
+  .profile-topbar {
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    gap: 8px 10px;
+  }
+  .ptab {
+    padding: 7px 4px !important;
+  }
+  .ptab .tab-label {
+    font-size: 0.72rem !important;
+  }
+}
+
+/* 2. Map Top Bar Collision Prevention on Tablets (769px – 1200px) */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .floating-profile-wrap {
+    top: max(14px, env(safe-area-inset-top, 14px));
+    left: max(12px, env(safe-area-inset-left, 12px));
+    gap: 6px;
+  }
+  .floating-profile-btn {
+    height: 36px;
+    padding: 4px 12px 4px 8px;
+    font-size: 0.84rem;
+    gap: 6px;
+  }
+  .floating-profile-name {
+    max-width: 110px;
+  }
+  .floating-top-right-group {
+    top: max(14px, env(safe-area-inset-top, 14px));
+    right: max(12px, env(safe-area-inset-right, 12px));
+    gap: 6px;
+    max-width: calc(100vw - 240px);
+  }
+  .floating-daynight-mode-btn,
+  .floating-routes-mode-btn,
+  .floating-lucky-btn,
+  .floating-visa-mode-btn,
+  .floating-poster-btn {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    gap: 5px;
+    border-radius: 12px;
+  }
+  .floating-top-right-group #map-legend.floating-legend:not(.expanded),
+  #map-legend.floating-legend {
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 99px;
+  }
+  #map-legend.floating-legend .legend-text {
+    display: none !important;
+  }
+  #map-legend.floating-legend .legend-items-list {
+    gap: 6px;
+  }
+  #map-legend.floating-legend .legend-item {
+    gap: 0;
+  }
+  #map-search-wrap.floating-search-wrap {
+    top: max(62px, calc(env(safe-area-inset-top, 0px) + 62px));
+    left: max(12px, env(safe-area-inset-left, 12px));
+    width: min(320px, calc(100vw - 24px));
+  }
+}
+
+/* Portrait Tablets (769px – 960px): icon-only pills on top-right for generous gap */
+@media (min-width: 769px) and (max-width: 960px) {
+  .floating-daynight-mode-btn .daynight-btn-lbl,
+  .floating-routes-mode-btn .routes-btn-lbl,
+  .floating-lucky-btn .routes-btn-lbl,
+  .floating-visa-mode-btn .visa-btn-lbl,
+  .floating-poster-btn .poster-btn-text {
+    display: none !important;
+  }
+  .floating-daynight-mode-btn,
+  .floating-routes-mode-btn,
+  .floating-lucky-btn,
+  .floating-visa-mode-btn,
+  .floating-poster-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.95rem;
+  }
+}
+
+/* 3. Passport Book, Country Popup & Profile Grids on Tablets (600px – 1180px) */
+@media (min-width: 600px) and (max-width: 1180px) {
+  .profile-content {
+    padding: 20px max(24px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  }
+  .profile-main {
+    max-width: min(860px, 100%);
+  }
+  .badges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  }
+  .bucket-card-grid,
+  .challenges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  }
+  .airlines-grid {
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  }
+  .aircraft-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  .settings-themes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  .passport-modal-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  }
+  .passport-modal-dialog {
+    margin: auto;
+    width: min(640px, 94vw);
+    max-height: min(860px, calc(100dvh - 32px));
+  }
+  .passport-modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .passport-book-card {
+    max-width: min(500px, 100%);
+    margin: 0 auto;
+  }
+  .leaflet-popup.clean-status-popup .leaflet-popup-content-wrapper {
+    width: min(360px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: min(600px, calc(100dvh - 104px)) !important;
+  }
+  .map-status-popup {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* 4. Landscape Tablets & Short Viewports (max-height: 860px): full vertical scroll */
+@media (max-height: 860px) {
+  .login-overlay,
+  .modal-overlay,
+  .passport-modal-overlay,
+  .notifications-modal-overlay,
+  .feedback-modal-overlay,
+  .poster-modal-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(20px, env(safe-area-inset-top, 20px)) 16px max(20px, env(safe-area-inset-bottom, 20px)) 16px;
+  }
+  .login-card,
+  .modal-card,
+  .passport-modal-dialog,
+  .notifications-modal-card,
+  .feedback-modal-card,
+  .poster-modal-dialog {
+    margin: auto;
+  }
+  .login-card {
+    padding: 24px 26px;
+  }
+  .login-logo {
+    margin-bottom: 14px;
+  }
+  .login-brand-logo-img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+  }
+  .avatar-grid {
+    max-height: 122px;
+  }
+  .passport-modal-dialog,
+  .notifications-modal-card,
+  .poster-modal-dialog {
+    max-height: calc(100dvh - 40px);
+  }
+  .passport-modal-body,
+  .notifications-modal-list {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .leaflet-popup.clean-status-popup .leaflet-popup-content-wrapper {
+    max-height: min(520px, calc(100dvh - 96px)) !important;
+  }
+}
+
 
 
 
