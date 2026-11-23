@@ -103,6 +103,9 @@ const COUNTRY_LABEL_OFFSETS = {
   'LB': [33.9, 35.8],  // Lebanon (Central)
   'EG': [26.8, 30.0],  // Egypt (Nile Valley interior)
   'SA': [24.0, 45.0],  // Saudi Arabia (Central Najd)
+  'TW': [23.7, 121.0], // Taiwan
+  'XN': [35.25, 33.45], // Northern Cyprus
+  'XS': [9.56, 44.06],  // Somaliland
 };
 
 const PROVINCE_LABEL_OFFSETS = {
@@ -165,9 +168,17 @@ const REGION_ZOOM = 5.0;
 const SUBREGION_ZOOM = 6.8;
 
 function getFlagHtml(code) {
-  if (!code || code.toUpperCase() === 'IL') return '';
-  const c = code.toLowerCase();
-  return `<img src="https://flagcdn.com/w40/${c}.png" class="country-flag-badge" alt="${code}" style="width:22px;height:15px;border-radius:3px;vertical-align:middle;display:inline-block;margin-right:6px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.3);" />`;
+  if (!code) return '';
+  const upper = String(code).toUpperCase();
+  if (upper === 'IL') return '';
+  if (upper === 'XN') {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="country-flag-badge" aria-label="KKTC" style="width:22px;height:15px;border-radius:3px;vertical-align:middle;display:inline-block;margin-right:6px;box-shadow:0 1px 4px rgba(0,0,0,0.3);"><rect width="30" height="20" fill="#fff"/><rect y="2" width="30" height="2.2" fill="#e30a17"/><rect y="15.8" width="30" height="2.2" fill="#e30a17"/><circle cx="13.5" cy="10" r="3.8" fill="#e30a17"/><circle cx="14.6" cy="10" r="3" fill="#fff"/><polygon points="16.5,10 18.6,10.7 17.3,8.9 17.3,11.1 18.6,9.3" fill="#e30a17"/></svg>`;
+  }
+  if (upper === 'XS') {
+    return `<span class="country-flag-badge" aria-label="XS" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:15px;margin-right:6px;font-size:14px;line-height:1;vertical-align:middle;">🏳️</span>`;
+  }
+  const c = upper.toLowerCase();
+  return `<img src="https://flagcdn.com/w40/${c}.png" class="country-flag-badge" alt="${escapeHtml(upper)}" style="width:22px;height:15px;border-radius:3px;vertical-align:middle;display:inline-block;margin-right:6px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.3);" />`;
 }
 
 function getStatusConfig() {
@@ -1042,23 +1053,21 @@ export function renderWorldMapView(container, options = {}) {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(async () => {
           await loadUniversalSearchData();
-          const query = searchInput.value.trim().toLowerCase();
+          const rawQuery = searchInput.value.trim();
           selectedResultIndex = -1;
-          if (query.length === 0) {
+          if (rawQuery.length === 0) {
             searchResults.style.display = 'none';
             if (searchClear) searchClear.style.display = 'none';
             return;
           }
           if (searchClear) searchClear.style.display = 'block';
 
-          const norm = (s) => (s || '').toLowerCase()
-            .replace(/ı/g, 'i')
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c');
-          const qNorm = norm(query);
+          const norm = (s) => (s || '')
+            .toLocaleLowerCase('tr-TR')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/ı/g, 'i');
+          const qNorm = norm(rawQuery);
 
           // Search matches with prioritization scoring: exact match > startsWith > includes
           const scoredMatches = [];
@@ -2157,8 +2166,13 @@ export function renderWorldMapView(container, options = {}) {
         // 2. Serverless fallback if direct didn't succeed
         if (!isSent) {
           try {
+            const isNativeCapacitor = Boolean(
+              window.Capacitor?.isNativePlatform?.() ||
+              window.Capacitor?.getPlatform?.() === 'android' ||
+              window.Capacitor?.getPlatform?.() === 'ios'
+            );
             const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const apiUrl = isLocal && !window.Capacitor
+            const apiUrl = isLocal || isNativeCapacitor
               ? 'https://gittigim-yerler.vercel.app/api/feedback'
               : '/api/feedback';
 
@@ -2428,6 +2442,17 @@ export function renderWorldMapView(container, options = {}) {
   return cleanup;
 }
 
+function stateBorderStyle() {
+  return {
+    fill: false,
+    fillOpacity: 0,
+    color: !isLightTheme() ? 'rgba(226, 232, 240, 0.50)' : 'rgba(30, 41, 59, 0.45)',
+    weight: 1.1,
+    opacity: 0.9,
+    interactive: false
+  };
+}
+
 function refreshAllStyles() {
   invalidateStorageCache();
   if (countryBordersLayer) {
@@ -2441,6 +2466,9 @@ function refreshAllStyles() {
   }
   Object.keys(regionLayers).forEach(code => refreshRegionLayer(code));
   Object.keys(subregionLayers).forEach(code => refreshSubregionLayer(code));
+  Object.values(stateBordersLayers).forEach(layer => {
+    if (layer) layer.setStyle(() => stateBorderStyle());
+  });
 }
 
 function updateLayerHud() {
@@ -4228,8 +4256,10 @@ function isTurkeyInView() {
 }
 
 // ─── Load World Region Data ───────────────────────────────────────────────────
+const NO_REGION_DATA_CODES = new Set(['TR', 'XN', 'XS']);
+
 async function loadRegionData(code) {
-  if (!code || code === 'TR') return null;
+  if (!code || NO_REGION_DATA_CODES.has(code)) return null;
   if (regionCache[code] === null) return null;
   if (regionLayers[code]) return regionLayers[code];
   if (regionCache[code]) {
@@ -4315,14 +4345,7 @@ function attachRegionLayer(code, data) {
   const stateBorder = L.geoJSON(sortedData, {
     renderer: stateBordersRenderer,
     pane: 'stateBordersPane',
-    style: () => ({
-      fill: false,
-      fillOpacity: 0,
-      color: getTheme() !== 'light' ? 'rgba(226, 232, 240, 0.50)' : 'rgba(30, 41, 59, 0.45)',
-      weight: 1.1,
-      opacity: 0.9,
-      interactive: false
-    }),
+    style: () => stateBorderStyle(),
     interactive: false
   });
   stateBordersLayers[code] = stateBorder;
@@ -4373,7 +4396,7 @@ function refreshRegionLayer(code) {
 
 // ─── Load World Subregion Data ────────────────────────────────────────────────
 async function loadSubregionData(code) {
-  if (!code || code === 'TR') return null;
+  if (!code || NO_REGION_DATA_CODES.has(code)) return null;
   if (subregionCache[code] === null) return null;
   if (subregionLayers[code]) return subregionLayers[code];
   if (subregionCache[code]) {
@@ -4550,6 +4573,8 @@ function findRegionRawForPoint(countryCode, latlng, cityName) {
 
 // ─── Photo Lightbox Modal Helper ───────────────────────────────────────────
 function openPhotoLightbox(imgSrc, title = '', caption = '') {
+  const safeImgSrc = sanitizePhotoUrl(imgSrc);
+  if (!safeImgSrc) return;
   const existing = document.getElementById('photo-lightbox-modal');
   if (existing) existing.remove();
 
@@ -4559,7 +4584,7 @@ function openPhotoLightbox(imgSrc, title = '', caption = '') {
   modal.innerHTML = `
     <div class="photo-lightbox-content">
       <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
-      <img src="${imgSrc}" class="photo-lightbox-img" alt="Memory Photo" />
+      <img src="${escapeHtml(safeImgSrc)}" class="photo-lightbox-img" alt="Memory Photo" />
       ${title || caption ? `
         <div class="photo-lightbox-footer">
           ${title ? `<div class="photo-lightbox-title">${escapeHtml(title)}</div>` : ''}
@@ -5476,12 +5501,16 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       return;
     }
 
-    photosGrid.innerHTML = photos.map(p => `
-      <div class="journal-photo-thumb" data-id="${p.id}">
-        <img src="${p.dataUrl}" alt="Photo" />
-        <button type="button" class="del-photo-btn" data-id="${p.id}" title="Fotoğrafı Sil">&times;</button>
+    photosGrid.innerHTML = photos.map(p => {
+      const safeDataUrl = sanitizePhotoUrl(p.dataUrl);
+      if (!safeDataUrl) return '';
+      return `
+      <div class="journal-photo-thumb" data-id="${escapeHtml(p.id)}">
+        <img src="${escapeHtml(safeDataUrl)}" alt="Photo" />
+        <button type="button" class="del-photo-btn" data-id="${escapeHtml(p.id)}" title="Fotoğrafı Sil">&times;</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     photosGrid.querySelectorAll('.journal-photo-thumb img').forEach(img => {
       img.addEventListener('click', (e) => {
@@ -5704,6 +5733,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       const canDelete = isSelf || currentUser.isSuperAdmin;
       const authorName = pl.username || 'Gezgin';
       const authorAvatar = pl.avatar || '👤';
+      const safePhotoUrl = sanitizePhotoUrl(pl.photoUrl);
 
       return `
         <div class="place-card-item" data-id="${escapeHtml(pl.id)}">
@@ -5716,7 +5746,7 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
               </div>
               ${pl.note ? `<div class="place-card-note">"${escapeHtml(pl.note)}"</div>` : ''}
               <div class="place-card-author">
-                ${pl.photoUrl ? `<img src="${escapeHtml(pl.photoUrl)}" class="place-author-avatar-img" alt=""/>` : `<span class="place-author-emoji">${escapeHtml(authorAvatar)}</span>`}
+                ${safePhotoUrl ? `<img src="${escapeHtml(safePhotoUrl)}" class="place-author-avatar-img" alt=""/>` : `<span class="place-author-emoji">${escapeHtml(authorAvatar)}</span>`}
                 <span class="place-author-name">@${escapeHtml(authorName)}</span>
                 ${isSelf ? '<span class="place-badge-self">(Sen)</span>' : ''}
               </div>
@@ -5859,12 +5889,13 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
       const authorAvatar = r.avatar || '🧭';
       const rScore = Number(r.rating) || 0;
       const dateFormatted = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' }) : '';
+      const safeReviewPhotoUrl = sanitizePhotoUrl(r.photoUrl);
 
       return `
         <div class="cr-review-item ${isSelf ? 'is-self-review' : ''}">
           <div class="cr-review-header">
             <div class="cr-user-meta">
-              ${r.photoUrl ? `<img src="${escapeHtml(r.photoUrl)}" class="cr-avatar-img" alt=""/>` : `<span class="cr-avatar-emoji">${escapeHtml(authorAvatar)}</span>`}
+              ${safeReviewPhotoUrl ? `<img src="${escapeHtml(safeReviewPhotoUrl)}" class="cr-avatar-img" alt=""/>` : `<span class="cr-avatar-emoji">${escapeHtml(authorAvatar)}</span>`}
               <span class="cr-username">@${escapeHtml(authorName)}</span>
               ${isSelf ? `<span class="cr-self-badge">${currentLang === 'tr' ? '(Sen)' : '(You)'}</span>` : ''}
             </div>
@@ -6150,16 +6181,18 @@ function openStatusPopup(latlng, id, title, type, countryCode, feature = null) {
         saveWorldVisit(id, val);
 
         if (val === 'unvisited') {
+          const data = getStorageData();
           if (id === 'TR') {
-            const data = getStorageData();
             Object.keys(data.turkeyVisits).forEach(pid => saveTurkeyVisit(pid, 'unvisited'));
           } else {
-            const data = getStorageData();
             const prefix = `${id}::`;
             Object.keys(data.worldVisits).forEach(k => {
               if (k.startsWith(prefix)) saveWorldVisit(k, 'unvisited');
             });
           }
+          (data.worldCities || [])
+            .filter(c => c.countryCode === id)
+            .forEach(c => toggleWorldCity(id, c.cityName, false));
         }
       } else if (type === 'subregion') {
         saveWorldVisit(id, val);
@@ -6611,9 +6644,8 @@ function getEffectiveCountryStatus(countryCode) {
 }
 
 function countryBorderStyle(f) {
-  const c = f ? findCountry(f) : null;
   const zoom = map?.getZoom() || 3;
-  const isDark = getTheme() !== 'light';
+  const isDark = !isLightTheme();
   const zoomed = zoom >= REGION_ZOOM;
 
   return {
@@ -6853,7 +6885,9 @@ function subregionStyle(name, code) {
 // ─── Country Finder Helper ─────────────────────────────────────────────────────
 function findCountry(f) {
   if (!f) return null;
-  const iso2 = (f.properties?.['ISO3166-1-Alpha-2'] || f.properties?.iso_a2 || f.properties?.ISO_A2 || f.id || '').toUpperCase();
+  let iso2 = (f.properties?.['ISO3166-1-Alpha-2'] || f.properties?.iso_a2 || f.properties?.ISO_A2 || f.id || '').toUpperCase();
+  const iso3 = (f.properties?.['ISO3166-1-Alpha-3'] || f.properties?.iso_a3 || f.properties?.ISO_A3 || '').toUpperCase();
+  if (iso2 === 'CN-TW' || iso3 === 'TWN') iso2 = 'TW';
   const name = f.properties?.name || '';
   if (iso2 && iso2 !== '-99' && iso2 !== 'UU') {
     const found = WORLD_COUNTRIES.find(c => c.code === iso2);

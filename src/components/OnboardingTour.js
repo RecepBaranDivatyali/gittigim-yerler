@@ -76,17 +76,67 @@ export function openQuickCountryWizard(onComplete) {
   overlay.innerHTML = `
     <style>
       .wizard-country-chip {
-        border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+        border: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.35));
         transition: all 0.18s ease;
       }
       .wizard-country-chip.selected {
         border: 1px solid #10b981 !important;
       }
+      #qw-search-input::placeholder {
+        color: var(--theme-text-muted, #94a3b8);
+        opacity: 1;
+      }
+      body.light-theme .qw-card,
+      body[data-theme="light"] .qw-card,
+      body[data-theme="natgeo_atlas"] .qw-card {
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.24) !important;
+      }
+      body.light-theme #qw-search-input,
+      body[data-theme="light"] #qw-search-input,
+      body[data-theme="natgeo_atlas"] #qw-search-input {
+        background: rgba(255, 255, 255, 0.92) !important;
+        border-color: rgba(100, 116, 139, 0.45) !important;
+        color: #0f172a !important;
+      }
+      body.light-theme .wizard-country-chip:not(.selected),
+      body[data-theme="light"] .wizard-country-chip:not(.selected),
+      body[data-theme="natgeo_atlas"] .wizard-country-chip:not(.selected) {
+        background: rgba(255, 255, 255, 0.88) !important;
+        border-color: rgba(100, 116, 139, 0.4) !important;
+        color: #0f172a !important;
+      }
+      body.light-theme .wizard-country-chip.selected,
+      body[data-theme="light"] .wizard-country-chip.selected,
+      body[data-theme="natgeo_atlas"] .wizard-country-chip.selected {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.26)) !important;
+        border-color: #059669 !important;
+      }
+      body.light-theme .wizard-country-chip.selected span:last-child,
+      body[data-theme="light"] .wizard-country-chip.selected span:last-child,
+      body[data-theme="natgeo_atlas"] .wizard-country-chip.selected span:last-child {
+        color: #065f46 !important;
+      }
+      body.light-theme #qw-counter,
+      body[data-theme="light"] #qw-counter,
+      body[data-theme="natgeo_atlas"] #qw-counter {
+        color: #065f46 !important;
+        border-color: #059669 !important;
+      }
+      body.light-theme #qw-btn-close,
+      body[data-theme="light"] #qw-btn-close,
+      body[data-theme="natgeo_atlas"] #qw-btn-close,
+      body.light-theme #qw-btn-clear,
+      body[data-theme="light"] #qw-btn-clear,
+      body[data-theme="natgeo_atlas"] #qw-btn-clear {
+        color: #334155 !important;
+        border-color: rgba(100, 116, 139, 0.45) !important;
+        background: rgba(148, 163, 184, 0.16) !important;
+      }
     </style>
     <div class="qw-card" style="
-      background: var(--theme-bg-card, #0f172a);
+      background: var(--theme-ui-bg, #0f172a);
       color: var(--theme-text-main, #f8fafc);
-      border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+      border: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.35));
       border-radius: 20px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
       width: 100%;
@@ -98,14 +148,14 @@ export function openQuickCountryWizard(onComplete) {
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     ">
-      <div style="padding: 18px 20px 14px; border-bottom: 1px solid var(--theme-border, rgba(148, 163, 184, 0.25)); position: relative;">
+      <div style="padding: 18px 20px 14px; border-bottom: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.25)); position: relative;">
         <button type="button" id="qw-btn-close" style="
           position: absolute; top: 16px; right: 16px;
-          background: rgba(148, 163, 184, 0.15); border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+          background: rgba(148, 163, 184, 0.15); border: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.35));
           color: var(--theme-text-muted, #94a3b8); font-size: 1.1rem; width: 34px; height: 34px;
           border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
         ">✕</button>
-        <div style="font-size: 1.25rem; font-weight: 800; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 1.25rem; font-weight: 800; margin: 0 0 6px 0; padding-right: 40px; display: flex; align-items: center; gap: 8px;">
           <span>⚡</span>
           <span>${isTr ? '10 Saniyede Gezdiğin Ülkeleri Seç' : 'Pick Visited Countries in 10s'}</span>
         </div>
@@ -128,7 +178,7 @@ export function openQuickCountryWizard(onComplete) {
 
         <div style="position: relative; margin-top: 10px;">
           <input type="text" id="qw-search-input" placeholder="${isTr ? '🔍 Tüm dünya ülkelerinde ara (195 ülke)...' : '🔍 Search all world countries (195 countries)...'}" style="
-            width: 100%; background: rgba(148, 163, 184, 0.1); border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+            width: 100%; background: var(--theme-card-bg, rgba(148, 163, 184, 0.14)); border: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.35));
             border-radius: 12px; padding: 10px 14px; color: var(--theme-text-main, #f8fafc); font-size: 0.92rem;
             outline: none; box-sizing: border-box;
           " />
@@ -139,8 +189,8 @@ export function openQuickCountryWizard(onComplete) {
         <div id="qw-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px;"></div>
       </div>
 
-      <div style="padding: 14px 20px; border-top: 1px solid var(--theme-border, rgba(148, 163, 184, 0.25)); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--theme-bg-card, #0b1120);">
-        <button type="button" id="qw-btn-clear" style="background: transparent; border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35)); color: var(--theme-text-muted, #94a3b8); padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+      <div style="padding: 14px 20px; border-top: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.25)); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--theme-ui-bg, #0b1120);">
+        <button type="button" id="qw-btn-clear" style="background: transparent; border: 1px solid var(--theme-ui-border, rgba(148, 163, 184, 0.35)); color: var(--theme-text-muted, #94a3b8); padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
           ${isTr ? 'Temizle' : 'Clear'}
         </button>
         <button type="button" id="qw-btn-save" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: none; padding: 12px 20px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 8px;">
@@ -230,8 +280,8 @@ export function openQuickCountryWizard(onComplete) {
       const name = isTr ? c.name : (c.nameEn || c.name);
       return `
         <button type="button" class="qw-chip wizard-country-chip ${isSelected ? 'selected' : ''}" data-code="${c.code}" style="
-          background: ${isSelected ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))' : 'rgba(148, 163, 184, 0.1)'};
-          border: 1px solid ${isSelected ? '#10b981' : 'var(--theme-border, rgba(148, 163, 184, 0.35))'};
+          background: ${isSelected ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))' : 'var(--theme-card-bg, rgba(148, 163, 184, 0.12))'};
+          border: 1px solid ${isSelected ? '#10b981' : 'var(--theme-ui-border, rgba(148, 163, 184, 0.35))'};
           box-shadow: ${isSelected ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'};
           border-radius: 12px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;
           user-select: none; text-align: left; color: inherit; width: 100%;

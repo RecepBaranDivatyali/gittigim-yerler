@@ -138,7 +138,7 @@ export function renderLoginPage(container, onLogin) {
     // so previous or guest map data never contaminates the authenticated account.
     if (!profile?.isGuest && (!isSameOwner || authMode === 'register') && !migrateLegacyData) {
       try {
-        resetTravelData({ skipCloudSync: true });
+        await resetTravelData({ skipCloudSync: true });
       } catch (err) {
         console.warn('Reset local travel data on account switch warning:', err);
       }

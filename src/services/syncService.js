@@ -81,9 +81,6 @@ let syncStatus = navigator.onLine ? 'synced' : 'offline';
 let lastSyncTime = null;
 let lastSyncError = null;
 let syncTimeout = null;
-// Cloud document ID that was successfully read (or confirmed empty) in this session.
-// Full-document overwrites are only allowed after hydration so an empty local state can never wipe cloud data.
-let cloudHydratedFor = null;
 const statusListeners = new Set();
 
 export function getSyncStatus() {
@@ -174,6 +171,10 @@ export function getLocalDataPayload() {
   let aircraft = {};
   let profile = { username: 'Gezgin', avatar: '🧭' };
   let homeCountry = 'TR';
+  let passportType = 'bordo';
+  let upcomingTrip = null;
+  let cityNotes = {};
+  let customRoutes = [];
   let unlockedAchievements = [];
 
   try {
@@ -194,6 +195,34 @@ export function getLocalDataPayload() {
       aircraft = (parsedAircraft && typeof parsedAircraft === 'object' && !Array.isArray(parsedAircraft)) ? parsedAircraft : {};
     } catch { aircraft = {}; }
     homeCountry = localStorage.getItem('gv_home_country') || 'TR';
+    passportType = localStorage.getItem('gv_passport_type') || 'bordo';
+    try {
+      const utRaw = localStorage.getItem('gv_upcoming_trip');
+      if (utRaw) {
+        const parsedUt = JSON.parse(utRaw);
+        if (parsedUt && typeof parsedUt === 'object' && !Array.isArray(parsedUt)) {
+          upcomingTrip = parsedUt;
+        }
+      }
+    } catch { upcomingTrip = null; }
+    try {
+      const cnRaw = localStorage.getItem('gv_city_notes');
+      if (cnRaw) {
+        const parsedCn = JSON.parse(cnRaw);
+        if (parsedCn && typeof parsedCn === 'object' && !Array.isArray(parsedCn)) {
+          cityNotes = parsedCn;
+        }
+      }
+    } catch { cityNotes = {}; }
+    try {
+      const crRaw = localStorage.getItem('gv_custom_routes');
+      if (crRaw) {
+        const parsedCr = JSON.parse(crRaw);
+        if (Array.isArray(parsedCr) || (parsedCr && typeof parsedCr === 'object')) {
+          customRoutes = parsedCr;
+        }
+      }
+    } catch { customRoutes = []; }
 
     try {
       const unRaw = localStorage.getItem('gv_unlocked_achievements');
@@ -230,6 +259,10 @@ export function getLocalDataPayload() {
     photoUrl: profile.photoUrl || null,
     bio: profile.bio || '',
     homeCountry,
+    passportType,
+    upcomingTrip,
+    cityNotes,
+    customRoutes,
     stats: {
       worldCountryCount: Object.keys(worldVisits).filter(k => !k.includes('::') && worldVisits[k]?.status === 'visited').length,
       turkeyCount: Object.keys(turkeyVisits).filter(k => turkeyVisits[k]?.status === 'visited').length,
@@ -304,11 +337,7 @@ export function queueCloudSync(force = false) {
       };
       const cleanedDocData = stripUndefinedDeep(docData);
 
-      if (cloudHydratedFor === userDocId) {
-        await setDoc(userRef, cleanedDocData);
-      } else {
-        await setDoc(userRef, cleanedDocData, { merge: true });
-      }
+      await setDoc(userRef, cleanedDocData, { merge: true });
 
       // Also register or update username directory for global friend searches (in isolated try/catch so it can never fail user data sync)
       if (cleanUserLower) {
@@ -493,7 +522,7 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
       if (data.passportType && typeof data.passportType === 'string') {
         try { localStorage.setItem('gv_passport_type', data.passportType); } catch {}
       } else {
-        try { localStorage.setItem('gv_passport_type', 'bordro'); } catch {}
+        try { localStorage.setItem('gv_passport_type', 'bordo'); } catch {}
       }
 
       // Upcoming Trip
@@ -588,13 +617,11 @@ export async function fetchAndMergeUserDataFromCloud(userIdOrUsername = null) {
         silenceAndHydrateUnlockedAchievements();
       }
 
-      cloudHydratedFor = getCurrentUserIdentifier();
       notifyStatus('synced');
       return data;
     }
 
     if (!hadReadError) {
-      cloudHydratedFor = getCurrentUserIdentifier();
       notifyStatus('synced');
     }
   } catch (err) {
@@ -726,12 +753,45 @@ export async function getCloudTravelerProfile(username) {
     const usernameSnap = await getDoc(doc(db, 'usernames', clean));
     if (usernameSnap.exists()) {
       const uData = usernameSnap.data();
-      const userSnap = await getDoc(doc(db, 'users', uData.uid));
-      if (userSnap.exists()) {
-        return userSnap.data();
-      }
+      try {
+        if (uData?.uid) {
+          const userSnap = await getDoc(doc(db, 'users', uData.uid));
+          if (userSnap.exists()) {
+            return userSnap.data();
+          }
+        }
+      } catch {}
+      // /users/{uid} okunamazsa community_users üzerinden okuma fallback'i
+      try {
+        if (uData?.uid) {
+          const commSnap = await getDoc(doc(db, 'community_users', uData.uid));
+          if (commSnap.exists()) {
+            return commSnap.data();
+          }
+        }
+        const commByUsername = await getDoc(doc(db, 'community_users', clean));
+        if (commByUsername.exists()) {
+          return commByUsername.data();
+        }
+        const commQuery = query(collection(db, 'community_users'), where('username', '==', clean), limit(1));
+        const commQuerySnap = await getDocs(commQuery);
+        if (!commQuerySnap.empty) {
+          return commQuerySnap.docs[0].data();
+        }
+      } catch {}
       return uData;
     }
+    try {
+      const commByUsername = await getDoc(doc(db, 'community_users', clean));
+      if (commByUsername.exists()) {
+        return commByUsername.data();
+      }
+      const commQuery = query(collection(db, 'community_users'), where('username', '==', clean), limit(1));
+      const commQuerySnap = await getDocs(commQuery);
+      if (!commQuerySnap.empty) {
+        return commQuerySnap.docs[0].data();
+      }
+    } catch {}
   } catch (err) {
     console.warn('Error fetching traveler cloud profile:', err);
   }

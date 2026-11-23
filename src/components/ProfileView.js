@@ -380,10 +380,13 @@ export function renderProfileView(container, onBack) {
           localStorage.removeItem('gv_admin_active');
           localStorage.removeItem('gv_data_owner_key');
           localStorage.removeItem('gv_community_travelers');
+          localStorage.removeItem('gv_city_notes');
+          localStorage.removeItem('gv_custom_routes');
+          localStorage.removeItem('gv_visa_data');
           sessionStorage.removeItem('gv_logged_in');
           sessionStorage.removeItem('gv_profile');
           try {
-            resetTravelData({ skipCloudSync: true });
+            await resetTravelData({ skipCloudSync: true });
           } catch {}
           location.reload();
         }
@@ -475,6 +478,7 @@ export function renderProfileView(container, onBack) {
 
     const currentPassportType = getPassportType();
     const isYesilPassport = currentPassportType === 'yesil';
+    const lightMode = isLightTheme(getTheme());
 
     contentArea.innerHTML = `
       <div class="profile-main">
@@ -503,7 +507,7 @@ export function renderProfileView(container, onBack) {
             <button id="btn-trigger-passport" class="profile-hero-passport-btn ${isYesilPassport ? 'yesil' : 'bordo'}" title="${currentLang === 'tr' ? 'Sanal Gezgin Pasaportu' : 'Virtual Passport'}">
               <div class="passport-hero-badge-icon">
                 <span class="hero-emblem-flag">${getCountryFlagHtml('TR', '🇹🇷', { width: 24, height: 16 })}</span>
-                <span class="hero-p-chip">${isYesilPassport ? 'YEŞİL' : 'BORDO'}</span>
+                <span class="hero-p-chip">${isYesilPassport ? (currentLang === 'tr' ? 'YEŞİL' : 'GREEN') : (currentLang === 'tr' ? 'BORDO' : 'BURGUNDY')}</span>
               </div>
               <div class="passport-hero-info">
                 <div class="passport-hero-title">
@@ -549,7 +553,7 @@ export function renderProfileView(container, onBack) {
               ${earnedMedals.map(m => renderMedalTokenHtml(m, { size: 'md' })).join('')}
             </div>
           ` : `
-            <div style="color:#64748b;font-size:0.85rem;padding:16px;background:rgba(10,15,29,0.5);border-radius:12px;border:1px dashed rgba(255,255,255,0.1);text-align:center;">
+            <div style="color:${lightMode ? '#475569' : '#64748b'};font-size:0.85rem;padding:16px;background:${lightMode ? 'rgba(15,23,42,0.04)' : 'rgba(10,15,29,0.5)'};border-radius:12px;border:1px dashed ${lightMode ? 'rgba(15,23,42,0.16)' : 'rgba(255,255,255,0.1)'};text-align:center;">
               ${currentLang === 'tr' ? 'Henüz madalya kazanılmadı. Haritada yerleri işaretleyerek 3D koleksiyon madalyalarını topla!' : 'No medals earned yet. Mark places on the map to collect 3D commemorative medals!'}
             </div>
           `}
@@ -601,7 +605,7 @@ export function renderProfileView(container, onBack) {
 
               return `
                 <div class="bucket-card" style="
-                  background: rgba(10, 15, 29, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px;
+                  background: ${lightMode ? 'rgba(241, 245, 249, 0.9)' : 'rgba(10, 15, 29, 0.45)'}; border: 1px solid ${lightMode ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 12px;
                   padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.2s ease;
                 ">
                   <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
@@ -609,37 +613,38 @@ export function renderProfileView(container, onBack) {
                       <span style="font-size:1.25rem;">${list.icon}</span>
                       <span style="font-weight:600; font-size:0.9rem; color:var(--theme-text-main, #f8fafc);">${escapeHtml(title)}</span>
                     </div>
-                    <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:99px; background:${isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.15)'}; color:${isCompleted ? '#10b981' : '#60a5fa'};">
+                    <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:99px; background:${isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.15)'}; color:${isCompleted ? (lightMode ? '#059669' : '#10b981') : (lightMode ? '#2563eb' : '#60a5fa')};">
                       ${progress.visited}/${progress.total} (%${progress.percentage})
                     </span>
                   </div>
 
                   <!-- Progress Bar -->
-                  <div class="bucket-progress-bar" style="height:6px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden;">
+                  <div class="bucket-progress-bar" style="height:6px; background:${lightMode ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.08)'}; border-radius:99px; overflow:hidden;">
                     <div class="bucket-progress-fill" style="width:${progress.percentage}%; height:100%; background:${isCompleted ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #8b5cf6)'}; border-radius:99px; transition:width 0.3s ease;"></div>
                   </div>
 
                   <!-- Country Chips -->
                   <div class="bucket-country-chips" style="display:flex; flex-wrap:wrap; gap:5px; margin: 2px 0;">
-                    ${list.countries.map(code => {
-                      const isVis = progress.visitedCountries.includes(code);
+                    ${list.countries.map(item => {
+                      const code = typeof item === 'string' ? item : (item?.code || '');
+                      const isVis = progress.visitedCountries.some(vc => (typeof vc === 'string' ? vc : vc?.code) === code);
                       const rawSt = storageData.worldVisits?.[code]?.status;
                       const st = isVis ? 'visited' : (rawSt === 'wishlist' || rawSt === 'planned' ? rawSt : 'unvisited');
                       const cObj = WORLD_COUNTRIES.find(x => x.code === code);
-                      const cName = cObj ? getCountryDisplayName(cObj) : code;
-                      const flag = (code === 'IL') ? '' : (cObj?.flag || '🌍');
+                      const cName = (typeof item === 'object' && (currentLang === 'tr' ? item.nameTr : item.nameEn)) || (cObj ? getCountryDisplayName(cObj) : code);
+                      const flag = (code === 'IL') ? '' : ((typeof item === 'object' && item.flag) || cObj?.flag || '🌍');
                       const isWish = st === 'wishlist' || st === 'planned';
-                      const chipBg = isVis ? 'rgba(16,185,129,0.2)' : (isWish ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)');
-                      const chipBorder = isVis ? 'rgba(16,185,129,0.4)' : (isWish ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.08)');
-                      const chipColor = isVis ? '#34d399' : (isWish ? '#c084fc' : 'inherit');
+                      const chipBg = isVis ? (lightMode ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.2)') : (isWish ? (lightMode ? 'rgba(168,85,247,0.15)' : 'rgba(168,85,247,0.2)') : (lightMode ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.05)'));
+                      const chipBorder = isVis ? 'rgba(16,185,129,0.4)' : (isWish ? 'rgba(168,85,247,0.4)' : (lightMode ? 'rgba(15,23,42,0.14)' : 'rgba(255,255,255,0.08)'));
+                      const chipColor = isVis ? (lightMode ? '#047857' : '#34d399') : (isWish ? (lightMode ? '#7e22ce' : '#c084fc') : (lightMode ? '#334155' : 'inherit'));
 
                       return `
                         <span class="bucket-country-chip ${st}" title="${escapeHtml(cName)}" style="
                           display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:6px;
                           background:${chipBg}; border:1px solid ${chipBorder}; color:${chipColor}; font-size:0.75rem;
                         ">
-                          <span>${flag}</span>
-                          <span>${escapeHtml(code)}</span>
+                          <span style="display:inline-flex;align-items:center;">${getCountryFlagHtml(code, flag, { width: 16, height: 12 })}</span>
+                          <span>${escapeHtml(cName)}</span>
                           ${isVis ? '<span style="font-size:0.7rem;">✓</span>' : ''}
                         </span>
                       `;
@@ -651,14 +656,14 @@ export function renderProfileView(container, onBack) {
                     ${isCompleted ? `
                       <button type="button" class="bucket-action-btn completed" disabled style="
                         width:100%; padding:7px 12px; border-radius:8px; background:rgba(16,185,129,0.15);
-                        border:1px solid rgba(16,185,129,0.3); color:#10b981; font-size:0.8rem; font-weight:600; cursor:default;
+                        border:1px solid rgba(16,185,129,0.3); color:${lightMode ? '#047857' : '#10b981'}; font-size:0.8rem; font-weight:600; cursor:default;
                       ">
                         🏆 ${currentLang === 'tr' ? 'Tamamlandı!' : 'Completed!'}
                       </button>
                     ` : `
-                      <button type="button" class="bucket-action-btn" data-list-id="${list.id}" style="
-                        width:100%; padding:7px 12px; border-radius:8px; background:rgba(255,255,255,0.06);
-                        border:1px solid rgba(255,255,255,0.12); color:var(--theme-text-main, #f8fafc); font-size:0.8rem;
+                      <button type="button" class="bucket-action-btn" data-list-id="${escapeHtml(list.id)}" style="
+                        width:100%; padding:7px 12px; border-radius:8px; background:${lightMode ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'};
+                        border:1px solid ${lightMode ? 'rgba(15,23,42,0.16)' : 'rgba(255,255,255,0.12)'}; color:${lightMode ? '#0f172a' : 'var(--theme-text-main, #f8fafc)'}; font-size:0.8rem;
                         font-weight:600; cursor:pointer; transition:all 0.15s ease;
                       ">
                         🎯 ${currentLang === 'tr' ? 'Kalanları Hedefe Ekle' : 'Add Remaining to Wishlist'}
@@ -801,9 +806,10 @@ export function renderProfileView(container, onBack) {
 
         gridEl.innerHTML = photos.map(p => {
           const friendly = getFriendlyPlaceName(p.targetId);
+          const safeSrc = sanitizePhotoUrl(p.dataUrl) || '';
           return `
-            <div class="photo-showcase-item" data-id="${p.id}">
-              <img src="${p.dataUrl}" alt="${escapeHtml(friendly.name)}" loading="lazy" />
+            <div class="photo-showcase-item" data-id="${escapeHtml(p.id)}">
+              <img src="${safeSrc}" alt="${escapeHtml(friendly.name)}" loading="lazy" />
               <div class="photo-showcase-overlay">
                 <div class="photo-showcase-tag">
                   <span class="photo-showcase-flag">${friendly.flag}</span>
@@ -826,11 +832,12 @@ export function renderProfileView(container, onBack) {
             const modal = document.createElement('div');
             modal.id = 'photo-lightbox-modal';
             modal.className = 'photo-lightbox-overlay';
+            const safeLightboxSrc = sanitizePhotoUrl(photoObj.dataUrl) || '';
             modal.innerHTML = `
               <div class="photo-lightbox-content">
                 <button type="button" class="photo-lightbox-close" id="btn-close-lightbox">&times;</button>
                 <div class="photo-lightbox-img-wrap">
-                  <img src="${photoObj.dataUrl}" class="photo-lightbox-img" alt="${escapeHtml(friendly.name)}" />
+                  <img src="${safeLightboxSrc}" class="photo-lightbox-img" alt="${escapeHtml(friendly.name)}" />
                 </div>
                 <div class="photo-lightbox-footer">
                   <div class="photo-lightbox-header-row">
@@ -1587,11 +1594,11 @@ export function renderProfileView(container, onBack) {
             <div class="trip-form-group">
               <label>${currentLang === 'tr' ? 'Ulaşım Aracı' : 'Mode of Transport'}</label>
               <div class="trip-trans-row">
-                <button type="button" class="trip-trans-btn ${selectedTrans === 'flight' ? 'active' : ''}" data-trans="flight">✈️ <span>Uçak</span></button>
-                <button type="button" class="trip-trans-btn ${selectedTrans === 'train' ? 'active' : ''}" data-trans="train">🚆 <span>Tren</span></button>
-                <button type="button" class="trip-trans-btn ${selectedTrans === 'car' ? 'active' : ''}" data-trans="car">🚗 <span>Araba</span></button>
-                <button type="button" class="trip-trans-btn ${selectedTrans === 'bus' ? 'active' : ''}" data-trans="bus">🚌 <span>Otobüs</span></button>
-                <button type="button" class="trip-trans-btn ${selectedTrans === 'ship' ? 'active' : ''}" data-trans="ship">🚢 <span>Gemi</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'flight' ? 'active' : ''}" data-trans="flight">✈️ <span>${currentLang === 'tr' ? 'Uçak' : 'Flight'}</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'train' ? 'active' : ''}" data-trans="train">🚆 <span>${currentLang === 'tr' ? 'Tren' : 'Train'}</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'car' ? 'active' : ''}" data-trans="car">🚗 <span>${currentLang === 'tr' ? 'Araba' : 'Car'}</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'bus' ? 'active' : ''}" data-trans="bus">🚌 <span>${currentLang === 'tr' ? 'Otobüs' : 'Bus'}</span></button>
+                <button type="button" class="trip-trans-btn ${selectedTrans === 'ship' ? 'active' : ''}" data-trans="ship">🚢 <span>${currentLang === 'tr' ? 'Gemi' : 'Ship'}</span></button>
               </div>
             </div>
             <div class="trip-form-group">
@@ -2126,7 +2133,7 @@ export function renderProfileView(container, onBack) {
 
           const preview = document.getElementById('settings-preview-avatar');
           if (preview) {
-            preview.innerHTML = `<img src="${uploadedPhotoUrl}" class="avatar-custom-img" alt="Avatar">`;
+            preview.innerHTML = `<img src="${sanitizePhotoUrl(uploadedPhotoUrl) || ''}" class="avatar-custom-img" alt="Avatar">`;
           }
           if (removePhotoBtn) removePhotoBtn.style.display = 'inline-flex';
         };
@@ -2377,9 +2384,9 @@ export function renderProfileView(container, onBack) {
     });
 
     // 7. Danger Zone - Reset Data
-    document.getElementById('profile-reset-map-btn')?.addEventListener('click', () => {
+    document.getElementById('profile-reset-map-btn')?.addEventListener('click', async () => {
       if (confirm(t('resetConfirm'))) {
-        resetTravelData();
+        await resetTravelData();
         alert(currentLang === 'tr' ? 'Harita verileri başarıyla sıfırlandı.' : 'Map data reset successfully.');
         render();
       }
@@ -2481,7 +2488,7 @@ export function renderProfileView(container, onBack) {
         }
 
         try {
-          resetTravelData();
+          await resetTravelData();
           localStorage.removeItem('gv_logged_in');
           localStorage.removeItem('gv_profile');
           sessionStorage.removeItem('gv_logged_in');
@@ -2745,7 +2752,8 @@ export function renderProfileView(container, onBack) {
               ${bucketItems.map((item, index) => {
                 const isPlanned = item.status === 'planned';
                 const statusBadge = isPlanned ? `<span class="bucket-status-tag planned">🟡 ${t('planned')}</span>` : `<span class="bucket-status-tag wishlist">🟣 ${t('wishlist')}</span>`;
-                const flagHtml = item.flag.startsWith('http') ? `<img src="${item.flag}" class="bucket-item-flag" alt="" />` : `<span style="font-size:1.4rem;">${item.flag}</span>`;
+                const safeFlagUrl = item.flag.startsWith('http') ? sanitizePhotoUrl(item.flag) : null;
+                const flagHtml = safeFlagUrl ? `<img src="${safeFlagUrl}" class="bucket-item-flag" alt="" />` : `<span style="font-size:1.4rem;">${escapeHtml(item.flag)}</span>`;
                 return `
                   <div class="bucket-item-card" data-id="${escapeHtml(item.id)}" data-idx="${index}">
                     <div class="bucket-rank-num">#${index + 1}</div>
@@ -2842,7 +2850,7 @@ export function renderProfileView(container, onBack) {
         <div class="share-section" style="margin-top:0;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
             <div>
-              <h3 style="margin-bottom:4px;">✈️ ${t('tabFlights')} & Koleksiyon</h3>
+              <h3 style="margin-bottom:4px;">✈️ ${t('tabFlights')} & ${currentLang === 'tr' ? 'Koleksiyon' : 'Collection'}</h3>
               <p style="color:var(--theme-text-muted, #94a3b8);font-size:0.85rem;">${currentLang === 'tr' ? 'Bindiğin havayolu birliklerini tamamla ve uçak modelleri filonu oluştur.' : 'Collect airline alliances and track your aircraft fleet.'}</p>
             </div>
           </div>
@@ -3029,9 +3037,9 @@ export function renderProfileView(container, onBack) {
                                 </div>
                                 <div class="aircraft-telemetry-hud">
                                   <div class="hud-grid-compact">
-                                    <div class="hud-stat-cell" title="${model.id === 'a380' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : (model.seatLayout || '-')}">
+                                    <div class="hud-stat-cell" title="${model.id === 'a380' ? (currentLang === 'tr' ? 'Alt Kat (Ana Gövde): 3-4-3 | Üst Kat: 2-4-2' : 'Lower Deck: 3-4-3 | Upper Deck: 2-4-2') : escapeHtml(model.seatLayout || '-')}">
                                       <span class="hud-lbl">💺 ${currentLang === 'tr' ? 'Düzen' : 'Layout'}</span>
-                                      <span class="hud-val" style="${model.id === 'a380' ? 'font-size:0.62rem;line-height:1.2;color:#f8fafc;' : ''}">${model.id === 'a380' ? 'Alt 3-4-3<br>Üst 2-4-2' : (model.seatLayout || '-')}</span>
+                                      <span class="hud-val" style="${model.id === 'a380' ? `font-size:0.62rem;line-height:1.2;color:${isLightTheme() ? '#0f172a' : '#f8fafc'};` : ''}">${model.id === 'a380' ? (currentLang === 'tr' ? 'Alt 3-4-3<br>Üst 2-4-2' : 'Lower 3-4-3<br>Upper 2-4-2') : escapeHtml(model.seatLayout || '-')}</span>
                                     </div>
                                     <div class="hud-stat-cell">
                                       <span class="hud-lbl">👥 ${currentLang === 'tr' ? 'Koltuk' : 'Seats'}</span>
@@ -3811,9 +3819,9 @@ export function renderProfileView(container, onBack) {
                     other: {
                       countryCode: (visa.singleCountry || 'INT').toUpperCase().slice(0, 3),
                       docTypeEyebrow: (otherCountryName ? `${otherCountryName.toUpperCase()} · ` : '') + 'OFFICIAL VISA • VİZE',
-                      docTitle: otherCountryName ? `${otherCountryName.toUpperCase()} VISA` : escapeHtml(vTypeInfo.title || 'INTERNATIONAL VISA'),
+                      docTitle: otherCountryName ? `${otherCountryName.toUpperCase()} VISA` : (vTypeInfo.title || 'INTERNATIONAL VISA'),
                       consulate: otherCountryName ? `EMBASSY / CONSULATE OF ${otherCountryName.toUpperCase()}` : (issuingLabel || 'CONSULAR SECTION'),
-                      validFor: otherCountryName ? otherCountryName.toUpperCase() : escapeHtml(vTypeInfo.title || 'DESTINATION STATE'),
+                      validFor: otherCountryName ? otherCountryName.toUpperCase() : (vTypeInfo.title || 'DESTINATION STATE'),
                       typeCode: 'V',
                       headerGrad: isExpired
                         ? 'linear-gradient(135deg, #4b5563 0%, #374151 100%)'
@@ -3824,7 +3832,7 @@ export function renderProfileView(container, onBack) {
                       stampTop: otherCountryName ? `${otherCountryName.toUpperCase()} EMBASSY` : 'CONSULAR OFFICE',
                       stampCenter: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? otherCountryObj.flag : '🏛️',
                       stampBottom: 'VISA SECTION',
-                      flagSvg: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? `<span style="font-size:1.6rem;line-height:1;">${otherCountryObj.flag}</span>` : `<span style="font-size:1.5rem;line-height:1;">🌍</span>`
+                      flagSvg: (otherCountryObj && otherCountryObj.code !== 'IL' && otherCountryObj.flag) ? `<span style="font-size:1.6rem;line-height:1;">${escapeHtml(otherCountryObj.flag)}</span>` : `<span style="font-size:1.5rem;line-height:1;">🌍</span>`
                     }
                   };
                   const vMeta = visaMetadata[(visa.visaType || 'other').toLowerCase()] || visaMetadata.other;
@@ -3847,13 +3855,13 @@ export function renderProfileView(container, onBack) {
                           <span class="pv-toolbar-tag">🛂 ${currentLang === 'tr' ? 'VİZE' : 'VISA'} ${visaPageIndex} / ${visaPagesCount}</span>
                         </div>
                         <div class="pv-sheet-toolbar-right">
-                          <button type="button" class="pv-action-chip pv2-btn-edit" data-visa-id="${visa.id}" title="${currentLang === 'tr' ? 'Vizeyi Düzenle' : 'Edit Visa'}">
+                          <button type="button" class="pv-action-chip pv2-btn-edit" data-visa-id="${escapeHtml(visa.id)}" title="${currentLang === 'tr' ? 'Vizeyi Düzenle' : 'Edit Visa'}">
                             <span>✏️</span> <span>${currentLang === 'tr' ? 'Düzenle' : 'Edit'}</span>
                           </button>
-                          <button type="button" class="pv-action-chip danger pv2-btn-delete" data-visa-id="${visa.id}" title="${currentLang === 'tr' ? 'Vizeyi Sil' : 'Delete Visa'}">
+                          <button type="button" class="pv-action-chip danger pv2-btn-delete" data-visa-id="${escapeHtml(visa.id)}" title="${currentLang === 'tr' ? 'Vizeyi Sil' : 'Delete Visa'}">
                             <span>🗑️</span> <span>${currentLang === 'tr' ? 'Sil' : 'Delete'}</span>
                           </button>
-                          <button type="button" class="pv-action-chip add-btn passport-add-visa-btn small" data-add-after="${visa.id}" title="${currentLang === 'tr' ? 'Yeni Vize Ekle' : 'Add Visa'}">
+                          <button type="button" class="pv-action-chip add-btn passport-add-visa-btn small" data-add-after="${escapeHtml(visa.id)}" title="${currentLang === 'tr' ? 'Yeni Vize Ekle' : 'Add Visa'}">
                             <span>➕</span> <span>${currentLang === 'tr' ? 'Yeni Ekle' : 'Add'}</span>
                           </button>
                         </div>
@@ -3864,7 +3872,7 @@ export function renderProfileView(container, onBack) {
                         <!-- Security background pattern layer -->
                         <div class="pv-vignette-bg">
                           <div class="pv-guilloche-canvas"></div>
-                          <div class="pv-center-watermark">${vMeta.watermark}</div>
+                          <div class="pv-center-watermark">${escapeHtml(vMeta.watermark)}</div>
                           <div class="pv-microtext-overlay">SCHENGENSTATES•ETATSSCHENGEN•SCHENGENERSTAATEN•EUROPEANUNION•OFFICIALDOCUMENT•</div>
                         </div>
 
@@ -3875,7 +3883,7 @@ export function renderProfileView(container, onBack) {
                             ${vMeta.starsRing ? `<span class="pv-stars-ring">${vMeta.starsRing}</span>` : ''}
                           </div>
                           <div class="pv-header-title-col">
-                            <div class="pv-doc-type-eyebrow">${vMeta.docTypeEyebrow}</div>
+                            <div class="pv-doc-type-eyebrow">${escapeHtml(vMeta.docTypeEyebrow)}</div>
                             <div class="pv-doc-title">${escapeHtml(vMeta.docTitle)}</div>
                             <div class="pv-doc-consulate">${escapeHtml(vMeta.consulate)}</div>
                           </div>
@@ -3891,7 +3899,7 @@ export function renderProfileView(container, onBack) {
                         <!-- Holographic Kinegram Ribbon -->
                         <div class="pv-kinegram-ribbon">
                           <div class="pv-kinegram-inner">
-                            <span>★ ${vMeta.countryCode} ★ VISA ★ SECURITY FEATURE ★ ICAO DOC 9303 ★ HOLOGRAPHIC ★ ★</span>
+                            <span>★ ${escapeHtml(vMeta.countryCode)} ★ VISA ★ SECURITY FEATURE ★ ICAO DOC 9303 ★ HOLOGRAPHIC ★ ★</span>
                           </div>
                         </div>
 
@@ -3910,9 +3918,9 @@ export function renderProfileView(container, onBack) {
                             <div class="pv-consular-stamp" style="--stamp-color:${vMeta.stampColor};">
                               <div class="pv-stamp-outer-ring">
                                 <div class="pv-stamp-inner-ring">
-                                  <div class="pv-stamp-top-text">${vMeta.stampTop}</div>
-                                  <div class="pv-stamp-center-icon">${vMeta.stampCenter}</div>
-                                  <div class="pv-stamp-bot-text">${vMeta.stampBottom}</div>
+                                  <div class="pv-stamp-top-text">${escapeHtml(vMeta.stampTop)}</div>
+                                  <div class="pv-stamp-center-icon">${escapeHtml(vMeta.stampCenter)}</div>
+                                  <div class="pv-stamp-bot-text">${escapeHtml(vMeta.stampBottom)}</div>
                                 </div>
                               </div>
                             </div>
@@ -3938,11 +3946,11 @@ export function renderProfileView(container, onBack) {
                             <div class="pv-field-row">
                               <div class="pv-field-block">
                                 <div class="pv-label">[2] VOM / FROM</div>
-                                <div class="pv-value pv-val-date">${visaFromFmt}</div>
+                                <div class="pv-value pv-val-date">${escapeHtml(visaFromFmt)}</div>
                               </div>
                               <div class="pv-field-block">
                                 <div class="pv-label">[3] BIS / UNTIL</div>
-                                <div class="pv-value pv-val-date ${isExpired ? 'expired-text' : ''}">${visaUntilFmt}</div>
+                                <div class="pv-value pv-val-date ${isExpired ? 'expired-text' : ''}">${escapeHtml(visaUntilFmt)}</div>
                               </div>
                             </div>
 
@@ -3950,15 +3958,15 @@ export function renderProfileView(container, onBack) {
                             <div class="pv-field-row-3">
                               <div class="pv-field-block">
                                 <div class="pv-label">[4] ART / TYPE</div>
-                                <div class="pv-value pv-val-code">${vMeta.typeCode}</div>
+                                <div class="pv-value pv-val-code">${escapeHtml(vMeta.typeCode)}</div>
                               </div>
                               <div class="pv-field-block">
                                 <div class="pv-label">[5] ENTRIES</div>
-                                <div class="pv-value pv-val-code pv-accent-code">${entriesLabel}</div>
+                                <div class="pv-value pv-val-code pv-accent-code">${escapeHtml(entriesLabel)}</div>
                               </div>
                               <div class="pv-field-block">
                                 <div class="pv-label">[6] DURATION</div>
-                                <div class="pv-value pv-val-code">${durationLabel} <span class="pv-unit">${currentLang === 'tr' ? 'GÜN' : 'DAYS'}</span></div>
+                                <div class="pv-value pv-val-code">${escapeHtml(durationLabel)} <span class="pv-unit">${currentLang === 'tr' ? 'GÜN' : 'DAYS'}</span></div>
                               </div>
                             </div>
 
@@ -3970,7 +3978,7 @@ export function renderProfileView(container, onBack) {
                               </div>
                               <div class="pv-field-block">
                                 <div class="pv-label">[8] AM / ON</div>
-                                <div class="pv-value">${issueDateFmt}</div>
+                                <div class="pv-value">${escapeHtml(issueDateFmt)}</div>
                               </div>
                             </div>
 
@@ -4512,7 +4520,7 @@ export function renderProfileView(container, onBack) {
                 eBtn('2','02', existingVisa?.entries==='2') +
                 eBtn('1','01', existingVisa?.entries==='1') +
               '</div>' +
-              '<input type="hidden" id="vf-entries" value="' + (existingVisa?.entries||'mult') + '">' +
+              '<input type="hidden" id="vf-entries" value="' + escapeHtml(existingVisa?.entries||'mult') + '">' +
             '</div>' +
             '<div class="visa-form-field">' +
               '<label>' + (lang==='tr'?'Kalış Süresi (Gün)':'Duration (Days)') + '</label>' +
@@ -4522,16 +4530,16 @@ export function renderProfileView(container, onBack) {
                 dBtn('180','180', existingVisa?.durationDays===180) +
                 dBtn('custom', lang==='tr'?'Özel':'Custom', hasCustomDur) +
               '</div>' +
-              '<input type="number" class="visa-form-input" id="vf-duration-custom" min="1" max="365" value="' + (hasCustomDur?existingVisa.durationDays:'') + '" style="display:' + (hasCustomDur?'block':'none') + ';margin-top:8px;">' +
-              '<input type="hidden" id="vf-duration" value="' + (existingVisa?.durationDays||90) + '">' +
+              '<input type="number" class="visa-form-input" id="vf-duration-custom" min="1" max="365" value="' + (hasCustomDur?escapeHtml(existingVisa.durationDays):'') + '" style="display:' + (hasCustomDur?'block':'none') + ';margin-top:8px;">' +
+              '<input type="hidden" id="vf-duration" value="' + escapeHtml(existingVisa?.durationDays||90) + '">' +
             '</div>' +
             '<div class="visa-form-row-2col">' +
-              '<div class="visa-form-field"><label>' + (lang==='tr'?'Başlangıç Tarihi':'Valid From') + '</label><input type="date" class="visa-form-input" id="vf-from" value="' + (existingVisa?.validFrom||'') + '"></div>' +
-              '<div class="visa-form-field"><label>' + (lang==='tr'?'Bitiş Tarihi':'Valid Until') + '</label><input type="date" class="visa-form-input" id="vf-until" value="' + (existingVisa?.validUntil||'') + '"></div>' +
+              '<div class="visa-form-field"><label>' + (lang==='tr'?'Başlangıç Tarihi':'Valid From') + '</label><input type="date" class="visa-form-input" id="vf-from" value="' + escapeHtml(existingVisa?.validFrom||'') + '"></div>' +
+              '<div class="visa-form-field"><label>' + (lang==='tr'?'Bitiş Tarihi':'Valid Until') + '</label><input type="date" class="visa-form-input" id="vf-until" value="' + escapeHtml(existingVisa?.validUntil||'') + '"></div>' +
             '</div>' +
             '<div class="visa-form-field">' +
               '<label>' + (lang==='tr'?'Vize No (Opsiyonel)':'Visa Number (Optional)') + '</label>' +
-              '<input type="text" class="visa-form-input" id="vf-visano" placeholder="' + (lang==='tr'?'Otomatik üretilir':'Auto-generated if empty') + '" value="' + (existingVisa?.visaNumber||'') + '">' +
+              '<input type="text" class="visa-form-input" id="vf-visano" placeholder="' + (lang==='tr'?'Otomatik üretilir':'Auto-generated if empty') + '" value="' + escapeHtml(existingVisa?.visaNumber||'') + '">' +
             '</div>' +
           '</div>' +
           '<div class="passport-visa-form-footer">' +
@@ -4557,14 +4565,14 @@ export function renderProfileView(container, onBack) {
               (searchable ? '<div class="cfs-search-box"><input type="text" class="cfs-search-input" placeholder="' + (lang === 'tr' ? 'Ülke ara...' : 'Search country...') + '" autocomplete="off"></div>' : '') +
               '<div class="cfs-options-list">' +
                 items.map(it =>
-                  '<div class="cfs-option-item' + (it.value === (curItem ? curItem.value : '') ? ' selected' : '') + '" data-val="' + it.value + '">' +
+                  '<div class="cfs-option-item' + (it.value === (curItem ? curItem.value : '') ? ' selected' : '') + '" data-val="' + escapeHtml(it.value) + '">' +
                     '<span class="cfs-option-flag">' + it.flagHtml + '</span>' +
                     '<span class="cfs-option-label">' + escapeHtml(it.label) + '</span>' +
                   '</div>'
                 ).join('') +
               '</div>' +
             '</div>' +
-            '<input type="hidden" id="' + inputId + '" value="' + (curItem ? curItem.value : '') + '">' +
+            '<input type="hidden" id="' + inputId + '" value="' + escapeHtml(curItem ? curItem.value : '') + '">' +
           '</div>';
 
         const trigger = wrap.querySelector('#' + inputId + '-trigger');

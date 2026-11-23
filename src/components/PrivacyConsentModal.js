@@ -80,8 +80,8 @@ export function checkPrivacyConsent(onAccepted) {
           <span><strong>${isTr ? 'Bulut Senkronizasyonu:' : 'Cloud Sync:'}</strong> ${isTr ? 'Giriş bilgileriniz haritanızı senkronize etmek için Firebase altyapısında şifreli saklanır.' : 'Account data is securely stored with Firebase to sync your travel map.'}</span>
         </div>
         <div style="margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px;">
-          <span style="font-size: 1rem;">📍</span>
-          <span><strong>${isTr ? 'Konum Gizliliği:' : 'Location Privacy:'}</strong> ${isTr ? 'GPS yalnızca haritada yerinizi bulmak için anlık kullanılır; arka planda ASLA izlenmez.' : 'GPS is only used on-demand to center the map; never tracked in background.'}</span>
+          <span style="font-size: 1rem;">🗺️</span>
+          <span><strong>${isTr ? 'Harita & Seyahat Verileri:' : 'Map & Travel Data:'}</strong> ${isTr ? 'İşaretlediğiniz ülkeler, şehirler ve notlar yalnızca sizin kontrolünüzde saklanır.' : 'Countries, cities, and notes you mark are stored strictly under your control.'}</span>
         </div>
         <div style="display: flex; align-items: flex-start; gap: 8px;">
           <span style="font-size: 1rem;">🔒</span>

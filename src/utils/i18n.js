@@ -133,7 +133,7 @@ const TRANSLATIONS = {
     resetColors: 'Varsayılan Renklere Dön',
     colorsReset: 'Durum renkleri varsayılana sıfırlandı.',
     appInfoTitle: 'Gezgin Hakkında',
-    appInfoDesc: 'Sürüm 1.4 (Build 5) • %100 Çevrimdışı ve Kişisel Cihaz Güvenliği',
+    appInfoDesc: 'Sürüm 3.0 • %100 Çevrimdışı ve Kişisel Cihaz Güvenliği',
     // Visa Mode
     visaMode: 'Vize Modu',
     exitVisaMode: 'Haritama Dön',
@@ -325,8 +325,9 @@ const TRANSLATIONS = {
     backupRestored: 'Backup successfully restored and map updated!',
     backupError: 'Failed to read backup file or invalid format!',
     resetColors: 'Reset to Default Colors',
+    colorsReset: 'Colors reset to default',
     appInfoTitle: 'About Gezgin',
-    appInfoDesc: 'Version 1.4 (Build 5) • 100% Offline & Personal Device Privacy',
+    appInfoDesc: 'Version 3.0 • 100% Offline & Personal Device Privacy',
     // Visa Mode
     visaMode: 'Visa Mode',
     exitVisaMode: 'Back to My Map',

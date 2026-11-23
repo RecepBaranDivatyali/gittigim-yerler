@@ -106,6 +106,9 @@ function initApp() {
           checkOnboarding();
         });
       }, 600);
+      setTimeout(() => {
+        import('./components/ProfileView.js').catch(() => {});
+      }, 1200);
     } else {
       if (window.__refreshMapStats) window.__refreshMapStats();
       if (window.__leafletMapInstance) {
@@ -117,10 +120,16 @@ function initApp() {
   async function showProfile() {
     currentView = 'profile';
     profileContainer.style.display = 'block';
-    const { renderProfileView } = await import('./components/ProfileView.js');
-    renderProfileView(profileContainer, () => {
-      showMap();
-    });
+    try {
+      const { renderProfileView } = await import('./components/ProfileView.js');
+      renderProfileView(profileContainer, () => {
+        showMap();
+      });
+    } catch (err) {
+      currentView = 'map';
+      profileContainer.style.display = 'none';
+      console.warn('Profile load error:', err);
+    }
   }
 
   window.addEventListener('GezginFlyToCountry', (e) => {

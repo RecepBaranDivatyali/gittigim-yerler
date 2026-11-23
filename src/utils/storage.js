@@ -542,7 +542,7 @@ export function exportBackup() {
   return jsonStr;
 }
 
-export function resetTravelData({ skipCloudSync = false } = {}) {
+export async function resetTravelData({ skipCloudSync = false } = {}) {
   try {
     cancelPendingCloudSync();
   } catch {}
@@ -564,33 +564,42 @@ export function resetTravelData({ skipCloudSync = false } = {}) {
   localStorage.removeItem('gv_visa_overrides');
   localStorage.removeItem('gv_passport_type');
   localStorage.removeItem('gv_upcoming_trip');
+  localStorage.removeItem('gv_custom_routes');
+  localStorage.removeItem('gv_city_notes');
+  localStorage.removeItem('gv_visa_data');
+  localStorage.removeItem('gittigim_yerler_notifications_v2');
+  localStorage.removeItem('gv_community_travelers');
   unlockedCache = null;
-  deleteAllPhotos().catch(e => console.warn('Photo cleanup error:', e));
+  await deleteAllPhotos().catch(e => console.warn('Photo cleanup error:', e));
   notifyStateChange({ skipCloudSync });
 }
 
 export function importBackup(fileContent) {
   try {
     const data = JSON.parse(fileContent);
-    if (data.turkeyVisits) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
-    if (data.worldVisits) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
-    if (data.worldCities) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
+    const isPlainObj = (v) => Boolean(v && typeof v === 'object' && !Array.isArray(v));
+    if (!isPlainObj(data)) {
+      throw new Error('Invalid backup structure');
+    }
+    if (isPlainObj(data.turkeyVisits)) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
+    if (isPlainObj(data.worldVisits)) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
+    if (Array.isArray(data.worldCities)) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
     const prof = data.profile || data.userProfile;
-    if (prof) {
+    if (isPlainObj(prof)) {
       safeSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(prof));
       safeSetItem('gv_profile', JSON.stringify(prof));
     }
-    if (data.userAirlines) safeSetItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(data.userAirlines));
-    if (data.userAircraft) safeSetItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(data.userAircraft));
-    if (data.bucketRanks) safeSetItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(data.bucketRanks));
-    if (data.savedFriends) safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(data.savedFriends));
-    if (data.userFeedbacks) safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(data.userFeedbacks));
-    if (data.feedbackOverrides) safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(data.feedbackOverrides));
-    if (data.homeCountry) setHomeCountry(data.homeCountry);
-    if (data.passportType) safeSetItem('gv_passport_type', data.passportType);
-    if (data.upcomingTrip) safeSetItem('gv_upcoming_trip', JSON.stringify(data.upcomingTrip));
-    if (data.userVisas) safeSetItem('gv_user_visas_v1', JSON.stringify(data.userVisas));
-    if (data.visaOverrides) safeSetItem('gv_visa_overrides', JSON.stringify(data.visaOverrides));
+    if (isPlainObj(data.userAirlines)) safeSetItem(STORAGE_KEYS.USER_AIRLINES, JSON.stringify(data.userAirlines));
+    if (isPlainObj(data.userAircraft)) safeSetItem(STORAGE_KEYS.USER_AIRCRAFT, JSON.stringify(data.userAircraft));
+    if (Array.isArray(data.bucketRanks)) safeSetItem(STORAGE_KEYS.BUCKET_RANKS, JSON.stringify(data.bucketRanks));
+    if (Array.isArray(data.savedFriends)) safeSetItem(STORAGE_KEYS.SAVED_FRIENDS, JSON.stringify(data.savedFriends));
+    if (Array.isArray(data.userFeedbacks)) safeSetItem(STORAGE_KEYS.USER_FEEDBACKS, JSON.stringify(data.userFeedbacks));
+    if (isPlainObj(data.feedbackOverrides)) safeSetItem(STORAGE_KEYS.FEEDBACK_STATUS_OVERRIDES, JSON.stringify(data.feedbackOverrides));
+    if (typeof data.homeCountry === 'string' && data.homeCountry.trim()) setHomeCountry(data.homeCountry);
+    if (typeof data.passportType === 'string' && data.passportType.trim()) safeSetItem('gv_passport_type', data.passportType);
+    if (isPlainObj(data.upcomingTrip)) safeSetItem('gv_upcoming_trip', JSON.stringify(data.upcomingTrip));
+    if (Array.isArray(data.userVisas)) safeSetItem('gv_user_visas_v1', JSON.stringify(data.userVisas));
+    if (isPlainObj(data.visaOverrides)) safeSetItem('gv_visa_overrides', JSON.stringify(data.visaOverrides));
     notifyStateChange();
     return true;
   } catch (e) {
@@ -914,58 +923,57 @@ export async function saveUserFeedback(item) {
   }
 }
 
-// Telegram Bot Direct Fallback Credentials
-const TELEGRAM_BOT_TOKEN = '8842381582:AAH_tgTR4uAudrcIQ1SCbgRzcear3wfP2cU';
-const TELEGRAM_CHAT_ID = '7906240525';
+function getFeedbackApiEndpoint() {
+  if (typeof window !== 'undefined' && window.location) {
+    const { protocol, hostname } = window.location;
+    if (
+      (protocol === 'https:' || protocol === 'http:') &&
+      hostname &&
+      hostname !== 'localhost' &&
+      hostname !== '127.0.0.1' &&
+      !window.Capacitor
+    ) {
+      return '/api/feedback';
+    }
+  }
+  return 'https://gittigim-yerler.vercel.app/api/feedback';
+}
 
-export async function sendFeedbackToTelegramDirect(fb, options = {}) {
+export async function sendFeedbackToTelegramDirect(fb, _options = {}) {
   try {
-    const typeLabel = fb.type === 'bug' ? '🐞 Hata / Bug' : (fb.type === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
-    const nowStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
-    const createdStr = fb.createdAt ? new Date(fb.createdAt).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : nowStr;
-    const cleanMsg = String(fb.message || '').trim().slice(0, 1000);
-    const cleanContact = fb.contact ? String(fb.contact).trim().slice(0, 120) : 'Belirtilmedi';
-    const cleanUsername = fb.username ? String(fb.username).trim().slice(0, 60) : 'Gezgin';
-    const cleanId = String(fb.id || ('fb_' + Date.now())).trim().slice(0, 50);
-
-    const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    let headerPrefix = '📬 <b>Yeni Gezgin Bildirimi!</b>';
-    if (options.isHistorical || fb.isHistoricalArchive) {
-      headerPrefix = '📜 <b>[Geçmiş Bildirim Arşivi - Otomatik İletim]</b>';
-    } else if (options.isQueued || fb.synced === false) {
-      headerPrefix = '🕒 <b>[Kuyruktan İletildi - Gecikmeli Teslimat]</b>';
+    const cleanMsg = String(fb?.message || '').trim().slice(0, 1000);
+    if (!cleanMsg) {
+      return { ok: false, error: 'Mesaj boş olamaz' };
     }
-
-    let timeDetails = `🕒 <b>Zaman:</b> ${esc(nowStr)}`;
-    if (createdStr && createdStr !== nowStr) {
-      timeDetails = `📅 <b>Oluşturulma:</b> ${esc(createdStr)}\n⚡ <b>İletilme:</b> ${esc(nowStr)}`;
-    }
-
-    const telegramText = `${headerPrefix}\n\n🆔 <b>ID:</b> <code>${esc(cleanId)}</code>\n🏷️ <b>Tür:</b> ${esc(typeLabel)}\n👤 <b>Kullanıcı:</b> ${esc(cleanUsername)}\n📱 <b>İletişim:</b> ${esc(cleanContact)}\n\n📝 <b>Mesaj:</b>\n${esc(cleanMsg)}\n\n${timeDetails}`;
+    const cleanContact = fb?.contact ? String(fb.contact).trim().slice(0, 120) : 'Belirtilmedi';
+    const cleanUsername = fb?.username ? String(fb.username).trim().slice(0, 60) : 'Gezgin';
+    const cleanId = String(fb?.id || ('fb_' + Date.now())).trim().slice(0, 50);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    const apiUrl = getFeedbackApiEndpoint();
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: telegramText,
-        parse_mode: 'HTML'
+        id: cleanId,
+        type: fb?.type || 'suggestion',
+        message: cleanMsg,
+        contact: cleanContact,
+        username: cleanUsername
       }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
 
-    const data = await res.json();
-    if (data && data.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && (data?.ok || data?.success)) {
       return { ok: true };
     }
-    return { ok: false, error: data?.description || 'Telegram reddetti' };
+    return { ok: false, error: data?.error || data?.details || 'Bildirim sunucusu reddetti' };
   } catch (err) {
-    console.warn('Direct Telegram dispatch error:', err);
+    console.warn('Feedback API dispatch error:', err);
     return { ok: false, error: err?.name === 'AbortError' ? 'Zaman aşımı (12s)' : (err?.message || 'Ağ bağlantı hatası') };
   }
 }
