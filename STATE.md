@@ -2,8 +2,8 @@
 
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
-- iOS sürüm: **3.0 (Derleme 66)** — Apple App Store'da **Yayında / Onaylandı (`READY_FOR_SALE`)** 🎉🍏
-- Android sürüm: **3.0** (versionCode **17**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **Yayında (`State 0`)** 🌸
+- iOS sürüm: **3.1** (GitHub Actions derlemesi tetiklendi; önceki **3.0 (Derleme 66)** yayında) 🍏
+- Android sürüm: **3.1** (versionCode **18**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **İncelemede (`State 5`)** 🌸
 - Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik yayında)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
@@ -12,9 +12,10 @@
 AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık sorun yok. (Web, Mobil ve Tablet/Katlanabilir ekranların tamamı %100 uyumlu ve E2E testleriyle doğrulandı).
+- Bilinen açık sorun yok. (Web, Mobil ve Tablet/Katlanabilir ekranların tamamı %100 uyumlu; Sürüm 3.1 tüm mağazalara gönderildi).
 
 ## Son Değişiklikler
+- 2026-11-23: Gezgin Sürüm 3.1 (vc 18) Android paketleri derlendi ve Google Play (`completed`) + Huawei AppGallery'ye (`State 5`) yüklendi; Genel Müdürlük portföyü 3.1 APK ile güncellendi; iOS 3.1 GitHub Actions derlemesi tetiklendi.
 - 2026-11-23: Tablet ve katlanabilir ekranlar (`673x841`, `744x1133`, `768x1024`, `800x1280`, `820x1180`, `834x1194`, `1024x768`, `1024x1366`, `1180x820`) için %100 dikey/yatay responsive uyum sağlandı (Profil `Çıkış Yap` ve 2 satırlı sekme barı, harita üst bar ikon/kompakt geçişi, `#layer-hud` 12px ayrımı, yatay tablet modal kaydırma, `PhoneSimulator.js` iPadOS/Android tablet tespiti, `AndroidManifest.xml` `resizeableActivity="true"`; 9/9 tablet E2E PASS).
 - 2026-11-23: 360° Denetimdeki tüm bulgular onarıldı (Keşif paketleri `[object Object]` -> bayraklı tam ülke/harika adı, masaüstü arama çubuğu çakışması, açık tema `light`/`natgeo_atlas` kontrastları, Türkçe `'İ'` araması, Tayvan `CN-TW` ve `XN.json` 404, mobil geri bildirim URL 404, çevrimdışı `ProfileView` preload & kilit koruması, çıkışta `gv_city_notes`/`gv_custom_routes`/`gv_visa_data`/`await deleteAllPhotos` temizliği, açık Telegram token gizleme, `firestore.rules` sahiplik kuralları; 19/19 test + 6/6 E2E PASS).
 - 2026-11-21: Canlı web (`gittigim-yerler.vercel.app`) ve mobil uygulama (Android/iOS/Capacitor/Offline/Veritabanı) 4 uzman ajan + 35+ gerçek Puppeteer E2E senaryosu ile ayrı ayrı denetlendi ve kapsamlı rapor hazırlandı.
