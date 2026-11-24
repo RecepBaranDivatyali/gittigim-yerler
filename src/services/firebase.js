@@ -1,9 +1,16 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import {
+  initializeAuth,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
+  getAuth
+} from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
+  persistentSingleTabManager,
   getFirestore
 } from 'firebase/firestore';
 
@@ -20,19 +27,36 @@ const firebaseConfig = {
 // Initialize Firebase App singleton
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firebase Auth
-export const auth = getAuth(app);
+const isNative = typeof window !== 'undefined' && Boolean(window.Capacitor?.isNativePlatform?.());
+
+// Initialize Firebase Auth (avoid indexedDBLocalPersistence deadlock on Capacitor iOS/Android WebView)
+let firebaseAuth;
+if (isNative) {
+  try {
+    firebaseAuth = initializeAuth(app, {
+      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
+    });
+  } catch (err) {
+    console.warn('Native initializeAuth fallback to getAuth:', err);
+    firebaseAuth = getAuth(app);
+  }
+} else {
+  firebaseAuth = getAuth(app);
+}
+export const auth = firebaseAuth;
 
 // Initialize Firestore with Offline-First Persistent Cache
 let firestoreDb;
 try {
   firestoreDb = initializeFirestore(app, {
     localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager()
+      tabManager: isNative
+        ? persistentSingleTabManager({ forceOwnership: true })
+        : persistentMultipleTabManager()
     })
   });
 } catch (err) {
-  console.warn('Firestore multi-tab persistent cache fallback to default:', err);
+  console.warn('Firestore persistent cache fallback to default:', err);
   firestoreDb = getFirestore(app);
 }
 

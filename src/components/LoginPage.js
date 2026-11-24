@@ -53,6 +53,34 @@ const HIDE_APPLE_BUTTON = (() => {
   try { return window.Capacitor?.getPlatform?.() === 'android'; } catch { return false; }
 })();
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function withTimeout(promise, ms, fallbackOrThrow) {
+  let timerId = null;
+  const timeoutPromise = new Promise((resolve, reject) => {
+    timerId = setTimeout(() => {
+      if (fallbackOrThrow instanceof Error) {
+        reject(fallbackOrThrow);
+      } else if (typeof fallbackOrThrow === 'function') {
+        try {
+          resolve(fallbackOrThrow());
+        } catch (err) {
+          reject(err);
+        }
+      } else if (fallbackOrThrow !== undefined) {
+        resolve(fallbackOrThrow);
+      } else {
+        const err = new Error('OPERATION_TIMEOUT');
+        err.code = 'auth/network-request-failed';
+        reject(err);
+      }
+    }, ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timerId !== null) clearTimeout(timerId);
+  });
+}
+
 /** Eski veri var mı? (giriş yapılmadan önce localStorage'da gezgin verisi olan kullanıcılar) */
 function hasLegacyData() {
   try {
@@ -115,6 +143,7 @@ export function renderLoginPage(container, onLogin) {
   let authMode = 'login'; // 'login' | 'register'
   let rememberMe = true;
   let selectedAvatar = '🧭';
+  let showAllAvatars = false;
   let emailVal = '';
   let passwordVal = '';
   let usernameVal = '';
@@ -184,7 +213,7 @@ export function renderLoginPage(container, onLogin) {
       // Pull and merge ONLY this user's cloud data before rendering the map
       if (navigator.onLine && !profile?.isGuest) {
         try {
-          const cloudData = await fetchAndMergeUserDataFromCloud(profile.username);
+          const cloudData = await withTimeout(fetchAndMergeUserDataFromCloud(profile.username), 6000, null);
           if (cloudData) {
             if (cloudData.displayName && authMode !== 'register') {
               profile.username = cloudData.displayName;
@@ -232,6 +261,11 @@ export function renderLoginPage(container, onLogin) {
 
   function render() {
     const currentLang = getLanguage();
+    const quickAvatars = ALLOWED_AVATARS.slice(0, 6);
+    if (!quickAvatars.includes(selectedAvatar)) {
+      quickAvatars[quickAvatars.length - 1] = selectedAvatar;
+    }
+    const displayedAvatars = showAllAvatars ? ALLOWED_AVATARS : quickAvatars;
 
     container.innerHTML = `
       <div class="login-overlay">
@@ -308,18 +342,25 @@ export function renderLoginPage(container, onLogin) {
           </div>
 
           <!-- Email/Password Auth Form -->
-          <form id="auth-main-form" class="login-form" onsubmit="return false;">
+          <form id="auth-main-form" class="login-form" novalidate>
             ${authMode === 'register' ? `
               <div class="input-group">
                 <label for="auth-username">${currentLang === 'tr' ? 'Gezgin Adı / Kullanıcı Adı (Maks 20)' : 'Traveler Name / Username (Max 20)'}</label>
-                <input type="text" id="auth-username" maxlength="20" placeholder="${currentLang === 'tr' ? 'Örn: gezgin_mert, seyahatsever...' : 'e.g. globetrotter'}" value="${sanitizeText(usernameVal, 20)}" autocomplete="name" required />
+                <input type="text" id="auth-username" maxlength="20" placeholder="${currentLang === 'tr' ? 'Örn: gezgin_mert, seyahatsever...' : 'e.g. globetrotter'}" value="${sanitizeText(usernameVal, 20)}" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" />
               </div>
 
-              <!-- Avatar Selection for Registration -->
-              <div class="avatar-section" style="margin-top:4px;margin-bottom:8px;">
-                <div class="avatar-label">${t('selectAvatar')}</div>
-                <div class="avatar-grid" id="login-avatar-grid">
-                  ${ALLOWED_AVATARS.map((emoji) => `
+              <!-- Compact Avatar Selection for Registration -->
+              <div class="avatar-section avatar-section-compact" style="margin-top:4px;margin-bottom:8px;">
+                <div class="avatar-header-row">
+                  <div class="avatar-label">${t('selectAvatar')} <strong class="avatar-current-badge">${selectedAvatar}</strong></div>
+                  <button type="button" class="avatar-expand-btn" id="btn-toggle-avatars" aria-expanded="${showAllAvatars ? 'true' : 'false'}">
+                    ${showAllAvatars
+                      ? (currentLang === 'tr' ? 'Daralt ▴' : 'Less ▴')
+                      : (currentLang === 'tr' ? `Tümü (${ALLOWED_AVATARS.length}) ▾` : `All (${ALLOWED_AVATARS.length}) ▾`)}
+                  </button>
+                </div>
+                <div class="avatar-grid ${showAllAvatars ? 'expanded' : 'compact'}" id="login-avatar-grid">
+                  ${displayedAvatars.map((emoji) => `
                     <button type="button" class="avatar-btn ${emoji === selectedAvatar ? 'selected' : ''}" data-emoji="${emoji}" tabindex="-1" aria-label="Avatar ${emoji}">${emoji}</button>
                   `).join('')}
                 </div>
@@ -328,13 +369,13 @@ export function renderLoginPage(container, onLogin) {
 
             <div class="input-group">
               <label for="auth-email">${authMode === 'login' ? (currentLang === 'tr' ? 'E-Posta veya Kullanıcı Adı' : 'Email or Username') : (currentLang === 'tr' ? 'E-Posta Adresi' : 'Email Address')}</label>
-              <input type="${authMode === 'login' ? 'text' : 'email'}" id="auth-email" placeholder="${authMode === 'login' ? (currentLang === 'tr' ? 'ornek@email.com veya kullaniciadi' : 'example@email.com or username') : 'ornek@email.com'}" value="${escapeHtml(emailVal)}" autocomplete="${authMode === 'login' ? 'username' : 'email'}" required />
+              <input type="text" inputmode="email" id="auth-email" placeholder="${authMode === 'login' ? (currentLang === 'tr' ? 'ornek@email.com veya kullaniciadi' : 'example@email.com or username') : 'ornek@email.com'}" value="${escapeHtml(emailVal)}" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="${authMode === 'login' ? 'username' : 'email'}" />
             </div>
 
             <div class="input-group">
               <label for="auth-password">${currentLang === 'tr' ? 'Şifre' : 'Password'}</label>
               <div style="position:relative;">
-                <input type="password" id="auth-password" style="padding-right:44px;" placeholder="${authMode === 'register' ? (currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters') : '••••••••'}" value="${escapeHtml(passwordVal)}" autocomplete="${authMode === 'register' ? 'new-password' : 'current-password'}" required />
+                <input type="password" id="auth-password" style="padding-right:44px;" placeholder="${authMode === 'register' ? (currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters') : '••••••••'}" value="${escapeHtml(passwordVal)}" autocomplete="${authMode === 'register' ? 'new-password' : 'current-password'}" />
                 <button type="button" id="btn-toggle-password" tabindex="-1" title="Şifreyi Göster/Gizle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.1rem;padding:4px;line-height:1;">👁</button>
               </div>
             </div>
@@ -351,6 +392,8 @@ export function renderLoginPage(container, onLogin) {
                 </button>
               ` : ''}
             </div>
+
+            <div id="auth-inline-message" class="auth-inline-msg" role="alert" aria-live="polite" style="display:none;"></div>
 
             <button type="submit" id="auth-submit-btn" class="login-btn" style="margin-top:6px;">
               <span>${authMode === 'login' ? '🚀' : '✨'}</span>
@@ -410,6 +453,42 @@ export function renderLoginPage(container, onLogin) {
     const usernameInput = container.querySelector('#auth-username');
     const rememberCheckbox = container.querySelector('#auth-remember-me');
 
+    const clearAuthMessage = () => {
+      const msgBox = container.querySelector('#auth-inline-message');
+      if (msgBox) {
+        msgBox.textContent = '';
+        msgBox.className = 'auth-inline-msg';
+        msgBox.style.display = 'none';
+      }
+      container.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+    };
+
+    const showAuthMessage = (message, type = 'error', fieldSelector = null) => {
+      const msgBox = container.querySelector('#auth-inline-message');
+      container.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+      if (fieldSelector) {
+        const fieldEl = container.querySelector(fieldSelector);
+        if (fieldEl) {
+          fieldEl.classList.add('input-invalid');
+          try { fieldEl.focus({ preventScroll: true }); } catch {}
+        }
+      }
+      if (msgBox) {
+        msgBox.textContent = message;
+        msgBox.className = `auth-inline-msg is-visible is-${type}`;
+        msgBox.style.display = 'block';
+        try {
+          msgBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch {}
+      }
+    };
+
+    [usernameInput, emailInput, passwordInput].forEach(inputEl => {
+      inputEl?.addEventListener('input', () => {
+        clearAuthMessage();
+      });
+    });
+
     rememberCheckbox?.addEventListener('change', (e) => {
       rememberMe = e.target.checked;
     });
@@ -425,6 +504,7 @@ export function renderLoginPage(container, onLogin) {
 
     // Migration banner butonları
     container.querySelector('#btn-migration-signup')?.addEventListener('click', () => {
+      clearAuthMessage();
       migrateLegacyData = true;
       authMode = 'register';
       render();
@@ -442,8 +522,15 @@ export function renderLoginPage(container, onLogin) {
       if (rememberCheckbox) rememberMe = rememberCheckbox.checked;
     };
 
+    container.querySelector('#btn-toggle-avatars')?.addEventListener('click', () => {
+      syncFormState();
+      showAllAvatars = !showAllAvatars;
+      render();
+    });
+
     container.querySelector('#tab-login')?.addEventListener('click', () => {
       if (authMode !== 'login') {
+        clearAuthMessage();
         syncFormState();
         authMode = 'login';
         render();
@@ -452,6 +539,7 @@ export function renderLoginPage(container, onLogin) {
 
     container.querySelector('#tab-register')?.addEventListener('click', () => {
       if (authMode !== 'register') {
+        clearAuthMessage();
         syncFormState();
         authMode = 'register';
         render();
@@ -459,12 +547,14 @@ export function renderLoginPage(container, onLogin) {
     });
 
     container.querySelector('#link-switch-register')?.addEventListener('click', () => {
+      clearAuthMessage();
       syncFormState();
       authMode = 'register';
       render();
     });
 
     container.querySelector('#link-switch-login')?.addEventListener('click', () => {
+      clearAuthMessage();
       syncFormState();
       authMode = 'login';
       render();
@@ -484,23 +574,39 @@ export function renderLoginPage(container, onLogin) {
 
     container.querySelector('#btn-forgot-password')?.addEventListener('click', async (e) => {
       e.preventDefault();
+      clearAuthMessage();
       syncFormState();
-      const emailInput = container.querySelector('#auth-email');
-      const email = (emailInput?.value || emailVal || '').trim();
-      if (!email || !email.includes('@')) {
-        alert(currentLang === 'tr' ? 'Lütfen önce geçerli bir e-posta adresi yazın.' : 'Please enter a valid email address first.');
-        emailInput?.focus();
+      const email = (emailInput?.value || emailVal || '').trim().toLowerCase();
+      if (!email || !EMAIL_REGEX.test(email)) {
+        showAuthMessage(
+          currentLang === 'tr' ? 'Lütfen önce geçerli bir e-posta adresi yazın.' : 'Please enter a valid email address first.',
+          'error',
+          '#auth-email'
+        );
         return;
       }
       if (!navigator.onLine) {
-        alert(currentLang === 'tr' ? 'Şifre sıfırlama işlemi için internet bağlantısı gereklidir.' : 'Internet connection is required for password reset.');
+        showAuthMessage(
+          currentLang === 'tr' ? 'Şifre sıfırlama işlemi için internet bağlantısı gereklidir.' : 'Internet connection is required for password reset.',
+          'error'
+        );
+        return;
+      }
+      if (!auth) {
+        showAuthMessage(
+          currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor.' : 'Authentication service is currently unavailable.',
+          'error'
+        );
         return;
       }
       try {
-        await sendPasswordResetEmail(auth, email);
-        alert(currentLang === 'tr' 
-          ? `Şifre sıfırlama bağlantısı ${email} adresinize gönderildi. Lütfen gelen kutunuzu (ve spam/gereksiz klasörünü) kontrol edin.` 
-          : `Password reset link has been sent to ${email}. Please check your inbox and spam folder.`);
+        await withTimeout(sendPasswordResetEmail(auth, email), 12000);
+        showAuthMessage(
+          currentLang === 'tr'
+            ? `Şifre sıfırlama bağlantısı ${email} adresinize gönderildi. Lütfen gelen kutunuzu (ve spam/gereksiz klasörünü) kontrol edin.`
+            : `Password reset link has been sent to ${email}. Please check your inbox and spam folder.`,
+          'success'
+        );
       } catch (err) {
         console.warn('Password reset error:', err);
         let msg = currentLang === 'tr' ? 'Şifre sıfırlama e-postası gönderilemedi.' : 'Failed to send password reset email.';
@@ -508,8 +614,10 @@ export function renderLoginPage(container, onLogin) {
           msg = currentLang === 'tr' ? 'Bu e-posta adresiyle kayıtlı bir hesap bulunamadı.' : 'No user found with this email address.';
         } else if (err?.code === 'auth/invalid-email') {
           msg = currentLang === 'tr' ? 'Geçersiz e-posta formatı.' : 'Invalid email format.';
+        } else if (err?.code === 'auth/network-request-failed') {
+          msg = currentLang === 'tr' ? 'Bağlantı hatası veya zaman aşımı. Lütfen tekrar deneyin.' : 'Network error or timeout. Please try again.';
         }
-        alert(msg);
+        showAuthMessage(msg, 'error', '#auth-email');
       }
     });
 
@@ -623,18 +731,27 @@ export function renderLoginPage(container, onLogin) {
     // ── Google ──
     const googleBtn = container.querySelector('#btn-google-auth');
     googleBtn?.addEventListener('click', async () => {
+      clearAuthMessage();
       syncFormState();
       if (!navigator.onLine) {
-        alert(currentLang === 'tr' ? 'Google ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Google.');
+        showAuthMessage(
+          currentLang === 'tr' ? 'Google ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Google.',
+          'error'
+        );
         return;
       }
       if (!auth) {
-        alert(currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.');
+        showAuthMessage(
+          currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.',
+          'error'
+        );
         return;
       }
       setBtnLoading(googleBtn, true);
       try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        try {
+          await withTimeout(setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence), 3500);
+        } catch {}
         let cred;
         if (hasAndroidGoogleBridge || hasIosAuthBridge) {
           const idToken = await requestNativeGoogleIdToken();
@@ -648,7 +765,7 @@ export function renderLoginPage(container, onLogin) {
       } catch (err) {
         if (!isCancelledError(err)) {
           console.warn('Google sign-in error:', err?.code, err?.message);
-          alert(socialErrorMessage(err, 'Google'));
+          showAuthMessage(socialErrorMessage(err, 'Google'), 'error');
         }
       } finally {
         setBtnLoading(googleBtn, false);
@@ -658,18 +775,27 @@ export function renderLoginPage(container, onLogin) {
     // ── Apple ──
     const appleBtn = container.querySelector('#btn-apple-auth');
     appleBtn?.addEventListener('click', async () => {
+      clearAuthMessage();
       syncFormState();
       if (!navigator.onLine) {
-        alert(currentLang === 'tr' ? 'Apple ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Apple.');
+        showAuthMessage(
+          currentLang === 'tr' ? 'Apple ile giriş yapmak için internet bağlantısı gereklidir.' : 'Internet connection is required to sign in with Apple.',
+          'error'
+        );
         return;
       }
       if (!auth) {
-        alert(currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.');
+        showAuthMessage(
+          currentLang === 'tr' ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen e-posta ile giriş yapın.' : 'Authentication service is unavailable. Please sign in with email.',
+          'error'
+        );
         return;
       }
       setBtnLoading(appleBtn, true);
       try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        try {
+          await withTimeout(setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence), 3500);
+        } catch {}
         const appleProvider = new OAuthProvider('apple.com');
         appleProvider.addScope('email');
         appleProvider.addScope('name');
@@ -687,7 +813,7 @@ export function renderLoginPage(container, onLogin) {
       } catch (err) {
         if (!isCancelledError(err)) {
           console.warn('Apple sign-in error:', err?.code, err?.message);
-          alert(socialErrorMessage(err, 'Apple'));
+          showAuthMessage(socialErrorMessage(err, 'Apple'), 'error');
         }
       } finally {
         setBtnLoading(appleBtn, false);
@@ -702,6 +828,8 @@ export function renderLoginPage(container, onLogin) {
         const emo = btn.getAttribute('data-emoji');
         if (ALLOWED_AVATARS.includes(emo)) {
           selectedAvatar = emo;
+          const badge = container.querySelector('.avatar-current-badge');
+          if (badge) badge.textContent = emo;
         }
       });
     });
@@ -712,18 +840,38 @@ export function renderLoginPage(container, onLogin) {
       if (_isSubmitting) return;
       _isSubmitting = true;
       try {
+        clearAuthMessage();
         syncFormState();
 
         if (!navigator.onLine) {
-          alert(currentLang === 'tr'
-            ? 'Giriş yapmak veya kayıt olmak için internet bağlantısı gereklidir. Çevrimdışı devam etmek için "Misafir Olarak Devam Et" seçeneğini kullanabilirsiniz.'
-            : 'Internet connection is required to sign in or register. You can use "Continue as Guest" to use offline.');
+          showAuthMessage(
+            currentLang === 'tr'
+              ? 'Giriş yapmak veya kayıt olmak için internet bağlantısı gereklidir. Çevrimdışı devam etmek için "Misafir Olarak Devam Et" seçeneğini kullanabilirsiniz.'
+              : 'Internet connection is required to sign in or register. You can use "Continue as Guest" to use offline.',
+            'error'
+          );
           return;
         }
 
+        if (!auth) {
+          showAuthMessage(
+            currentLang === 'tr'
+              ? 'Kimlik doğrulama servisine şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin.'
+              : 'Authentication service is currently unavailable. Please try again later.',
+            'error'
+          );
+          return;
+        }
+
+        let profileUsername = '';
+
         if (authMode === 'login') {
           if (!emailVal) {
-            alert(currentLang === 'tr' ? 'Lütfen e-posta adresinizi veya kullanıcı adınızı girin.' : 'Please enter your email or username.');
+            showAuthMessage(
+              currentLang === 'tr' ? 'Lütfen e-posta adresinizi veya kullanıcı adınızı girin.' : 'Please enter your email or username.',
+              'error',
+              '#auth-email'
+            );
             return;
           }
 
@@ -738,61 +886,117 @@ export function renderLoginPage(container, onLogin) {
             } catch {}
 
             if (rememberedEmail) {
-              emailVal = rememberedEmail;
+              emailVal = String(rememberedEmail).trim().toLowerCase();
             } else {
               const hint = await getUsernameLoginHint(cleanInput);
               if (hint.exists && hint.authProvider === 'google') {
-                alert(currentLang === 'tr'
-                  ? 'Bu kullanıcı adı Google hesabına bağlı. Lütfen aşağıdaki "Google ile Devam Et" butonunu kullanın.'
-                  : 'This username is linked to a Google account. Please use the "Continue with Google" button below.');
+                showAuthMessage(
+                  currentLang === 'tr'
+                    ? 'Bu kullanıcı adı Google hesabına bağlı. Lütfen yukarıdaki "Google ile Giriş Yap" butonunu kullanın.'
+                    : 'This username is linked to a Google account. Please use the "Sign in with Google" button above.',
+                  'info',
+                  '#auth-email'
+                );
                 return;
               }
               if (hint.exists && hint.authProvider === 'apple') {
-                alert(currentLang === 'tr'
-                  ? 'Bu kullanıcı adı Apple hesabına bağlı. Lütfen aşağıdaki "Apple ile Devam Et" butonunu kullanın.'
-                  : 'This username is linked to an Apple account. Please use the "Continue with Apple" button below.');
+                showAuthMessage(
+                  currentLang === 'tr'
+                    ? 'Bu kullanıcı adı Apple hesabına bağlı. Lütfen yukarıdaki "Apple ile Giriş Yap" butonunu kullanın.'
+                    : 'This username is linked to an Apple account. Please use the "Sign in with Apple" button above.',
+                  'info',
+                  '#auth-email'
+                );
                 return;
               }
               if (hint.exists && hint.emailHint) {
-                alert(currentLang === 'tr'
-                  ? `Bu kullanıcı adı (${hint.emailHint}) e-postasına bağlı. Güvenlik gereği yeni oturumda e-posta adresinizle giriş yapmanız gerekir.`
-                  : `This username is linked to (${hint.emailHint}). For security, please sign in with your email address on a new session.`);
+                showAuthMessage(
+                  currentLang === 'tr'
+                    ? `Bu kullanıcı adı (${hint.emailHint}) e-postasına bağlı. Güvenlik gereği yeni oturumda e-posta adresinizle giriş yapmanız gerekir.`
+                    : `This username is linked to (${hint.emailHint}). For security, please sign in with your email address on a new session.`,
+                  'info',
+                  '#auth-email'
+                );
                 return;
               }
               if (hint.exists) {
-                alert(currentLang === 'tr'
-                  ? 'Bu kullanıcı adı kayıtlı ancak e-posta bilgisi bulunamadı. Hesabı açtığınız e-posta adresini veya Google/Apple butonunu kullanın.'
-                  : 'This username is registered but email info could not be found. Please use your email address or Google/Apple sign-in.');
+                showAuthMessage(
+                  currentLang === 'tr'
+                    ? 'Bu kullanıcı adı kayıtlı ancak e-posta bilgisi bulunamadı. Hesabı açtığınız e-posta adresini veya Google/Apple butonunu kullanın.'
+                    : 'This username is registered but email info could not be found. Please use your email address or Google/Apple sign-in.',
+                  'info',
+                  '#auth-email'
+                );
                 return;
               }
-              alert(currentLang === 'tr'
-                ? 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı. Yeni hesap için "Kayıt Ol" sekmesini kullanabilirsiniz.'
-                : 'No account found with this username. You can use the "Register" tab to create a new account.');
+              showAuthMessage(
+                currentLang === 'tr'
+                  ? 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı. Yeni hesap için "Kayıt Ol" sekmesini kullanabilirsiniz.'
+                  : 'No account found with this username. You can use the "Register" tab to create a new account.',
+                'error',
+                '#auth-email'
+              );
               return;
             }
+          } else {
+            emailVal = emailVal.trim().toLowerCase();
           }
+
+          if (!passwordVal || passwordVal.length < 4) {
+            showAuthMessage(
+              currentLang === 'tr' ? 'Lütfen şifrenizi girin (en az 4 karakter).' : 'Please enter your password (at least 4 characters).',
+              'error',
+              '#auth-password'
+            );
+            return;
+          }
+
+          // In login mode, only reuse stored profile username if it belongs to this same email
+          let existingName = emailVal.split('@')[0];
+          try {
+            const stored = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
+            if (stored) {
+              const p = JSON.parse(stored);
+              if (p?.username && p?.email && String(p.email).toLowerCase().trim() === emailVal) {
+                existingName = p.username;
+              }
+            }
+          } catch {}
+          profileUsername = existingName;
         } else {
-          if (!emailVal || !emailVal.includes('@')) {
-            alert(currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.');
-            return;
-          }
-        }
-
-        if (!passwordVal || passwordVal.length < 4) {
-          alert(currentLang === 'tr' ? 'Lütfen şifrenizi girin (en az 4 karakter).' : 'Please enter password (min 4 chars).');
-          return;
-        }
-
-        let profileUsername = '';
-        if (authMode === 'register') {
+          // Register mode validations
           const rawUser = usernameVal.trim();
-          profileUsername = sanitizeText(rawUser.slice(0, 20), 20) || emailVal.split('@')[0];
-          if (profileUsername.length < 3) {
-            alert(currentLang === 'tr' 
-              ? 'Kullanıcı adı en az 3 karakter olmalıdır.' 
-              : 'Username must be at least 3 characters.');
+          profileUsername = sanitizeText(rawUser.slice(0, 20), 20);
+          if (!profileUsername || profileUsername.length < 3) {
+            showAuthMessage(
+              currentLang === 'tr'
+                ? 'Kullanıcı adı en az 3 karakter olmalıdır.'
+                : 'Username must be at least 3 characters.',
+              'error',
+              '#auth-username'
+            );
             return;
           }
+
+          emailVal = emailVal.trim().toLowerCase();
+          if (!emailVal || !EMAIL_REGEX.test(emailVal)) {
+            showAuthMessage(
+              currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Please enter a valid email address.',
+              'error',
+              '#auth-email'
+            );
+            return;
+          }
+
+          if (!passwordVal || passwordVal.length < 6) {
+            showAuthMessage(
+              currentLang === 'tr' ? 'Şifre en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.',
+              'error',
+              '#auth-password'
+            );
+            return;
+          }
+
           const isAvail = await isUsernameAvailableAsync(profileUsername);
           if (!isAvail) {
             const hint = await getUsernameLoginHint(profileUsername);
@@ -800,67 +1004,72 @@ export function renderLoginPage(container, onLogin) {
             if (hint.exists && hint.emailHint) {
               extra = ` (${hint.emailHint})`;
             }
-            alert(currentLang === 'tr' 
-              ? `"${profileUsername}" kullanıcı adı zaten kullanımda${extra}. Bu hesap size aitse "Giriş Yap" sekmesinden giriş yapabilirsiniz.` 
-              : `Username "${profileUsername}" is already taken${extra}. If this is your account, please sign in from the "Sign In" tab.`);
+            showAuthMessage(
+              currentLang === 'tr'
+                ? `"${profileUsername}" kullanıcı adı zaten kullanımda${extra}. Bu hesap size aitse "Giriş Yap" sekmesinden giriş yapabilirsiniz.`
+                : `Username "${profileUsername}" is already taken${extra}. If this is your account, please sign in from the "Sign In" tab.`,
+              'error',
+              '#auth-username'
+            );
             return;
           }
-        } else {
-          // In login mode, only reuse stored profile username if it belongs to this same email
-          let existingName = emailVal.split('@')[0];
-          try {
-            const stored = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
-            if (stored) {
-              const p = JSON.parse(stored);
-              if (p?.username && p?.email && String(p.email).toLowerCase().trim() === emailVal.toLowerCase().trim()) {
-                existingName = p.username;
-              }
-            }
-          } catch {}
-          profileUsername = existingName;
         }
 
-        // Capitalize clean display name
-        let formattedName = profileUsername.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-        // Attempt real Firebase Auth in background
-        if (navigator.onLine && auth) {
+        // Authenticate via real Firebase Auth
+        try {
           try {
-            await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-            if (authMode === 'register') {
-              const cred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
-              if (cred.user) {
-                await updateProfile(cred.user, { displayName: formattedName }).catch(() => {});
-              }
-            } else {
-              const cred = await signInWithEmailAndPassword(auth, emailVal, passwordVal);
-              if (cred?.user?.displayName) {
-                formattedName = cred.user.displayName;
-              }
+            await withTimeout(setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence), 3500);
+          } catch {}
+
+          if (authMode === 'register') {
+            const cred = await withTimeout(createUserWithEmailAndPassword(auth, emailVal, passwordVal), 20000);
+            if (cred?.user) {
+              await withTimeout(updateProfile(cred.user, { displayName: profileUsername }), 4000).catch(() => {});
             }
-          } catch (fbErr) {
-            console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
-            let msg = fbErr.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
-            if (fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/invalid-credential') {
-              msg = currentLang === 'tr'
-                ? 'E-posta veya şifre hatalı. Bu hesabı Google/Apple ile açtıysanız o butonla giriş yapın.'
-                : 'Incorrect email or password. If you created this account with Google/Apple, use that button instead.';
-            } else if (fbErr.code === 'auth/user-not-found') {
-              msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
-            } else if (fbErr.code === 'auth/email-already-in-use') {
-              msg = currentLang === 'tr' ? 'Bu e-posta adresi zaten kullanımda.' : 'This email is already registered.';
-            } else if (fbErr.code === 'auth/too-many-requests') {
-              msg = currentLang === 'tr' ? 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.' : 'Too many failed attempts. Please try again later.';
-            } else if (fbErr.code === 'auth/weak-password') {
-              msg = currentLang === 'tr' ? 'Şifre çok zayıf. En az 6 karakter kullanın.' : 'Password too weak. Use at least 6 characters.';
+          } else {
+            const cred = await withTimeout(signInWithEmailAndPassword(auth, emailVal, passwordVal), 20000);
+            if (cred?.user?.displayName) {
+              profileUsername = cred.user.displayName;
             }
-            alert(msg);
-            return;
           }
+        } catch (fbErr) {
+          console.warn('Firebase auth notice:', fbErr?.code || fbErr?.message);
+          let msg = fbErr?.message || (currentLang === 'tr' ? 'Giriş başarısız. Lütfen tekrar deneyin.' : 'Sign in failed. Please try again.');
+          let fieldSel = null;
+          if (fbErr?.code === 'auth/wrong-password' || fbErr?.code === 'auth/invalid-credential') {
+            msg = currentLang === 'tr'
+              ? 'E-posta veya şifre hatalı. Bu hesabı Google/Apple ile açtıysanız o butonla giriş yapın.'
+              : 'Incorrect email or password. If you created this account with Google/Apple, use that button instead.';
+            fieldSel = '#auth-password';
+          } else if (fbErr?.code === 'auth/user-not-found') {
+            msg = currentLang === 'tr' ? 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.' : 'No account found with this email.';
+            fieldSel = '#auth-email';
+          } else if (fbErr?.code === 'auth/email-already-in-use') {
+            msg = currentLang === 'tr' ? 'Bu e-posta adresi zaten kullanımda.' : 'This email is already registered.';
+            fieldSel = '#auth-email';
+          } else if (fbErr?.code === 'auth/invalid-email') {
+            msg = currentLang === 'tr' ? 'Geçersiz e-posta adresi formatı. Lütfen kontrol edin.' : 'Invalid email address format. Please check and try again.';
+            fieldSel = '#auth-email';
+          } else if (fbErr?.code === 'auth/weak-password') {
+            msg = currentLang === 'tr' ? 'Şifre çok zayıf. En az 6 karakter kullanın.' : 'Password too weak. Use at least 6 characters.';
+            fieldSel = '#auth-password';
+          } else if (fbErr?.code === 'auth/too-many-requests') {
+            msg = currentLang === 'tr' ? 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.' : 'Too many failed attempts. Please try again later.';
+          } else if (fbErr?.code === 'auth/operation-not-allowed') {
+            msg = currentLang === 'tr'
+              ? 'E-posta ile kayıt/giriş şu anda etkin değil. Lütfen daha sonra tekrar deneyin.'
+              : 'Email sign-in/registration is currently disabled. Please try again later.';
+          } else if (fbErr?.code === 'auth/network-request-failed') {
+            msg = currentLang === 'tr'
+              ? 'İnternet bağlantısı hatası veya zaman aşımı. Lütfen bağlantınızı kontrol edip tekrar deneyin.'
+              : 'Network error or request timed out. Please check your connection and try again.';
+          }
+          showAuthMessage(msg, 'error', fieldSel);
+          return;
         }
 
         const profile = {
-          username: formattedName,
+          username: profileUsername,
           email: emailVal,
           avatar: selectedAvatar,
           createdAt: new Date().toISOString()
@@ -881,7 +1090,10 @@ export function renderLoginPage(container, onLogin) {
           submitBtn.disabled = true;
           submitBtn.style.opacity = '0.7';
           submitBtn.style.pointerEvents = 'none';
-          submitBtn.innerHTML = `<span>⏳</span><span>${currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...'}</span>`;
+          const loadingLabel = authMode === 'register'
+            ? (currentLang === 'tr' ? 'Kayıt olunuyor...' : 'Registering...')
+            : (currentLang === 'tr' ? 'Giriş yapılıyor...' : 'Signing in...');
+          submitBtn.innerHTML = `<span>⏳</span><span>${loadingLabel}</span>`;
         }
         await handleSubmit();
         if (submitBtn) {

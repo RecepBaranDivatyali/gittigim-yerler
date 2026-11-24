@@ -690,6 +690,24 @@ export async function searchCloudTravelers(searchQuery) {
   }
 }
 
+function withCloudTimeout(promise, ms = 4500) {
+  let timerId = null;
+  const timeoutPromise = new Promise((_, reject) => {
+    timerId = setTimeout(() => reject(new Error('CLOUD_LOOKUP_TIMEOUT')), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timerId !== null) clearTimeout(timerId);
+  });
+}
+
+export function getUsernameLookupKeys(username) {
+  if (!username || typeof username !== 'string') return [];
+  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  if (!clean) return [];
+  const legacySpaced = clean.replace(/[._-]+/g, ' ').trim();
+  return legacySpaced && legacySpaced !== clean ? [clean, legacySpaced] : [clean];
+}
+
 /**
  * Strict Global Username Uniqueness check in Firestore
  */
@@ -699,18 +717,23 @@ export async function isUsernameAvailableInCloud(username, currentUserId = null)
   if (!clean || clean.length < 3) return false;
   if (!db) return true;
 
-  try {
-    // Check usernames directory (lowercase key) — O(1) direct lookup
-    const usernameSnap = await getDoc(doc(db, 'usernames', clean));
-    if (usernameSnap.exists()) {
-      const data = usernameSnap.data();
-      if (currentUserId && data?.uid === currentUserId) {
-        return true; // Owned by the current user
-      }
-      return false; // Already taken by another user
-    }
+  const keys = getUsernameLookupKeys(clean);
 
-    return true;
+  try {
+    return await withCloudTimeout((async () => {
+      for (const key of keys) {
+        // Check usernames directory (lowercase key) — O(1) direct lookup
+        const usernameSnap = await getDoc(doc(db, 'usernames', key));
+        if (usernameSnap.exists()) {
+          const data = usernameSnap.data();
+          if (currentUserId && data?.uid === currentUserId) {
+            return true; // Owned by the current user
+          }
+          return false; // Already taken by another user
+        }
+      }
+      return true;
+    })(), 4500);
   } catch (err) {
     console.warn('Could not verify username uniqueness in cloud:', err);
     return true; // Fallback to allowing if network check fails
@@ -725,18 +748,24 @@ export async function getUsernameLoginHint(username) {
   const clean = username.trim().toLowerCase().replace(/^@/, '');
   if (!clean || !db) return { exists: false };
 
+  const keys = getUsernameLookupKeys(clean);
+
   try {
-    const snap = await getDoc(doc(db, 'usernames', clean));
-    if (snap.exists()) {
-      const data = snap.data() || {};
-      return {
-        exists: true,
-        authProvider: data.authProvider || 'password',
-        emailHint: data.emailHint || '',
-        displayName: data.displayName || ''
-      };
-    }
-    return { exists: false };
+    return await withCloudTimeout((async () => {
+      for (const key of keys) {
+        const snap = await getDoc(doc(db, 'usernames', key));
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          return {
+            exists: true,
+            authProvider: data.authProvider || 'password',
+            emailHint: data.emailHint || '',
+            displayName: data.displayName || ''
+          };
+        }
+      }
+      return { exists: false };
+    })(), 4500);
   } catch (err) {
     console.warn('getUsernameLoginHint lookup error:', err);
     return { exists: false };

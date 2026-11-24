@@ -1609,6 +1609,8 @@ body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .avatar-btn:hover {
@@ -1620,6 +1622,79 @@ body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
   background: rgba(255, 87, 34, 0.25);
   border-color: #ff5722;
   transform: scale(1.08);
+}
+
+.avatar-section-compact {
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.avatar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.avatar-section-compact .avatar-label {
+  margin-bottom: 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-current-badge {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.avatar-expand-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.avatar-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body[data-theme="light"] .avatar-expand-btn,
+body[data-theme="natgeo_atlas"] .avatar-expand-btn {
+  background: rgba(241, 245, 249, 0.92);
+  border-color: rgba(51, 65, 85, 0.22);
+  color: #1e293b;
+}
+
+body[data-theme="light"] .avatar-expand-btn:hover,
+body[data-theme="natgeo_atlas"] .avatar-expand-btn:hover {
+  background: #e2e8f0;
+  border-color: rgba(51, 65, 85, 0.35);
+  color: #0f172a;
+}
+
+.avatar-grid.compact {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.avatar-grid.expanded {
+  max-height: 155px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .login-form {
@@ -1642,6 +1717,7 @@ body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
 
 .auth-tab-btn {
   flex: 1;
+  min-height: 46px;
   padding: 10px 14px;
   border-radius: 10px;
   border: none;
@@ -1656,6 +1732,8 @@ body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .auth-tab-btn:hover {
@@ -1687,6 +1765,8 @@ body[data-theme="light"] .avatar-grid::-webkit-scrollbar-thumb {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 10px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .apple-auth-btn:hover {
@@ -1738,6 +1818,8 @@ body[data-theme="light"] .apple-icon-svg {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 18px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .google-auth-btn:hover {
@@ -1824,6 +1906,8 @@ body[data-theme="light"] .apple-icon-svg {
   text-decoration: underline;
   text-underline-offset: 3px;
   margin-left: 4px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .auth-switch-link:hover {
@@ -1855,8 +1939,79 @@ body[data-theme="light"] .apple-icon-svg {
   box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
 }
 
+.login-form input.input-invalid {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22) !important;
+}
+
+/* ── Inline Auth Status / Error Box ── */
+#auth-inline-message,
+.auth-inline-msg {
+  display: none;
+}
+
+#auth-inline-message.is-visible,
+.auth-inline-msg.is-visible {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  font-weight: 600;
+  animation: fadeIn 0.2s ease;
+}
+
+.auth-inline-msg.is-error {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fecaca;
+}
+
+body[data-theme="light"] .auth-inline-msg.is-error,
+body[data-theme="natgeo_atlas"] .auth-inline-msg.is-error {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #991b1b;
+}
+
+.auth-inline-msg.is-success {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #a7f3d0;
+}
+
+body[data-theme="light"] .auth-inline-msg.is-success,
+body[data-theme="natgeo_atlas"] .auth-inline-msg.is-success {
+  background: #ecfdf5;
+  border-color: #34d399;
+  color: #065f46;
+}
+
+.auth-inline-msg.is-info {
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: #bfdbfe;
+}
+
+body[data-theme="light"] .auth-inline-msg.is-info,
+body[data-theme="natgeo_atlas"] .auth-inline-msg.is-info {
+  background: #eff6ff;
+  border-color: #60a5fa;
+  color: #1e40af;
+}
+
+#btn-guest-continue,
+#btn-forgot-password,
+#btn-toggle-password {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .login-btn {
   width: 100%;
+  min-height: 46px;
   background: linear-gradient(135deg, #ff5722, #f59e0b);
   border: none;
   border-radius: 12px;
@@ -1871,6 +2026,8 @@ body[data-theme="light"] .apple-icon-svg {
   padding: 13px;
   transition: all .2s ease;
   font-family: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .login-btn:hover {
@@ -2987,7 +3144,7 @@ body[data-theme="light"] .medal-spotlight-desc {
 
 @media (max-width: 480px) {
   .login-card {
-    padding: 24px 18px;
+    padding: 20px 16px;
     border-radius: 20px;
   }
 
@@ -17533,6 +17690,9 @@ body[data-theme="light"] .auth-tab-btn { background: rgba(241, 245, 249, 0.7); c
 body[data-theme="light"] .auth-tab-btn.active { background: rgba(255, 87, 34, 0.1); color: #ff5722; border-color: #ff5722; }
 body[data-theme="light"] .auth-checkbox-label { color: #374151; }
 body[data-theme="light"] .google-auth-btn { background: #ffffff; border-color: rgba(51, 65, 85, 0.2); color: #374151; }
+body[data-theme="light"] .apple-auth-btn { background: #000000 !important; border-color: #000000 !important; color: #ffffff !important; }
+body[data-theme="light"] .apple-auth-btn span,
+body[data-theme="light"] .apple-auth-btn .apple-icon-svg { color: #ffffff !important; }
 body[data-theme="light"] .login-note { color: #6b7280; }
 body[data-theme="light"] .auth-switch-prompt { color: #374151; }
 
@@ -20790,7 +20950,7 @@ body[data-theme="light"] .map-active-mode-banner .mode-banner-close-btn:hover {
     height: 60px;
     margin-bottom: 8px;
   }
-  .avatar-grid {
+  .avatar-grid.expanded {
     max-height: 122px;
   }
   .passport-modal-dialog,
@@ -20805,6 +20965,31 @@ body[data-theme="light"] .map-active-mode-banner .mode-banner-close-btn:hover {
   }
   .leaflet-popup.clean-status-popup .leaflet-popup-content-wrapper {
     max-height: min(520px, calc(100dvh - 96px)) !important;
+  }
+}
+
+/* 5. Mobile Login Compact Layout (max-width: 600px) */
+@media (max-width: 600px) {
+  .login-overlay {
+    padding: max(14px, env(safe-area-inset-top)) 12px max(24px, env(safe-area-inset-bottom)) 12px;
+  }
+  .login-card {
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+  .login-logo {
+    margin-bottom: 14px;
+  }
+  .login-brand-logo-img {
+    width: 58px;
+    height: 58px;
+    margin-bottom: 8px;
+  }
+  .auth-tabs-row {
+    margin-bottom: 14px;
+  }
+  .login-form {
+    gap: 11px;
   }
 }
 

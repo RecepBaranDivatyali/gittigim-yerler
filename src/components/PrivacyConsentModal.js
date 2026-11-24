@@ -35,9 +35,11 @@ export function checkPrivacyConsent(onAccepted) {
     backdrop-filter: blur(12px);
     z-index: 20000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 16px max(16px, env(safe-area-inset-bottom, 16px)) 16px;
     animation: fadeIn 0.3s ease;
   `;
 
@@ -47,6 +49,7 @@ export function checkPrivacyConsent(onAccepted) {
       border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 24px;
       width: min(460px, 94vw);
+      margin: auto;
       padding: 28px 24px;
       text-align: center;
       box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.85);
