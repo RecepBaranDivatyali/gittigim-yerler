@@ -1,6 +1,57 @@
+const ALLOWED_ORIGINS = [
+  /^https:\/\/gittigim-yerler(-[a-z0-9-]+)?\.vercel\.app$/,
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^capacitor:\/\/localhost$/,
+  /^ionic:\/\/localhost$/
+];
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const ipRateLimitMap = new Map();
+
+function isAllowedOrigin(origin) {
+  return typeof origin === 'string' && ALLOWED_ORIGINS.some((re) => re.test(origin));
+}
+
+function getClientIp(req) {
+  const fwd = req.headers?.['x-forwarded-for'];
+  if (typeof fwd === 'string' && fwd.trim()) {
+    return fwd.split(',')[0].trim();
+  }
+  return req.headers?.['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+}
+
+function isRateLimited(ip, now = Date.now()) {
+  if (ipRateLimitMap.size > 500) {
+    for (const [k, entry] of ipRateLimitMap.entries()) {
+      if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+        ipRateLimitMap.delete(k);
+      }
+    }
+  }
+  const entry = ipRateLimitMap.get(ip);
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    ipRateLimitMap.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  entry.count += 1;
+  return false;
+}
+
 export default async function handler(req, res) {
-  // CORS for Mobile & Web clients
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS & Origin verification for Mobile & Web clients
+  const origin = req.headers?.origin;
+  if (origin) {
+    if (!isAllowedOrigin(origin)) {
+      return res.status(403).json({ error: 'Origin not allowed' });
+    }
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -10,6 +61,10 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (isRateLimited(getClientIp(req))) {
+    return res.status(429).json({ error: 'Too many requests' });
   }
 
   try {
@@ -27,7 +82,8 @@ export default async function handler(req, res) {
     const typeLabel = cleanType === 'bug' ? '🐞 Hata / Bug' : (cleanType === 'feature' ? '✨ Yeni Özellik İsteği' : '💡 Öneri / Tavsiye');
     const nowStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
 
-    const cleanId = (req.body && req.body.id) ? String(req.body.id).trim().slice(0, 50) : ('fb_' + Date.now());
+    const rawId = (req.body && typeof req.body.id === 'string') ? req.body.id.trim() : '';
+    const cleanId = /^[a-zA-Z0-9_-]{3,50}$/.test(rawId) ? rawId : ('fb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
 
     // Escape HTML for safe Telegram rendering (prevents Markdown parsing failures)
     const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -56,7 +112,7 @@ export default async function handler(req, res) {
     // Also persist to Firestore 'feedbacks' collection for cross-device developer mode
     try {
       const nowIso = new Date().toISOString();
-      await fetch(`https://firestore.googleapis.com/v1/projects/gezgin-app-c269d/databases/(default)/documents/feedbacks/${cleanId}`, {
+      await fetch(`https://firestore.googleapis.com/v1/projects/gezgin-app-c269d/databases/(default)/documents/feedbacks/${encodeURIComponent(cleanId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

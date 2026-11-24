@@ -112,6 +112,7 @@ export async function sendTripInvitation({ fromProfile, toUsername, placeId, pla
   const notif = {
     id: notifId,
     type: 'trip_tagged',
+    fromUid: auth?.currentUser?.uid || null,
     fromUsername: fromUser,
     fromName: fromProfile?.name || fromProfile?.username || 'Gezgin',
     fromAvatar: fromProfile?.avatar || '🧭',

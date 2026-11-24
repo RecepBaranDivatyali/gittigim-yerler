@@ -858,6 +858,9 @@ export async function deleteUserCloudAccountData() {
     try {
       await deleteUser(auth.currentUser);
     } catch (e) {
+      if (e?.code === 'auth/requires-recent-login') {
+        throw new Error('RECENT_LOGIN_REQUIRED');
+      }
       console.warn('Firebase Auth deleteUser notice:', e?.code || e?.message);
     }
   }

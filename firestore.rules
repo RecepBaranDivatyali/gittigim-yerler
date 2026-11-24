@@ -38,21 +38,28 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (request.auth != null && (resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid));
     }
 
-    // Kullanıcı geri bildirimleri (Yalnızca admin veya bildirim sahibi okuyabilir/yönetebilir)
+    // Kullanıcı geri bildirimleri (Yalnızca admin veya bildirim sahibi okuyabilir/yönetebilir; oluşturmada boyut sınırı)
     match /user_feedbacks/{feedbackId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().size() <= 15
+                    && (!('message' in request.resource.data) || (request.resource.data.message is string && request.resource.data.message.size() <= 2000));
       allow read, update, delete: if isAdmin() || (request.auth != null && (resource.data.uid == request.auth.uid || resource.data.userId == request.auth.uid));
     }
 
     match /feedbacks/{feedbackId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().size() <= 15
+                    && (!('message' in request.resource.data) || (request.resource.data.message is string && request.resource.data.message.size() <= 2000));
       allow read, update, delete: if isAdmin() || (request.auth != null && (resource.data.uid == request.auth.uid || resource.data.userId == request.auth.uid));
     }
 
-    // Seyahat davetleri
+    // Seyahat davetleri (Oluşturmada gönderici UID kontrolü, silmede sahiplik kontrolü)
     match /trip_invitations/{invId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid);
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().size() <= 15
+                    && (!('fromUid' in request.resource.data) || request.resource.data.fromUid == request.auth.uid);
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'handledAt', 'updatedAt']);
+      allow delete: if isAdmin() || (request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid));
     }
   }
 }

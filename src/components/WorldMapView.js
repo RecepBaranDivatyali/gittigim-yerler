@@ -853,19 +853,13 @@ export function renderWorldMapView(container, options = {}) {
                 <!-- Injected dynamically -->
               </div>
 
-              <!-- Admin Mode Toggle & Login Section (Sadece baranimoley@gmail.com veya barandivatyali@gmail.com hesabına açık) -->
+              <!-- Admin Mode Toggle Section (Sadece doğrulanmış Firebase admin oturumuna açık) -->
               ${isCurrentUserSuperAdmin() ? `
                 <div class="fb-admin-section" id="fb-admin-auth-section">
                   <div class="fb-admin-toggle-row">
                     <button type="button" id="btn-toggle-admin" class="fb-admin-toggle-btn">
                       <span>👑</span> <span>${t('adminMode')}</span>
                     </button>
-                  </div>
-                  <div id="fb-admin-drawer" class="fb-admin-drawer" style="display:none;margin-top:8px;">
-                    <div class="fb-admin-auth-row" id="fb-admin-auth-row">
-                      <input type="password" id="fb-admin-pin" class="feedback-input" style="width:140px;margin:0;" placeholder="Geliştirici Şifresi" />
-                      <button type="button" id="btn-admin-login" class="feedback-submit-btn" style="width:auto;padding:8px 16px;margin:0;">Giriş</button>
-                    </div>
                   </div>
                 </div>
               ` : ''}
@@ -2227,49 +2221,19 @@ export function renderWorldMapView(container, options = {}) {
       });
     }
 
-    // Admin Drawer & Auth Handlers
+    // Admin Drawer & Auth Handlers (Yalnızca doğrulanmış Firebase admin oturumu ile açılır)
     const btnToggleAdmin = container.querySelector('#btn-toggle-admin');
-    const adminDrawer = container.querySelector('#fb-admin-drawer');
-    const btnAdminLogin = container.querySelector('#btn-admin-login');
-    const adminPinInput = container.querySelector('#fb-admin-pin');
 
     if (btnToggleAdmin) {
       btnToggleAdmin.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isCurrentUserSuperAdmin()) {
-          // Instant 1-click activation for authenticated super admin (baranimoley@gmail.com / barandivatyali@gmail.com)
           isAdminActive = true;
           localStorage.setItem('gv_admin_active', '1');
-          if (adminDrawer) adminDrawer.style.display = 'none';
-          renderFeedbackList();
-        } else if (adminDrawer) {
-          const isHidden = adminDrawer.style.display === 'none';
-          adminDrawer.style.display = isHidden ? 'block' : 'none';
-          if (isHidden && adminPinInput) adminPinInput.focus();
-        }
-      });
-    }
-
-    if (btnAdminLogin && adminPinInput) {
-      const handleAdminLogin = (e) => {
-        if (e) e.stopPropagation();
-        const pin = adminPinInput.value.trim();
-        if (pin === '2179') {
-          isAdminActive = true;
-          localStorage.setItem('gv_admin_active', '1');
-          adminPinInput.value = '';
-          if (adminDrawer) adminDrawer.style.display = 'none';
           renderFeedbackList();
         } else {
-          alert('Hatalı Geliştirici Şifresi!');
-        }
-      };
-
-      btnAdminLogin.addEventListener('click', handleAdminLogin);
-      adminPinInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleAdminLogin(e);
+          isAdminActive = false;
+          localStorage.removeItem('gv_admin_active');
         }
       });
     }

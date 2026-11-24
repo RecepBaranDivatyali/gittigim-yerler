@@ -134,9 +134,10 @@ export function renderLoginPage(container, onLogin) {
     const prevOwnerKey = localStorage.getItem('gv_data_owner_key') || '';
     const isSameOwner = prevOwnerKey !== '' && (prevOwnerKey === newOwnerKey || prevOwnerKey === legacyEmailKey);
 
-    // Clear local travel storage whenever switching accounts, registering a new account, or logging in from guest state
-    // so previous or guest map data never contaminates the authenticated account.
-    if (!profile?.isGuest && (!isSameOwner || authMode === 'register') && !migrateLegacyData) {
+    // Clear local travel storage whenever switching accounts, registering a new account, logging in from guest state,
+    // or transitioning from a real account into guest mode so previous data never contaminates another session.
+    const isSwitchingFromAccountToGuest = Boolean(profile?.isGuest && prevOwnerKey && prevOwnerKey !== '__guest__');
+    if (isSwitchingFromAccountToGuest || (!profile?.isGuest && (!isSameOwner || authMode === 'register') && !migrateLegacyData)) {
       try {
         await resetTravelData({ skipCloudSync: true });
       } catch (err) {
@@ -677,27 +678,8 @@ export function renderLoginPage(container, onLogin) {
           const rawNonce = randomNonce();
           const res = await requestNativeAppleToken(await sha256Hex(rawNonce));
           nameHint = res.fullName || '';
-          try {
-            const cred = await signInWithCredential(auth, appleProvider.credential({ idToken: res.identityToken, rawNonce }));
-            await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
-          } catch (fbErr) {
-            console.warn('[AppleAuth] Firebase credential exchange failed, using native Apple session fallback:', fbErr);
-            if (!res?.userIdentifier) {
-              alert(currentLang === 'tr' ? 'Apple ile giriş tamamlanamadı. Lütfen tekrar deneyin.' : 'Apple sign in could not be completed. Please try again.');
-              return;
-            }
-            const appleUid = `apple_${res.userIdentifier}`;
-            const username = sanitizeText(String(nameHint || (res.email ? res.email.split('@')[0] : 'Gezgin Apple')).slice(0, 20), 20) || 'Gezgin Apple';
-            const email = res.email || `${appleUid}@privaterelay.appleid.com`;
-            await saveAndCompleteLogin({
-              uid: appleUid,
-              username,
-              email,
-              avatar: selectedAvatar || '🧭',
-              authProvider: 'apple',
-              createdAt: new Date().toISOString()
-            }, rememberMe);
-          }
+          const cred = await signInWithCredential(auth, appleProvider.credential({ idToken: res.identityToken, rawNonce }));
+          await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);
         } else {
           const cred = await signInWithPopup(auth, appleProvider);
           await finishFirebaseSocialLogin(cred.user, 'apple', nameHint);

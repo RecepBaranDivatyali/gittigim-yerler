@@ -37,17 +37,7 @@ export const STORAGE_KEYS = {
 
 export function isCurrentUserSuperAdmin() {
   try {
-    let email = '';
-    const profileStr = localStorage.getItem('gv_profile') || sessionStorage.getItem('gv_profile');
-    if (profileStr) {
-      const profile = JSON.parse(profileStr);
-      if (profile && profile.email) {
-        email = String(profile.email).toLowerCase().trim();
-      }
-    }
-    if (!email && auth && auth.currentUser && auth.currentUser.email) {
-      email = String(auth.currentUser.email).toLowerCase().trim();
-    }
+    const email = String(auth?.currentUser?.email || '').toLowerCase().trim();
     const isSuper = (email === 'baranimoley@gmail.com' || email === 'barandivatyali@gmail.com');
     if (!isSuper) {
       try { localStorage.removeItem('gv_admin_active'); } catch {}
@@ -574,15 +564,43 @@ export async function resetTravelData({ skipCloudSync = false } = {}) {
   notifyStateChange({ skipCloudSync });
 }
 
+const DANGEROUS_PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const SAFE_PLACE_CODE_RE = /^[A-Za-z0-9_:-]{1,20}$/;
+
+function sanitizeObjectPlain(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeObjectPlain(item));
+  }
+  if (value && typeof value === 'object') {
+    const clean = {};
+    for (const key of Object.keys(value)) {
+      if (DANGEROUS_PROTO_KEYS.has(key)) continue;
+      clean[key] = sanitizeObjectPlain(value[key]);
+    }
+    return clean;
+  }
+  return value;
+}
+
+function sanitizeVisitMap(obj) {
+  const clean = {};
+  for (const key of Object.keys(obj)) {
+    if (DANGEROUS_PROTO_KEYS.has(key) || !SAFE_PLACE_CODE_RE.test(key)) continue;
+    clean[key] = sanitizeObjectPlain(obj[key]);
+  }
+  return clean;
+}
+
 export function importBackup(fileContent) {
   try {
-    const data = JSON.parse(fileContent);
+    const parsed = JSON.parse(fileContent);
     const isPlainObj = (v) => Boolean(v && typeof v === 'object' && !Array.isArray(v));
-    if (!isPlainObj(data)) {
+    if (!isPlainObj(parsed)) {
       throw new Error('Invalid backup structure');
     }
-    if (isPlainObj(data.turkeyVisits)) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(data.turkeyVisits));
-    if (isPlainObj(data.worldVisits)) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(data.worldVisits));
+    const data = sanitizeObjectPlain(parsed);
+    if (isPlainObj(data.turkeyVisits)) safeSetItem(STORAGE_KEYS.TURKEY_VISITS, JSON.stringify(sanitizeVisitMap(data.turkeyVisits)));
+    if (isPlainObj(data.worldVisits)) safeSetItem(STORAGE_KEYS.WORLD_VISITS, JSON.stringify(sanitizeVisitMap(data.worldVisits)));
     if (Array.isArray(data.worldCities)) safeSetItem(STORAGE_KEYS.WORLD_CITIES, JSON.stringify(data.worldCities));
     const prof = data.profile || data.userProfile;
     if (isPlainObj(prof)) {
