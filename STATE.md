@@ -2,8 +2,8 @@
 
 ## Özet
 - Uygulama: **Gezgin: Seyahat Haritası** (`com.gittigimyerler.app`)
-- iOS sürüm: **3.1** (GitHub Actions derlemesi tetiklendi; önceki **3.0 (Derleme 66)** yayında) 🍏
-- Android sürüm: **3.1** (versionCode **18**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **İncelemede (`State 5`)** 🌸
+- iOS sürüm: **3.2** (GitHub Actions derlemesi tetiklendi; önceki **3.0 (Derleme 66)** yayında) 🍏
+- Android sürüm: **3.2** (versionCode **19**) — Google Play'de **Yayında (`completed`)** 🟢, Huawei AppGallery'de **İncelemede** 🌸
 - Otomasyon: 3 Mağaza (`Apple + Google Play + Huawei`) canlı durum (`npm run stores:status`) ve tek komutla otomatik imzalama/yayınlama aktif
 - Web: gittigim-yerler.vercel.app (main'den otomatik yayında)
 - Çalışma alanları: `PROJELERİM\Gittiğim Yerler` (ana) + `Desktop\GittigimYerler` (ikincil, `git pull` ile senkron)
@@ -12,9 +12,10 @@
 AKTIF_GOREV: yok
 
 ## Bilinen Sorunlar
-- Bilinen açık kod sorunu yok. (Kayıt olma ve mobil buton sorunları onarıldı; web sürümü `main` üzerinden otomatik güncellendi, mağazalar için bir sonraki sürüm 3.2 çıktığında mobil kullanıcılara da ulaşacak. Firebase Console'da `firestore.rules` + Google/Apple giriş ayarları kullanıcının onayını bekliyor).
+- Bilinen açık sorun yok. (Firebase güvenlik kuralları, Apple/Google giriş sağlayıcıları ve Google Play App Signing SHA-1/SHA-256 parmak izleri doğrulandı; Sürüm 3.2 Google Play, Huawei AppGallery ve iOS CI'a gönderildi).
 
 ## Son Değişiklikler
+- 2026-11-25: Gezgin Sürüm 3.2 (vc 19 / iOS 3.2) tüm mağazalara gönderildi (`deploy-stores.mjs` içine Google Play `uploadType=resumable` 2 MB parçalı yükleme, socket timeout ve Huawei OBS ilerleme takibi eklendi; Google Play `completed` vc 19 + Huawei AppGallery incelemeye gönderildi; Genel Müdürlük portföyü 3.2 APK ile güncellendi; iOS 3.2 GitHub Actions derlemesi tetiklendi; Firebase Console'da `firestore.rules`, Apple/Google giriş ve Google Play App Signing SHA-1/SHA-256 tamamlandı).
 - 2026-11-24: Sürüm 3.0'daki kayıt olma ve mobil buton tepkisizliği sorunları kökten onarıldı (`firebase.js` Capacitor native `initializeAuth` + `persistentSingleTabManager` donma onarımı; `LoginPage.js` `novalidate`, `type="text" inputmode="email"`, `alert()` yerine inline `#auth-inline-message` hata kutusu, kompakt 6'lı/59'lu avatar seçici, `withTimeout` koruması, kayıt şifresi ≥6 karakter ve `gezgin_mert` kullanıcı adı korunması; `syncService.js` 4500ms timeout + legacy boşluklu kullanıcı adı uyumu; `PrivacyConsentModal.js` küçük ekran kaydırma; `main.css` mobil dokunmatik & açık tema kontrastı; `AndroidManifest.xml` `windowSoftInputMode="adjustResize"`; 23/23 test + 6/6 mobil E2E + güvenlik TEMİZ).
 - 2026-11-24: 7 ileri seviye güvenlik kalkanı uygulandı (`api/feedback.js` ID regex & IP rate-limit, `LoginPage.js` misafir izolasyonu & Apple fallback kaldırma, `storage.js` gerçek Firebase Auth admin kontrolü & `importBackup` prototype pollution/key filtresi, `WorldMapView.js` sabit PIN kaldırma, `syncService.js` `requires-recent-login` hatası fırlatma, `notificationSystem.js` `fromUid` kaydı, `vercel.json` HTTP güvenlik başlıkları, `AndroidManifest.xml` `allowBackup=false`/`usesCleartextTraffic=false`, `firestore.rules` şema/boyut/davet kuralları; 19/19 test PASS).
 - 2026-11-23: Gezgin Sürüm 3.1 (vc 18) Android paketleri derlendi ve Google Play (`completed`) + Huawei AppGallery'ye (`State 5`) yüklendi; Genel Müdürlük portföyü 3.1 APK ile güncellendi; iOS 3.1 GitHub Actions derlemesi tetiklendi.
@@ -24,4 +25,3 @@ AKTIF_GOREV: yok
 - 2026-11-19: Mobil önizleme telefon çerçevesi (`PhoneSimulator.js` + `ProfileView.js`) yalnızca yerel geliştirme ortamıyla (`localhost`/`DEV`/`?devsim=1`) sınırlandırıldı; canlı web (`gittigim-yerler.vercel.app`) artık her zaman doğrudan tam ekran açılıyor (19/19 test PASS).
 - 2026-11-17: Gezgin Sürüm 3.0 (iOS Derleme 66 + Android vc 17) Apple App Store (`READY_FOR_SALE`), Google Play (`completed`) ve Huawei AppGallery (`State 0`) dahil 3 mağazanın tamamında resmi olarak YAYINDA!
 - 2026-11-13: Sürüm 3.0 (vc 17) Android paketleri derlendi ve Google Play + Huawei AppGallery'ye gönderildi; deploy-stores.mjs Huawei OBS `fileName` parametresi düzeltildi; iOS 3.0 GitHub Actions derlemesi tetiklendi.
-- 2026-11-13: Veritabanı, Auth ve Kullanıcı Adı giriş akışı düzeltildi (E-posta veya Kullanıcı Adı girişi, cihaz içi güvenli hesap hatırlama, maskeli e-posta ipucu, Firestore UID sahiplik kuralları, çıkışta yerel dizin temizliği, eski user_ bulut verisi uyumluluğu; 19/19 test PASS, güvenlik denetimi TEMİZ).

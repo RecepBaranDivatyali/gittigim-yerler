@@ -83,24 +83,43 @@ function parseCliArgs() {
 function httpRequest(urlStr, options = {}, bodyBuffer = null) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlStr);
+    const timeoutMs = options.timeoutMs || 120000;
     const reqOptions = {
       protocol: url.protocol,
       hostname: url.hostname,
       port: url.port || 443,
       path: `${url.pathname}${url.search}`,
       method: options.method || 'GET',
+      family: 4,
       headers: {
         'User-Agent': 'Gezgin-Deploy-Bot/1.0',
         ...options.headers
       }
     };
 
+    const isBuffer = Buffer.isBuffer(bodyBuffer);
+    const totalBytes = bodyBuffer
+      ? (isBuffer ? bodyBuffer.length : Buffer.byteLength(bodyBuffer))
+      : 0;
+
     if (bodyBuffer) {
       reqOptions.headers = {
         ...reqOptions.headers,
-        'Content-Length': Buffer.isBuffer(bodyBuffer) ? bodyBuffer.length : Buffer.byteLength(bodyBuffer)
+        'Content-Length': totalBytes
       };
     }
+
+    let settled = false;
+    const finishResolve = (val) => {
+      if (settled) return;
+      settled = true;
+      resolve(val);
+    };
+    const finishReject = (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    };
 
     const req = https.request(reqOptions, (res) => {
       const chunks = [];
@@ -114,7 +133,7 @@ function httpRequest(urlStr, options = {}, bodyBuffer = null) {
         } catch {
           parsed = null;
         }
-        resolve({
+        finishResolve({
           statusCode: res.statusCode,
           headers: res.headers,
           data: parsed,
@@ -124,12 +143,41 @@ function httpRequest(urlStr, options = {}, bodyBuffer = null) {
       });
     });
 
-    req.on('error', reject);
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error('HTTP isteği zaman aşımına uğradı'));
+    });
 
-    if (bodyBuffer) {
-      req.write(bodyBuffer);
+    req.on('error', finishReject);
+
+    if (bodyBuffer && isBuffer && bodyBuffer.length > 262144) {
+      const WRITE_CHUNK = 65536;
+      let offset = 0;
+
+      const writeNext = () => {
+        if (settled || req.destroyed) return;
+        while (offset < bodyBuffer.length) {
+          const end = Math.min(offset + WRITE_CHUNK, bodyBuffer.length);
+          const slice = bodyBuffer.subarray(offset, end);
+          offset = end;
+          if (typeof options.onProgress === 'function') {
+            options.onProgress(offset, totalBytes);
+          }
+          const ok = req.write(slice);
+          if (!ok) {
+            req.once('drain', writeNext);
+            return;
+          }
+        }
+        req.end();
+      };
+
+      writeNext();
+    } else {
+      if (bodyBuffer) {
+        req.write(bodyBuffer);
+      }
+      req.end();
     }
-    req.end();
   });
 }
 
@@ -259,25 +307,82 @@ async function deployGooglePlay({ name, notes }) {
   console.log(`  ✓ Edit ID: ${editId}`);
 
   try {
-    console.log('  2. AAB paketi Google Play sunucularına yükleniyor...');
+    console.log('  2. AAB paketi Google Play sunucularına yükleniyor (resumable)...');
     const aabBuffer = fs.readFileSync(RELEASE_AAB_PATH);
     const aabSizeMb = (aabBuffer.length / (1024 * 1024)).toFixed(2);
     console.log(`     Dosya: app-release.aab (${aabSizeMb} MB)`);
 
-    const uploadRes = await httpRequest(
-      `${uploadBaseUrl}/edits/${editId}/bundles?uploadType=media`,
+    const initRes = await httpRequest(
+      `${uploadBaseUrl}/edits/${editId}/bundles?uploadType=resumable`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/octet-stream'
+          'X-Upload-Content-Type': 'application/octet-stream',
+          'X-Upload-Content-Length': String(aabBuffer.length),
+          'Content-Length': '0'
         }
-      },
-      aabBuffer
+      }
     );
 
-    if (uploadRes.statusCode !== 200 || !uploadRes.data?.versionCode) {
-      throw new Error(`AAB yükleme başarısız (${uploadRes.statusCode}): ${uploadRes.rawString}`);
+    const sessionUri = initRes.headers?.location;
+    if (initRes.statusCode !== 200 || !sessionUri) {
+      throw new Error(`Resumable upload oturumu başlatılamadı (${initRes.statusCode}): ${initRes.rawString}`);
+    }
+
+    const CHUNK_SIZE = 2 * 1024 * 1024;
+    let uploadRes = null;
+    for (let offset = 0; offset < aabBuffer.length; offset += CHUNK_SIZE) {
+      const end = Math.min(offset + CHUNK_SIZE, aabBuffer.length) - 1;
+      const chunk = aabBuffer.subarray(offset, end + 1);
+      let lastErr = null;
+      let chunkRes = null;
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          chunkRes = await httpRequest(
+            sessionUri,
+            {
+              method: 'PUT',
+              timeoutMs: 90000,
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'Content-Range': `bytes ${offset}-${end}/${aabBuffer.length}`
+              }
+            },
+            chunk
+          );
+          if (chunkRes.statusCode >= 500 && attempt < 3) {
+            lastErr = new Error(`Sunucu hatası (${chunkRes.statusCode})`);
+            await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 2000));
+          } else {
+            throw lastErr;
+          }
+        }
+      }
+
+      const isFinalChunk = end + 1 >= aabBuffer.length;
+      if (!isFinalChunk && chunkRes?.statusCode === 308) {
+        console.log(`     Yükleniyor: ${((end + 1) / (1024 * 1024)).toFixed(2)} / ${aabSizeMb} MB (%${Math.round(((end + 1) / aabBuffer.length) * 100)})`);
+        continue;
+      }
+      if (isFinalChunk && (chunkRes?.statusCode === 200 || chunkRes?.statusCode === 201)) {
+        console.log(`     Yükleniyor: ${((end + 1) / (1024 * 1024)).toFixed(2)} / ${aabSizeMb} MB (%100)`);
+        uploadRes = chunkRes;
+        break;
+      }
+      throw new Error(`AAB parça yükleme başarısız (${chunkRes?.statusCode}): ${chunkRes?.rawString || lastErr?.message}`);
+    }
+
+    if (!uploadRes || (uploadRes.statusCode !== 200 && uploadRes.statusCode !== 201) || !uploadRes.data?.versionCode) {
+      throw new Error(`AAB yükleme başarısız (${uploadRes?.statusCode}): ${uploadRes?.rawString || 'Yanıt yok'}`);
     }
 
     const uploadedVersionCode = uploadRes.data.versionCode;
@@ -455,9 +560,19 @@ async function deployHuaweiAppGallery({ notes }) {
     'Content-Length': contentLength
   };
 
+  let lastHuaweiMilestone = 0;
   const obsRes = await httpRequest(uploadUrl, {
     method: 'PUT',
-    headers: obsHeaders
+    timeoutMs: 300000,
+    headers: obsHeaders,
+    onProgress: (sent, total) => {
+      const pct = Math.floor((sent / total) * 100);
+      const milestone = Math.floor(pct / 20) * 20;
+      if (milestone > lastHuaweiMilestone && milestone <= 100) {
+        lastHuaweiMilestone = milestone;
+        console.log(`     OBS Yükleniyor: ${(sent / (1024 * 1024)).toFixed(2)} / ${apkSizeMb} MB (%${milestone})`);
+      }
+    }
   }, apkBuffer);
 
   if (obsRes.statusCode < 200 || obsRes.statusCode >= 300) {
